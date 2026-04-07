@@ -1,0 +1,35 @@
+{
+  "name": "craftcms-claude-skills",
+  "description": "Production-ready skills and agents for Craft CMS 5 development. Plugin development (elements, services, controllers, migrations, events) and site development (content modeling, Twig templates, atomic design, 20 plugin references). 6 skills, 6 specialized agents, project template with 8 rules.",
+  "version": "1.0.0",
+  "homepage": "https://github.com/michtio/craftcms-claude-skills",
+  "author": {
+    "name": "michtio"
+  },
+  "keywords": [
+    "craft-cms",
+    "craftcms",
+    "craft-cms-5",
+    "twig",
+    "php",
+    "ddev",
+    "plugin-development",
+    "content-modeling"
+  ],
+  "skills": [
+    "./skills/craftcms",
+    "./skills/craft-site",
+    "./skills/craft-content-modeling",
+    "./skills/craft-twig-guidelines",
+    "./skills/craft-php-guidelines",
+    "./skills/ddev"
+  ],
+  "agents": [
+    "./agents/craft-planner.md",
+    "./agents/craft-debugger.md",
+    "./agents/craft-feature-builder.md",
+    "./agents/craft-code-reviewer.md",
+    "./agents/craft-simplifier.md",
+    "./agents/craft-site-builder.md"
+  ]
+}
