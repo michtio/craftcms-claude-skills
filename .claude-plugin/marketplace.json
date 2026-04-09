@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "craftcms-claude-skills",
-      "source": ".",
+      "source": "./",
       "description": "Production-ready skills and agents for Craft CMS 5 development. 6 skills, 6 specialized agents, project template with 8 rules.",
       "version": "1.0.0",
       "author": {
