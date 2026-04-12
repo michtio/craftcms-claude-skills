@@ -10,7 +10,7 @@ Intelligent redirect manager by nystudio107. Handles static and regex redirects,
 - Configuration: https://nystudio107.com/docs/retour/configuring.html
 - Using: https://nystudio107.com/docs/retour/using.html
 
-When unsure about a Retour feature, `web_fetch` the relevant docs page.
+When unsure about a Retour feature, `WebFetch` the relevant docs page.
 
 ## Common Pitfalls
 

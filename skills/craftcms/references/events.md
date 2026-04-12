@@ -217,7 +217,7 @@ See `references/graphql.md` for the full 10-event GraphQL event reference.
 
 ## Other Registerable Component Types
 
-Craft's component architecture extends beyond elements, fields, and controllers. These are less common but follow the same `EVENT_REGISTER_*` pattern. For detailed implementation, `web_fetch` the linked documentation.
+Craft's component architecture extends beyond elements, fields, and controllers. These are less common but follow the same `EVENT_REGISTER_*` pattern. For detailed implementation, `WebFetch` the linked documentation.
 
 ### Utilities (`craft\services\Utilities`)
 

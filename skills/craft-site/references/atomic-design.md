@@ -2,7 +2,8 @@
 
 > Brad Frost's hierarchical composition model for building user interfaces.
 > Technology-independent — this is the thinking model, not the implementation.
-> For the Craft CMS Twig implementation, see `atomic-patterns.md`.
+> For the Craft CMS Twig implementation, see `atomic-patterns.md` (individual atoms)
+> and `composition-patterns.md` (molecules, organisms, structural layouts).
 
 ## Documentation
 

@@ -4,120 +4,150 @@
 
 Built and maintained by [michtio](https://github.com/michtio). Covers both **plugin/module development** (extending Craft) and **site development** (content modeling, Twig templates, front-end architecture).
 
-## Install
+## Quick Start
 
-Three ways to install — pick what fits your workflow:
-
-### Method 1: Claude Code Plugin (recommended)
-
-Register as a marketplace source, then install:
+### 1. Install
 
 ```bash
-# In Claude Code
+# Claude Code Plugin (recommended)
 /plugin install craftcms-claude-skills@michtio/craftcms-claude-skills
-```
 
-This installs all skills and agents through Claude Code's native plugin system.
-
-### Method 2: Vercel Skills CLI
-
-```bash
+# Or via Vercel Skills CLI
 npx skills add michtio/craftcms-claude-skills --all
-```
 
-Installs all skills via the open [Agent Skills](https://agentskills.io) ecosystem. Works with Claude Code, Cursor, Codex, and other compatible agents.
-
-### Method 3: Git Clone
-
-```bash
+# Or clone manually
 git clone https://github.com/michtio/craftcms-claude-skills.git ~/.claude/craftcms-claude-skills
 cd ~/.claude/craftcms-claude-skills && bash install.sh
 ```
 
-Symlinks skills and agents into `~/.claude/`. Existing skills are never overwritten.
+### 2. Set Up Your Project
 
-To uninstall: `cd ~/.claude/craftcms-claude-skills && bash uninstall.sh`
+Open Claude Code in your Craft project and say:
+
+```
+Set up Claude for this Craft project
+```
+
+The `craft-project-setup` skill detects your project type (plugin, site, module) and generates a tailored `CLAUDE.md` and `.claude/rules/` directory.
+
+### 3. Start Building
+
+The skills trigger automatically based on what you're doing. Just describe what you need:
+
+```
+Build a blog with topics, authors, and a flexible body builder using CKEditor
+```
+
+Claude loads the right skills, follows Craft conventions, and uses the correct field handles, DDEV commands, and project config workflow.
+
+## Real-World Examples
+
+These are the kinds of prompts that trigger skills and produce high-quality results:
+
+### Content Modeling
+
+```
+Plan the content architecture for a multi-language corporate site with
+news, team members, office locations, and a service catalog. We need
+English, German, and French with subfolder-per-language routing.
+```
+
+```
+I need a Matrix field for page building with these block types: hero banner,
+text with image, testimonial slider, CTA section, and FAQ accordion.
+What entry types should I create and how should I configure the Matrix?
+```
+
+```
+We're migrating from WordPress. The old site has 3 category taxonomies
+and about 200 tags. What's the Craft 5 approach for taxonomies?
+```
+
+### Plugin Development
+
+```
+Build a custom element type for "Job Listings" with postDate/expiryDate
+status, a categories relation for departments, and a CP edit page with
+field layout designer.
+```
+
+```
+Add a webhook controller to my plugin that receives POST requests from
+an external API, validates the signature, and queues a sync job.
+```
+
+```
+Set up Pest tests for my plugin's Items service. I need tests for
+CRUD operations, validation failures, and multi-site behavior.
+```
+
+### Twig Templates
+
+```
+Create an atomic button component that supports links, form submits,
+and disabled states. It needs size variants and a loading spinner option.
+```
+
+```
+Build a language switcher that shows all available translations for the
+current entry, falls back to the site homepage when a translation doesn't
+exist, and includes proper hreflang attributes.
+```
+
+```
+Set up Vite with Tailwind v4 for our Craft site, including HMR in DDEV
+and production builds with content hashing.
+```
+
+### Configuration & DevOps
+
+```
+Configure Redis for cache, sessions, and mutex in our Craft project.
+We're running DDEV locally and deploying to a VPS with Redis installed.
+```
+
+```
+Set up a headless Craft installation with GraphQL for our Next.js frontend.
+We need preview support so editors can see draft content.
+```
 
 ## What's Inside
 
-### Two Development Tracks
+### Skills
 
-#### Plugin Development — Extending Craft
+| Skill | Track | Description |
+|-------|-------|-------------|
+| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, editions, Vite, headless, testing, configuration. 17 reference files. |
+| `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, enums, ECS/PHPStan, Yii2 validators, scaffolding. 5 reference files. |
+| `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, CKEditor, relations, eager loading, entrification, asset volumes, users/permissions, storage architecture. 4 reference files. |
+| `craft-site` | Site | Atomic design, component patterns, routing, image presets, Vite, JavaScript boundaries, multi-site patterns. 12 reference files + 22 plugin references. |
+| `craft-twig-guidelines` | Site | Variable naming, null handling (`??`/`???`), whitespace, include isolation, Craft helpers, `collect()`. |
+| `ddev` | Shared | Commands, services, configuration, Xdebug, custom commands, troubleshooting. |
+| `craft-project-setup` | Shared | Interactive project scaffolding. Generates CLAUDE.md and .claude/rules/ for plugin, site, or module projects. |
 
-For building plugins, modules, custom element types, field types, services, controllers, migrations, queue jobs, events, and GraphQL schemas.
-
-| Skill | Description |
-|-------|-------------|
-| `craftcms` | Complete extending reference — elements, queries, services, controllers, CP templates, migrations, events, GraphQL. 13 reference files. |
-| `craft-php-guidelines` | PHP coding standards — PHPDocs, section headers, naming, verification checklist. |
-
-#### Site Development — Building with Craft
-
-For content architecture, Twig templates, atomic design, component systems, and plugin configuration.
-
-| Skill | Description |
-|-------|-------------|
-| `craft-content-modeling` | Content architecture — sections, entry types, all 26 field types, Matrix, relations, eager loading, project config, strategic patterns. 3 reference files. |
-| `craft-site` | Front-end Twig architecture — atomic design, component patterns, routing, image presets, Vite, JavaScript boundaries. 11 reference files + 20 plugin references. |
-| `craft-twig-guidelines` | Twig coding standards — naming, null handling, whitespace, include isolation, Craft helpers, `collect()` conventions. |
-
-#### Shared
-
-| Skill | Description |
-|-------|-------------|
-| `ddev` | DDEV development environment — commands, services, configuration, Xdebug, multi-site. |
+Skills load automatically when relevant. They also declare **companion skills** so related knowledge loads together (e.g., `craftcms` always loads `craft-php-guidelines` alongside it).
 
 ### Agents
 
 Six specialized sub-agents with dedicated models and tool scopes:
 
-**Plugin Development**
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| `craft-planner` | Opus | Break features into scoped implementation steps |
+| `craft-feature-builder` | Opus | Build production-quality plugin code |
+| `craft-simplifier` | Opus | Refine code for simplicity after implementation |
+| `craft-debugger` | Sonnet | Systematic bug investigation |
+| `craft-code-reviewer` | Sonnet | Code review with findings report |
+| `craft-site-builder` | Opus | Site templates, content architecture, components |
 
-| Agent | Model | Purpose | Tools |
-|-------|-------|---------|-------|
-| `craft-planner` | Opus | Break features into scoped implementation steps | Read-only |
-| `craft-feature-builder` | Opus | Build production-quality plugin code | All |
-| `craft-simplifier` | Opus | Refine code for simplicity after implementation | All |
-| `craft-debugger` | Sonnet | Systematic bug investigation | All |
-| `craft-code-reviewer` | Sonnet | Code review with findings report | Read-only |
+Each agent loads relevant skills automatically and enforces DDEV-only commands, symlinked plugin paths, and scoped ECS fixes.
 
-**Site Development**
+### Plugin Reference Library
 
-| Agent | Model | Purpose | Tools |
-|-------|-------|---------|-------|
-| `craft-site-builder` | Opus | Site templates, content architecture, components | All |
-
-### Project Template
-
-A ready-to-use `.claude/` directory for any Craft CMS 5 plugin repository. Copy `project-template/` into your plugin repo and customize.
-
-```
-your-plugin/
-├── CLAUDE.md                    # Imports rules, defines environment commands
-└── .claude/
-    └── rules/
-        ├── architecture.md      # Service patterns, element operations, project config
-        ├── coding-style.md      # PHPDocs, section headers, naming conventions
-        ├── git-workflow.md      # Conventional commits, verification before push
-        ├── migrations.md        # Idempotency, foreign keys, deployment safety
-        ├── scaffolding.md       # ddev craft make generators
-        ├── security.md          # Permissions, input sanitization, secrets
-        ├── templates.md         # CP template macros, translations, admin checks
-        └── testing.md           # Pest, factories, site context
-```
-
-Rules are path-scoped where appropriate — `migrations.md` only loads when editing files in `src/migrations/`, `testing.md` only in `tests/`.
-
-### CSS Framework Note
-
-The `craft-site` skill documents an atomic design system that assumes Tailwind CSS for class composition. **Craft CMS is unopinionated about front-end tooling** — adapt the class patterns to your CSS framework. The component architecture (props, extends/block, include with only) is framework-agnostic.
-
-## Plugin Reference Library
-
-The `craft-site` skill includes detailed references for 20 Craft plugins, each covering configuration, Twig/PHP API, common pitfalls, and cross-references:
+22 Craft plugins with detailed configuration, Twig/PHP API, common pitfalls, and cross-references:
 
 <details>
-<summary>View all 20 plugin references</summary>
+<summary>View all 22 plugin references</summary>
 
 | Plugin | Author | Key Surface |
 |--------|--------|-------------|
@@ -141,8 +171,40 @@ The `craft-site` skill includes detailed references for 20 Craft plugins, each c
 | Embedded Assets | spicyweb | oEmbed as assets |
 | Amazon SES | putyourlightson | SES mail transport |
 | Timeloop | craftpulse | Recurring dates |
+| Feed Me | craftcms | Data import from XML/JSON/CSV, CLI automation |
+| Imager-X | spacecrafttechnologies | Advanced image transforms, named presets, effects |
 
 </details>
+
+## Project Setup
+
+### Automatic (recommended)
+
+Use the `craft-project-setup` skill:
+
+```
+Set up Claude for this Craft project
+```
+
+It detects your project type from `composer.json`, `.ddev/config.yaml`, and directory structure, asks a few clarifying questions, and generates:
+
+- `CLAUDE.md` with project-specific conventions and commands
+- `.claude/rules/` with coding standards, architecture rules, security, git workflow
+
+### Manual
+
+Copy the project template:
+
+```bash
+cp -r ~/.claude/craftcms-claude-skills/project-template/.claude /path/to/your-project/
+cp ~/.claude/craftcms-claude-skills/project-template/CLAUDE.md /path/to/your-project/
+```
+
+Then customize: replace `YourVendor` with your author name and `plugin-handle` with your plugin's handle.
+
+### CSS Framework Note
+
+The `craft-site` skill documents an atomic design system using Tailwind CSS for class composition. **Craft CMS is unopinionated about front-end tooling.** The component architecture (props, extends/block, include with only) is framework-agnostic.
 
 ## Requirements
 
@@ -151,44 +213,21 @@ The `craft-site` skill includes detailed references for 20 Craft plugins, each c
 - Craft CMS 5.x
 - Bash (macOS/Linux) for the install script
 
-## Customization
-
-### Personal CLAUDE.md
-
-The installer does **not** touch your `~/.claude/CLAUDE.md`. A reference version is provided at `reference/CLAUDE.md` — review it and merge what you need.
-
-### Project Template
-
-Copy the project template into your plugin repository:
-
-```bash
-cp -r ~/.claude/craftcms-claude-skills/project-template/.claude /path/to/your-plugin/
-cp ~/.claude/craftcms-claude-skills/project-template/CLAUDE.md /path/to/your-plugin/
-```
-
-Then customize:
-- Replace `YourVendor` in `rules/coding-style.md` with your author name
-- Replace `plugin-handle` in `rules/templates.md` with your plugin's handle
-
 ## Roadmap
 
-- [ ] Additional plugin references (Neo, Imager-X, Feed Me, Commerce, Scout, Campaign)
-- [ ] Twig element query reference (relatedTo patterns, cache tags)
-- [ ] Multi-site patterns reference (propagation, language switchers)
+- [ ] More plugin references (Neo, Scout, Campaign, Commerce)
 - [ ] Release workflow reference (semver, changelog, CI/CD)
-- [ ] Plugin Vite reference (VitePluginService, CP asset bundles)
 - [ ] Hosting/deployment patterns (Craft Cloud, Servd, self-hosted)
+- [ ] Content modeling: deeper coverage (parked for next iteration)
 
 ## Contributing
 
-Contributions are welcome. See the issue templates for guidance:
+Contributions are welcome:
 
-- **Skill improvements** — open a PR with before/after examples
-- **New plugin references** — follow the format in `skills/craft-site/references/plugins/`
-- **Bug reports** — use the bug report issue template
-
-All contributions must maintain the A+ quality standard established across the skill library.
+- **Skill improvements** -- open a PR with before/after examples
+- **New plugin references** -- follow the format in `skills/craft-site/references/plugins/`
+- **Bug reports** -- use the bug report issue template
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT -- see [LICENSE](LICENSE).

@@ -1,4 +1,24 @@
+# OS
 .DS_Store
 *.swp
 *.swo
 *~
+Thumbs.db
+
+# Claude Code local settings (personal permissions, not shared)
+.claude/settings.local.json
+.claude/memory/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Temp
+*.log
+*.tmp

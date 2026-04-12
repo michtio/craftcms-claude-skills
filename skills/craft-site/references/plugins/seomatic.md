@@ -13,7 +13,7 @@ Comprehensive SEO toolkit by nystudio107. Auto-renders HTML meta tags, JSON-LD s
 - Content SEO: https://nystudio107.com/docs/seomatic/content.html
 - Site settings: https://nystudio107.com/docs/seomatic/site.html
 
-When unsure about an SEOMatic feature, `web_fetch` the relevant docs page.
+When unsure about an SEOMatic feature, `WebFetch` the relevant docs page.
 
 ## Common Pitfalls
 

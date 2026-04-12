@@ -20,7 +20,7 @@ List the files added or modified.
 - [ ] Specific, actionable pitfalls (not generic advice)
 - [ ] Code examples use correct Craft CMS 5 / Twig 3.21 syntax
 - [ ] No vendor-specific references (use `YourVendor`, `plugin-handle` placeholders)
-- [ ] `web_fetch` guidance included for documentation links
+- [ ] `WebFetch` guidance included for documentation links
 - [ ] "Pair With" cross-references to related skills/plugins
 - [ ] No `?.` nullsafe operator in Twig (requires Twig 3.23+, Craft 5 ships 3.21)
 - [ ] Tested with Claude Code on a real Craft CMS project

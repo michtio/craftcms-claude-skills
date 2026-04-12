@@ -11,7 +11,7 @@ Automatic responsive image transform generation by nystudio107. Adds an Optimize
 - Using (Twig): https://nystudio107.com/docs/image-optimize/using.html
 - Advanced: https://nystudio107.com/docs/image-optimize/advanced.html
 
-When unsure about an ImageOptimize feature, `web_fetch` the relevant docs page.
+When unsure about an ImageOptimize feature, `WebFetch` the relevant docs page.
 
 ## Common Pitfalls
 

@@ -12,7 +12,7 @@ Full-page static caching by putyourlightson. Converts Craft pages into static HT
 - Dynamic content: https://putyourlightson.com/plugins/blitz#dynamic-content
 - Hints utility: https://putyourlightson.com/plugins/blitz#hints
 
-When unsure about a Blitz feature, `web_fetch` the plugin page.
+When unsure about a Blitz feature, `WebFetch` the plugin page.
 
 ## Common Pitfalls
 

@@ -9,7 +9,7 @@ Security scanner and monitor by PutYourLightsOn. Scans for vulnerabilities — f
 - Docs: https://putyourlightson.com/plugins/sherlock
 - GitHub: https://github.com/putyourlightson/craft-sherlock
 
-When unsure about a feature, `web_fetch` the docs page.
+When unsure about a feature, `WebFetch` the docs page.
 
 ## Editions
 

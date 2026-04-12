@@ -159,7 +159,7 @@ it('pushes sync job to queue', function() {
 
 ## Code Review Checklist
 
-For the full PHP coding standards, see `~/.claude/craft-php-guidelines.md`. Key checks before every commit:
+For the full PHP coding standards, see the `craft-php-guidelines` skill. Key checks before every commit:
 
 1. `ddev composer check-cs` passes
 2. `ddev composer phpstan` passes

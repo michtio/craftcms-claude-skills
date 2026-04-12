@@ -11,7 +11,7 @@ oEmbed plugin by Spicy Web. Lets editors paste URLs (YouTube, Vimeo, Instagram, 
 - GraphQL: https://github.com/spicywebau/craft-embedded-assets/blob/main/docs/graphql.md
 - Configuration: https://github.com/spicywebau/craft-embedded-assets/blob/main/docs/configuration.md
 
-When unsure, `web_fetch` the relevant docs page.
+When unsure, `WebFetch` the relevant docs page.
 
 ## Common Pitfalls
 

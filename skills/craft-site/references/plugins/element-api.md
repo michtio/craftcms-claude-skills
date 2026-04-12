@@ -9,7 +9,7 @@ First-party JSON API plugin by Pixel & Tonic. Define endpoints in a config file 
 - GitHub/README: https://github.com/craftcms/element-api/blob/4.x/README.md
 - Plugin Store: https://plugins.craftcms.com/element-api
 
-When unsure about a config option, `web_fetch` the GitHub README — it's the canonical reference.
+When unsure about a config option, `WebFetch` the GitHub README — it's the canonical reference.
 
 ## Common Pitfalls
 

@@ -346,7 +346,7 @@ Views compose organisms into a full page. Named `view--{type}-{context}.twig`.
 - Views have **no layout wrapping**. The router provides layout context.
 - Views are **pure composition** — organism includes in order.
 - Views can use `{% embed %}` for structural skeletons when a page needs
-  content slots (e.g., main + aside). See `atomic-patterns.md` embed pattern.
+  content slots (e.g., main + aside). See `composition-patterns.md` embed pattern.
 - Use `.eagerly()` on all relation field queries.
 - Use `.exists()` to check before including optional sections.
 - Pass `only` on every include.

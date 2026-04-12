@@ -9,7 +9,7 @@ Flexible link field type by Verbb. Supports entries, URLs, emails, phone numbers
 - Docs: https://verbb.io/craft-plugins/hyper/docs
 - GitHub: https://github.com/verbb/hyper
 
-When unsure about a Hyper feature, `web_fetch` the docs.
+When unsure about a Hyper feature, `WebFetch` the docs.
 
 ## Common Pitfalls
 

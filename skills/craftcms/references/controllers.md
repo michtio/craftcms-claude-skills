@@ -7,15 +7,41 @@
 
 ## Common Pitfalls
 
+- **Hardcoding the CP trigger in URLs** — The CP trigger (`admin` by default) is configurable via `cpTrigger` in `config/general.php`. When generating URLs in PHP, use the right helper: `UrlHelper::actionUrl('my-plugin/controller/action')` for action endpoints, `UrlHelper::cpUrl('my-plugin/path')` for CP pages (or `{{ cpUrl('my-plugin/path') }}` in Twig). When documenting endpoints in READMEs, write action URLs as `actions/my-plugin/controller/action` and CP URLs as `{cpTrigger}/my-plugin/path` — never assume `/admin/`. CP URL rules in `EVENT_REGISTER_CP_URL_RULES` define the path *after* the trigger, so the rule `my-plugin/items/<itemId:\d+>` resolves to `{cpTrigger}/my-plugin/items/123` at runtime.
 - Forgetting `$this->requirePostRequest()` on mutating actions — without it, state-changing actions are accessible via GET, which browsers prefetch and bots crawl.
 - Returning `null` from a save action without passing the entity back via `setRouteParams()` — the template re-renders but the entity (with its validation errors and filled-in values) is lost, showing a blank form.
 - Webhook controllers without `$enableCsrfValidation = false` — external services don't have a CSRF token, so every POST returns 400.
 - Using `requireAdmin()` for view actions that should work when admin changes are disabled — use `requireAdmin(false)` for read-only screens, otherwise admins can't even view settings on production.
 - Registering webhook routes in CP URL rules instead of site URL rules — CP rules require authentication, so external services get redirected to the login page.
 - Not distinguishing view vs mutate actions in `beforeAction()` — view actions should be accessible even when `allowAdminChanges` is `false`, so admins can still review settings without being able to change them.
+- **Over-engineering with CP URL rules when action URLs suffice** — If the endpoint is an API call, AJAX handler, or utility action, the default `actions/{pluginHandle}/{controller}/{action}` URL works out of the box with query params (`?itemId=123`). CP URL rules with `<itemId:\d+>` path params are only worth the complexity for pretty URLs in CP nav or browser-facing pages. Don't register routes for endpoints that will only be called from JavaScript or `UrlHelper::actionUrl()`.
+
+## Controller Access Patterns
+
+Plugin controllers are accessible at `actions/{pluginHandle}/{controllerKebab}/{actionKebab}` by default — no route registration needed. The `actionTrigger` is `actions` by default (configurable in `config/general.php`). Craft resolves the plugin handle, controller class, and action method automatically from the URL segments.
+
+For example, `MyPlugin\controllers\ItemsController::actionEditItem()` with plugin handle `my-plugin` resolves to:
+
+```
+actions/my-plugin/items/edit-item
+```
+
+In PHP, generate these with `UrlHelper::actionUrl('my-plugin/items/edit-item', ['itemId' => 123])`.
+
+### When to register URL rules
+
+| Pattern | Register? | Why |
+|---------|-----------|-----|
+| AJAX/API endpoint called from JS | No — action URL with query params | `actions/my-plugin/items/edit-item?itemId=123` works immediately |
+| CP nav page with pretty URL | Yes — CP URL rule | Users see `{cpTrigger}/my-plugin/settings/items/42` in their browser |
+| Public webhook or redirect | Yes — site URL rule | External services hit `my-plugin/webhook/receive` on the site URL |
+| Form POST target | No — action URL via hidden input | `<input type="hidden" name="action" value="my-plugin/items/save-item">` |
+
+The rule of thumb: register a route only when the URL is visible to humans (browser address bar, CP nav) or must be on the site domain (webhooks). For everything else, action URLs just work.
 
 ## Table of Contents
 
+- [Controller Access Patterns](#controller-access-patterns)
 - [Scaffold](#scaffold)
 - [Controller Types](#controller-types)
 - [CP Entity Controller Pattern](#cp-entity-controller-pattern)
@@ -338,3 +364,15 @@ $this->requirePostRequest();                            // POST only
 $this->requireAcceptsJson();                            // JSON endpoints
 $this->requireCpRequest();                              // CP only
 ```
+
+### Use-Case Mapping
+
+| Endpoint type | Auth approach |
+|---------------|---------------|
+| Plugin settings page (view) | `requireCpRequest()` + `requireAdmin(false)` in `beforeAction()` for view actions — admins can view even with `allowAdminChanges` off |
+| Plugin settings page (save) | `requireCpRequest()` + `requireAdmin()` — blocks when `allowAdminChanges` is `false` |
+| CP feature gated by permission | `requireCpRequest()` + `requirePermission('my-plugin:manage-items')` — works for non-admin users with the permission |
+| AJAX endpoint for CP UI | `requireCpRequest()` + `requireAcceptsJson()` + `requirePostRequest()` |
+| Public webhook from external service | `$allowAnonymous = ['receive']` + `$enableCsrfValidation = false` — no auth, no CSRF |
+| Preview/share URL for logged-in users | `requireLogin()` — any authenticated user, not just admins |
+| Public API endpoint (headless) | `$allowAnonymous = true` — wide open, validate via API key/signature in the action |

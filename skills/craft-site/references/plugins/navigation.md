@@ -11,7 +11,7 @@ Menu management plugin by Verbb. Create and manage navigation menus with drag-an
 - Custom fields: https://verbb.io/craft-plugins/navigation/docs/get-started/custom-fields
 - GitHub: https://github.com/verbb/navigation
 
-When unsure about a Navigation feature, `web_fetch` the docs.
+When unsure about a Navigation feature, `WebFetch` the docs.
 
 ## Common Pitfalls
 

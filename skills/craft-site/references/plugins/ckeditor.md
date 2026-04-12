@@ -10,7 +10,7 @@ First-party rich text editor by Pixel & Tonic. CKEditor 5 with drag-and-drop too
 - Plugin Store: https://plugins.craftcms.com/ckeditor
 - CKEditor 5 config reference: https://ckeditor.com/docs/ckeditor5/latest/api/module_core_editor_editorconfig-EditorConfig.html
 
-When unsure about CKEditor options, `web_fetch` the GitHub readme.
+When unsure about CKEditor options, `WebFetch` the GitHub readme.
 
 ## Common Pitfalls
 

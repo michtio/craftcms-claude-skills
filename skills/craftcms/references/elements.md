@@ -13,6 +13,8 @@
 - URI/Routing
 - Searchable Attributes
 - Propagation
+- CP Edit Pages (getCpEditUrl, elements/edit route, asCpScreen, slide-outs)
+- Preview Targets (previewTargets, EVENT_REGISTER_PREVIEW_TARGETS)
 - Eager Loading (eagerLoadingMap)
 - Soft Delete
 - Element Events Reference (~40 events)
@@ -402,6 +404,189 @@ public function getSupportedSites(): array
 }
 ```
 
+## CP Edit Pages
+
+Custom elements need a CP edit page for creating and editing instances. Craft provides a built-in `elements/edit` action that handles drafts, revisions, auto-saving, and slide-out editing automatically.
+
+### Route Registration + getCpEditUrl()
+
+Register a CP URL rule pointing to `elements/edit`, and implement `getCpEditUrl()` on your element:
+
+```php
+// In your plugin's init() or via EVENT_REGISTER_CP_URL_RULES
+Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES,
+    function(RegisterUrlRulesEvent $event) {
+        $event->rules['my-plugin'] = ['template' => 'my-plugin/_index.twig'];
+        $event->rules['my-plugin/<elementId:\\d+>'] = 'elements/edit';
+    }
+);
+```
+
+```php
+// On the element class
+public function getCpEditUrl(): ?string
+{
+    return UrlHelper::cpUrl("my-plugin/{$this->id}");
+}
+```
+
+When `getCpEditUrl()` returns a URL, Craft generates edit links in the element index, and the `elements/edit` action handles the entire edit page — field layout rendering, draft/revision management, and auto-saving. No custom controller needed for standard editing.
+
+### Custom Edit Pages with asCpScreen()
+
+For non-standard editing (custom tabs, extra UI outside the field layout), build your own controller action using `CpScreenResponseBehavior`:
+
+```php
+public function actionEdit(?int $elementId = null): Response
+{
+    $element = $elementId
+        ? Craft::$app->getElements()->getElementById($elementId, MyElement::class)
+        : new MyElement();
+
+    if ($elementId && !$element) {
+        throw new NotFoundHttpException('Element not found');
+    }
+
+    /** @var Response|CpScreenResponseBehavior $response */
+    $response = $this->asCpScreen()
+        ->title($element->title ?? Craft::t('my-plugin', 'New Item'))
+        ->editUrl($element->getCpEditUrl())
+        ->docTitle($element->title ?? Craft::t('my-plugin', 'New Item'))
+        ->action('my-plugin/items/save')
+        ->redirectUrl('my-plugin')
+        ->contentTemplate('my-plugin/items/_edit', [
+            'element' => $element,
+        ]);
+
+    return $response;
+}
+```
+
+`asCpScreen()` automatically handles both full-page and slide-out (modal) contexts — no need to detect which mode is active.
+
+### Propagation Method Settings UI
+
+To let admins configure propagation per source (e.g., per category or section), include a propagation method select in the source's settings template:
+
+```twig
+{% import '_includes/forms.twig' as forms %}
+
+{{ forms.selectField({
+    label: 'Propagation Method'|t('app'),
+    id: 'propagationMethod',
+    name: 'propagationMethod',
+    value: category.propagationMethod.value,
+    options: [
+        { label: 'Only save to the site it was created in'|t('app'), value: 'none' },
+        { label: 'Save to all sites the owner element is saved in'|t('app'), value: 'all' },
+        { label: 'Save to other sites in the same site group'|t('app'), value: 'siteGroup' },
+        { label: 'Save to other sites with the same language'|t('app'), value: 'language' },
+    ],
+}) }}
+```
+
+The saved value feeds into `getSupportedSites()` on the element, which returns the `propagationMethod` per site.
+
+### Field Layout Designer in Settings
+
+To let admins design the field layout for your element type, include Craft's field layout designer in your settings template:
+
+```twig
+{% import '_includes/forms.twig' as forms %}
+
+{{ forms.fieldLayoutDesignerField({
+    fieldLayout: category.getFieldLayout(),
+}) }}
+```
+
+In the controller, save the field layout from the POST body:
+
+```php
+$fieldLayout = Craft::$app->getFields()->assembleLayoutFromPost();
+$fieldLayout->type = MyElement::class;
+$category->setFieldLayout($fieldLayout);
+```
+
+### Site-Specific Settings (URI Format, Template, Enabled)
+
+For elements with URIs, create per-site settings with URI format and template path:
+
+```twig
+{% set allSites = craft.app.sites.getAllSites() %}
+
+{% for site in allSites %}
+    <div class="field">
+        <div class="heading"><label>{{ site.name }}</label></div>
+        {{ forms.lightswitchField({
+            label: 'Enabled'|t('app'),
+            name: "sites[#{site.id}][enabled]",
+            on: siteSettings[site.id].enabled ?? false,
+        }) }}
+        {{ forms.textField({
+            label: 'URI Format'|t('app'),
+            name: "sites[#{site.id}][uriFormat]",
+            value: siteSettings[site.id].uriFormat ?? '',
+            placeholder: 'items/{slug}',
+        }) }}
+        {{ forms.textField({
+            label: 'Template'|t('app'),
+            name: "sites[#{site.id}][template]",
+            value: siteSettings[site.id].template ?? '',
+            placeholder: 'items/_entry',
+        }) }}
+    </div>
+{% endfor %}
+```
+
+## Preview Targets
+
+Define where an element can be previewed. Craft shows these as options in the edit page's preview menu.
+
+### Implementing previewTargets()
+
+Override `previewTargets()` on the element class:
+
+```php
+protected function previewTargets(): array
+{
+    $targets = parent::previewTargets();
+
+    if ($this->uri) {
+        $targets[] = [
+            'label' => Craft::t('app', 'Primary page'),
+            'url' => $this->getUrl(),
+        ];
+    }
+
+    return $targets;
+}
+```
+
+### Registering Preview Targets via Event
+
+Add preview targets to elements you don't own:
+
+```php
+use craft\base\Element;
+use craft\events\RegisterPreviewTargetsEvent;
+
+Event::on(
+    MyElement::class,
+    Element::EVENT_REGISTER_PREVIEW_TARGETS,
+    static function(RegisterPreviewTargetsEvent $event) {
+        /** @var MyElement $element */
+        $element = $event->sender;
+
+        if ($element->externalId) {
+            $event->previewTargets[] = [
+                'label' => Craft::t('my-plugin', 'External Preview'),
+                'url' => "https://example.com/preview/{$element->externalId}",
+            ];
+        }
+    }
+);
+```
+
 ## Eager Loading
 
 For custom relations, implement `eagerLoadingMap()` — returns source→target ID mappings:
@@ -448,4 +633,4 @@ Element.php fires ~40 events. Key categories:
 
 **Structures**: `EVENT_BEFORE_MOVE_IN_STRUCTURE`, `EVENT_AFTER_MOVE_IN_STRUCTURE`
 
-For the full list and event class signatures, `web_fetch` https://craftcms.com/docs/5.x/extend/events.html
+For the full list and event class signatures, `WebFetch` https://craftcms.com/docs/5.x/extend/events.html

@@ -1,13 +1,24 @@
 # Field Types Reference
 
-All 26 built-in field types in Craft CMS 5 with settings, Twig access, and query syntax.
+All built-in field types in Craft CMS 5 with settings, Twig access, and query syntax. CKEditor (the primary rich text field) is a first-party plugin — see `content-patterns.md` for CKEditor content modeling patterns.
+
+## Contents
+
+- [Text & Input](#text--input) (Plain Text, Email, Link)
+- [Number & Money](#number--money) (Number, Money, Range)
+- [Date & Time](#date--time) (Date/Time, Time)
+- [Option Fields](#option-fields) (Dropdown, Radio, Button Group, Checkboxes, Multi-Select)
+- [Toggle & Visual](#toggle--visual) (Lightswitch, Color, Icon, Country)
+- [Relational Fields](#relational-fields) (Entries, Assets, Categories, Tags, Users)
+- [Structured Data](#structured-data) (Matrix, Table, JSON, Addresses, Content Block)
+- [Matrix Configuration](#matrix-configuration) (entry types, view modes, nesting, versioning)
 
 ## Documentation
 
 - Field types index: https://craftcms.com/docs/5.x/reference/field-types/
 - Custom fields system: https://craftcms.com/docs/5.x/system/fields.html
 
-Use `web_fetch` on specific field type doc pages for full setting details.
+Use `WebFetch` on specific field type doc pages for full setting details.
 
 ## Text & Input
 
@@ -33,6 +44,10 @@ Returns `string|null`. Validates email format automatically.
 ### Link (replaced URL field in 5.3)
 
 Returns `LinkData|null`. Supports URL, Asset, Category, Email, Entry, Phone, SMS link types. Settings: allowed link types, custom label, target/rel/ARIA attributes (5.6.0+).
+
+The Url field is deprecated since 5.3.0 and is now an alias for Link.
+
+Extensible via `EVENT_REGISTER_LINK_TYPES` — plugins can register custom link types (e.g., internal route links, tel with extensions).
 
 ```twig
 {# Full <a> tag with all attributes #}
@@ -73,7 +88,13 @@ Returns `Money\Money|null`. Stored as integers in minor units ($123.45 → 12345
 
 ### Range
 
-Returns `int|float|null`. Same as Number but renders as a slider in the CP.
+Returns `int|float|null`. Same as Number but renders as a slider in the CP. Since 5.5.0. Settings: min/max, step size, decimal points.
+
+```twig
+{{ entry.myField }}
+```
+
+Query: same as Number — `.myField('>= 50')`.
 
 ## Date & Time
 
@@ -155,11 +176,28 @@ Returns `ColorData|null`. Settings: predefined palette (5.6.0+), allow custom co
 
 ### Icon
 
-Returns icon data from FontAwesome set.
+Returns `IconData|null` (`craft\fields\data\IconData`). Two properties: `name` (string, e.g., `'heart'`, `'arrow-right'`) and `styles` (array of available Font Awesome styles). Stored as a string in the database — the `styles` array is reconstructed at runtime from Craft's icon index.
+
+Settings: `includeProIcons` (bool, whether to show Font Awesome Pro icons in the picker).
 
 ```twig
+{# Icon name (IconData stringifies to the name) #}
+{{ entry.myField }}            {# 'heart' #}
+{{ entry.myField.name }}       {# 'heart' #}
+
+{# Available styles #}
+{{ entry.myField.styles|join(', ') }}   {# 'solid, regular, light' #}
+
+{# Render as FontAwesome element #}
 {{ tag('i', { class: 'fa-solid fa-' ~ entry.myField.name }) }}
+
+{# Render as inline SVG from Craft's icon set #}
+{% if entry.myField %}
+    {{ svg("@appicons/#{entry.myField.name}.svg") }}
+{% endif %}
 ```
+
+Query: queryable as a string — `.myField('heart')`, `.myField(':notempty:')`.
 
 ### Country
 
@@ -173,6 +211,13 @@ Returns `Country|null`. Stored as two-letter code.
 ## Relational Fields
 
 All relational fields return **element queries** (not arrays). Each access returns a fresh query copy.
+
+Properties common to all relation fields (Entries, Assets, Categories, Tags, Users):
+
+- `viewMode` — display mode in the CP: `'list'`, `'list-inline'`, `'thumbs'`, `'cards'`, `'cards-grid'` (since 5.9.0)
+- `allowSelfRelations` (bool) — allow an element to relate to itself
+- `localizeRelations` (bool) — maintain separate relations per site
+- `defaultPlacement` (5.7.0) — `'beginning'` or `'end'` for newly added relations
 
 ### Entries
 
@@ -236,6 +281,8 @@ Returns `EntryQuery` of nested entries. The most powerful field type — see det
 
 Returns `array` of row arrays. Column types: checkbox, color, date, dropdown, email, lightswitch, multi-line text, number, single-line text, time, URL, row heading.
 
+Settings: `staticRows` (bool, 5.5.0) — predefined rows that can't be added/removed, only edited. `maxRows` / `minRows` — limit number of rows.
+
 ```twig
 {% for row in entry.myField %}
     {{ row.columnHandle }}
@@ -244,6 +291,18 @@ Returns `array` of row arrays. Column types: checkbox, color, date, dropdown, em
 {# Check if empty #}
 {% if entry.myField|length %}
 ```
+
+### JSON
+
+Returns `array|null`. Raw JSON editor in the CP. Useful for storing structured data that doesn't fit other field types (API payloads, configuration blobs, custom metadata).
+
+```twig
+{{ entry.myField|json_encode }}
+{% set data = entry.myField %}
+{{ data.someKey }}
+```
+
+Query: not queryable by content.
 
 ### Addresses
 
@@ -259,7 +318,9 @@ Returns `AddressQuery`. Owned by parent element (not relational).
 
 ### Content Block (5.8.0+)
 
-Returns a single nested `Entry`. Always exactly one entry per element — not repeatable. Ideal for reusable field groups (SEO metadata, banner config).
+Returns a single nested `ContentBlock` element (`craft\elements\ContentBlock`). Always exactly one per element — not repeatable. Ideal for reusable field groups (SEO metadata, banner config).
+
+View modes: `grouped` (default, fields in a bordered group), `pane` (fields in a pane), `inline` (fields rendered inline with parent).
 
 ```twig
 {{ entry.myContentBlock.metaTitle }}
@@ -274,14 +335,28 @@ Cannot be nested within other Content Block fields.
 
 Select from globally-defined entry types or create new ones. Entry types can be organized into named groups (5.8.0+). Local name/handle overrides available (5.6.0+).
 
+### Entry Type Per-Usage Overrides (5.6.0+)
+
+When an entry type is used in a section or Matrix field, its name, handle, and description can be overridden for that specific context. The original entry type is unchanged — the override only applies in that section/field. This allows one entry type to serve different semantic roles in different contexts.
+
 ### View Modes
 
-| Mode | Best For |
-|------|----------|
-| **Blocks** | Page builders, inline editing. Classic collapse/expand + drag reorder. |
-| **Cards** | Read-only overview. Double-click opens slideout editor. |
-| **Card Grid** (5.9.0+) | Media galleries, visual content. |
-| **Index** | Large datasets (100+ entries). Search, sort, filter, table toggle. |
+| Mode | Best For | Since |
+|------|----------|-------|
+| **Blocks** | Page builders, inline editing. Classic collapse/expand + drag reorder. | 5.0.0 |
+| **Cards** | Read-only overview. Double-click opens slideout editor. | 5.0.0 |
+| **Cards Grid** | Media galleries, visual content. Grid layout of cards. | 5.9.0 |
+| **Index** | Large datasets (100+ entries). Search, sort, filter, table toggle. | 5.0.0 |
+
+### Matrix Properties
+
+- `enableVersioning` (bool, 5.7.0) — version nested entries alongside owner (blocks mode) or independently (cards/index)
+- `pageSize` (int) — pagination for index view mode
+- `defaultTableColumns` (array) — columns shown in table view
+- `defaultIndexViewMode` (string, 5.5.0) — default view in index mode
+- `createButtonLabel` (string) — customize the "New entry" button text
+
+Matrix entries can have their own URI formats and templates per site (5.0.0) — enabling nested entries to have independent URLs.
 
 ### Nesting
 
@@ -292,7 +367,7 @@ Matrix fields can contain entry types that themselves have Matrix fields. Use di
 ```twig
 {# Basic block rendering #}
 {% for block in entry.contentBlocks.all() %}
-    {% include '_blocks/' ~ block.type.handle ignore missing %}
+    {% include '_blocks/' ~ block.type.handle ignore missing only %}
 {% endfor %}
 
 {# Filter by type #}
@@ -310,4 +385,4 @@ Matrix fields can contain entry types that themselves have Matrix fields. Use di
 
 ### Versioning (5.7.0+)
 
-Blocks view mode: nested entries versioned alongside owner. Cards/Index modes: independent versioning via slideout editor when enabled.
+Controlled by `enableVersioning`. Blocks view mode: nested entries versioned alongside owner. Cards/Index modes: independent versioning via slideout editor when enabled.

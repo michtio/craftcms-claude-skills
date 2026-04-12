@@ -15,7 +15,7 @@ Drag-and-drop form builder by Verbb. Forms are Craft element types with conditio
 - Events: https://verbb.io/craft-plugins/formie/docs/developers/events
 - Hooks: https://verbb.io/craft-plugins/formie/docs/developers/hooks
 
-When unsure about a Formie feature, `web_fetch` the relevant docs page.
+When unsure about a Formie feature, `WebFetch` the relevant docs page.
 
 ## Common Pitfalls
 

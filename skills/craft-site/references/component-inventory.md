@@ -209,7 +209,7 @@ variant patterns — not an exhaustive list, because variants are design-driven.
 | `heroes/` | `--primary`, `--secondary` | Page header sections. Primary = with image, secondary = text-only. |
 | `grids/` | Design-driven | Card grids. Variants match the card type they compose. |
 | `builders/` | `--blocks`, `--content`, `--landing` | Matrix block renderers. One per builder field style. |
-| `layouts/` | Design-driven | Structural embed skeletons. See `atomic-patterns.md` embed pattern. |
+| `layouts/` | Design-driven | Structural embed skeletons. See `composition-patterns.md` embed pattern. |
 | `navigations/` | `--site`, `--primary`, `--mobile` | Complex nav with dropdowns, Alpine/DataStar interactivity. |
 | `footers/` | `--primary` | Site footer. |
 | `forms/` | `--primary` | Form wrapper (Formie or native). |

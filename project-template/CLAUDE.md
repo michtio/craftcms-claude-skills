@@ -70,7 +70,7 @@ src/
 - Scaffolding (Generator): https://craftcms.com/docs/5.x/extend/generator.html
 - Craft source code: `vendor/craftcms/cms/src/`
 
-Use `web_fetch` on these URLs when skills don't cover a specific pattern.
+Use `WebFetch` on these URLs when skills don't cover a specific pattern.
 
 ## Project-Specific Skills
 

@@ -10,7 +10,7 @@ Reactive Twig component framework by PutYourLightsOn. Lets you create components
 - Cookbook: https://putyourlightson.com/sprig/cookbook
 - GitHub: https://github.com/putyourlightson/craft-sprig
 
-When unsure about a Sprig attribute or function, `web_fetch` the docs page. The cookbook has ready-to-use patterns for common scenarios.
+When unsure about a Sprig attribute or function, `WebFetch` the docs page. The cookbook has ready-to-use patterns for common scenarios.
 
 ## Core Concept
 

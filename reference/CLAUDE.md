@@ -25,7 +25,7 @@ Never install Craft plugins (`composer require`) without explicit approval. Plug
 
 Use `gh` for all GitHub operations — it's already authenticated. Never mention Claude Code in PR descriptions, PR comments, or issue comments.
 
-Use `web_fetch` to read documentation URLs directly when skills don't cover a specific pattern.
+Use `WebFetch` to read documentation URLs directly when skills don't cover a specific pattern.
 
 ## Agents
 
