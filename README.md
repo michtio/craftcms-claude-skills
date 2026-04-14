@@ -113,6 +113,29 @@ Set up a headless Craft installation with GraphQL for our Next.js frontend.
 We need preview support so editors can see draft content.
 ```
 
+```
+Our Commerce search takes over 100 seconds on 80k entries. The queries
+show LIKE '%term%' instead of MATCH/AGAINST. How do we fix the search
+performance?
+```
+
+```
+Set up email for production using AWS SES, but locally in DDEV we want
+Mailpit to catch everything. Show me the full config for both environments.
+```
+
+```
+Harden our production Craft config — disable admin changes, set up proper
+CSRF for static caching with Blitz, configure trusted hosts behind our
+load balancer, and disable the X-Powered-By header.
+```
+
+```
+We're setting up environment variables for our staging and production
+servers. What CRAFT_* variables do we need, and how does the config
+priority order work between .env, general.php, and app.php?
+```
+
 ## What's Inside
 
 ### Skills

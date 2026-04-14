@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.0 -- 2026-04-14
+
+Complete rewrite of configuration reference. Full coverage of all Craft CMS 5 config settings, mail transport, search performance, and app component configuration.
+
+### New
+
+- **config-general.md** — all 130+ GeneralConfig settings across 17 categories with implications, dangerous interactions, and production hardening guidance
+- **config-app.md** — all app.php components: cache (DB/Redis/APCu/Memcached), session, queue, mutex, mailer (SMTP/Gmail/Sendmail + AWS SES/Mailgun/Postmark/Sendgrid plugins), search component, logging, CORS, database replicas, module registration, multi-site maxSites
+- **config-bootstrap.md** — environment variables, CRAFT_* auto-mapping, aliases (@web/@webroot/custom), config priority order, fluent API, custom.php, db.php, routes.php, htmlpurifier configs
+- Web vs console split explanation — why app.web.php and app.console.php exist, decision table for which components go in which file
+
+### Changed
+
+- **craftcms SKILL.md** — configuration reference split from 1 file to 3, with expanded task routing examples (search, mail, env vars, GraphQL tokens)
+- **README** — added 4 configuration prompt examples (search performance, mail transport, production hardening, environment variables)
+
+### Removed
+
+- **configuration.md** — replaced by the three new config reference files
+
 ## 1.1.1 -- 2026-04-14
 
 ### Fixed

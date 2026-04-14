@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Craft CMS 5 skills and agents for Claude Code — plugin development, site development, content modeling, headless, multi-site, and more.",
-    "version": "1.1.1"
+    "version": "1.2.0"
   },
   "plugins": [
     {
       "name": "craftcms-claude-skills",
       "source": "./",
       "description": "Production-ready skills and agents for Craft CMS 5 development. 7 skills, 6 specialized agents, 22 plugin references, project scaffolding.",
-      "version": "1.1.1",
+      "version": "1.2.0",
       "author": {
         "name": "michtio"
       },
