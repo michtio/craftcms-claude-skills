@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1 -- 2026-04-14
+
+### Fixed
+
+- **craft-twig-guidelines**: Variable naming convention was incorrectly enforcing snake_case for multi-word Twig variables and flagging camelCase as an error. Now correctly requires camelCase (`buttonText`, `containerClass`) and flags snake_case (`button_text`, `container_class`) as wrong.
+- **craft-project-setup**: Project template `templates.md` said "No camelCase" — now says multi-word uses camelCase with examples.
+- **README**: Updated install instructions to include marketplace registration step.
+
 ## 1.1.0 -- 2026-04-12
 
 Major expansion across all skills. Content modeling overhaul, 10 new reference files, new project setup skill, validation coverage, and storage architecture documentation.

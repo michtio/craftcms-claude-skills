@@ -6,7 +6,7 @@
 - `.eagerly()` on every relational field access inside loops.
 - `{% include '_builders/' ~ block.type.handle ignore missing only %}` for Matrix rendering.
 - Props via `collect({})`, classes via named-key collections.
-- Single descriptive words for variable names: `heading`, `image`, `button`. No camelCase.
+- Single descriptive words for variable names when possible: `heading`, `image`, `button`. Multi-word uses camelCase: `buttonText`, `containerClass`.
 - `{%-` and `-%}` whitespace control in low-level components.
 - No macros for UI components — use includes with `only`.
 - No hardcoded content that should come from fields.
