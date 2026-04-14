@@ -166,6 +166,17 @@ $groups = Craft::$app->getUserGroups()->getAllGroups();
 {% endif %}
 ```
 
+### Custom plugin permission check (dynamic UID)
+
+For plugin entities (channels, forms, item types) where permissions are scoped per-entity:
+
+```twig
+{# Assume 'channel' is passed to the template from a controller or route #}
+{% if currentUser and currentUser.can("myPlugin-manage:#{channel.uid}") %}
+    <a href="{{ actionUrl('my-plugin/channels/edit', { id: channel.id }) }}">Edit Channel</a>
+{% endif %}
+```
+
 ### Group membership
 
 ```twig
