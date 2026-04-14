@@ -238,3 +238,186 @@ class MyCategory extends Model
     }
 }
 ```
+
+## Validation
+
+### Element Validation Rules
+
+`getElementValidationRules()` defines validation applied to the **element** when the field value is saved. Rules are added to the element's `rules()` automatically. Standard Yii validators work: `string`, `number`, `email`, `url`, `required`, `in`, `match`, etc.
+
+```php
+public function getElementValidationRules(): array
+{
+    return [
+        ['string', 'max' => $this->maxLength],
+        ['required', 'when' => fn($model) => $this->required],
+    ];
+}
+```
+
+### Field Settings Validation
+
+`defineRules()` validates the **field's own settings** (configured in Settings > Fields), not the element value. Always call `parent::defineRules()` -- skipping it silently drops validation for `handle`, `name`, and other core settings.
+
+```php
+protected function defineRules(): array
+{
+    $rules = parent::defineRules();
+    $rules[] = [['maxLength'], 'number', 'integerOnly' => true, 'min' => 1];
+    $rules[] = [['placeholder'], 'string', 'max' => 255];
+    return $rules;
+}
+```
+
+## Search Keywords
+
+Without `getSearchKeywords()`, custom field content is invisible to Craft's search. Return an empty string to opt out of indexing (appropriate for non-textual data like coordinates or binary flags).
+
+```php
+public function getSearchKeywords(mixed $value, ElementInterface $element): string
+{
+    return $value instanceof MyValueObject ? $value->getSearchableText() : (string)$value;
+}
+```
+
+After changing this method on an existing field, rebuild: `ddev craft db/search-indexes`.
+
+## GraphQL Integration
+
+Three methods control how a custom field type appears in Craft's GraphQL API. All optional -- if omitted, the field won't be queryable via GraphQL. See `graphql.md` for full GQL patterns.
+
+```php
+use GraphQL\Type\Definition\Type;
+
+// Return type for queries
+public function getContentGqlType(): array|Type
+{
+    return Type::string();
+    // For complex types: return ['name' => $this->handle, 'type' => Type::string(), 'resolve' => fn($source) => ...]
+}
+
+// Input type for mutations
+public function getContentGqlMutationArgumentType(): array|Type
+{
+    return ['name' => $this->handle, 'type' => Type::string()];
+}
+
+// Argument type for query filtering
+public function getContentGqlQueryArgumentType(): array|Type
+{
+    return ['name' => $this->handle, 'type' => Type::listOf(Type::string())];
+}
+```
+
+## Lifecycle Methods
+
+Override these in your field class to hook into element CRUD operations. The `before*` methods can return `false` to cancel the operation.
+
+| Method | When it fires | Notes |
+|--------|---------------|-------|
+| `beforeElementSave($element, $isNew)` | Before save | Return `false` to cancel |
+| `afterElementSave($element, $isNew)` | After save | **Most common** -- sync data, process relations |
+| `afterElementPropagate($element, $isNew)` | After multi-site propagation | Runs after all sites updated |
+| `beforeElementDelete($element)` | Before soft/hard delete | Return `false` to prevent |
+| `afterElementDelete($element)` | After delete | **Common** -- clean up resources |
+| `beforeElementRestore($element)` | Before restore from soft delete | Return `false` to prevent |
+| `afterElementRestore($element)` | After restore | Re-establish connections |
+
+```php
+public function afterElementSave(ElementInterface $element, bool $isNew): void
+{
+    if ($element->isFieldDirty($this->handle)) {
+        $value = $element->getFieldValue($this->handle);
+        // Process only when value changed
+    }
+    parent::afterElementSave($element, $isNew); // Always call parent
+}
+```
+
+## Multi-Site Translation
+
+The `translationMethod` property determines how field values are shared across sites.
+
+| Constant | Behavior |
+|----------|----------|
+| `Field::TRANSLATION_METHOD_NONE` | Same value across all sites (default) |
+| `Field::TRANSLATION_METHOD_SITE` | Unique value per site |
+| `Field::TRANSLATION_METHOD_SITE_GROUP` | Shared within site group, unique across groups |
+| `Field::TRANSLATION_METHOD_LANGUAGE` | Shared when sites have the same language |
+| `Field::TRANSLATION_METHOD_CUSTOM` | Custom logic via `getTranslationKey()` |
+
+### getTranslationKey
+
+With `TRANSLATION_METHOD_CUSTOM`, elements with the same translation key share the same field value.
+
+```php
+public function getTranslationKey(ElementInterface $element): string
+{
+    return $element->getSite()->currency ?? 'default';
+}
+```
+
+### getTranslationDescription
+
+Human-readable description shown in the field layout designer tooltip.
+
+```php
+public function getTranslationDescription(): ?string
+{
+    return Craft::t('my-plugin', 'Values are shared across sites with the same currency.');
+}
+```
+
+`supportedTranslationMethods()` declares which methods the field type supports -- see [Craft 5 Static Configuration Methods](#craft-5-static-configuration-methods).
+
+## Static and Preview HTML
+
+### getStaticHtml — Read-only rendering
+
+Called when rendering the field in a non-editable context: draft sidebars, disabled fields, or without edit permission.
+
+```php
+public function getStaticHtml(mixed $value, ElementInterface $element): string
+{
+    return $value ? Html::encode((string)$value) : '';
+}
+```
+
+### getPreviewHtml — Element index table/card preview
+
+Called when rendering a compact preview in element index tables and cards. Keep output short.
+
+```php
+public function getPreviewHtml(mixed $value, ElementInterface $element): string
+{
+    return $value ? Html::encode(StringHelper::truncate((string)$value, 50)) : '';
+}
+```
+
+Both methods must return HTML-safe strings. Use `Html::encode()` for plain text to prevent XSS.
+
+## Craft 5 Static Configuration Methods
+
+Static methods that define field type metadata. Craft calls these without an instance to build the field type selector, generate IDE hints, and configure database storage.
+
+| Method | Return Type | Purpose |
+|--------|-------------|---------|
+| `icon()` | `?string` | SVG icon path or icon name for the field type picker |
+| `phpType()` | `string` | PHP type hint for IDE autocompletion (e.g., `'string\|null'`) |
+| `dbType()` | `string\|null` | Database column type -- replaces older `getContentColumnType()` |
+| `isMultiInstance()` | `bool` | Whether multiple instances can exist in one layout (default `true`) |
+| `supportedTranslationMethods()` | `array` | Array of `TRANSLATION_METHOD_*` constants the field supports |
+
+```php
+public static function icon(): ?string { return 'palette'; }
+public static function phpType(): string { return 'string|null'; }
+public static function isMultiInstance(): bool { return true; }
+
+public static function dbType(): string|null
+{
+    return \yii\db\Schema::TYPE_TEXT;
+    // Return null when the field manages its own storage (relation tables, external APIs)
+}
+```
+
+`dbType()` is the preferred approach in Craft 5. The instance method `getContentColumnType()` still works but `dbType()` takes precedence when both are defined.
