@@ -167,18 +167,30 @@ public function canRetry($attempt, $error): bool
 
 ### Selective retry by error type
 
-Retry network/server errors, fail immediately on client errors (4xx):
+Retry network/server errors, fail immediately on client errors and application-level validation errors:
 
 ```php
 public function canRetry($attempt, $error): bool
 {
     if ($attempt >= 5) { return false; }
+
+    // Network errors — retry
     if ($error instanceof \GuzzleHttp\Exception\ConnectException) { return true; }
     if ($error instanceof \GuzzleHttp\Exception\ServerException) { return true; }
+
+    // Client errors (4xx) — don't retry, the request is wrong
     if ($error instanceof \GuzzleHttp\Exception\ClientException) { return false; }
+
+    // Application-level validation — don't retry, the data is bad
+    if ($error instanceof \craft\errors\ElementNotFoundException) { return false; }
+    if ($error instanceof \yii\base\InvalidArgumentException) { return false; }
+
+    // Unknown errors — retry cautiously
     return true;
 }
 ```
+
+The key principle: retry transient failures (network timeouts, 503s), never retry permanent failures (bad data, missing elements, 404s). If `saveElement()` throws because validation failed, retrying won't fix the data.
 
 ### Global max attempts
 

@@ -326,7 +326,49 @@ class RecentItems extends Widget
 }
 ```
 
-Settings template renders form fields (e.g., `forms.textField` for `limit`). Body template renders the widget content -- a table, list, or chart. Both are standard Twig templates using Craft's form macros and CSS classes (`data fullwidth` for tables).
+### Widget templates
+
+Settings template (`_components/widgets/recentitems/settings.twig`):
+
+```twig
+{% import '_includes/forms.twig' as forms %}
+
+{{ forms.textField({
+    label: 'Limit',
+    id: 'limit',
+    name: 'limit',
+    value: widget.limit,
+    size: 3,
+    type: 'number',
+}) }}
+```
+
+Body template (`_components/widgets/recentitems/body.twig`):
+
+```twig
+{% if items|length %}
+<table class="data fullwidth">
+    <thead>
+        <tr>
+            <th>{{ 'Title'|t('app') }}</th>
+            <th>{{ 'Date'|t('app') }}</th>
+            <th>{{ 'Status'|t('app') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td><a href="{{ item.cpEditUrl }}">{{ item.title }}</a></td>
+            <td>{{ item.dateCreated|date('short') }}</td>
+            <td>{{ item.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>{{ 'No recent activity.'|t('my-plugin') }}</p>
+{% endif %}
+```
 
 ### Registration
 

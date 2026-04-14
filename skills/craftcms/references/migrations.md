@@ -261,6 +261,31 @@ $section->setFieldLayout($fieldLayout);
 Craft::$app->getEntries()->saveSection($section);
 ```
 
+### Creating entry types
+
+In Craft 5, sections and entry types are decoupled. A section can have multiple entry types, each with its own field layout:
+
+```php
+use craft\models\EntryType;
+
+$entryType = new EntryType();
+$entryType->name = 'Document';
+$entryType->handle = 'document';
+$entryType->icon = 'file-lines';
+$entryType->color = 'blue';
+
+// Assign field layout to the entry type, not the section
+$entryType->setFieldLayout($fieldLayout);
+
+if (!Craft::$app->getEntries()->saveEntryType($entryType)) {
+    throw new \RuntimeException('Could not save entry type: ' . implode(', ', $entryType->getFirstErrors()));
+}
+
+// Assign entry type to the section
+$section->setEntryTypes([$entryType->id]);
+Craft::$app->getEntries()->saveSection($section);
+```
+
 ### Warning: project config coordination
 
 Content migrations that create sections, fields, or entry types write to project config. If your project also has YAML files in `config/project/` that define the same structures, you get a conflict. The rule:
