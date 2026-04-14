@@ -622,7 +622,7 @@ Element.php fires ~40 events. Key categories:
 
 **Delete/restore**: `EVENT_BEFORE_DELETE`, `EVENT_AFTER_DELETE`, `EVENT_BEFORE_RESTORE`, `EVENT_AFTER_RESTORE`
 
-**Authorization** (fired from `canView()`, `canSave()`, etc.):
+**Authorization** (fired from `canView()`, `canSave()`, etc. — see `permissions.md` for full patterns):
 `EVENT_AUTHORIZE_VIEW`, `EVENT_AUTHORIZE_SAVE`, `EVENT_AUTHORIZE_CREATE_DRAFTS`, `EVENT_AUTHORIZE_DUPLICATE`, `EVENT_AUTHORIZE_DELETE`, `EVENT_AUTHORIZE_DELETE_FOR_SITE`
 
 **Registration** (extend via events):

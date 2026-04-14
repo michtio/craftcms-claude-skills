@@ -359,7 +359,7 @@ Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_SITE_URL_RULES,
 ```php
 $this->requireAdmin(false);                             // Admin, no allowAdminChanges check (view)
 $this->requireAdmin();                                  // Admin + allowAdminChanges (mutate)
-$this->requirePermission('my-plugin:settings');         // Custom permission
+$this->requirePermission('my-plugin:settings');         // Custom permission (see permissions.md)
 $this->requirePostRequest();                            // POST only
 $this->requireAcceptsJson();                            // JSON endpoints
 $this->requireCpRequest();                              // CP only

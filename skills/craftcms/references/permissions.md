@@ -278,6 +278,42 @@ Event::on(
 
 Prefix all custom permission handles with your plugin handle: `myPlugin-actionName`. This prevents collisions between plugins and makes it clear which plugin owns the permission.
 
+### Dynamic per-entity permissions
+
+For plugins that manage multiple entities (e.g., forms, channels, item types), generate permissions scoped by entity UID:
+
+```php
+private function _buildPermissions(): array
+{
+    $permissions = [
+        'myPlugin-settings' => [
+            'label' => Craft::t('my-plugin', 'Manage settings'),
+        ],
+    ];
+
+    foreach (MyPlugin::getInstance()->getItems()->getAllItems() as $item) {
+        $permissions["myPlugin-manage:{$item->uid}"] = [
+            'label' => Craft::t('my-plugin', 'Manage {name}', ['name' => $item->name]),
+            'nested' => [
+                "myPlugin-view:{$item->uid}" => [
+                    'label' => Craft::t('my-plugin', 'View entries'),
+                ],
+            ],
+        ];
+    }
+
+    return $permissions;
+}
+```
+
+Then check in controllers:
+
+```php
+$this->requirePermission("myPlugin-manage:{$item->uid}");
+```
+
+This pattern gives admins granular control over which plugin entities each user group can manage. Always pair with element-level `canView()` / `canSave()` checks (see `elements.md`).
+
 ### Nested permissions
 
 The `nested` key creates a hierarchy in the CP permissions UI. A nested permission is only checkable when its parent is checked. This is a UI convenience -- Craft does not enforce the hierarchy in `can()` checks. If you grant a nested permission directly (e.g., via database), `can()` will return `true` even if the parent is unchecked.

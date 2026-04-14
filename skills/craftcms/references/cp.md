@@ -584,6 +584,8 @@ For modern build tooling (HMR, TypeScript, Vue), use `nystudio107/craft-plugin-v
 
 ## Permissions
 
+For the complete permissions reference (all built-in handles, user groups, Twig/PHP checking, authorization events, strategies), see `permissions.md`. This section covers the CP-specific patterns.
+
 ### Registration
 
 ```php
