@@ -60,6 +60,9 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up custom URL routes" → read `config-bootstrap.md`
 - "Configure search to find short words" → read `config-app.md`
 - "Set up GraphQL tokens and schemas" → read `headless.md` + `config-general.md`
+- "Set up caching for a high-traffic site" → read `caching.md`
+- "Register custom permissions for my plugin" → read `permissions.md`
+- "Check user permissions in templates" → read `permissions.md`
 
 | Task | Read |
 |------|------|
@@ -82,6 +85,8 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 | GeneralConfig: all 130+ settings, categories, interactions, dangerous defaults | `references/config-general.md` |
 | App config: cache, session, queue, mutex, mailer/SMTP, search, logging, CORS, DB replicas, web/console split | `references/config-app.md` |
 | Config bootstrap: env vars, aliases, priority order, fluent API, custom.php, db.php, routes.php, htmlpurifier | `references/config-bootstrap.md` |
+| Caching: template cache tag, data cache, static caching (Blitz), CDN, layered strategy, invalidation | `references/caching.md` |
+| Permissions: built-in handles, user groups, custom registration, Twig/PHP checking, authorization events, strategies | `references/permissions.md` |
 
 ## Plugin vs Module Differences
 
