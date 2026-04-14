@@ -136,17 +136,45 @@ servers. What CRAFT_* variables do we need, and how does the config
 priority order work between .env, general.php, and app.php?
 ```
 
+### Authentication & Member Areas
+
+```
+Build a member area with registration, login, password reset, and
+profile editing. Users should be in the "Members" group and only see
+content in the gated section.
+```
+
+```
+I need to protect certain pages so only logged-in users with the
+"premium" permission can access them. Show me the template patterns
+and the permission registration for my plugin.
+```
+
+### Caching & Performance
+
+```
+My blog listing page runs 200+ queries and takes 3 seconds. I think
+there's an N+1 problem with related entries. How do I find and fix it,
+and should I add template caching?
+```
+
+```
+We're launching a marketing site behind Cloudflare. What's the right
+caching strategy — Blitz, template caching, or both? We need forms
+to still work with CSRF.
+```
+
 ## What's Inside
 
 ### Skills
 
 | Skill | Track | Description |
 |-------|-------|-------------|
-| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, editions, Vite, headless, testing, configuration. 17 reference files. |
+| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration (all 130+ settings), caching, permissions, mail transport, CP templates, console commands, debugging. 21 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, enums, ECS/PHPStan, Yii2 validators, scaffolding. 5 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, CKEditor, relations, eager loading, entrification, asset volumes, users/permissions, storage architecture. 4 reference files. |
-| `craft-site` | Site | Atomic design, component patterns, routing, image presets, Vite, JavaScript boundaries, multi-site patterns. 12 reference files + 22 plugin references. |
-| `craft-twig-guidelines` | Site | Variable naming, null handling (`??`/`???`), whitespace, include isolation, Craft helpers, `collect()`. |
+| `craft-site` | Site | Atomic design, component patterns, routing, image presets, Vite, JavaScript boundaries, multi-site patterns, front-end authentication flows. 13 reference files + 22 plugin references. |
+| `craft-twig-guidelines` | Site | Variable naming (camelCase), null handling (`??`/`???`), whitespace, include isolation, Craft helpers, `collect()`. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, custom commands, troubleshooting. |
 | `craft-project-setup` | Shared | Interactive project scaffolding. Generates CLAUDE.md and .claude/rules/ for plugin, site, or module projects. |
 
@@ -240,10 +268,11 @@ The `craft-site` skill documents an atomic design system using Tailwind CSS for 
 
 ## Roadmap
 
-- [ ] More plugin references (Neo, Scout, Campaign, Commerce)
-- [ ] Release workflow reference (semver, changelog, CI/CD)
-- [ ] Hosting/deployment patterns (Craft Cloud, Servd, self-hosted)
-- [ ] Content modeling: deeper coverage (parked for next iteration)
+- [ ] Upgrade guide (Craft 3→4, 4→5, 3→5) with deprecated plugin mapping and migration paths
+- [ ] Deployment/CI/CD patterns (Craft Cloud, Servd, Forge, Docker, zero-downtime)
+- [ ] DDEV skill expansion (Xdebug deep-dive, custom services, production parity)
+- [ ] Commerce skill (products, variants, orders, carts, payments — separate skill)
+- [ ] More plugin references (Neo, Scout, Campaign)
 
 ## Contributing
 
