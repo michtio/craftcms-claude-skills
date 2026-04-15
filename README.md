@@ -182,18 +182,17 @@ Skills load automatically when relevant. They also declare **companion skills** 
 
 ### Agents
 
-Six specialized sub-agents with dedicated models and tool scopes:
+Five specialized sub-agents with dedicated models and tool scopes:
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `craft-planner` | Opus | Break features into scoped implementation steps |
-| `craft-feature-builder` | Opus | Build production-quality plugin code |
-| `craft-simplifier` | Opus | Refine code for simplicity after implementation |
+| `craft-planner` | Opus | Break features into scoped implementation steps with runnable verification gates |
+| `craft-feature-builder` | Opus | Build production-quality plugin code layer by layer with explicit gates; includes final simplification pass |
+| `craft-site-builder` | Opus | Site templates, content architecture, components built layer by layer with explicit gates |
 | `craft-debugger` | Sonnet | Systematic bug investigation |
 | `craft-code-reviewer` | Sonnet | Code review with findings report |
-| `craft-site-builder` | Opus | Site templates, content architecture, components |
 
-Each agent loads relevant skills automatically and enforces DDEV-only commands, symlinked plugin paths, and scoped ECS fixes.
+Each agent loads relevant skills automatically and enforces DDEV-only commands, symlinked plugin paths, and scoped ECS fixes. Builder agents enforce layered build-verify gates (migration → verify → model → verify → service → verify → controller → verify) and mandatory todo lists for plans with more than 3 steps.
 
 ### Plugin Reference Library
 
