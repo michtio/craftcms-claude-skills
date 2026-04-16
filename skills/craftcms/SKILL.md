@@ -44,7 +44,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Add a settings page with form fields" → read `controllers.md` + `cp.md` + `architecture.md`
 - "Register a custom field type" → read `fields.md` + `events.md`
 - "Fix PHPStan errors" → read `quality.md`
-- "Add a dashboard widget" → read `events.md` (Widget Types section)
+- "Add a dashboard widget" → read `cp.md` (Dashboard Widgets) + `events.md` (Widget Types section)
 - "Expose template variables for plugin users" → read `events.md` (Twig Extensions section)
 - "Attach custom methods to entries" → read `events.md` (Behaviors section)
 - "Build a CP utility page" → read `events.md` (Utilities section) + `cp.md`
@@ -63,6 +63,16 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up caching for a high-traffic site" → read `caching.md`
 - "Register custom permissions for my plugin" → read `permissions.md`
 - "Check user permissions in templates" → read `permissions.md`
+- "Set up plugin editions / feature gating" → read `architecture.md` (Plugin Editions section)
+- "Upgrade a plugin from Craft 4 to 5" → read `quality.md` (Rector section)
+- "Set up CI for a Craft plugin" → read `quality.md` (CI/CD Integration section)
+- "Create sections or fields in a migration" → read `migrations.md` (Content Migrations section)
+- "Set up database read replicas" → read `config-app.md` (Database Replicas section)
+- "Register a module in app.php" → read `config-app.md` (Module Registration section)
+- "Create a custom validator" → read `architecture.md` (Custom Validators section)
+- "Create a custom filesystem type" → read `events.md` (Filesystem Types section)
+- "Build a custom condition rule for an element index" → read `cp.md` (Condition Builders section)
+- "Set up pre-commit hooks for code quality" → read `quality.md` (Pre-Commit Hooks section)
 
 | Task | Read |
 |------|------|
