@@ -58,7 +58,7 @@ use Symplify\EasyCodingStandard\Config\ECSConfig;
 
 return ECSConfig::configure()
     ->withPaths([__DIR__ . '/src', __DIR__ . '/tests'])
-    ->withSets([SetList::CRAFT_CMS_5])
+    ->withSets([SetList::CRAFT_CMS_4])
     ->withSkip([
         // PhpCsFixer\Fixer\Operator\NotOperatorWithSuccessorSpaceFixer::class,
     ]);
