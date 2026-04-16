@@ -175,7 +175,7 @@ to still work with CSRF.
 
 | Skill | Track | Description |
 |-------|-------|-------------|
-| `craftcms` | Plugin | Elements (including mass assignment, field value lifecycle, safe attribute rules), queries, services, controllers, migrations, events, GraphQL, configuration (all 130+ settings), caching, permissions, mail transport, CP templates, console commands, debugging. 21 reference files. |
+| `craftcms` | Plugin | Elements, mass assignment, field value lifecycle, queries, services, controllers, migrations, events, GraphQL, configuration (all 130+ settings), caching, permissions, mail transport, CP templates, console commands, debugging. 21 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, enums, ECS/PHPStan, Yii2 validators, scaffolding. 5 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, CKEditor, relations, eager loading, entrification, asset volumes, users/permissions, storage architecture. Reuse-first field workflow (audits existing field pool before creating new fields). 4 reference files. |
 | `craft-site` | Site | Atomic design, component patterns, routing, image presets, Vite, JavaScript boundaries, multi-site patterns, front-end authentication flows. 13 reference files + 22 plugin references. |

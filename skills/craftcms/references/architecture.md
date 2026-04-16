@@ -427,7 +427,7 @@ $rules[] = [['batchSize'], 'integer', 'min' => 1, 'max' => 500,
 | `'each'` | string | `rule` | Apply a rule to each element in an array |
 | `'default'` | string | `value` | Set default value (not a validation, runs before other rules) |
 | `'filter'` | string | `filter` | Transform value (trim, strip_tags, custom callable) |
-| `'safe'` | string | — | Mark attribute as safe for mass assignment (see `elements.md` — Attributes, Field Values, and Mass Assignment) |
+| `'safe'` | string | — | Mark attribute as safe for mass assignment (see `references/elements.md` — Attributes, Field Values, and Mass Assignment) |
 | `'trim'` | string | — | Trim whitespace |
 | `'unique'` | string | `targetClass`, `targetAttribute` | Unique in DB (use Craft's UniqueValidator for elements) |
 

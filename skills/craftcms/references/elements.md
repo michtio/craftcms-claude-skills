@@ -147,7 +147,7 @@ public function afterPropagate(bool $isNew): void
 
 Craft elements carry two distinct kinds of data. Understanding how each flows from form to database prevents silent data loss.
 
-### Two Worlds: Native Attributes vs Custom Field Values
+### Native attributes vs custom field values
 
 **Native attributes** are PHP properties declared on the element class. They live in your custom element table (written in `afterSave()`), and are set/read as normal properties:
 
@@ -157,7 +157,7 @@ $element->cockpitId = 'abc-123';
 $element->postDate = new DateTime();
 ```
 
-**Custom field values** are managed by Craft's field system. They live on a `CustomFieldBehavior` attached to every element, stored as JSON in the `elements_sites.content` column (simple fields) or in separate tables (relational/Matrix fields via `afterElementSave()`). They use dedicated methods:
+**Custom field values** are managed by Craft's field system. They live on a `CustomFieldBehavior` attached to every element, serialized into per-field-layout content tables (simple fields with a `dbType()`) or into separate tables (relational/Matrix fields via `afterElementSave()`). They use dedicated methods:
 
 ```php
 // Single field
@@ -171,13 +171,13 @@ $element->setFieldValues([
 ]);
 ```
 
-The `__get`/`__set` magic on Element bridges both worlds — `$element->body` checks native properties first, then falls back to `setFieldValue()`/`getFieldValue()`. The `field:handle` prefix forces the field path: `$element->{'field:body'}`.
+The `__get`/`__set` magic on Element bridges both worlds — `$element->body` checks native properties first, then falls back to `setFieldValue()`/`getFieldValue()`. When a native attribute and custom field share the same handle, use the `field:` prefix to disambiguate: `$element->{'field:body'}`.
 
-### How CP Form Saves Work
+### How CP form saves work
 
-When an editor saves in the CP, `ElementsController` splits the POST body into two streams:
+When an editor saves in the CP, `ElementsController::actionSave()` splits the POST body into two streams:
 
-**Step 1 — `beforeAction()` separates POST data:**
+**Step 1 — `actionSave()` separates POST data:**
 - Extracts meta-params (`elementType`, `siteId`, `enabled`, `draftName`, etc.)
 - Extracts custom field data from the `fields` namespace (configurable via `fieldsLocation`)
 - Everything remaining in the POST body = native attribute values
@@ -191,26 +191,27 @@ Custom fields:      setFieldValuesFromRequest('fields') → setFieldValue() per 
 
 The native path goes through Yii2's mass assignment, which filters by safe attributes. The custom field path bypasses mass assignment entirely — it iterates editable fields from the field layout and calls `setFieldValueFromRequest()` for each, which normalizes via `$field->normalizeValueFromRequest()`.
 
-### The Safe Attribute Gate
+### The safe attribute gate
 
 Yii2's `setAttributes()` (called with `$safeOnly = true` by default) only assigns attributes returned by `safeAttributes()`. An attribute is "safe" for a scenario if **any** validation rule includes it for that scenario.
 
-The controller sets the scenario to `SCENARIO_LIVE` before calling `setAttributesFromRequest()`. So your native attributes must appear in at least one rule that applies to `SCENARIO_LIVE`:
+The controller sets the scenario to `SCENARIO_LIVE` before calling `setAttributesFromRequest()` for live elements, or `SCENARIO_ESSENTIALS` for drafts. Your native attributes must appear in at least one rule that applies to the relevant scenarios. The safest approach is to cover all three:
 
 ```php
 protected function defineRules(): array
 {
     $rules = parent::defineRules();
 
-    // These attributes have real validation — implicitly safe for both scenarios
+    // These attributes have real validation — implicitly safe for listed scenarios
     $rules[] = [['name', 'handle'], 'required',
         'on' => [self::SCENARIO_DEFAULT, self::SCENARIO_LIVE]];
     $rules[] = [['batchSize'], 'integer', 'min' => 1, 'max' => 500,
         'on' => [self::SCENARIO_DEFAULT, self::SCENARIO_LIVE]];
 
-    // These attributes need no validation but must be assignable from forms
+    // These attributes need no validation but must be assignable from forms.
+    // Include SCENARIO_ESSENTIALS so draft saves also pick them up.
     $rules[] = [['cockpitId', 'cockpitInstanceId'], 'safe',
-        'on' => [self::SCENARIO_DEFAULT, self::SCENARIO_LIVE]];
+        'on' => [self::SCENARIO_DEFAULT, self::SCENARIO_LIVE, self::SCENARIO_ESSENTIALS]];
 
     return $rules;
 }
@@ -225,7 +226,7 @@ protected function defineRules(): array
 $rules[] = [['cockpitId', 'cockpitInstanceId'], 'safe'];
 ```
 
-### The Silent Drop Trap
+### The silent drop trap
 
 If a native attribute has no validation rule (and no `'safe'` rule), it won't be in `safeAttributes()` for any scenario. When the CP form submits:
 
@@ -234,9 +235,9 @@ If a native attribute has no validation rule (and no `'safe'` rule), it won't be
 3. Yii2 calls `onUnsafeAttribute()` — which **silently discards** the value (a debug-level log in dev, nothing in production)
 4. `afterSave()` writes the old/null value to the database
 
-No error. No warning. The form appears to save, the value is gone. This is the most common trap when building custom elements with native attributes.
+No error. No warning. The form appears to save, the value is gone. In `devMode`, Yii2 writes a debug-level log via `onUnsafeAttribute()` — check your Craft logs for "Failed to set unsafe attribute" if you suspect this is happening. In production, there is no signal at all. This is the most common trap when building custom elements with native attributes.
 
-### When to Use What
+### When to use what
 
 | Scenario | Method | Why |
 |----------|--------|-----|
@@ -248,7 +249,7 @@ No error. No warning. The form appears to save, the value is gone. This is the m
 | Controller manually applying POST data | `$element->setAttributesFromRequest($values)` | Delegates to `setAttributes()`, same safe checks apply |
 | Setting from request with field normalization | `$element->setFieldValueFromRequest('handle', $value)` | Calls `normalizeValueFromRequest()` immediately (not lazy) |
 
-### Custom Field Value Lifecycle
+### Custom field value lifecycle
 
 Custom field values go through a normalization and serialization chain:
 
@@ -262,10 +263,10 @@ Form POST → normalizeValueFromRequest() → stored on behavior → [lazy] norm
 
 - **`normalizeValueFromRequest()`** — transforms raw POST data into the field's working type. Called immediately during `setFieldValueFromRequest()`.
 - **`normalizeValue()`** — transforms stored/raw values into the field's working type. Called lazily on first `getFieldValue()`. Skipped if already normalized from request.
-- **`serializeValueForDb()`** — converts the working value back to a DB-storable format. Called by `Elements::_saveElementInternal()` for fields with a `dbType()`.
+- **`serializeValueForDb()`** — converts the working value back to a DB-storable format. Called during the element save pipeline for fields with a `dbType()`.
 - **`afterElementSave()`** — persists complex data (relations, nested elements). Called from `Element::afterSave()`.
 
-### Native Fields in the Field Layout
+### Native fields in the field layout
 
 Native fields (`BaseNativeField` subclasses) map directly to element attributes. They render form inputs whose names land in the native attribute stream (not the `fields` namespace). Examples: Title, Slug, Post Date, Expiry Date.
 
