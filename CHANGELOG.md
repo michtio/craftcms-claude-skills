@@ -32,6 +32,7 @@ Complete rewrite of configuration reference and expansion of 4 thin reference fi
 
 ### Changed
 
+- **elements.md** — Added "Attributes, Field Values, and Mass Assignment" section covering the full value flow: native attributes vs custom field values (`CustomFieldBehavior`), how `ElementsController` splits POST data into two streams, the Yii2 safe attribute gate (`SCENARIO_LIVE`), the silent drop trap when native attributes lack validation rules, `setFieldValue`/`setFieldValues`/`setFieldValueFromRequest` usage, custom field normalization/serialization lifecycle, and native field layout registration. New pitfall entry for the safe attribute trap. Cross-reference from architecture.md validator table.
 - **migrations.md** (101 → 401 lines) — content migrations (creating sections/fields/entry types programmatically), common schema patterns, multi-site migrations, project config interaction, safeDown patterns, `craft migrate` vs `craft up` comparison
 - **queue-jobs.md** (125 → 402 lines) — queue infrastructure (daemon vs web runner), retry strategies, failed job handling, long-running patterns, priority, built-in jobs table, queue health monitoring
 - **quality.md** (177 → 405 lines) — ECS deep dive with violation table, PHPStan levels 0-9, craftcms/phpstan package, Rector for automated refactoring, CI/CD GitHub Actions workflow, pre-commit hooks. Removed duplicated Pest content (cross-references testing.md)
