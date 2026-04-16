@@ -54,6 +54,19 @@ A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." I
 - Walk through changes step by step. File path first, then the code.
 - When building a custom element type, also build the CP edit page templates: field layout designer, propagation settings, preview targets, edit/index templates. An element without its CP interface is incomplete.
 
+## Patterns to prevent (the reviewer will flag these)
+
+- **Element queries**: always `andWhere()`, never `where()` — `where()` wipes status/soft-delete/site filters.
+- **Site IDs**: never hardcode (`siteId => 1`). Use `Craft::$app->getSites()->getPrimarySite()->id` or `getCurrentSite()->id`.
+- **Controllers**: `$allowAnonymous` must list specific action names, never blanket `true` on controllers with CP actions. Never return `$e->getMessage()` to anonymous users — log the real exception, return a generic message.
+- **Permissions**: define handles as class constants, reference them in both registration and `requirePermission()` calls.
+- **Badge counts**: `getCpNavItem()` runs on every CP page load. Use cached counts or simple indexed queries, never N+1 or eager loading.
+- **Cleanup**: use `Gc::EVENT_RUN` for expired element cleanup, never synchronous per-request hooks in `init()`.
+- **Asset bundles**: register conditionally with `getIsCpRequest()` / `getIsSiteRequest()`, never globally.
+- **Templates**: never `|raw` on admin-entered content inside `<style>` or `<script>` tags.
+- **Query properties**: every property on an element query class must have corresponding `andWhere` logic in `beforePrepare()`.
+- **Twig extensions**: functions must `return`, not `echo`. Delegate to services, don't query records directly.
+
 ## Simplification pass (before handoff)
 
 After all gates pass and before you declare done, do one sweep on files you just wrote. You have the context fresh — use it:

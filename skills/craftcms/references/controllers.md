@@ -14,6 +14,8 @@
 - Using `requireAdmin()` for view actions that should work when admin changes are disabled — use `requireAdmin(false)` for read-only screens, otherwise admins can't even view settings on production.
 - Registering webhook routes in CP URL rules instead of site URL rules — CP rules require authentication, so external services get redirected to the login page.
 - Not distinguishing view vs mutate actions in `beforeAction()` — view actions should be accessible even when `allowAdminChanges` is `false`, so admins can still review settings without being able to change them.
+- Setting `$allowAnonymous = true` (blanket) on controllers that also have CP actions — exposes every action to unauthenticated users. Always list specific action names: `$allowAnonymous = ['receive', 'verify']`. Blanket `true` is only acceptable on a **dedicated** API controller where every action is intentionally public (see authorization table below).
+- Returning raw exception messages to anonymous users (`$e->getMessage()` in JSON responses) — leaks database details, file paths, and internal state. Return generic messages ("An error occurred") and log the real exception with `Craft::error()`.
 - **Over-engineering with CP URL rules when action URLs suffice** — If the endpoint is an API call, AJAX handler, or utility action, the default `actions/{pluginHandle}/{controller}/{action}` URL works out of the box with query params (`?itemId=123`). CP URL rules with `<itemId:\d+>` path params are only worth the complexity for pretty URLs in CP nav or browser-facing pages. Don't register routes for endpoints that will only be called from JavaScript or `UrlHelper::actionUrl()`.
 
 ## Controller Access Patterns
@@ -289,16 +291,20 @@ class WebhookController extends Controller
             ]);
 
         } catch (BadRequestHttpException $e) {
+            Craft::warning("Webhook validation failed: {$e->getMessage()}", __METHOD__);
+
             return $this->asJson([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Invalid request',
             ])->setStatusCode(400);
 
         } catch (Throwable $e) {
+            Craft::error("Webhook processing failed: {$e->getMessage()}", __METHOD__);
+
             return $this->asJson([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ])->setStatusCode(400);
+                'message' => 'An error occurred',
+            ])->setStatusCode(500);
         }
     }
 }
@@ -375,4 +381,4 @@ $this->requireCpRequest();                              // CP only
 | AJAX endpoint for CP UI | `requireCpRequest()` + `requireAcceptsJson()` + `requirePostRequest()` |
 | Public webhook from external service | `$allowAnonymous = ['receive']` + `$enableCsrfValidation = false` — no auth, no CSRF |
 | Preview/share URL for logged-in users | `requireLogin()` — any authenticated user, not just admins |
-| Public API endpoint (headless) | `$allowAnonymous = true` — wide open, validate via API key/signature in the action |
+| Public API endpoint (headless) | `$allowAnonymous = true` on a **dedicated** API controller (no CP actions on the same controller) — validate via API key/signature in each action |

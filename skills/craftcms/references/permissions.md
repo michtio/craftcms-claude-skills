@@ -17,6 +17,8 @@ Complete reference for the Craft CMS 5 permissions system: built-in permission h
 - Granting `administrateUsers` to non-admins -- this permission enables privilege escalation because it allows changing passwords and email addresses. Treat it as near-admin access.
 - Checking `currentUser.can()` without null-checking `currentUser` first -- anonymous visitors have no user object, causing a Twig error.
 - Not prefixing custom permission handles with the plugin handle -- leads to collisions between plugins.
+- Checking a non-existent permission handle via `requirePermission()` -- Craft does not throw an error. Admins pass (they bypass all checks). Non-admins get a 403 because the permission is never granted — which looks "correct" but is wrong for the wrong reason. Assigning that handle in the CP has no effect since it's not registered. Define permission handles as class constants and reference them in both registration and checking to prevent mismatches.
+- Using string literals for permission handles across multiple files -- a typo in one file (`'my-plugin:delete-cookies'` vs `'my-plugin:remove-cookies'`) creates a phantom permission that silently behaves wrong. Constants eliminate this class of bug entirely.
 
 ## Contents
 

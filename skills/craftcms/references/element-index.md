@@ -28,6 +28,7 @@
 - Forgetting `includeSetStatusAction()` — without it, users can't bulk-change status from the index, even though your element has statuses.
 - Sources returning stale data — sources are memoized per-request. Use service getters that read from MemoizableArray, not static arrays.
 - Returning all table attributes as defaults — clutters the index. Pick the 4-5 columns users need most; they can customize from there.
+- Loading all elements in `defineSources()` to extract grouping values — `defineSources()` runs on every element index page load. Use an aggregate query (`GROUP BY`) to get distinct values, never `::find()->all()` followed by array extraction.
 
 ## Sources
 

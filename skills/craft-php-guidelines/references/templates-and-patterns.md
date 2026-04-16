@@ -61,6 +61,10 @@ Use `??` for safe defaults in templates:
 {% set title = title ?? 'Untitled'|t('app') %}
 ```
 
+### Output Safety
+
+Never use `|raw` on user-provided or admin-provided content rendered inside `<style>` or `<script>` tags — even admin-entered values are XSS vectors if an admin account is compromised. For CSS values, sanitize or whitelist. For HTML content, use `|purify` (Craft's HTML Purifier filter). Reserve `|raw` for trusted, hardcoded content or content that has already been sanitized.
+
 ### Whitespace Control
 
 Use `{%-` and `-%}` to trim surrounding whitespace in low-level components:

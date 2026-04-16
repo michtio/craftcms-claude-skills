@@ -389,12 +389,27 @@ The `Craft::configure($query, $criteria)` pattern lets Twig authors pass query p
 For custom functions, filters, or global variables, register a Twig extension in your plugin's `init()`:
 
 ```php
+// Scope to site requests only (most common), or remove the guard to register for all contexts
 if (Craft::$app->getRequest()->getIsSiteRequest()) {
     Craft::$app->getView()->registerTwigExtension(new MyTwigExtension());
 }
 ```
 
-Extend `\Twig\Extension\AbstractExtension` and override `getFunctions()`, `getFilters()`, or `getGlobals()`.
+Extend `\Twig\Extension\AbstractExtension` and override `getFunctions()`, `getFilters()`, or `getGlobals()`. Omit the `getIsSiteRequest()` guard if your extension should also be available in CP templates. Key rules:
+
+- Twig functions must **return** values, not `echo` them. Using `echo` bypasses Twig's output escaping and produces unpredictable template output.
+- Extensions should delegate to services — keep the extension as a thin adapter over your service layer, not a place for direct record queries or business logic.
+- Use `'is_safe' => ['html']` only when the function returns pre-sanitized HTML. Otherwise let Twig auto-escape.
+
+### Conditional asset bundle registration
+
+Register asset bundles scoped to the correct request context. Front-end JS should only load on site requests, CP-only assets only on CP requests. Never register a monolithic asset bundle on `EVENT_BEFORE_RENDER_TEMPLATE` without checking:
+
+```php
+if (Craft::$app->getRequest()->getIsCpRequest()) {
+    Craft::$app->getView()->registerAssetBundle(MyCpAssetBundle::class);
+}
+```
 
 ## Registration Pattern
 

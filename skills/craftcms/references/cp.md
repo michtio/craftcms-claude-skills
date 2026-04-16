@@ -21,6 +21,7 @@ Complete reference for CP extension points: templates, navigation, settings page
 - Using raw HTML in CP templates instead of Craft's form macros -- loses consistency, dark mode support, and accessibility features.
 - Not handling the `readonly` state for fields when `allowAdminChanges` is false -- users can edit values they can't save.
 - Forgetting `csrfInput()` in custom forms that don't use `fullPageForm` -- POST requests will be rejected.
+- Expensive `badgeCount` computation in `getCpNavItem()` -- this method runs on **every CP page load** across the entire install, not just your plugin's pages. Badge counts must be extremely cheap: use a cached value (invalidated on relevant saves) or a simple indexed `COUNT(*)` query. Never run complex queries, N+1 patterns, or element queries with eager loading here.
 
 ## Contents
 
@@ -117,7 +118,9 @@ public bool $hasCpSection = true;
 public function getCpNavItem(): ?array
 {
     $item = parent::getCpNavItem();
-    $item['badgeCount'] = 5;
+    // Badge count must be cheap — runs on every CP page load, not just this plugin's pages
+    $item['badgeCount'] = Craft::$app->getCache()->getOrSet('my-plugin:pending-count', fn() =>
+        MyElement::find()->status('pending')->count(), 300);
     $item['subnav'] = [
         'dashboard' => ['label' => Craft::t('my-plugin', 'Dashboard'), 'url' => 'my-plugin'],
         'items' => ['label' => Craft::t('my-plugin', 'Items'), 'url' => 'my-plugin/items'],

@@ -17,7 +17,7 @@
 - CP Edit Pages (getCpEditUrl, elements/edit route, asCpScreen, slide-outs)
 - Preview Targets (previewTargets, EVENT_REGISTER_PREVIEW_TARGETS)
 - Eager Loading (eagerLoadingMap)
-- Soft Delete
+- Soft Delete and Garbage Collection (Gc::EVENT_RUN)
 - Element Events Reference (~40 events)
 
 ## Documentation
@@ -39,6 +39,10 @@
 - Overriding `canView()` / `canSave()` without calling `parent::` — base class fires authorization events that other plugins depend on.
 - `getFieldLayout()` returning null — field layout designer won't render, custom fields won't save.
 - Native attributes without a validation rule or `'safe'` marker — Yii2 mass assignment silently drops the value on CP form saves. No error, no warning. The form appears to save but `afterSave()` writes null/old value. Add `'safe'` to `defineRules()` for any native attribute that needs to come through from forms.
+- Using `->where()` on an element query — replaces all internal conditions (status filters, soft-delete filters, site scoping). Always use `->andWhere()`. The `where()` method is inherited from Yii's `Query` and does not understand element query internals. This applies everywhere: services, controllers, Twig — not just `beforePrepare()`.
+- Hardcoding site IDs (`->where(['siteId' => 1])`) — site 1 may not exist (sites can be deleted and recreated). Use `Craft::$app->getSites()->getPrimarySite()->id` or `getCurrentSite()->id`.
+- Loading all elements in `defineSources()` to extract grouping values — `defineSources()` runs on every element index page load. Use an aggregate query (`GROUP BY`) to get distinct values, never `::find()->all()` followed by array extraction.
+- Declaring element query properties without wiring them in `beforePrepare()` — unused properties are dead code that mislead developers. Every property on the query class must have corresponding `andWhere` logic in `beforePrepare()`.
 
 ## Scaffold
 
@@ -767,6 +771,19 @@ public static function eagerLoadingMap(array $sourceElements, string $handle): a
 ## Soft Delete and Garbage Collection
 
 Elements use soft delete by default (`dateDeleted` column). Craft's garbage collector purges after the configured retention period. Don't bypass with hard deletes unless you have a specific reason.
+
+For plugin-level cleanup of expired or stale elements, listen to `Gc::EVENT_RUN` instead of running cleanup on every request:
+
+```php
+use craft\services\Gc;
+
+Event::on(Gc::class, Gc::EVENT_RUN, function(\yii\base\Event $event) {
+    // Batch delete expired elements — runs during Craft's GC cycle, not on every request
+    MyPlugin::$plugin->getMyService()->deleteExpiredElements();
+});
+```
+
+Never run synchronous cleanup in `init()` or request-level event handlers — it adds latency to every CP page load. For bulk element deletion, use a queue job or a single batch query where possible.
 
 ## Element Events Reference
 
