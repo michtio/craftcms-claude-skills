@@ -34,14 +34,14 @@
 - Writing to the custom table in `beforeSave()` — the element ID isn't available until after the `elements` table insert. Custom table writes belong in `afterSave()`.
 - Not checking `$this->getIsDraft()` before saving side effects — drafts shouldn't trigger sync jobs, API calls, etc.
 - Storing status as a DB column — status must be computed from dates in `getStatus()`.
-- Missing `site('*')` in queue workers — elements on non-primary sites are invisible. See `references/queue-jobs.md`.
+- Missing `site('*')` in queue workers — elements on non-primary sites are invisible. See `queue-jobs.md`.
 - `hasDrafts()` returning `true` is required for `hasRevisions()` to work.
 - Overriding `canView()` / `canSave()` without calling `parent::` — base class fires authorization events that other plugins depend on.
 - `getFieldLayout()` returning null — field layout designer won't render, custom fields won't save.
 - Native attributes without a validation rule or `'safe'` marker — Yii2 mass assignment silently drops the value on CP form saves. No error, no warning. The form appears to save but `afterSave()` writes null/old value. Add `'safe'` to `defineRules()` for any native attribute that needs to come through from forms.
 - Using `->where()` on an element query — replaces all internal conditions (status filters, soft-delete filters, site scoping). Always use `->andWhere()`. The `where()` method is inherited from Yii's `Query` and does not understand element query internals. This applies everywhere: services, controllers, Twig — not just `beforePrepare()`.
 - Hardcoding site IDs (`->where(['siteId' => 1])`) — site 1 may not exist (sites can be deleted and recreated). Use `Craft::$app->getSites()->getPrimarySite()->id` or `getCurrentSite()->id`.
-- Loading all elements in `defineSources()` to extract grouping values — `defineSources()` runs on every element index page load. Use an aggregate query (`GROUP BY`) to get distinct values, never `::find()->all()` followed by array extraction.
+- Loading all elements in `defineSources()` — runs on every index page load. See `element-index.md` Common Pitfalls for details.
 - Declaring element query properties without wiring them in `beforePrepare()` — unused properties are dead code that mislead developers. Every property on the query class must have corresponding `andWhere` logic in `beforePrepare()`.
 
 ## Scaffold
@@ -298,7 +298,7 @@ class CockpitIdField extends BaseNativeField
 }
 ```
 
-Because `cockpitId` is a native attribute rendered outside the `fields` namespace, it flows through `setAttributes()` on save — so it must be safe. See `references/fields.md` for full native field implementation patterns.
+Because `cockpitId` is a native attribute rendered outside the `fields` namespace, it flows through `setAttributes()` on save — so it must be safe. See `fields.md` for full native field implementation patterns.
 
 ## Element Query — `beforePrepare()`
 

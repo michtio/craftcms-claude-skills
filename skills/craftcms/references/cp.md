@@ -1,6 +1,6 @@
 # Control Panel — Templates, Permissions, UI
 
-Complete reference for CP extension points: templates, navigation, settings pages, utilities, widgets, slideouts, and AJAX patterns. For controller patterns (CRUD, webhooks, API, routing), see `references/controllers.md`.
+Complete reference for CP extension points: templates, navigation, settings pages, utilities, widgets, slideouts, and AJAX patterns. For controller patterns (CRUD, webhooks, API, routing), see `controllers.md`.
 
 ## Documentation
 
@@ -277,7 +277,7 @@ Does not extend a layout -- Craft wraps it. Use `csrfInput()` since this is not 
 ### Registration
 
 ```php
-Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITY_TYPES,
+Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES,
     function(RegisterComponentTypesEvent $event) {
         $event->types[] = MyUtility::class;
     }
@@ -620,4 +620,4 @@ private function _buildPermissions(): array
 }
 ```
 
-Element-level checks (`canView()`, `canSave()`, `canDelete()`) are in `references/elements.md` under Authorization. Always implement alongside controller-level `requirePermission()` checks. Use `App::env('MY_PLUGIN_API_KEY')` for sensitive data.
+Element-level checks (`canView()`, `canSave()`, `canDelete()`) are in `elements.md` under Authorization. Always implement alongside controller-level `requirePermission()` checks. Use `App::env('MY_PLUGIN_API_KEY')` for sensitive data.

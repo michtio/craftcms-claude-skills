@@ -337,9 +337,9 @@ protected function previewTargets(): array
 {
     $targets = parent::previewTargets();
 
-    if ($this->hasUrls && $this->uri) {
+    if ($this->uri) {
         $targets[] = [
-            'label' => Craft::t('app', 'Primary entry page'),
+            'label' => Craft::t('app', 'Primary page'),
             'url' => $this->getUrl(),
         ];
     }

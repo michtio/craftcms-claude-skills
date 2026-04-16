@@ -115,7 +115,7 @@ Event::on(Entry::class, Entry::EVENT_BEFORE_SAVE,
 
 ### Element Events (~47 on Element class)
 
-Already documented in `references/elements.md`. These fire on the **element instance itself** — `$event->sender` is the element. Use `Entry::class` or `MyElement::class` as the first argument to scope to a specific element type.
+Already documented in `elements.md`. These fire on the **element instance itself** — `$event->sender` is the element. Use `Entry::class` or `MyElement::class` as the first argument to scope to a specific element type.
 
 ### Elements Service (`craft\services\Elements`) — 33+ events
 
@@ -195,7 +195,7 @@ These fire on the **Elements service**, not on the element instance. `$event->se
 
 ### GQL (`craft\services\Gql`)
 
-See `references/graphql.md` for the full 10-event GraphQL event reference.
+See `graphql.md` for the full 9-event GraphQL event reference.
 
 ### Dashboard (`craft\services\Dashboard`)
 

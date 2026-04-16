@@ -66,6 +66,10 @@ A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." I
 - **Templates**: never `|raw` on admin-entered content inside `<style>` or `<script>` tags.
 - **Query properties**: every property on an element query class must have corresponding `andWhere` logic in `beforePrepare()`.
 - **Twig extensions**: functions must `return`, not `echo`. Delegate to services, don't query records directly.
+- **Element queries**: always `addSelect()`, never `select()` — `select()` wipes default columns. Use `site('*')` in queue workers.
+- **User input**: always `Db::parseParam()` for query parameters from user input, never interpolate directly.
+- **Migrations**: must be idempotent. Use `muteEvents` on project config writes to prevent circular event firing.
+- **`defineSources()`**: use aggregate queries for dynamic sources, never `::find()->all()` to extract grouping values.
 
 ## Simplification pass (before handoff)
 

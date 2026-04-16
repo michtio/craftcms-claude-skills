@@ -49,6 +49,7 @@ You are a code review specialist for Craft CMS 5 plugin development. You review 
 - Performance: no synchronous cleanup in `init()` or request handlers — use `Gc::EVENT_RUN` or queue jobs.
 - Performance: `defineSources()` uses aggregate queries, not `::find()->all()`.
 - Performance: asset bundles registered conditionally (`getIsCpRequest()` / `getIsSiteRequest()`).
+- Twig extensions: functions `return` values (not `echo`), delegate to services, `is_safe` only for pre-sanitized HTML.
 - Code style: early returns, `match` over `switch`, alphabetical ordering.
 - Migration safety: idempotent, `muteEvents` on project config writes.
 
