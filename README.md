@@ -197,7 +197,7 @@ Five specialized sub-agents with dedicated models and tool scopes:
 | `craft-debugger` | Sonnet | Systematic bug investigation |
 | `craft-code-reviewer` | Sonnet | Code review with findings report |
 
-Each agent loads relevant skills automatically and enforces DDEV-only commands, symlinked plugin paths, and scoped ECS fixes. Builder agents enforce layered build-verify gates (migration → verify → model → verify → service → verify → controller → verify) and mandatory todo lists for plans with more than 3 steps.
+Each agent loads relevant skills automatically and enforces DDEV-only commands, symlinked plugin paths, and scoped ECS fixes. Builder agents enforce layered build-verify gates (migration → verify → model → verify → service → verify → controller → verify) and mandatory todo lists for plans with more than 3 steps. The builder and reviewer maintain prevention/detection parity — 14 prevention rules in the builder map to 19 checklist items in the reviewer, covering security (`$allowAnonymous`, CSRF, XSS, error leakage, permissions), performance (`getCpNavItem()`, `defineSources()`, `Gc::EVENT_RUN`), and query safety (`andWhere()`, `addSelect()`, `Db::parseParam()`).
 
 ### Plugin Reference Library
 
