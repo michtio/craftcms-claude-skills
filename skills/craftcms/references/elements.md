@@ -397,7 +397,7 @@ Each has a corresponding event: `EVENT_AUTHORIZE_VIEW`, `EVENT_AUTHORIZE_SAVE`, 
 
 ## Drafts and Revisions
 
-Enable with static methods — `hasDrafts()` returning `true` is required for `hasRevisions()`:
+Enable with `hasDrafts()` (static) and `hasRevisions()` (instance) — `hasDrafts()` returning `true` is required for `hasRevisions()` to work:
 
 ```php
 public static function hasDrafts(): bool

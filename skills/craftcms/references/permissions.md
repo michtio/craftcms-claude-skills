@@ -174,7 +174,7 @@ For plugin entities (channels, forms, item types) where permissions are scoped p
 
 ```twig
 {# Assume 'channel' is passed to the template from a controller or route #}
-{% if currentUser and currentUser.can("myPlugin-manage:#{channel.uid}") %}
+{% if currentUser and currentUser.can("my-plugin:manage:#{channel.uid}") %}
     <a href="{{ actionUrl('my-plugin/channels/edit', { id: channel.id }) }}">Edit Channel</a>
 {% endif %}
 ```
@@ -211,7 +211,7 @@ These tags halt template rendering immediately. `{% requirePermission %}` and `{
 
 ```php
 // Require a permission -- throws ForbiddenHttpException if missing
-$this->requirePermission('myPlugin-manageItems');
+$this->requirePermission('my-plugin:manage-items');
 
 // Require login -- throws ForbiddenHttpException if guest
 $this->requireLogin();
@@ -222,7 +222,7 @@ $this->requireLogin();
 ```php
 $user = Craft::$app->getUser()->getIdentity();
 
-if ($user && $user->can('myPlugin-manageItems')) {
+if ($user && $user->can('my-plugin:manage-items')) {
     // authorized
 }
 ```
@@ -267,16 +267,16 @@ Event::on(
         $event->permissions[] = [
             'heading' => 'My Plugin',
             'permissions' => [
-                'myPlugin-manageItems' => [
+                'my-plugin:manage-items' => [
                     'label' => 'Manage items',
                 ],
-                'myPlugin-deleteItems' => [
+                'my-plugin:delete-items' => [
                     'label' => 'Delete items',
                 ],
-                'myPlugin-viewReports' => [
+                'my-plugin:view-reports' => [
                     'label' => 'View reports',
                     'nested' => [
-                        'myPlugin-exportReports' => [
+                        'my-plugin:export-reports' => [
                             'label' => 'Export reports',
                         ],
                     ],
@@ -289,7 +289,7 @@ Event::on(
 
 ### Convention
 
-Prefix all custom permission handles with your plugin handle: `myPlugin-actionName`. This prevents collisions between plugins and makes it clear which plugin owns the permission.
+Prefix all custom permission handles with your plugin handle and a colon: `my-plugin:action-name`. Use kebab-case for both the plugin prefix and the action name. This prevents collisions between plugins and matches the convention used by Craft core and first-party plugins.
 
 ### Dynamic per-entity permissions
 
@@ -299,16 +299,16 @@ For plugins that manage multiple entities (e.g., forms, channels, item types), g
 private function _buildPermissions(): array
 {
     $permissions = [
-        'myPlugin-settings' => [
+        'my-plugin:settings' => [
             'label' => Craft::t('my-plugin', 'Manage settings'),
         ],
     ];
 
     foreach (MyPlugin::getInstance()->getItems()->getAllItems() as $item) {
-        $permissions["myPlugin-manage:{$item->uid}"] = [
+        $permissions["my-plugin:manage:{$item->uid}"] = [
             'label' => Craft::t('my-plugin', 'Manage {name}', ['name' => $item->name]),
             'nested' => [
-                "myPlugin-view:{$item->uid}" => [
+                "my-plugin:view:{$item->uid}" => [
                     'label' => Craft::t('my-plugin', 'View entries'),
                 ],
             ],
@@ -322,7 +322,7 @@ private function _buildPermissions(): array
 Then check in controllers:
 
 ```php
-$this->requirePermission("myPlugin-manage:{$item->uid}");
+$this->requirePermission("my-plugin:manage:{$item->uid}");
 ```
 
 This pattern gives admins granular control over which plugin entities each user group can manage. Always pair with element-level `canView()` / `canSave()` checks (see `elements.md`).
@@ -345,7 +345,7 @@ Event::on(
     Cp::EVENT_REGISTER_CP_NAV_ITEMS,
     function(RegisterCpNavItemsEvent $event) {
         $user = Craft::$app->getUser()->getIdentity();
-        if ($user && $user->can('myPlugin-manageItems')) {
+        if ($user && $user->can('my-plugin:manage-items')) {
             $event->navItems[] = [
                 'url' => 'my-plugin/items',
                 'label' => 'Items',
@@ -363,14 +363,14 @@ Always pair template-level permission checks with controller-level enforcement:
 ```php
 public function actionEdit(int $id = null): Response
 {
-    $this->requirePermission('myPlugin-manageItems');
+    $this->requirePermission('my-plugin:manage-items');
 
     // ... controller logic
 }
 
 public function actionDelete(): Response
 {
-    $this->requirePermission('myPlugin-deleteItems');
+    $this->requirePermission('my-plugin:delete-items');
 
     // ... controller logic
 }
