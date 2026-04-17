@@ -141,6 +141,32 @@ servers. What CRAFT_* variables do we need, and how does the config
 priority order work between .env, general.php, and app.php?
 ```
 
+### CP JavaScript (Garnish)
+
+```
+Add drag-to-reorder functionality to the items list on my plugin's
+settings page. Each <li> has a .move.icon handle and I need to POST
+the new order via an action endpoint when it changes.
+```
+
+```
+I need a modal dialog for my Craft plugin that opens when clicking
+"Add Item", shows a form with name and handle fields, POSTs to my
+plugin's save action, and closes on success. Make it keyboard accessible.
+```
+
+```
+Add a disclosure menu (the ... action menu) to each row in my custom
+element index. Needs Edit, Duplicate, and a red Delete option with
+confirmation. Show me the Twig markup and JS initialization.
+```
+
+```
+My plugin has a custom field type that needs an interactive dropdown
+in the CP. When the user clicks a button, a menu should appear with
+options loaded from an AJAX endpoint.
+```
+
 ### Authentication & Member Areas
 
 ```
@@ -180,10 +206,11 @@ to still work with CSRF.
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, CKEditor, relations, eager loading, entrification, asset volumes, users/permissions, storage architecture. Reuse-first field workflow (audits existing field pool before creating new fields). 4 reference files. |
 | `craft-site` | Site | Atomic design, component patterns, routing, image presets, Vite, JavaScript boundaries, multi-site patterns, front-end authentication flows. 13 reference files + 22 plugin references. |
 | `craft-twig-guidelines` | Site | Variable naming (camelCase), null handling (`??`/`???`), whitespace, include isolation, Craft helpers, `collect()`. |
+| `craft-garnish` | Plugin | Garnish CP JavaScript toolkit: class system, UI widgets (Modal, HUD, DisclosureMenu, MenuBtn, Select), drag system (DragSort, DragDrop, DragMove), ARIA/focus, custom events, Craft.* class pattern. 5 reference files. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, custom commands, troubleshooting. |
 | `craft-project-setup` | Shared | Interactive project scaffolding. Generates CLAUDE.md and .claude/rules/ for plugin, site, or module projects. |
 
-Skills load automatically when relevant. They also declare **companion skills** so related knowledge loads together (e.g., `craftcms` always loads `craft-php-guidelines` alongside it).
+Skills load automatically when relevant. They also declare **companion skills** so related knowledge loads together (e.g., `craftcms` always loads `craft-php-guidelines` alongside it). 8 skills total.
 
 ### Agents
 

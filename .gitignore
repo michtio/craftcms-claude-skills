@@ -19,6 +19,9 @@ npm-debug.log*
 *.sublime-project
 *.sublime-workspace
 
+# Eval workspaces (skill-creator test artifacts)
+*-workspace/
+
 # Temp
 *.log
 *.tmp

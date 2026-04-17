@@ -2,11 +2,26 @@
 
 ## 1.2.0 -- unreleased
 
-Complete rewrite of configuration reference and expansion of 4 thin reference files. Full coverage of all Craft CMS 5 config settings, mail transport, search performance, app component configuration, migrations, queue jobs, code quality tooling, and CP templates. Agent architecture overhaul with explicit build-verify gates, mandatory todo lists, and removal of the redundant simplifier agent. Content modeling improvement: reuse-first field workflow.
+Complete rewrite of configuration reference and expansion of 4 thin reference files. Full coverage of all Craft CMS 5 config settings, mail transport, search performance, app component configuration, migrations, queue jobs, code quality tooling, and CP templates. Agent architecture overhaul with explicit build-verify gates, mandatory todo lists, and removal of the redundant simplifier agent. Content modeling improvement: reuse-first field workflow. New Garnish JS skill for CP JavaScript development.
+
+### New skill: craft-garnish
+
+- **craft-garnish** — Full reference for Garnish, Craft CMS's undocumented CP JavaScript UI toolkit. 5 reference files (2,050 lines) covering the class system (`Garnish.Base.extend`, inheritance, events, listeners, destroy lifecycle), UI widgets (Modal, HUD, DisclosureMenu, MenuBtn, Select, CustomSelect, ContextMenu), drag system (BaseDrag, Drag, DragSort, DragDrop, DragMove with full settings/events/hierarchy), utilities (key constants, custom jQuery events `activate`/`textchange`/`resize`, ARIA/focus management, UiLayerManager, geometry, animation), and Craft integration (GarnishAsset, webpack externals, `Craft.*` class pattern, Twig JS blocks, form widgets). Source-validated against `~/dev/craftcms/src/web/assets/garnish/src/`. Tested with 3 evals (DragSort, Modal, DisclosureMenu) showing +78% quality improvement over baseline.
+- **Ecosystem integration** — craftcms SKILL.md now cross-references craft-garnish in companion skills, 3 task examples, and the reference table. craft-feature-builder and craft-code-reviewer agents load craft-garnish and include CP JavaScript guidance (8 review checks). craft-project-setup mentions craft-garnish for plugin projects with CP assets.
 
 ### Content modeling
 
 - **craft-content-modeling SKILL.md** — Added "Reuse-First Workflow" section that enforces field pool audit before proposing new fields. Agents must enumerate existing fields via `config/project/fields/`, classify each proposed field as reuse / reuse-with-review / create-new, and present a decision table. Also documents multi-instance vs single-instance field types (Matrix, Content Block, Addresses are single-instance) with reuse caveats. Addresses [#3](https://github.com/michtio/craftcms-claude-skills/issues/3).
+
+### Trigger & token efficiency
+
+- **craftcms SKILL.md** — Added trigger keywords: GraphQL, headless, Rector, CI/CD, GitHub Actions, validator, defineRules.
+- **craft-site SKILL.md** — Added trigger keywords: Blitz, ImageOptimize, Imager-X, responsive images, srcset, SEOmatic, Sprig, Formie, localization.
+- **craft-content-modeling SKILL.md** — Added trigger keywords: site propagation, multi-language, localization, translation method, field instances, reserved handles. Extracted 150 lines (propagation, project config, storage model, asset volumes) into new `references/infrastructure.md` — body dropped from 447 to 297 lines.
+- **craft-garnish SKILL.md** — Conditional companion loading: craftcms and craft-php-guidelines only load when the task involves PHP (asset bundles, plugin architecture). Pure JS tasks skip them, saving ~9,000 lines of context.
+- **craftcms/references/elements.md** — Upgraded TOC from plain text to descriptive format with section summaries.
+- **craftcms/references/events.md** — Upgraded TOC from plain text to descriptive format with section summaries.
+- **.gitignore** — Added `*-workspace/` pattern to exclude eval artifacts.
 
 ### Skill consistency
 

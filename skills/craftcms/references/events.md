@@ -3,14 +3,14 @@
 ## Contents
 
 - Common Pitfalls
-- Event Anatomy (sender, name, event object)
-- Registering Handlers (class-level, instance-level, deferred)
-- Event Naming Conventions (REGISTER, DEFINE, BEFORE, AFTER, SET, AUTHORIZE)
-- Key Event Sources (Element, Elements service, Fields, FieldLayout, UrlManager, View, Permissions, Plugins, ProjectConfig, Gql, Dashboard, Console, CP nav)
-- Other Registerable Component Types (Utilities, Filesystems, Image Transformers, Auth Methods, Mail Transports)
+- Event Anatomy — sender, name, event object
+- Registering Handlers — class-level, instance-level, deferred
+- Event Naming Conventions — REGISTER, DEFINE, BEFORE, AFTER, SET, AUTHORIZE
+- Key Event Sources — Element, Elements service, Fields, FieldLayout, UrlManager, View, Permissions, Plugins, ProjectConfig, Gql, Dashboard, Console, CP nav
+- Other Registerable Component Types — Utilities, Filesystems, Image Transformers, Auth Methods, Mail Transports
 - Behaviors
 - Twig Extensions
-- Registration Pattern (full plugin init example)
+- Registration Pattern — full plugin init example
 - Custom Events in Your Plugin
 - Discovering Events
 

@@ -12,7 +12,7 @@
     {
       "name": "craftcms-claude-skills",
       "source": "./",
-      "description": "Production-ready skills and agents for Craft CMS 5 development. 7 skills, 5 specialized agents with explicit build-verify gates, 22 plugin references, project scaffolding.",
+      "description": "Production-ready skills and agents for Craft CMS 5 development. 8 skills, 5 specialized agents with explicit build-verify gates, 22 plugin references, project scaffolding.",
       "version": "1.2.0",
       "author": {
         "name": "michtio"

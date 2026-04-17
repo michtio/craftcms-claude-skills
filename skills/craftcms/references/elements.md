@@ -3,22 +3,22 @@
 ## Contents
 
 - Common Pitfalls
-- Static Configuration Methods (displayName, hasTitles, hasUris, hasDrafts, etc.)
-- Element Save Lifecycle (15 steps, beforeSave, afterSave, afterPropagate)
-- Attributes, Field Values, and Mass Assignment (native vs custom, safe rules, CP save chain, silent drop trap)
+- Static Configuration Methods — displayName, hasTitles, hasUris, hasDrafts, etc.
+- Element Save Lifecycle (15 steps) — beforeSave, afterSave, afterPropagate
+- Attributes, Field Values, and Mass Assignment — native vs custom, safe rules, CP save chain, silent drop trap
 - Element Query — beforePrepare()
 - Status from Dates
-- Authorization (canView, canSave, canDelete + 5 more)
+- Authorization — canView, canSave, canDelete + 5 more
 - Drafts and Revisions
-- Field Layouts (getFieldLayout, defineFieldLayouts)
+- Field Layouts — getFieldLayout, defineFieldLayouts
 - URI/Routing
 - Searchable Attributes
 - Propagation
-- CP Edit Pages (getCpEditUrl, elements/edit route, asCpScreen, slide-outs)
-- Preview Targets (previewTargets, EVENT_REGISTER_PREVIEW_TARGETS)
-- Eager Loading (eagerLoadingMap)
-- Soft Delete and Garbage Collection (Gc::EVENT_RUN)
-- Element Events Reference (~40 events)
+- CP Edit Pages — getCpEditUrl, elements/edit route, asCpScreen, slide-outs
+- Preview Targets — previewTargets, EVENT_REGISTER_PREVIEW_TARGETS
+- Eager Loading — eagerLoadingMap
+- Soft Delete and Garbage Collection — Gc::EVENT_RUN
+- Element Events Reference — ~40 events
 
 ## Documentation
 
