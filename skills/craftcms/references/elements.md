@@ -4,7 +4,7 @@
 
 - Common Pitfalls
 - Static Configuration Methods (displayName, hasTitles, hasUris, hasDrafts, etc.)
-- Element Save Lifecycle (16 steps, beforeSave, afterSave, afterPropagate)
+- Element Save Lifecycle (15 steps, beforeSave, afterSave, afterPropagate)
 - Attributes, Field Values, and Mass Assignment (native vs custom, safe rules, CP save chain, silent drop trap)
 - Element Query — beforePrepare()
 - Status from Dates
@@ -85,9 +85,9 @@ public static function statuses(): array
 }
 ```
 
-## Element Save Lifecycle (16 steps)
+## Element Save Lifecycle (15 steps)
 
-1. `beforeValidate()` → 2. `afterValidate()` → 3. `EVENT_BEFORE_SAVE` → 4. `beforeSave($isNew)` → 5. Insert/update `elements` table → 6. Insert/update `content` table → 7. Insert/update custom element table → 8. `afterSave($isNew)` → 9. Update search index → 10. `EVENT_AFTER_SAVE` → 11. Update structures → 12. Propagate to other sites → 13. Update drafts/revisions → 14. `afterPropagate($isNew)` → 15. `EVENT_AFTER_PROPAGATE` → 16. Clear caches.
+1. `beforeValidate()` → 2. `afterValidate()` → 3. `EVENT_BEFORE_SAVE` → 4. `beforeSave($isNew)` → 5. Insert/update `elements` table → 6. Insert/update `content` table → 7. `afterSave($isNew)` (**you** write to your custom element table here) → 8. Update search index → 9. `EVENT_AFTER_SAVE` → 10. Update structures → 11. Propagate to other sites → 12. Update drafts/revisions → 13. `afterPropagate($isNew)` → 14. `EVENT_AFTER_PROPAGATE` → 15. Clear caches.
 
 ### `beforeSave($isNew)`
 

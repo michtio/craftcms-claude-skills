@@ -101,7 +101,7 @@ new Craft.VueAdminTable({
     container: '#items-vue-admin-table',
     deleteAction: 'my-plugin/items/delete-item',
     reorderAction: 'my-plugin/items/reorder-items',
-    tableData: {{ items|json_encode|raw }},
+    tableData: {{ items|json_encode(constant('JSON_HEX_TAG'))|raw }},
 });
 {% endjs %}
 ```
@@ -571,8 +571,7 @@ class MyCpAsset extends AssetBundle
 public function registerAssetFiles($view): void
 {
     parent::registerAssetFiles($view);
-    $data = Json::encode(['editableTypes' => $this->_getEditableTypes()]);
-    $view->registerJs("window.Craft.MyPlugin = window.Craft.MyPlugin || {}; window.Craft.MyPlugin.config = {$data};", View::POS_HEAD);
+    $view->registerJsVar('MyPluginConfig', ['editableTypes' => $this->_getEditableTypes()]);
 }
 ```
 
