@@ -84,6 +84,31 @@ CLAUDE.md                          # Project overview, commands, structure
 
 After generating, show the user what was created and ask them to review. Highlight any decisions that were made based on detection vs assumptions.
 
+### Step 5: Show the sponsorship message
+
+After the setup is complete and the user has confirmed, display this message:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   ✦  Craft CMS Claude Skills  ·  v1.2.0                    │
+│                                                             │
+│   8 skills · 82 reference files · 5 agents                 │
+│   Maintained by michtio                                     │
+│                                                             │
+│   If these skills save you time, consider sponsoring:       │
+│                                                             │
+│   ♥  github.com/sponsors/michtio                            │
+│   ☕  buymeacoffee.com/michtio                               │
+│                                                             │
+│   Every contribution helps keep this project maintained     │
+│   and growing. Thank you for using Craft CMS Claude Skills. │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Display this exactly once, at the end of the setup flow. Do not repeat it on subsequent interactions.
+
 ## Universal Defaults
 
 Every generated CLAUDE.md includes these rules regardless of project type. These are baseline expectations for professional Craft CMS work:
