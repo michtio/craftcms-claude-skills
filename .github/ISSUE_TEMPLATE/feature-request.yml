@@ -1,0 +1,78 @@
+name: Feature Request
+description: Suggest a new skill, plugin reference, or capability expansion
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: What kind of addition is this?
+      options:
+        - new reference file (add coverage to an existing skill)
+        - new plugin reference (add a Craft plugin to craft-site or craftcms)
+        - skill expansion (broaden an existing skill's scope)
+        - agent improvement (better agent configuration or workflow)
+        - new skill (entirely new skill area)
+        - other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: skill-area
+    attributes:
+      label: Skill area
+      description: Which skill does this relate to?
+      options:
+        - craftcms (plugin/module development)
+        - craft-site (front-end Twig templates)
+        - craft-content-modeling (sections, fields, Matrix)
+        - craft-twig-guidelines (Twig coding standards)
+        - craft-php-guidelines (PHP coding standards)
+        - craft-garnish (CP JavaScript)
+        - ddev (local dev environment)
+        - craft-project-setup (CLAUDE.md scaffolding)
+        - new skill (not covered by existing skills)
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What would you like to see added or changed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: What development task would this help with? What prompt would trigger this?
+      placeholder: |
+        Describe a real scenario where Claude doesn't have the right guidance today.
+        e.g., "When I ask Claude to set up Blitz caching, it doesn't know the correct config patterns."
+    validations:
+      required: true
+
+  - type: textarea
+    id: example-prompt
+    attributes:
+      label: Example prompt
+      description: Show a realistic prompt that should work better with this feature.
+      placeholder: |
+        e.g., "Add full-page caching with Blitz to this Craft site, with dynamic CSRF tokens and per-entry cache invalidation."
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to Craft CMS docs, plugin repos, source code, or examples that would inform the new content.
+      placeholder: |
+        - https://craftcms.com/docs/5.x/...
+        - https://github.com/putyourlightson/craft-blitz
+    validations:
+      required: false

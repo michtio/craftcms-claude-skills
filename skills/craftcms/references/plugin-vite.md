@@ -11,6 +11,7 @@ Craft 5 does not have native Vite support for plugins. The built-in `Webpack` se
 
 ## Common Pitfalls
 
+- **Using Vite for element index JS** — `craft-plugin-vite` adds `type="module"` to all `<script>` tags. Module scripts execute deferred, so `Craft.registerElementIndexClass()` runs **after** `Craft.createElementIndex()` (POS_READY) — the custom index class is never found. Element index JS (and element editor JS) must load as regular scripts through a Yii2 AssetBundle that reads the Vite manifest for the hashed filename. See the `craft-garnish` skill's `integration.md` for the full pattern (modeled after Commerce's `ProductIndexAsset`). Vite `register()` is fine for field type JS, settings pages, and anything that runs on DOMContentLoaded or later.
 - **Declaring `$js`/`$css` on the AssetBundle** — when using VitePluginService, leave these empty. The service registers tags via the manifest. Declaring them causes double-loading.
 - **Same dev server port across plugins** — each plugin needs a unique port (3005, 3006, 4000, etc.) to avoid conflicts during development.
 - **Missing `VITE_PLUGIN_DEVSERVER` env var check** — without this env var, VitePluginService forces `useDevServer = false`. Safe default for production, but confusing during dev if you forget to set it.

@@ -42,11 +42,9 @@ Build a blog with topics, authors, and a flexible body builder using CKEditor
 
 Claude loads the right skills, follows Craft conventions, and uses the correct field handles, DDEV commands, and project config workflow.
 
-## Real-World Examples
+## Example Prompts
 
-These are the kinds of prompts that trigger skills and produce high-quality results:
-
-### Content Modeling
+Just describe what you need. Skills trigger automatically and produce high-quality results.
 
 ```
 Plan the content architecture for a multi-language corporate site with
@@ -55,98 +53,9 @@ English, German, and French with subfolder-per-language routing.
 ```
 
 ```
-I need a Matrix field for page building with these block types: hero banner,
-text with image, testimonial slider, CTA section, and FAQ accordion.
-What entry types should I create and how should I configure the Matrix?
-```
-
-```
-We're migrating from WordPress. The old site has 3 category taxonomies
-and about 200 tags. What's the Craft 5 approach for taxonomies?
-```
-
-```
-Add a hero image, subtitle, and CTA link to the "Service Page" entry type.
-We already have fields for other entry types — reuse what exists.
-```
-
-### Plugin Development
-
-```
 Build a custom element type for "Job Listings" with postDate/expiryDate
 status, a categories relation for departments, and a CP edit page with
 field layout designer.
-```
-
-```
-Add a webhook controller to my plugin that receives POST requests from
-an external API, validates the signature, and queues a sync job.
-```
-
-```
-Set up Pest tests for my plugin's Items service. I need tests for
-CRUD operations, validation failures, and multi-site behavior.
-```
-
-### Twig Templates
-
-```
-Create an atomic button component that supports links, form submits,
-and disabled states. It needs size variants and a loading spinner option.
-```
-
-```
-Build a language switcher that shows all available translations for the
-current entry, falls back to the site homepage when a translation doesn't
-exist, and includes proper hreflang attributes.
-```
-
-```
-Set up Vite with Tailwind v4 for our Craft site, including HMR in DDEV
-and production builds with content hashing.
-```
-
-### Configuration & DevOps
-
-```
-Configure Redis for cache, sessions, and mutex in our Craft project.
-We're running DDEV locally and deploying to a VPS with Redis installed.
-```
-
-```
-Set up a headless Craft installation with GraphQL for our Next.js frontend.
-We need preview support so editors can see draft content.
-```
-
-```
-Our Commerce search takes over 100 seconds on 80k entries. The queries
-show LIKE '%term%' instead of MATCH/AGAINST. How do we fix the search
-performance?
-```
-
-```
-Set up email for production using AWS SES, but locally in DDEV we want
-Mailpit to catch everything. Show me the full config for both environments.
-```
-
-```
-Harden our production Craft config — disable admin changes, set up proper
-CSRF for static caching with Blitz, configure trusted hosts behind our
-load balancer, and disable the X-Powered-By header.
-```
-
-```
-We're setting up environment variables for our staging and production
-servers. What CRAFT_* variables do we need, and how does the config
-priority order work between .env, general.php, and app.php?
-```
-
-### CP JavaScript (Garnish)
-
-```
-Add drag-to-reorder functionality to the items list on my plugin's
-settings page. Each <li> has a .move.icon handle and I need to POST
-the new order via an action endpoint when it changes.
 ```
 
 ```
@@ -156,18 +65,14 @@ plugin's save action, and closes on success. Make it keyboard accessible.
 ```
 
 ```
-Add a disclosure menu (the ... action menu) to each row in my custom
-element index. Needs Edit, Duplicate, and a red Delete option with
-confirmation. Show me the Twig markup and JS initialization.
+Create an atomic button component that supports links, form submits,
+and disabled states. It needs size variants and a loading spinner option.
 ```
 
 ```
-My plugin has a custom field type that needs an interactive dropdown
-in the CP. When the user clicks a button, a menu should appear with
-options loaded from an AJAX endpoint.
+Configure Redis for cache, sessions, and mutex in our Craft project.
+We're running DDEV locally and deploying to a VPS with Redis installed.
 ```
-
-### Authentication & Member Areas
 
 ```
 Build a member area with registration, login, password reset, and
@@ -175,60 +80,40 @@ profile editing. Users should be in the "Members" group and only see
 content in the gated section.
 ```
 
-```
-I need to protect certain pages so only logged-in users with the
-"premium" permission can access them. Show me the template patterns
-and the permission registration for my plugin.
-```
-
-### Caching & Performance
-
-```
-My blog listing page runs 200+ queries and takes 3 seconds. I think
-there's an N+1 problem with related entries. How do I find and fix it,
-and should I add template caching?
-```
-
-```
-We're launching a marketing site behind Cloudflare. What's the right
-caching strategy — Blitz, template caching, or both? We need forms
-to still work with CSRF.
-```
+See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by task type.
 
 ## What's Inside
 
 ### Skills
 
-| Skill | Track | Description |
-|-------|-------|-------------|
-| `craftcms` | Plugin | Elements, mass assignment, field value lifecycle, queries, services, controllers, migrations, events, GraphQL, configuration (all 130+ settings), caching, permissions, mail transport, CP templates, console commands, debugging. 21 reference files. |
-| `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, enums, ECS/PHPStan, Yii2 validators, scaffolding. 5 reference files. |
-| `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, CKEditor, relations, eager loading, entrification, asset volumes, users/permissions, storage architecture. Reuse-first field workflow (audits existing field pool before creating new fields). 4 reference files. |
-| `craft-site` | Site | Atomic design, component patterns, routing, image presets, Vite, JavaScript boundaries, multi-site patterns, front-end authentication flows. 13 reference files + 22 plugin references. |
-| `craft-twig-guidelines` | Site | Variable naming (camelCase), null handling (`??`/`???`), whitespace, include isolation, Craft helpers, `collect()`. |
-| `craft-garnish` | Plugin | Garnish CP JavaScript toolkit: class system, UI widgets (Modal, HUD, DisclosureMenu, MenuBtn, Select), drag system (DragSort, DragDrop, DragMove), ARIA/focus, custom events, Craft.* class pattern. 5 reference files. |
-| `ddev` | Shared | Commands, services, configuration, Xdebug, custom commands, troubleshooting. |
-| `craft-project-setup` | Shared | Interactive project scaffolding. Generates CLAUDE.md and .claude/rules/ for plugin, site, or module projects. |
+| Skill | Track | Key Coverage |
+|-------|-------|--------------|
+| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates, debugging. 28 reference files. |
+| `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
+| `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 5 reference files. |
+| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 17 reference files + 22 plugin references. |
+| `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
+| `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
+| `ddev` | Shared | Commands, services, configuration, Xdebug, troubleshooting. |
+| `craft-project-setup` | Shared | Interactive project scaffolding. Generates CLAUDE.md and .claude/rules/. |
 
-Skills load automatically when relevant. They also declare **companion skills** so related knowledge loads together (e.g., `craftcms` always loads `craft-php-guidelines` alongside it). 8 skills total.
+8 skills, 82 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 
-Five specialized sub-agents with dedicated models and tool scopes:
-
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `craft-planner` | Opus | Break features into scoped implementation steps with runnable verification gates |
-| `craft-feature-builder` | Opus | Build production-quality plugin code layer by layer with explicit gates; includes final simplification pass |
-| `craft-site-builder` | Opus | Site templates, content architecture, components built layer by layer with explicit gates |
+| `craft-planner` | Opus | Break features into scoped steps with runnable verification gates |
+| `craft-feature-builder` | Opus | Build plugin code layer by layer with build-verify gates |
+| `craft-site-builder` | Opus | Site templates and components with build-verify gates |
 | `craft-debugger` | Sonnet | Systematic bug investigation |
 | `craft-code-reviewer` | Sonnet | Code review with findings report |
 
-Each agent loads relevant skills automatically and enforces DDEV-only commands, symlinked plugin paths, and scoped ECS fixes. Builder agents enforce layered build-verify gates (migration → verify → model → verify → service → verify → controller → verify) and mandatory todo lists for plans with more than 3 steps. The builder and reviewer maintain prevention/detection parity — 14 prevention rules in the builder map to 19 checklist items in the reviewer, covering security (`$allowAnonymous`, CSRF, XSS, error leakage, permissions), performance (`getCpNavItem()`, `defineSources()`, `Gc::EVENT_RUN`), and query safety (`andWhere()`, `addSelect()`, `Db::parseParam()`).
+Builder agents enforce layered build-verify gates and mandatory todo lists. The builder and reviewer maintain prevention/detection parity -- 14 prevention rules map to 19 checklist items. See [docs/agents.md](docs/agents.md) for details.
 
 ### Plugin Reference Library
 
-22 Craft plugins with detailed configuration, Twig/PHP API, common pitfalls, and cross-references:
+22 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls:
 
 <details>
 <summary>View all 22 plugin references</summary>
@@ -260,35 +145,15 @@ Each agent loads relevant skills automatically and enforces DDEV-only commands, 
 
 </details>
 
-## Project Setup
+## Documentation
 
-### Automatic (recommended)
-
-Use the `craft-project-setup` skill:
-
-```
-Set up Claude for this Craft project
-```
-
-It detects your project type from `composer.json`, `.ddev/config.yaml`, and directory structure, asks a few clarifying questions, and generates:
-
-- `CLAUDE.md` with project-specific conventions and commands
-- `.claude/rules/` with coding standards, architecture rules, security, git workflow
-
-### Manual
-
-Copy the project template:
-
-```bash
-cp -r ~/.claude/craftcms-claude-skills/project-template/.claude /path/to/your-project/
-cp ~/.claude/craftcms-claude-skills/project-template/CLAUDE.md /path/to/your-project/
-```
-
-Then customize: replace `YourVendor` with your author name and `plugin-handle` with your plugin's handle.
-
-### CSS Framework Note
-
-The `craft-site` skill documents an atomic design system using Tailwind CSS for class composition. **Craft CMS is unopinionated about front-end tooling.** The component architecture (props, extends/block, include with only) is framework-agnostic.
+| Guide | What it covers |
+|-------|----------------|
+| [Getting Started](docs/getting-started.md) | Installation, project setup, how skills auto-trigger, first steps |
+| [Skills Overview](docs/skills-overview.md) | All 8 skills with triggers, companion skills, reference counts, boundaries |
+| [Prompt Guide](docs/prompt-guide.md) | 40+ real-world prompts organized by task type |
+| [Agents](docs/agents.md) | 5 agents with tools, gate patterns, composition examples |
+| [Contributing](docs/contributing.md) | Adding plugin references, improving skills, reporting issues |
 
 ## Requirements
 
@@ -300,19 +165,14 @@ The `craft-site` skill documents an atomic design system using Tailwind CSS for 
 ## Roadmap
 
 - [ ] Upgrade guide (Craft 3→4, 4→5, 3→5) with deprecated plugin mapping and migration paths
-- [ ] Deployment/CI/CD patterns (Craft Cloud, Servd, Forge, Docker, zero-downtime)
 - [ ] DDEV skill expansion (Xdebug deep-dive, custom services, production parity)
-- [ ] Commerce skill (products, variants, orders, carts, payments — separate skill)
+- [ ] Commerce skill (products, variants, orders, carts, payments -- separate skill)
 - [ ] CKEditor 4→5 migration guide (config conversion, custom styles, plugin mapping, HTML cleanup)
 - [ ] More plugin references (Neo, Scout, Campaign)
 
 ## Contributing
 
-Contributions are welcome:
-
-- **Skill improvements** -- open a PR with before/after examples
-- **New plugin references** -- follow the format in `skills/craft-site/references/plugins/`
-- **Bug reports** -- use the bug report issue template
+Contributions welcome. See [docs/contributing.md](docs/contributing.md) for how to add plugin references, improve skills, and report issues.
 
 ## License
 

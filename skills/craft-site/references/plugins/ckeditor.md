@@ -17,7 +17,7 @@ When unsure about CKEditor options, `WebFetch` the GitHub readme.
 - Not enabling HTML Purifier rules for custom styles — CKEditor's client-side editor allows certain markup, but HTML Purifier strips it on save if the rules don't permit it. Relax Purifier config in `config/htmlpurifier/` when adding custom styles or plugins.
 - Forgetting to cache oEmbed content — with "Parse embeds" enabled, CKEditor fetches embed HTML on every request. Wrap output in `{% cache %}` tags or use Blitz.
 - Nested entries without partial templates — nested entries render via `_partials/entry/{entryTypeHandle}.twig`. Missing templates produce blank output.
-- Using `{{ entry.ckeditorField }}` without chunk iteration when nested entries exist — string output works for plain HTML content, but nested entries need the chunk loop to render correctly.
+- Using `{{ entry.ckeditorField }}` directly when nested entries exist — the field returns an iterable chunk array, not a string. Direct output renders `Array`. Always use the chunk loop pattern.
 - Configuring heading levels in both the CKEditor config and the field settings — the field's "Heading Levels" setting takes precedence. Don't set `heading.options` in config options unless you need fine-grained control beyond what the UI provides.
 - Images as `<img>` vs nested entries — CKEditor supports both. Using nested entries for images gives editors more control (alt text fields, captions, transforms) but adds complexity.
 
@@ -82,7 +82,7 @@ CKEditor fields can embed Craft entries inline within rich text content — Craf
 
 ### Front-End Rendering
 
-CKEditor field content with nested entries is iterable as chunks:
+Always use the chunk iteration pattern — it handles both plain HTML and nested entries correctly. Direct output (`{{ entry.richContent }}`) only works when the field has zero nested entries; if nested entries exist, it renders as `Array`.
 
 ```twig
 {% for chunk in entry.richContent %}

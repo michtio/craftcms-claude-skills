@@ -543,3 +543,4 @@ var contextMenu = new Garnish.ContextMenu(this.$element, [
 - `utilities.md` — UiLayerManager (layer stack for modals/menus), ARIA helpers, focus trapping, key constants
 - `drag-system.md` — DragSort and DragDrop (often used alongside Select for reorderable element lists)
 - `integration.md` — How to register asset bundles, Twig markup for DisclosureMenu/MenuBtn, Craft.initUiElements
+- **Craft.Slideout** — Craft's slideout editor extends `Garnish.Modal` with side-panel behavior. Not part of Garnish itself, but uses Modal's layer management, focus trapping, and ESC handling. Source: `src/web/assets/cp/src/js/Slideout.js`. When building custom slideout panels, extend `Craft.Slideout` (not `Garnish.Modal` directly) to get the slide animation, header/footer chrome, and element editor integration.

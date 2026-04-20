@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General questions and discussion
+    url: https://github.com/michtio/craftcms-claude-skills/discussions
+    about: Ask questions, share prompts, or discuss Craft CMS development with Claude Code.
+  - name: Craft CMS documentation
+    url: https://craftcms.com/docs/5.x/
+    about: Official Craft CMS 5.x documentation — check here first if you're unsure whether a pattern is correct.

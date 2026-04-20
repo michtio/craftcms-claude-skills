@@ -37,6 +37,7 @@ Complete reference for queue job development in Craft CMS 5. For queue component
 - Accessing `Craft::$app->getUser()` in queue jobs -- no user session in queue context. Pass needed user IDs as job properties.
 - Not reporting progress in long-running jobs -- CP shows a "stuck" indicator, admins retry thinking it failed.
 - Memory leaks in batch operations -- element caches grow unbounded. Use `Db::each()` or paginated queries.
+- Removing `@property` docblock hints for queue-injected properties -- the queue runner dynamically assigns `$this->queue` to job instances. Without a `@property Queue $queue` annotation on the class docblock, PHPStan reports an undefined property error. This applies to `BaseJob`, `BaseBatchedJob`, and any custom base job class. Always keep `@property` hints for properties that are injected by the framework rather than declared in the class body.
 
 ## Scaffold
 

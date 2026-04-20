@@ -366,3 +366,266 @@ public static function indexViewModes(): array
     return $viewModes;
 }
 ```
+
+## Extending Element Indexes via Events
+
+Plugins can extend any element type's index (including Craft's built-in Users, Entries, Assets) without modifying the element class. Most events below fire on `craft\base\Element` and are inherited by all element types. Condition rules are the exception — they live on `craft\base\conditions\BaseCondition`.
+
+### Event Reference
+
+| Event Constant | Event Class | Purpose |
+|---------------|------------|---------|
+| `EVENT_REGISTER_TABLE_ATTRIBUTES` | `RegisterElementTableAttributesEvent` | Add custom columns |
+| `EVENT_REGISTER_DEFAULT_TABLE_ATTRIBUTES` | `RegisterElementDefaultTableAttributesEvent` | Set which columns show by default |
+| `EVENT_DEFINE_ATTRIBUTE_HTML` | `DefineAttributeHtmlEvent` | Custom column rendering |
+| `EVENT_PREP_QUERY_FOR_TABLE_ATTRIBUTE` | `ElementIndexTableAttributeEvent` | Modify query for custom column data |
+| `EVENT_REGISTER_SOURCES` | `RegisterElementSourcesEvent` | Add sidebar sources |
+| `EVENT_REGISTER_ACTIONS` | `RegisterElementActionsEvent` | Add bulk actions |
+| `EVENT_REGISTER_SORT_OPTIONS` | `RegisterElementSortOptionsEvent` | Add sort options |
+| `EVENT_REGISTER_SEARCHABLE_ATTRIBUTES` | `RegisterElementSearchableAttributesEvent` | Add searchable attributes |
+| `EVENT_REGISTER_CARD_ATTRIBUTES` | `RegisterElementCardAttributesEvent` | Add card view attributes (5.5+) |
+| `EVENT_REGISTER_DEFAULT_CARD_ATTRIBUTES` | `RegisterElementDefaultCardAttributesEvent` | Set default card attributes (5.5+) |
+| `EVENT_DEFINE_METADATA` | `DefineMetadataEvent` | Add metadata to element editor sidebar |
+
+Condition rules live on `craft\base\conditions\BaseCondition`:
+
+| Event Constant | Event Class | Purpose |
+|---------------|------------|---------|
+| `EVENT_REGISTER_CONDITION_RULES` | `RegisterConditionRulesEvent` | Add custom condition rules |
+
+### Adding a custom column to the Users index
+
+```php
+use craft\base\Element;
+use craft\elements\User;
+use craft\events\DefineAttributeHtmlEvent;
+use craft\events\RegisterElementTableAttributesEvent;
+use yii\base\Event;
+
+// Step 1: Register the column
+Event::on(
+    User::class,
+    Element::EVENT_REGISTER_TABLE_ATTRIBUTES,
+    function(RegisterElementTableAttributesEvent $event) {
+        $event->tableAttributes['lastPasswordChange'] = [
+            'label' => Craft::t('my-plugin', 'Last Password Change'),
+        ];
+    }
+);
+
+// Step 2: Render the column value
+Event::on(
+    User::class,
+    Element::EVENT_DEFINE_ATTRIBUTE_HTML,
+    function(DefineAttributeHtmlEvent $event) {
+        if ($event->attribute === 'lastPasswordChange') {
+            /** @var User $user */
+            $user = $event->sender;
+            $date = MyPlugin::getInstance()
+                ->getPasswordService()
+                ->getLastPasswordChange($user->id);
+
+            $event->html = $date
+                ? Craft::$app->getFormatter()->asDatetime($date)
+                : '';
+
+            $event->handled = true;
+        }
+    }
+);
+```
+
+### Preparing query data for custom columns
+
+When your custom column needs data not on the element by default, modify the query to avoid N+1:
+
+```php
+use craft\elements\User;
+use craft\events\ElementIndexTableAttributeEvent;
+use yii\base\Event;
+
+Event::on(
+    User::class,
+    Element::EVENT_PREP_QUERY_FOR_TABLE_ATTRIBUTE,
+    function(ElementIndexTableAttributeEvent $event) {
+        if ($event->attribute === 'lastPasswordChange') {
+            // Add a subquery or join so the data is available
+            $event->query
+                ->leftJoin(
+                    '{{%my_password_history}} ph',
+                    '[[ph.userId]] = [[elements.id]]'
+                )
+                ->addSelect(['ph.dateChanged AS lastPasswordChange']);
+        }
+    }
+);
+```
+
+### Adding a sidebar source
+
+```php
+use craft\elements\User;
+use craft\events\RegisterElementSourcesEvent;
+use yii\base\Event;
+
+Event::on(
+    User::class,
+    Element::EVENT_REGISTER_SOURCES,
+    function(RegisterElementSourcesEvent $event) {
+        $event->sources[] = [
+            'heading' => Craft::t('my-plugin', 'Password Status'),
+        ];
+
+        $event->sources[] = [
+            'key' => 'my-plugin:expired-passwords',
+            'label' => Craft::t('my-plugin', 'Expired Passwords'),
+            'criteria' => [],  // Custom filtering handled in EVENT_BEFORE_PREPARE
+            'data' => ['type' => 'expired-passwords'],
+            'defaultSort' => ['dateCreated', 'desc'],
+        ];
+
+        $event->sources[] = [
+            'key' => 'my-plugin:reset-required',
+            'label' => Craft::t('my-plugin', 'Reset Required'),
+            'criteria' => ['passwordResetRequired' => true],
+            'defaultSort' => ['dateCreated', 'desc'],
+        ];
+    }
+);
+```
+
+### Adding a custom bulk action
+
+Element actions implement `craft\base\ElementActionInterface`. Register them per source:
+
+```php
+use craft\elements\User;
+use craft\events\RegisterElementActionsEvent;
+use yii\base\Event;
+
+Event::on(
+    User::class,
+    Element::EVENT_REGISTER_ACTIONS,
+    function(RegisterElementActionsEvent $event) {
+        $event->actions[] = ForcePasswordReset::class;
+    }
+);
+```
+
+The action class:
+
+```php
+use craft\base\ElementAction;
+use craft\elements\db\ElementQueryInterface;
+
+class ForcePasswordReset extends ElementAction
+{
+    /**
+     * @inheritdoc
+     */
+    public static function displayName(): string
+    {
+        return Craft::t('my-plugin', 'Force Password Reset');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function performAction(ElementQueryInterface $query): bool
+    {
+        /** @var User[] $users */
+        $users = $query->all();
+
+        foreach ($users as $user) {
+            $user->passwordResetRequired = true;
+            Craft::$app->getElements()->saveElement($user);
+        }
+
+        $this->setMessage(Craft::t(
+            'my-plugin',
+            '{count} user(s) flagged for password reset.',
+            ['count' => count($users)]
+        ));
+
+        return true;
+    }
+}
+```
+
+### Adding condition rules
+
+Condition rules allow users to filter the element index. Listen on the element's condition class:
+
+```php
+use craft\elements\conditions\users\UserCondition;
+use craft\base\conditions\BaseCondition;
+use craft\events\RegisterConditionRulesEvent;
+use yii\base\Event;
+
+Event::on(
+    UserCondition::class,
+    BaseCondition::EVENT_REGISTER_CONDITION_RULES,
+    function(RegisterConditionRulesEvent $event) {
+        $event->conditionRules[] = PasswordExpiredConditionRule::class;
+    }
+);
+```
+
+See `conditions.md` for building custom condition rule classes.
+
+### Adding metadata to the element editor sidebar
+
+```php
+use craft\elements\User;
+use craft\events\DefineMetadataEvent;
+use yii\base\Event;
+
+Event::on(
+    User::class,
+    Element::EVENT_DEFINE_METADATA,
+    function(DefineMetadataEvent $event) {
+        /** @var User $user */
+        $user = $event->sender;
+
+        $lastChange = MyPlugin::getInstance()
+            ->getPasswordService()
+            ->getLastPasswordChange($user->id);
+
+        if ($lastChange) {
+            $event->metadata[Craft::t('my-plugin', 'Password Changed')] =
+                Craft::$app->getFormatter()->asDatetime($lastChange);
+        }
+    }
+);
+```
+
+### Adding sort options
+
+```php
+use craft\elements\User;
+use craft\events\RegisterElementSortOptionsEvent;
+use yii\base\Event;
+
+Event::on(
+    User::class,
+    Element::EVENT_REGISTER_SORT_OPTIONS,
+    function(RegisterElementSortOptionsEvent $event) {
+        $event->sortOptions['lastPasswordChange'] = [
+            'label' => Craft::t('my-plugin', 'Last Password Change'),
+            'orderBy' => 'my_password_history.dateChanged',
+            'defaultDir' => 'desc',
+        ];
+    }
+);
+```
+
+### User index built-in sources
+
+The User element provides these sidebar sources by default:
+
+- `*` — All Users
+- `admins` — Admins
+- `credentialed` — Credentialed (users who can log in)
+- `group:{uid}` — One per user group
+
+Plugin sources append after these via `EVENT_REGISTER_SOURCES`.

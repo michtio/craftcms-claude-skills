@@ -63,15 +63,131 @@ Complete reference for CP extension points: templates, navigation, settings page
 
 ### Editable Table
 
+Two variants: `editableTableField` (with label, instructions, error wrapper) and `editableTable` (raw table only, for embedding in custom layouts).
+
+#### Basic usage
+
 ```twig
 {{ forms.editableTableField({
-    label: 'Site Mappings'|t('my-plugin'), id: 'sites', name: 'sites',
+    label: 'Site Mappings'|t('my-plugin'),
+    instructions: 'Map each site to a URI format.'|t('my-plugin'),
+    id: 'sites',
+    name: 'sites',
     cols: {
         siteId: { type: 'select', heading: 'Site'|t('my-plugin'), options: siteOptions },
         uriFormat: { type: 'singleline', heading: 'URI Format'|t('my-plugin'), placeholder: 'items/{slug}' },
+        enabled: { type: 'lightswitch', heading: 'Enabled'|t('my-plugin') },
     },
-    rows: siteRows, allowAdd: true, allowDelete: true, allowReorder: true,
+    rows: siteRows,
+    allowAdd: true,
+    allowDelete: true,
+    allowReorder: true,
+    errors: settings.getErrors('sites'),
 }) }}
+```
+
+#### Column types
+
+| Type | Renders | Value in POST data |
+|------|---------|-------------------|
+| `singleline` | Text input | `string` |
+| `multiline` | Textarea (auto-grows) | `string` |
+| `number` | Number input | `string` (cast server-side) |
+| `checkbox` | Centered checkbox | `'1'` or absent |
+| `lightswitch` | Craft lightswitch toggle | `'1'` or `''` |
+| `select` | Dropdown (requires `options`) | Selected value `string` |
+| `date` | Date picker | `string` (Y-m-d format) |
+| `time` | Time picker | `string` (H:i format) |
+| `color` | Color picker | `string` (hex) |
+| `heading` | Non-editable display text | Not submitted |
+| `html` | Raw HTML (non-editable) | Not submitted |
+| `template` | Render a Twig template per cell | Depends on template |
+
+Column config keys: `type` (required), `heading`, `placeholder`, `class`, `width` (CSS width like `'30%'`), `thin` (boolean, minimal width), `options` (for `select`), `info` (tooltip text).
+
+#### Raw table (no field wrapper)
+
+```twig
+{{ forms.editableTable({
+    id: 'mappings',
+    name: 'mappings',
+    cols: cols,
+    rows: rows,
+    allowAdd: true,
+    allowDelete: true,
+    allowReorder: true,
+    defaultValues: { enabled: true, batchSize: '50' },
+    minRows: 1,
+    maxRows: 10,
+    staticRows: false,
+}) }}
+```
+
+Additional settings: `minRows`, `maxRows` (enforce row count limits), `defaultValues` (hash of column handle → default value for new rows), `staticRows` (when `true`, rows can't be added/deleted — useful for fixed configurations like site mappings where you show one row per site).
+
+#### Server-side handling
+
+POST data arrives as a nested array keyed by row ID:
+
+```php
+// In controller action
+$rows = $this->request->getBodyParam('sites');
+// $rows = [
+//     'row1' => ['siteId' => '1', 'uriFormat' => 'items/{slug}', 'enabled' => '1'],
+//     'row2' => ['siteId' => '2', 'uriFormat' => 'articles/{slug}', 'enabled' => ''],
+// ]
+
+// Normalize — strip row IDs, cast types
+$normalized = [];
+foreach ($rows as $row) {
+    $normalized[] = [
+        'siteId' => (int)$row['siteId'],
+        'uriFormat' => $row['uriFormat'] ?? '',
+        'enabled' => (bool)($row['enabled'] ?? false),
+    ];
+}
+```
+
+Row IDs are auto-generated (e.g., `row1`, `new2`). Never rely on them — iterate the array values. New rows added by the user have IDs prefixed with `new`. When repopulating on validation failure, pass the raw `$rows` back as `rows` so the user's edits aren't lost.
+
+#### Populating rows from a model
+
+```php
+// In controller, before rendering
+$siteRows = [];
+foreach ($settings->siteMappings as $mapping) {
+    $siteRows[] = [
+        'siteId' => $mapping['siteId'],
+        'uriFormat' => $mapping['uriFormat'],
+        'enabled' => $mapping['enabled'],
+    ];
+}
+
+// Pass to template
+return $this->renderTemplate('my-plugin/settings', [
+    'siteRows' => $siteRows,
+    'siteOptions' => $this->_getSiteOptions(),
+]);
+```
+
+#### JS interaction (Garnish)
+
+The table auto-initializes as a `Craft.EditableTable` instance. Access it for programmatic manipulation:
+
+```javascript
+// Get the instance (auto-attached to the container)
+var table = $('#sites').data('editable-table');
+
+// Add a row programmatically
+table.addRow(false); // false = don't focus the new row
+
+// Listen for row changes
+$('#sites').on('addRow', function(ev) {
+    // A row was added
+});
+$('#sites').on('deleteRow', function(ev) {
+    // A row was deleted
+});
 ```
 
 ### CP Layout
@@ -481,21 +597,102 @@ Craft::$app->getSession()->setError(Craft::t('my-plugin', 'Could not save item.'
 
 ## Form Macros Reference
 
-Beyond the basics (`textField`, `lightswitchField`, `selectField`):
+All macros live in `_includes/forms.twig`. Import with `{% import '_includes/forms.twig' as forms %}`.
 
-| Macro | Purpose |
-|-------|---------|
-| `forms.dateTimeField` | Date and time picker |
-| `forms.colorField` | Color picker |
-| `forms.autosuggestField` | Text with autocomplete (env vars, aliases) |
-| `forms.textareaField` | Multi-line text |
-| `forms.passwordField` | Password input |
-| `forms.checkboxField` | Single checkbox |
-| `forms.checkboxGroupField` | Multiple checkboxes |
-| `forms.radioGroupField` | Radio button group |
-| `forms.field` | Generic wrapper for custom HTML |
+Every `*Field` macro wraps its input in a `<div class="field">` with label, instructions, tip, warning, and error display. The non-`Field` variants (e.g., `forms.text` vs `forms.textField`) render just the input — use these when building custom layouts or embedding inputs in other containers.
 
-`autosuggestField` with `suggestEnvVars: true` -- typing `$` shows env vars. With `suggestAliases: true` -- typing `@` shows Yii aliases (`@web`, `@webroot`). See [Settings Pages](#settings-pages) for a full example.
+### Common parameters (all field macros)
+
+| Param | Type | Purpose |
+|-------|------|---------|
+| `label` | `string` | Field label (translate with `\|t('my-plugin')`) |
+| `instructions` | `string` | Help text below the label |
+| `tip` | `string` | Green info tip below the input |
+| `warning` | `string` | Orange warning below the input |
+| `id` | `string` | Input element ID |
+| `name` | `string` | Input name (for POST data) |
+| `value` | `mixed` | Current value |
+| `errors` | `array` | Validation errors from `item.getErrors('field')` |
+| `required` | `bool` | Shows required indicator |
+| `first` | `bool` | Auto-focus this field on page load |
+| `disabled` | `bool` | Disable the input |
+| `fieldClass` | `string` | Extra CSS class on the outer `<div class="field">` |
+
+### Input macros
+
+| Macro | Purpose | Key extra params |
+|-------|---------|-----------------|
+| `forms.textField` | Single-line text | `placeholder`, `size`, `maxlength`, `type` (e.g. `'email'`, `'url'`, `'number'`) |
+| `forms.textareaField` | Multi-line text | `rows`, `placeholder`, `maxlength` |
+| `forms.passwordField` | Password input | `placeholder` |
+| `forms.selectField` | Dropdown | `options` (array of `{label, value}` or flat `{value: label}`) |
+| `forms.multiSelectField` | Multi-select list | `options`, `values` (array of selected values) |
+| `forms.lightswitchField` | Toggle switch | `on` (bool), `toggle` (CSS selector to show/hide) |
+| `forms.checkboxField` | Single checkbox | `checked` (bool), `toggle` (CSS selector) |
+| `forms.checkboxGroupField` | Multiple checkboxes | `options`, `values` (array of checked values) |
+| `forms.radioGroupField` | Radio button group | `options`, `value` |
+| `forms.colorField` | Color picker | `value` (hex string) |
+| `forms.dateTimeField` | Date and time picker | `value` (DateTime object or string) |
+| `forms.timeField` | Time-only picker | `value` (time string) |
+| `forms.autosuggestField` | Text with autocomplete | `suggestEnvVars`, `suggestAliases`, `suggestions` |
+| `forms.editableTableField` | Editable table with add/delete/reorder | `cols`, `rows`, `allowAdd`, `allowDelete`, `allowReorder` — see [Editable Table](#editable-table) |
+| `forms.elementSelectField` | Element relation selector (entries, assets, users) | `elementType`, `sources`, `criteria`, `limit`, `elements` (pre-selected), `modalStorageKey` |
+| `forms.fieldLayoutDesignerField` | Field layout designer UI | `fieldLayout` (FieldLayout object) |
+| `forms.hidden` | Hidden input (no field wrapper) | `name`, `value` |
+| `forms.field` | Generic wrapper — you provide the inner HTML | `input` (raw HTML string) |
+
+### autosuggestField
+
+```twig
+{{ forms.autosuggestField({
+    label: 'API Endpoint'|t('my-plugin'),
+    id: 'apiUrl',
+    name: 'apiUrl',
+    value: settings.apiUrl,
+    suggestEnvVars: true,
+    suggestAliases: true,
+    placeholder: '$MY_API_URL',
+}) }}
+```
+
+Typing `$` shows environment variables, `@` shows Yii aliases (`@web`, `@webroot`, custom aliases). Standard for any setting that should support env var overrides.
+
+### elementSelectField
+
+```twig
+{{ forms.elementSelectField({
+    label: 'Related Entries'|t('my-plugin'),
+    id: 'relatedEntries',
+    name: 'relatedEntries',
+    elementType: 'craft\\elements\\Entry',
+    sources: ['section:blog', 'section:news'],
+    criteria: { status: null },
+    limit: 5,
+    elements: existingRelatedEntries,
+    modalStorageKey: 'my-plugin.relatedEntries',
+}) }}
+```
+
+Server-side, the POST value is an array of element IDs: `$ids = $request->getBodyParam('relatedEntries');`. Use `modalStorageKey` to remember the user's last-selected source in the modal.
+
+### lightswitchField toggle
+
+The `toggle` param shows/hides another element based on the switch state:
+
+```twig
+{{ forms.lightswitchField({
+    label: 'Enable Feature'|t('my-plugin'),
+    id: 'enableFeature',
+    name: 'enableFeature',
+    on: settings.enableFeature,
+    toggle: '#feature-settings',
+}) }}
+
+<div id="feature-settings"{% if not settings.enableFeature %} class="hidden"{% endif %}>
+    {# Additional fields shown only when the switch is on #}
+    {{ forms.textField({ ... }) }}
+</div>
+```
 
 ## Condition Builders
 

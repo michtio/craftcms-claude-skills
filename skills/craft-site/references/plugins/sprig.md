@@ -215,9 +215,12 @@ Available inside Sprig component templates:
 
 Sprig components inject dynamic content via AJAX and are inherently incompatible with full-page static caching. Strategies:
 
-1. **Include Sprig components outside cached blocks** — use Blitz's `{{ craft.blitz.getUri() }}` or exclude specific URIs
-2. **Use `s-trigger="load"` for dynamic islands** — render a placeholder in the static page, let Sprig hydrate on load
-3. **Ensure htmx loads outside cache** — output `{{ sprig.htmxScript }}` in an uncached block
+1. **Use Blitz's `{% dynamicInclude %}` tag** — the preferred approach. Wraps the Sprig component call so Blitz injects it dynamically into the otherwise static page. No manual cache block management needed.
+2. **Use `s-trigger="load"` for dynamic islands** — render a lightweight placeholder in the static page, let Sprig hydrate on load via AJAX. Works with any static cache, not just Blitz.
+3. **Exclude URIs with Sprig forms from Blitz** — for pages that are primarily dynamic (search, filtered listings), exclude the URI from Blitz entirely via the Blitz "Included/Excluded URI Patterns" setting.
+4. **Ensure htmx loads outside cache** — output `{{ sprig.htmxScript }}` in a layout block that isn't statically cached. If using `{% dynamicInclude %}`, htmx is automatically included.
+
+Do NOT wrap `{{ sprig('_components/...') }}` in `{% cache %}` tags — the cached output will contain stale HTML that Sprig can't re-render correctly because the component state is frozen.
 
 ## Pair With
 

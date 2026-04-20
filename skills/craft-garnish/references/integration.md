@@ -14,6 +14,7 @@
 
 ## Common Pitfalls
 
+- **Loading element index JS via Vite (`craft.myPlugin.register()`)** — `nystudio107/craft-plugin-vite` adds `type="module"` to all `<script>` tags. Module scripts execute deferred, which means `Craft.registerElementIndexClass()` runs **after** `Craft.createElementIndex()` in the `{% js %}` block (POS_READY). The class isn't registered in time, so the custom index never loads. Craft core and Commerce both load element index JS as regular scripts through Yii2 asset bundles — never as modules. Use the regular AssetBundle pattern for element index classes (see [Element Index JS Loading](#element-index-js-loading) below). Vite module loading is fine for field type JS, settings pages, and anything that runs on DOMContentLoaded or later.
 - Bundling Garnish into a plugin's webpack output — use `import Garnish from 'garnishjs'` which resolves to the global via externals.
 - Requiring Garnish before `CpAsset` is loaded — if your asset bundle doesn't depend on `CpAsset` (or `GarnishAsset`), Garnish won't be available.
 - Using `Craft.MyClass = function() {}` instead of `Garnish.Base.extend()` — loses event system, listener management, settings, and destroy lifecycle.
@@ -27,6 +28,7 @@
 - [Plugin Asset Bundles](#plugin-asset-bundles)
 - [Craft.* Class Pattern](#craft-class-pattern)
 - [Twig JavaScript Blocks](#twig-javascript-blocks)
+- [Element Index JS Loading](#element-index-js-loading)
 - [Form Widgets](#form-widgets)
 
 ---
@@ -317,6 +319,125 @@ In CP templates, use `{% js %}` blocks to write JavaScript that uses Garnish:
 
 ---
 
+## Element Index JS Loading
+
+Custom element index classes (extending `Craft.BaseElementIndex`) and element editor classes require **regular script loading** through Yii2 asset bundles. Do NOT load them via `nystudio107/craft-plugin-vite` — the `type="module"` attribute causes deferred execution that breaks the synchronous lookup in `Craft.createElementIndex()`.
+
+This pattern comes from Commerce's `ProductIndexAsset`. Three files involved:
+
+### 1. Asset bundle — reads the Vite manifest for the hashed filename
+
+```php
+use craft\web\AssetBundle;
+use craft\web\assets\cp\CpAsset;
+use craft\helpers\Json;
+
+class MyElementIndexAsset extends AssetBundle
+{
+    public function init(): void
+    {
+        $this->sourcePath = '@vendor/myplugin/web/assets/dist/';
+        $this->depends = [
+            CpAsset::class,
+            MyPluginCpAsset::class, // provides Craft.MyPlugin namespace + data
+        ];
+
+        // Read manifest to resolve hashed filename
+        $manifestPath = Craft::getAlias($this->sourcePath . 'manifest.json');
+        if (is_file($manifestPath)) {
+            $manifest = Json::decodeIfJson(file_get_contents($manifestPath));
+            if (isset($manifest['src/js/MyElementIndex.js']['file'])) {
+                $this->js = [$manifest['src/js/MyElementIndex.js']['file']];
+            }
+        }
+
+        parent::init();
+    }
+}
+```
+
+### 2. Controller — registers the asset bundle before rendering
+
+```php
+public function actionIndex(): Response
+{
+    $this->getView()->registerAssetBundle(MyElementIndexAsset::class);
+
+    return $this->renderTemplate('my-plugin/elements/_index', [...]);
+}
+```
+
+### 3. Template — clean, no JS loading
+
+```twig
+{% extends '_layouts/elementindex' %}
+{% set title = 'My Elements'|t('my-plugin') %}
+{% set elementType = 'vendor\\plugin\\elements\\MyElement' %}
+
+{% if typeHandle is defined %}
+    {% js %}
+        window.defaultTypeHandle = '{{ typeHandle }}';
+    {% endjs %}
+{% endif %}
+```
+
+### Data injection pattern
+
+The CP asset bundle (e.g., `MyPluginCpAsset`) injects editable types at `POS_HEAD` as inline JS:
+
+```php
+$js = 'window.Craft.MyPlugin = {};' . PHP_EOL;
+$js .= 'window.Craft.MyPlugin.editableTypes = ' . Json::encode($types) . ';';
+$view->registerJs($js, View::POS_HEAD);
+```
+
+The element index JS reads from this in `afterInit()` — a lifecycle hook on `Craft.BaseElementIndex` (not `Garnish.Base`) that fires at the end of `BaseElementIndex.init()`, after sources and the UI are set up. Subclasses use it to avoid overriding the full init chain:
+
+```javascript
+Craft.MyPlugin.MyElementIndex = Craft.BaseElementIndex.extend({
+    editableTypes: null,
+
+    // Called by BaseElementIndex at the end of init() — sources are available
+    afterInit: function() {
+        this.editableTypes = [];
+        for (const type of Craft.MyPlugin.editableTypes) {
+            if (this.getSourceByKey('type:' + type.uid)) {
+                this.editableTypes.push(type);
+            }
+        }
+        this.base();
+    },
+});
+
+Craft.registerElementIndexClass(
+    'vendor\\plugin\\elements\\MyElement',
+    Craft.MyPlugin.MyElementIndex
+);
+```
+
+### Execution order (regular script pattern)
+
+```
+1. POS_HEAD inline: window.Craft = {...}                     (CpAsset data)
+2. POS_HEAD inline: window.Craft.MyPlugin.editableTypes = [] (plugin data)
+3. POS_END script:  cp.js                                    (BaseElementIndex, registerElementIndexClass)
+4. POS_END script:  my-element-index.js                      (defines class, calls registerElementIndexClass)
+5. POS_READY:       Craft.createElementIndex()               (finds registered class)
+```
+
+### When Vite register() IS fine
+
+Vite module loading works for JS that doesn't need to execute before `Craft.createElementIndex()`:
+
+- Field type JS
+- Settings page JS
+- General CP enhancements
+- Anything that runs on DOMContentLoaded or later
+
+It's specifically element index classes (and likely element editor classes) that need the regular-script asset bundle pattern because Craft's factory methods look them up synchronously.
+
+---
+
 ## Form Widgets
 
 ### NiceText
@@ -382,19 +503,30 @@ Uses `role="status"` live region for screen reader announcements.
 
 ### MixedInput
 
-Text input that supports inline tag elements mixed with text.
+Text input that supports inline tag elements mixed with text. Used in Craft's condition builder, search inputs, and anywhere users type text interspersed with tag-like chips.
 
 ```javascript
-new Garnish.MixedInput($container);
+var input = new Garnish.MixedInput($container);
+
+// Add a removable tag/chip element
+var $tag = $('<span class="token">Category</span>');
+input.addElement($tag);
+
+// Get the full combined value (text + element values)
+var value = input.getVal();
 ```
 
-Used for complex input fields where users can type text interspersed with tag-like elements. Manages caret positioning and element insertion/removal within the mixed content.
+Manages caret positioning, keyboard navigation between text and elements, and element insertion/removal within the mixed content.
 
 ### Key Methods:
-- `addTextElement()` — Add a text segment
-- `addElement($element)` — Add a tag/chip element inline
-- `removeElement($element)` — Remove an inline element
-- `getVal()` — Get the combined value
+- `addTextElement()` — Add a new text segment at the current caret position
+- `addElement($element)` — Add a tag/chip element inline at caret
+- `removeElement($element)` — Remove an inline element and merge adjacent text nodes
+- `getVal()` — Get the combined value of all text and element nodes
+- `focus()` — Focus the input, placing caret at the end
+- `blur()` — Blur the input
+- `onPaste(ev)` — Handles paste events, strips formatting and inserts plain text
+- `reset()` — Clear all content (text and elements)
 
 ---
 

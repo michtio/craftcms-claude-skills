@@ -220,6 +220,8 @@ $event->types[] = MyElement::class;
 | Property has no type declaration | Missing typed property | Add typed property: `public string $handle = '';` |
 | Dead catch -- Exception never thrown | Overly broad catch block | Narrow to specific exception class |
 | Access to undefined property | Custom element properties not declared | Add typed properties to element class |
+| Access to undefined property $queue | Queue runner injects `$this->queue` dynamically | Add `@property \yii\queue\Queue $queue` to class docblock |
+| Access to an undefined property via __get() | Using `$plugin->settings` or `$app->view` magic access | Use explicit getters: `$plugin->getSettings()`, `$app->getView()`. PHPStan can't resolve `__get()` calls. |
 | Return type has no value type | Generic types like `array` without `@return` | Use `@return array<string, mixed>` in PHPDoc |
 | Method should return X but returns Y | Mismatched declared vs actual return type | Fix return type or method logic |
 | Comparison always evaluates to true | Redundant null check on non-nullable | Remove the check, or fix the type annotation |

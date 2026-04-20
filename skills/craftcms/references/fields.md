@@ -15,6 +15,21 @@
 - Using `afterElementSave()` without checking `$element->isFieldDirty()` — runs expensive processing (API calls, re-indexing) on every save even when the field value didn't change.
 - Confusing native fields with custom field types — native fields are layout elements for element attributes (Title, Slug), custom fields are the configurable types users add in Settings → Fields. Different base classes, different registration events.
 
+## Table of Contents
+
+- [When to Use What](#when-to-use-what)
+- [Custom Field Types](#custom-field-types)
+- [Native Fields](#native-fields)
+- [UI Elements](#ui-elements)
+- [FieldLayoutBehavior](#fieldlayoutbehavior)
+- [Validation](#validation)
+- [Search Keywords](#search-keywords)
+- [GraphQL Integration](#graphql-integration)
+- [Lifecycle Methods](#lifecycle-methods)
+- [Multi-Site Translation](#multi-site-translation)
+- [Static and Preview HTML](#static-and-preview-html)
+- [Craft 5 Static Configuration Methods](#craft-5-static-configuration-methods)
+
 ## When to Use What
 
 Craft's field system has three distinct concepts. Understanding which one you need prevents building the wrong thing.

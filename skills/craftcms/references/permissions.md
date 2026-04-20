@@ -291,25 +291,71 @@ Event::on(
 
 Prefix all custom permission handles with your plugin handle and a colon: `my-plugin:action-name`. Use kebab-case for both the plugin prefix and the action name. This prevents collisions between plugins and matches the convention used by Craft core and first-party plugins.
 
-### Dynamic per-entity permissions
+### Permission handle constants
 
-For plugins that manage multiple entities (e.g., forms, channels, item types), generate permissions scoped by entity UID:
+Define permission handles as class constants. This prevents phantom mismatches where a typo in one file creates a permission that silently behaves wrong (denies non-admins, passes for admins — hard to debug).
+
+```php
+namespace myplugin;
+
+class Permissions
+{
+    public const PERMISSION_SETTINGS = 'my-plugin:settings';
+    public const PERMISSION_MANAGE = 'my-plugin:manage';
+    public const PERMISSION_VIEW = 'my-plugin:view';
+    public const PERMISSION_DELETE = 'my-plugin:delete';
+}
+```
+
+Use constants everywhere — registration, controllers, templates, element `can*()` methods:
+
+```php
+// Controller
+$this->requirePermission(Permissions::PERMISSION_MANAGE . ":{$item->uid}");
+
+// Element canView()
+return $user->can(Permissions::PERMISSION_VIEW . ":{$this->getItemUid()}");
+```
+
+```twig
+{# Template — can't use PHP constants, so reference the string value #}
+{% if currentUser.can('my-plugin:manage:' ~ item.uid) %}
+```
+
+### Dynamic per-entity permissions (parameterized UIDs)
+
+For plugins that manage multiple entities (e.g., forms, channels, item types), generate one permission handle per entity using its UID. This follows Craft's own convention:
+
+| Craft Handle | Pattern |
+|-------------|---------|
+| `assignUserGroup:{uid}` | Per user group |
+| `editSite:{uid}` | Per site |
+| `viewEntries:{uid}` | Per section |
+| `viewAssets:{uid}` | Per volume |
+| `my-plugin:manage-group:{uid}` | Plugin convention |
+
+Wire the constants (from `Permissions` class above) into a builder method on your plugin class, then call it from the `EVENT_REGISTER_PERMISSIONS` handler:
 
 ```php
 private function _buildPermissions(): array
 {
     $permissions = [
-        'my-plugin:settings' => [
+        Permissions::PERMISSION_SETTINGS => [
             'label' => Craft::t('my-plugin', 'Manage settings'),
         ],
     ];
 
     foreach (MyPlugin::getInstance()->getItems()->getAllItems() as $item) {
-        $permissions["my-plugin:manage:{$item->uid}"] = [
+        $suffix = $item->uid;
+        $permissions[Permissions::PERMISSION_MANAGE . ":{$suffix}"] = [
             'label' => Craft::t('my-plugin', 'Manage {name}', ['name' => $item->name]),
             'nested' => [
-                "my-plugin:view:{$item->uid}" => [
+                Permissions::PERMISSION_VIEW . ":{$suffix}" => [
                     'label' => Craft::t('my-plugin', 'View entries'),
+                ],
+                Permissions::PERMISSION_DELETE . ":{$suffix}" => [
+                    'label' => Craft::t('my-plugin', 'Delete entries'),
+                    'warning' => Craft::t('my-plugin', 'Allows permanent deletion'),
                 ],
             ],
         ];
@@ -319,17 +365,32 @@ private function _buildPermissions(): array
 }
 ```
 
-Then check in controllers:
+### How doesUserHavePermission() resolves handles
 
-```php
-$this->requirePermission("my-plugin:manage:{$item->uid}");
-```
+Permission handles are stored **lowercase** in the database. `doesUserHavePermission()` calls `strtolower()` on the handle before checking. This means `'My-Plugin:Manage'` and `'my-plugin:manage'` resolve to the same permission. Convention: always use lowercase kebab-case.
 
-This pattern gives admins granular control over which plugin entities each user group can manage. Always pair with element-level `canView()` / `canSave()` checks (see `elements.md`).
+Resolution order:
+1. If `$user->admin` is `true` → returns `true` immediately (no DB lookup)
+2. If Craft edition is Solo → returns `true` unconditionally
+3. Looks up the handle in the user's stored permission set via `in_array()`
+4. If handle not found → returns `false`
 
-### Nested permissions
+**Key implication:** A non-existent permission handle is effectively a deny for non-admins but invisible to admins. If you register `my-plugin:manage` but check `my-plugin:mannage` (typo), admins pass silently and non-admins get a 403. Constants prevent this.
+
+This pattern gives admins granular control over which plugin entities each user group can manage. Always pair with element-level `canView()` / `canSave()` checks (see `elements.md` and `element-authorization.md`).
+
+### Nested permissions and extra properties
 
 The `nested` key creates a hierarchy in the CP permissions UI. A nested permission is only checkable when its parent is checked. This is a UI convenience -- Craft does not enforce the hierarchy in `can()` checks. If you grant a nested permission directly (e.g., via database), `can()` will return `true` even if the parent is unchecked.
+
+Permission entries support these properties:
+
+| Property | Type | Purpose |
+|----------|------|---------|
+| `label` | `string` | Required. Display text for the permission. |
+| `nested` | `array` | Child permissions (indented in CP, require parent check). |
+| `info` | `string` | Tooltip text shown on hover. Use for clarification. |
+| `warning` | `string` | Warning text shown below the permission. Use for dangerous permissions. |
 
 ### Gating CP nav items based on permission
 
@@ -378,51 +439,20 @@ public function actionDelete(): Response
 
 ## Element Authorization Events
 
-For fine-grained, context-aware authorization that goes beyond static permissions, use element authorization events. These fire when Craft checks whether a user is authorized to perform a specific action on a specific element.
+For fine-grained, context-aware authorization that goes beyond static permissions, see `element-authorization.md`. That reference covers:
 
-### Available events
+- All 8 authorization events on `Elements::class` (VIEW, SAVE, CREATE_DRAFTS, DUPLICATE, DUPLICATE_AS_DRAFT, COPY, DELETE, DELETE_FOR_SITE)
+- The four-layer defense model (UI → Route → Query → Authorization)
+- Query scoping via `EVENT_BEFORE_PREPARE` with context guards
+- Element `can*()` method overrides with parent delegation
+- Built-in authorization logic for Entry, User, and Asset elements
+- Defense-in-depth patterns for security-sensitive plugins
 
-| Event Constant | When Checked |
-|---------------|-------------|
-| `EVENT_AUTHORIZE_VIEW` | Viewing the element |
-| `EVENT_AUTHORIZE_SAVE` | Saving the element |
-| `EVENT_AUTHORIZE_CREATE_DRAFTS` | Creating a draft of the element |
-| `EVENT_AUTHORIZE_DELETE` | Deleting the element |
-| `EVENT_AUTHORIZE_DELETE_FOR_SITE` | Deleting the element for a specific site |
+Key facts for quick reference:
 
-### Usage
-
-```php
-use craft\elements\Entry;
-use craft\events\AuthorizationCheckEvent;
-use yii\base\Event;
-
-Event::on(
-    Entry::class,
-    Entry::EVENT_AUTHORIZE_SAVE,
-    function(AuthorizationCheckEvent $event) {
-        /** @var Entry $entry */
-        $entry = $event->sender;
-        $user = $event->user;
-
-        // Only allow saving classifieds if user has accepted TOS
-        if ($entry->section->handle === 'classifieds' && !$user->acceptedTos) {
-            $event->authorized = false;
-            $event->handled = true;
-        }
-    }
-);
-```
-
-### How authorization resolution works
-
-Setting `$event->authorized` to `true` or `false` overrides all other checks for that action. Set `$event->handled = true` to prevent other event handlers from changing the result. If no handler sets `authorized`, Craft falls back to its default permission logic.
-
-Multiple handlers can listen to the same event. The last handler to set `authorized` wins, unless an earlier handler set `handled = true`.
-
-### Restricting admins
-
-Element authorization events are the only mechanism that can restrict admins. Since `can()` always returns `true` for admins, static permissions cannot gate admin actions. An authorization event handler that sets `$event->authorized = false` and `$event->handled = true` will block even admins from that specific action on that specific element.
+- Authorization events live on `craft\services\Elements`, not on the element class (element-level events deprecated since 4.3.0)
+- Setting `$event->authorized = false` with `$event->handled = true` is the only way to restrict admins
+- Element queries do NOT filter by permission — scoping requires `EVENT_BEFORE_PREPARE`
 
 ## Permission Strategies
 
