@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 -- unreleased
+## 1.2.0 -- 2026-04-20
 
 Complete rewrite of configuration reference and expansion of 4 thin reference files. Full coverage of all Craft CMS 5 config settings, mail transport, search performance, app component configuration, migrations, queue jobs, code quality tooling, and CP templates. Agent architecture overhaul with explicit build-verify gates, mandatory todo lists, and removal of the redundant simplifier agent. Content modeling improvement: reuse-first field workflow. New Garnish JS skill for CP JavaScript development. Quality audit with reference file splits and description optimization across all 8 skills. Gap analysis: 9 new reference files (element authorization, sessions, custom field types, conditions, email, deployment, drafts/revisions, search, feeds) filling 12 identified coverage gaps. Headless/GraphQL consumer patterns moved from craftcms to craft-site. New /docs directory with getting-started guide, skills overview, 43-prompt guide, agent documentation, and contributing guide. GitHub issue templates upgraded to YAML forms with structured data collection.
 
