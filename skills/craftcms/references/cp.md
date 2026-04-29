@@ -26,7 +26,7 @@ Complete reference for CP extension points: templates, navigation, settings page
 
 ## Contents
 
-- [CP Templates](#cp-templates)
+- [CP Templates](#cp-templates) — form macros, editable tables, tabbed settings, VueAdminTable
 - [CP Navigation](#cp-navigation)
 - [Settings Pages](#settings-pages) — settings model, env var support, split settings pages (savePluginSettings footgun)
 - [Utility Pages](#utility-pages)
@@ -207,6 +207,105 @@ $('#sites').on('deleteRow', function(ev) {
     {# Form fields here #}
 {% endblock %}
 ```
+
+### Tabbed Settings Pages
+
+Two approaches for multi-tab CP pages: Twig-level tabs (template-driven) and PHP-level tabs (controller-driven via `asCpScreen()`).
+
+#### Twig-level tabs
+
+Set the `tabs` variable in your template. Each tab links to a different URL or anchor. The CP layout renders the tab bar automatically when `tabs` has more than one entry.
+
+```twig
+{% extends '_layouts/cp.twig' %}
+{% set title = 'Settings'|t('my-plugin') %}
+{% set selectedSubnavItem = 'settings' %}
+{% set fullPageForm = true %}
+
+{% set tabs = {
+    general: { label: 'General'|t('my-plugin'), url: url('my-plugin/settings/general') },
+    sync: { label: 'Sync'|t('my-plugin'), url: url('my-plugin/settings/sync') },
+    advanced: { label: 'Advanced'|t('my-plugin'), url: url('my-plugin/settings/advanced') },
+} %}
+
+{% set selectedTab = 'general' %}
+
+{% block content %}
+    {{ actionInput('my-plugin/settings/save-general') }}
+    {{ redirectInput('my-plugin/settings/general') }}
+    {# Tab-specific form fields #}
+{% endblock %}
+```
+
+Each tab is a separate template (or a shared template with conditional blocks). The `selectedTab` variable highlights the active tab. Register CP URL rules for each tab path.
+
+#### Anchor-based tabs (single page)
+
+For tabs that switch content without a page reload, use anchor-based tab IDs. Craft's JS handles showing/hiding `#content-{tabId}` containers automatically:
+
+```twig
+{% set tabs = {
+    general: { label: 'General'|t('my-plugin'), url: '#general' },
+    mapping: { label: 'Mapping'|t('my-plugin'), url: '#mapping' },
+    advanced: { label: 'Advanced'|t('my-plugin'), url: '#advanced' },
+} %}
+
+{% block content %}
+    {{ actionInput('my-plugin/settings/save') }}
+    {{ redirectInput('my-plugin/settings') }}
+
+    <div id="general">
+        {# General settings fields #}
+    </div>
+
+    <div id="mapping" class="hidden">
+        {# Mapping settings fields #}
+    </div>
+
+    <div id="advanced" class="hidden">
+        {# Advanced settings fields #}
+    </div>
+{% endblock %}
+```
+
+Craft's CP JavaScript automatically shows the panel matching the selected tab and hides the others. Initial state: all panels except the first get `class="hidden"`.
+
+#### PHP-level tabs via asCpScreen()
+
+For controller-driven screens (custom element edit pages, non-template responses), use the `tabs()` fluent method on `CpScreenResponseBehavior`:
+
+```php
+/** @var Response|CpScreenResponseBehavior $response */
+$response = $this->asCpScreen()
+    ->title($item->title ?? Craft::t('my-plugin', 'New Item'))
+    ->action('my-plugin/items/save')
+    ->redirectUrl('my-plugin/items')
+    ->tabs([
+        'content' => [
+            'label' => Craft::t('my-plugin', 'Content'),
+            'url' => '#content',
+        ],
+        'settings' => [
+            'label' => Craft::t('my-plugin', 'Settings'),
+            'url' => '#settings',
+        ],
+    ])
+    ->contentTemplate('my-plugin/items/_edit', [
+        'item' => $item,
+    ]);
+```
+
+Or add tabs individually with `addTab()`:
+
+```php
+$response->addTab(
+    id: 'integrations',
+    label: Craft::t('my-plugin', 'Integrations'),
+    url: '#integrations',
+);
+```
+
+`addTab()` accepts optional `class` (string or array) and `visible` (bool, default `true`) parameters. Set `visible: false` to hide a tab conditionally.
 
 ### VueAdminTable
 
@@ -666,6 +765,7 @@ Every `*Field` macro wraps its input in a `<div class="field">` with label, inst
 | `forms.checkboxField` | Single checkbox | `checked` (bool), `toggle` (CSS selector) |
 | `forms.checkboxGroupField` | Multiple checkboxes | `options`, `values` (array of checked values) |
 | `forms.radioGroupField` | Radio button group | `options`, `value` |
+| `forms.buttonGroupField` | Button-style option selector (exclusive) | `options`, `value` — see [buttonGroupField](#buttongroupfield) |
 | `forms.colorField` | Color picker | `value` (hex string) |
 | `forms.dateTimeField` | Date and time picker | `value` (DateTime object or string) |
 | `forms.timeField` | Time-only picker | `value` (time string) |
@@ -728,6 +828,42 @@ The `toggle` param shows/hides another element based on the switch state:
     {{ forms.textField({ ... }) }}
 </div>
 ```
+
+### buttonGroupField
+
+Exclusive button selector — visually similar to a segmented control. One option active at a time. Renders a `Craft.Listbox` with `aria-pressed` on each button. Use for settings with 2-5 discrete options where radio buttons feel too heavy.
+
+```twig
+{{ forms.buttonGroupField({
+    label: 'Display Mode'|t('my-plugin'),
+    id: 'displayMode',
+    name: 'displayMode',
+    value: settings.displayMode,
+    options: {
+        list: 'List'|t('my-plugin'),
+        grid: 'Grid'|t('my-plugin'),
+        map: 'Map'|t('my-plugin'),
+    },
+}) }}
+```
+
+Options can be a flat hash (`{ value: label }`) or an array of objects with `label`, `value`, and optional `class`:
+
+```twig
+{{ forms.buttonGroupField({
+    label: 'Priority'|t('my-plugin'),
+    id: 'priority',
+    name: 'priority',
+    value: settings.priority,
+    options: [
+        { label: 'Low', value: 'low' },
+        { label: 'Normal', value: 'normal' },
+        { label: 'High', value: 'high', class: 'error' },
+    ],
+}) }}
+```
+
+Server-side, the POST value is the selected option's `value` string. The raw variant (`forms.buttonGroup`) renders without the field wrapper — use it inside custom layouts or inline with other inputs.
 
 ## Condition Builders
 
