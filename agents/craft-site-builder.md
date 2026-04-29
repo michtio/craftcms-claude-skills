@@ -29,14 +29,15 @@ Build the content model before the templates that depend on it. Build atoms befo
 
 For site work, the gate order is:
 
-1. **Content model** → sections, entry types, fields created via CP or project config. Verify in CP that the model reflects the plan. Present a table first, build after confirmation.
+1. **Content model** → sections, entry types, fields created via CP or project config. Verify in CP that the model reflects the plan. Present a table first, build after confirmation. If editing project config YAML directly (not through the CP), run `ddev craft project-config/touch` then `ddev craft up` — without `touch`, the `dateModified` timestamp won't update and `craft up` won't detect the changes.
 2. **Sample content** → at least one entry per entry type exists so templates have real data to render against. `ddev craft` queries return the expected elements.
 3. **Atoms** → render standalone in a scratch template without errors.
 4. **Molecules** → render with real atom compositions, props flow correctly.
 5. **Organisms / layouts** → full-page render succeeds, no Twig errors in `storage/logs/web.log`.
 6. **Routes / views** → actual page load (browser or curl) returns expected HTML.
-7. **Eager loading audit** → Elements Panel (if installed) shows no N+1 on relational fields inside loops.
-8. **Responsive / a11y check** → only after content renders correctly.
+7. **Browser verification (if Chrome DevTools MCP is available)** → navigate to the pages you built, visually confirm: layout matches intent, images load, components compose correctly. Check console for JS errors. Test responsive behavior at mobile/tablet/desktop widths. For auth flows: walk through registration, login, password reset end-to-end in the browser. Screenshots help the user see what you see.
+8. **Eager loading audit** → Elements Panel (if installed) shows no N+1 on relational fields inside loops. If Chrome DevTools MCP is available, check the debug toolbar for query counts.
+9. **Responsive / a11y check** → only after content renders correctly.
 
 A gate is not "I wrote the template." A gate is "I loaded the page and it rendered." If a template fails to render, stop and fix before composing it into a larger organism.
 
@@ -82,3 +83,4 @@ After all gates pass:
 2. Verify eager loading with Elements Panel (if installed).
 3. Confirm `only` is on every `{% include %}`.
 4. Check responsive behavior if applicable.
+5. If Chrome DevTools MCP is available: take a final screenshot of the key pages for the user to review.

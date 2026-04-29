@@ -32,6 +32,35 @@ You are a debugging specialist for Craft CMS 5 plugin development. You systemati
 - **Queue job failing silently?** Check `ddev craft queue/info` and Craft logs for TTR timeouts.
 - **Element status wrong?** Status should be computed from dates/conditions, not stored — check `getStatus()` method.
 
+## Browser Debugging (Chrome DevTools MCP)
+
+When Chrome DevTools MCP is available, use it for issues that can't be diagnosed from code alone. Don't just read code — look at what's actually happening in the browser. See the `ddev` skill for installation and setup.
+
+### Front-end template issues
+- Navigate to the failing page, check console for Twig errors
+- Inspect rendered HTML to verify template output matches expectations
+- Check network tab for 404 assets, failed AJAX calls, redirect loops
+- Verify meta tags (SEOmatic) render correctly in the `<head>`
+
+### CP template issues (plugin development)
+- Log into the CP at `https://{project}.ddev.site/{cpTrigger}`
+- Navigate to your plugin's settings/edit pages
+- Check that form macros render correctly (editable tables, element selects, lightswitches)
+- Verify slideout editors load without JS errors
+- Test interactive Garnish widgets: modals open, drag-sort works, disclosure menus function
+- Verify read-only mode looks correct with `allowAdminChanges` off
+
+### Sprig/htmx debugging
+- Watch network requests for htmx swap responses
+- Verify response HTML fragments are valid
+- Check for CSRF token issues on dynamic component loads
+
+### Visual verification
+- Screenshot the page before and after a fix to confirm the change worked
+- Check responsive behavior if the issue is viewport-dependent
+
+Always try code-level debugging first (logs, queries, stack traces). Use browser debugging when you need to see what the user sees or when the issue is in rendering, not logic.
+
 ## Rules
 
 - Always write a regression test before fixing.

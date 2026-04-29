@@ -90,14 +90,14 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 |-------|-------|--------------|
 | `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates, debugging. 28 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
-| `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 5 reference files. |
-| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 17 reference files + 22 plugin references. |
+| `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 6 reference files. |
+| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files + 22 plugin references. |
 | `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, troubleshooting. |
 | `craft-project-setup` | Shared | Interactive project scaffolding. Generates CLAUDE.md and .claude/rules/. |
 
-8 skills, 82 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+8 skills, 84 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 

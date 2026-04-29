@@ -105,7 +105,26 @@ return GeneralConfig::create()
 | `postCpLoginRedirect` | `mixed` | `'dashboard'` | Redirect after CP login. |
 | `postLogoutRedirect` | `mixed` | `''` | Redirect after front-end logout. |
 
-`cpTrigger` can be set to `null` when the CP lives on a separate domain (e.g., `cms.example.com`). In this case, all requests to that domain route to the CP without needing a path segment. If you change `cpTrigger` mid-project, update any hardcoded CP URLs in bookmarks, documentation, or external integrations.
+`cpTrigger` is configurable via `CRAFT_CP_TRIGGER` env var or `cpTrigger` in `config/general.php`. Default is `'admin'` but many projects use `'cp'` or other values. Set to `null` when the CP lives on a separate domain (e.g., `cms.example.com`) — all requests to that domain route to the CP without needing a path segment.
+
+**Never hardcode `/admin/` in URLs.** Always use helpers:
+
+```php
+// PHP — use UrlHelper
+use craft\helpers\UrlHelper;
+
+UrlHelper::cpUrl('my-plugin/items');           // → {cpTrigger}/my-plugin/items
+UrlHelper::actionUrl('my-plugin/api/sync');    // → {actionTrigger}/my-plugin/api/sync
+```
+
+```twig
+{# Twig — use cpUrl() function #}
+<a href="{{ cpUrl('my-plugin/items') }}">Manage Items</a>
+```
+
+CP URL rules registered via `EVENT_REGISTER_CP_URL_RULES` define paths *after* the trigger — the rule `'my-plugin/items/<itemId:\d+>'` resolves to `{cpTrigger}/my-plugin/items/123` at runtime. In documentation, write CP URLs as `{cpTrigger}/my-plugin/path`, not `/admin/my-plugin/path`.
+
+If you change `cpTrigger` mid-project, update bookmarks, external integrations, and any documentation that references the old path.
 
 `pageTrigger` behavior depends on whether `omitScriptNameInUrls` is `true`. When `true`, pagination uses path segments like `/p2`. When `false`, it uses query params like `?p=2`. The value must not conflict with any section URI patterns.
 

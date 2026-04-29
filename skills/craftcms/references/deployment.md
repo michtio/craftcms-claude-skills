@@ -73,6 +73,17 @@ return GeneralConfig::create()
 | `craft project-config/rebuild` | Regenerates YAML from DB | When DB is the source of truth (destructive to YAML) |
 | `craft project-config/write` | Writes current DB state to YAML files | After manual DB changes (rare) |
 
+### rebuild vs apply --force — know the direction
+
+These two commands fix drift but in **opposite directions**:
+
+| Command | Direction | Destructive to | Use when |
+|---------|-----------|----------------|----------|
+| `project-config/apply --force` | YAML → DB | Database | YAML is correct, DB has drifted |
+| `project-config/rebuild` | DB → YAML | YAML files | DB is correct, YAML has drifted |
+
+Always run `project-config/diff` first to understand what diverged. Choosing the wrong direction overwrites the correct state with the stale one.
+
 ### Migration ordering
 
 Migrations use timestamp format (`m{YYMMDD}_{HHMMSS}_description.php`). Each plugin has its own track (triggered by `schemaVersion` changes). Content migrations have a separate global track. `craft up` runs all tracks, then applies project config.

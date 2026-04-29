@@ -12,7 +12,7 @@ How to send email from Craft CMS 5: system messages, custom messages, programmat
 - Not testing with Mailpit — DDEV includes Mailpit at `https://yoursite.ddev.site:8026`. Zero config, captures all outbound mail.
 - Hardcoding `fromEmail` — use `Craft::$app->getProjectConfig()->get('email.fromEmail')` or let the Mailer component handle defaults.
 - Forgetting that system message bodies are rendered as Markdown — HTML tags work, but the body goes through Twig then Markdown (GFM) then the HTML wrapper template.
-- Not accounting for per-site email overrides (5.6+) — multi-site installs can have different `fromEmail`, `fromName`, `replyToEmail`, and HTML templates per site.
+- Not accounting for per-site email overrides (since 5.6.0) — multi-site installs can have different `fromEmail`, `fromName`, `replyToEmail`, and HTML templates per site.
 
 ## Contents
 
@@ -182,6 +182,23 @@ class SendNotification extends BaseJob
 | `setSubject()` | `string` | |
 | `setHtmlBody()` | `string` | |
 | `setTextBody()` | `string` | Auto-generated from HTML if omitted |
+
+### Per-site email overrides (since 5.6.0)
+
+`Mailer::$siteOverrides` allows different `fromEmail`, `fromName`, `replyToEmail`, and HTML template per site. Overrides are keyed by site UID:
+
+```php
+// Craft handles this via Settings > Email > Site Overrides
+// Plugins sending email can specify a site:
+$message = $mailer->composeFromKey('my_plugin_notification', [
+    'user' => $user,
+]);
+$message->siteId = $site->id; // Override applies automatically
+$message->setTo($user);
+$mailer->send($message);
+```
+
+When `$message->siteId` is set, Craft looks up the site's overrides and applies them before sending. This is relevant for multi-site installs where different sites have different brands, from addresses, or email templates.
 
 ## Email Templates
 

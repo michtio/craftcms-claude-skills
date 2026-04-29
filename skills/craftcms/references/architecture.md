@@ -27,6 +27,7 @@
 - [Project Config](#project-config)
 - [Yii2 Core Validators](#yii2-core-validators)
 - [Custom Validators](#custom-validators)
+- [Plugin Editions](#plugin-editions) — declaring, checking, feature gating, edition switching, helper methods, migrations
 
 ## Scaffolding
 
@@ -238,6 +239,12 @@ class Element_SiteSettings extends Model
 ### Core Concept
 
 Project config syncs configuration across environments via YAML. Entities that should sync (managed settings, field layouts) live in project config. Runtime data (element content, user preferences) does not.
+
+**When manually editing `project.yaml`** (changing plugin editions, adding settings, resolving merge conflicts), you must update the `dateModified` unix timestamp at the top of the file. Without this, `craft up` won't detect the change. Either:
+- Run `date +%s` and replace the `dateModified` value manually, or
+- Run `ddev craft project-config/touch` which updates `dateModified` for you
+
+This is the most common cause of "I changed the YAML but nothing happened."
 
 ### Register Paths
 
@@ -621,6 +628,50 @@ class MyPlugin extends Plugin
 Available: `CmsEdition::Solo`, `CmsEdition::Team`, `CmsEdition::Pro`, `CmsEdition::Enterprise` (5.3.0+).
 
 Use this when the plugin depends on CMS features only available in higher editions (e.g., user groups for permission-scoped content). For what each CMS edition unlocks (user groups, permissions, public registration), see the `craft-content-modeling` skill's `references/users-and-permissions.md`.
+
+### Switching Editions for Local Testing
+
+To test different plugin editions in a local dev environment:
+
+1. **Change the edition** in `cms/config/project/project.yaml` — find the plugin's entry under `plugins` and set the `edition` key
+2. **Update `dateModified`** at the top of `project.yaml` — run `date +%s` and replace the value. Without this, `craft up` won't detect the change.
+3. **Apply the config**: `ddev craft up`
+4. **Clear compiled templates**: `ddev craft clear-caches/compiled-templates` — Twig templates are compiled and cached, so edition-dependent conditionals (`{% if plugin.is('pro') %}`) won't re-evaluate until the cache is cleared
+
+All four steps are required. Skipping step 2 means `craft up` silently ignores the change. Skipping step 4 means Twig renders stale compiled templates with the old edition check.
+
+**Do NOT use `app.php` `pluginConfigs` to set editions.** That's for component configuration overrides, not edition management. The project config YAML is the single source of truth for plugin editions.
+
+### Edition Helper Methods
+
+Provide convenience getters for edition checks. Always delegate to `$this->is()` — never hardcode return values:
+
+```php
+public const EDITION_LITE = 'lite';
+public const EDITION_PRO = 'pro';
+public const EDITION_ENTERPRISE = 'enterprise';
+
+public function getIsLite(): bool
+{
+    return $this->is(self::EDITION_LITE);
+}
+
+public function getIsPro(): bool
+{
+    return $this->is(self::EDITION_PRO);
+}
+
+public function getIsEnterprise(): bool
+{
+    return $this->is(self::EDITION_ENTERPRISE);
+}
+```
+
+These are accessible as properties via Yii's magic getters: `MyPlugin::$plugin->isPro`, `MyPlugin::$plugin->isEnterprise`. Use edition constants as the source of truth — never `return true` or `return false` directly.
+
+### Edition in Migrations
+
+Migrations run regardless of the active edition. Settings saved in project config persist across edition changes — downgrading from Pro to Lite doesn't delete Pro settings. Guard feature access in `init()` and controllers, not in migrations or project config handlers.
 
 ### Edition in Templates
 

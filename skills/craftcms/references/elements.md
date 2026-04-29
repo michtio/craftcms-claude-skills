@@ -16,6 +16,7 @@
 - Propagation
 - CP Edit Pages — getCpEditUrl, elements/edit route, asCpScreen, slide-outs
 - Preview Targets — previewTargets, EVENT_REGISTER_PREVIEW_TARGETS
+- Generated Fields (5.8.0) — computed values saved on elements
 - Eager Loading — eagerLoadingMap
 - Soft Delete and Garbage Collection — Gc::EVENT_RUN
 - Element Events Reference — ~40 events
@@ -43,6 +44,8 @@
 - Hardcoding site IDs (`->where(['siteId' => 1])`) — site 1 may not exist (sites can be deleted and recreated). Use `Craft::$app->getSites()->getPrimarySite()->id` or `getCurrentSite()->id`.
 - Loading all elements in `defineSources()` — runs on every index page load. See `element-index.md` Common Pitfalls for details.
 - Declaring element query properties without wiring them in `beforePrepare()` — unused properties are dead code that mislead developers. Every property on the query class must have corresponding `andWhere` logic in `beforePrepare()`.
+- Assuming `NestedElementTrait` handles site propagation — it doesn't. The trait manages owner relationships (eager loading, owner getters/setters, sort order) but does NOT override `getSupportedSites()` or `isLocalized()`. Address elements fall through to the base `Element` default: primary site only. Matrix entries get multi-site support because the `Entry` class explicitly overrides `getSupportedSites()` and delegates to `$this->getField()->getSupportedSitesForElement($this)` when `$this->fieldId` is set. If your custom nested element type needs multi-site propagation, you must override `getSupportedSites()` yourself — the trait won't do it for you.
+- Assuming all User properties are populated from element queries — `UserQuery::beforePrepare()` only selects a subset of columns from the `users` table. Security-sensitive columns like `lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, and `lastLoginAttemptIp` are intentionally excluded. These properties are `null` on User elements loaded via `Craft::$app->getUser()->getIdentity()` or any element query, even when the database has values. To access them, query the `users` table directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`. Craft's CP profile page does this internally — it loads the User record separately from the element.
 
 ## Scaffold
 
@@ -545,7 +548,9 @@ protected function searchKeywords(string $attribute): string
 
 ## Propagation
 
-Control which sites an element exists on:
+Control which sites an element exists on. The base `Element::getSupportedSites()` checks `isLocalized()` — if false (the default), returns primary site only. If true, returns all sites. Most element types override this with their own logic.
+
+`NestedElementTrait` does NOT provide `getSupportedSites()` or `isLocalized()`. Nested element types that need multi-site propagation must override these themselves. Matrix entries work because `Entry::getSupportedSites()` delegates to `$this->getField()->getSupportedSitesForElement($this)` when `fieldId` is set. Address elements don't override either method, so they exist on the primary site only — even when their owner exists on multiple sites.
 
 ```php
 public function getSupportedSites(): array
@@ -767,6 +772,50 @@ public static function eagerLoadingMap(array $sourceElements, string $handle): a
     return parent::eagerLoadingMap($sourceElements, $handle);
 }
 ```
+
+## Generated Fields (5.8.0)
+
+Generated fields are computed values stored on elements. Unlike native fields (entered by editors) or custom fields (configured by admins), generated fields are defined on the field layout and their values are computed from an object template on every save.
+
+### How they work
+
+Generated fields are configured on `FieldLayout`, not on the element class. Each generated field has:
+- `uid` — unique identifier
+- `name` — display name
+- `handle` — access handle (like custom field handles)
+- `template` — an object template (Twig) evaluated against the element at save time
+
+```php
+// Access generated field values like custom fields
+$element->getGeneratedFieldValues();
+
+// Individual value
+$value = $element->{$handle};
+```
+
+### Storage and querying
+
+Generated field values are stored in the database. They can be:
+- Queried as element query params: `MyElement::find()->myGeneratedHandle('> 100')`
+- Used in sort options: `.orderBy('myGeneratedHandle DESC')`
+- Displayed in table and card views on element indexes
+
+Since 5.9.0, `true`/`false`/`null`/integer/float values are normalized to appropriate types.
+
+### Use cases
+
+- **Computed summaries** — count related entries, sum values from nested content
+- **Denormalized data** — hoist a nested field value to the top level for querying/sorting
+- **Binary criteria** — flag elements matching a condition (e.g., spending > threshold)
+- **Sequential numbering** — use `seq()` for auto-incrementing reference numbers
+- **Search-optimized text** — strip markup from rich text for cleaner search indexing
+
+### Limitations
+
+- Values are evaluated sequentially at save time — referencing one generated field from another sees pre-save values
+- Values from related elements can become stale between saves
+- Condition builders treat values as strings (text operators: "starts with", "contains")
+- Not directly editable in the CP — they're computed, not authored
 
 ## Soft Delete and Garbage Collection
 

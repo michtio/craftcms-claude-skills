@@ -21,13 +21,14 @@ Complete reference for CP extension points: templates, navigation, settings page
 - Using raw HTML in CP templates instead of Craft's form macros -- loses consistency, dark mode support, and accessibility features.
 - Not handling the `readonly` state for fields when `allowAdminChanges` is false -- users can edit values they can't save.
 - Forgetting `csrfInput()` in custom forms that don't use `fullPageForm` -- POST requests will be rejected.
+- Using `size` attribute with `type: 'number'` on `textField` -- browsers ignore the HTML `size` attribute on `<input type="number">`. Craft's own Number field works around this by using `type: 'text'` with `inputmode: 'numeric'`. For number inputs, constrain width with `inputAttributes: { style: 'width: 6rem' }` or switch to a text input with `inputmode="numeric"` pattern.
 - Expensive `badgeCount` computation in `getCpNavItem()` -- this method runs on **every CP page load** across the entire install, not just your plugin's pages. Badge counts must be extremely cheap: use a cached value (invalidated on relevant saves) or a simple indexed `COUNT(*)` query. Never run complex queries, N+1 patterns, or element queries with eager loading here.
 
 ## Contents
 
 - [CP Templates](#cp-templates)
 - [CP Navigation](#cp-navigation)
-- [Settings Pages](#settings-pages)
+- [Settings Pages](#settings-pages) — settings model, env var support, split settings pages (savePluginSettings footgun)
 - [Utility Pages](#utility-pages)
 - [Dashboard Widgets](#dashboard-widgets)
 - [Slideout Editors](#slideout-editors)
@@ -37,6 +38,8 @@ Complete reference for CP extension points: templates, navigation, settings page
 - [Condition Builders](#condition-builders)
 - [Asset Bundles](#asset-bundles)
 - [Permissions](#permissions)
+- [CP Markup Patterns](#cp-markup-patterns) — sidebar badges, notice/warning blocks, tip/warning on form fields
+- [Read-Only Mode (allowAdminChanges)](#read-only-mode-allowadminchanges) — controller setup, template patterns, disabled fields
 
 ## CP Templates
 
@@ -342,6 +345,38 @@ protected function settingsHtml(): ?string
 ```
 
 `disabled: not allowAdminChanges` on every field prevents editing in production. `suggestEnvVars: true` shows env var dropdown when user types `$`. At runtime, resolve with `App::parseEnv($settings->apiUrl)`.
+
+### Split Settings Pages (savePluginSettings footgun)
+
+`Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)` only persists the keys present in `$settings`. Internally it calls `$pluginSettings->toArray(array_keys($settings))`, meaning any settings NOT submitted in the current request are silently dropped from project config.
+
+If your plugin has tabbed or multi-page settings, each tab's form only submits its own fields. **You must merge with existing settings before saving:**
+
+```php
+public function actionSaveGeneralSettings(): ?Response
+{
+    $this->requirePostRequest();
+    $this->requireAdmin();
+
+    $plugin = MyPlugin::getInstance();
+    $settings = $plugin->getSettings();
+
+    // Only update the fields from this tab
+    $settings->apiUrl = $this->request->getBodyParam('apiUrl');
+    $settings->apiKey = $this->request->getBodyParam('apiKey');
+
+    // Save the FULL settings model — all properties are present
+    if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings->toArray())) {
+        $this->setFailFlash(Craft::t('my-plugin', 'Couldn't save settings.'));
+        return null;
+    }
+
+    $this->setSuccessFlash(Craft::t('my-plugin', 'Settings saved.'));
+    return $this->redirectToPostedUrl();
+}
+```
+
+The key: load the full settings model first, update only the relevant properties, then pass `$settings->toArray()` (all keys). Never pass `$this->request->getBodyParams()` directly to `savePluginSettings()` on a split-settings page — you'll lose every setting not on the current tab.
 
 ## Utility Pages
 
@@ -817,3 +852,177 @@ private function _buildPermissions(): array
 ```
 
 Element-level checks (`canView()`, `canSave()`, `canDelete()`) are in `elements.md` under Authorization. Always implement alongside controller-level `requirePermission()` checks. Use `App::env('MY_PLUGIN_API_KEY')` for sensitive data.
+
+## CP Markup Patterns
+
+### Sidebar badges
+
+Use `<span class="badge">` for badge labels in navigation sidebars and settings sidebars. Not `<span class="status">` — that's for element status indicators.
+
+```twig
+<span class="badge">{{ count }}</span>
+```
+
+### Notice and warning blocks
+
+Semantic notice/warning markup for CP templates. No inline styles — use Craft's built-in classes:
+
+```twig
+{# Warning #}
+<p class="warning has-icon">
+    <span class="icon" aria-hidden="true"></span>
+    <span class="visually-hidden">{{ 'Warning:'|t('app') }}</span>
+    <span>{{ 'This action cannot be undone.'|t('my-plugin') }}</span>
+</p>
+
+{# Tip / informational notice #}
+<p class="notice has-icon">
+    <span class="icon" aria-hidden="true"></span>
+    <span>{{ 'Configure the API key in Settings.'|t('my-plugin') }}</span>
+</p>
+```
+
+Form field macros also accept `tip` and `warning` parameters:
+
+```twig
+{{ forms.textField({
+    label: 'API Key'|t('my-plugin'),
+    name: 'apiKey',
+    value: settings.apiKey,
+    warning: 'Changing this will invalidate existing tokens.'|t('my-plugin'),
+    tip: 'Use an environment variable ($MY_API_KEY) for production.'|t('my-plugin'),
+}) }}
+```
+
+## Read-Only Mode (allowAdminChanges)
+
+When `allowAdminChanges` is `false` (production), plugin settings pages should be viewable but not editable. This requires coordination between the controller and the template. For the controller-side pattern, see `controllers.md` (the `requireAdmin(false)` pattern).
+
+### Controller setup
+
+```php
+private bool $readOnly;
+
+public function beforeAction($action): bool
+{
+    if (!parent::beforeAction($action)) {
+        return false;
+    }
+
+    // View actions: admin without allowAdminChanges check
+    if (in_array($action->id, ['index', 'edit'])) {
+        $this->requireAdmin(false);
+    } else {
+        // Save/delete actions: require allowAdminChanges
+        $this->requireAdmin();
+    }
+
+    $this->readOnly = !Craft::$app->getConfig()->getGeneral()->allowAdminChanges;
+
+    return true;
+}
+
+public function actionEdit(?int $itemId = null): Response
+{
+    // Block creation in read-only mode
+    if ($itemId === null && $this->readOnly) {
+        throw new ForbiddenHttpException('New items cannot be created when allowAdminChanges is disabled.');
+    }
+
+    $variables['readOnly'] = $this->readOnly;
+
+    return $this->renderTemplate('my-plugin/_edit', $variables);
+}
+```
+
+### Template patterns
+
+Pass `readOnly` to the template and use it to disable inputs and hide save buttons:
+
+```twig
+{% set readOnly = readOnly ?? false %}
+
+{% set fullPageForm = not readOnly %}
+
+{% block content %}
+    {# Text field — disabled in read-only mode #}
+    {{ forms.textField({
+        label: 'Name'|t('my-plugin'),
+        name: 'name',
+        value: item.name,
+        errors: item.getErrors('name'),
+        disabled: readOnly,
+        readonly: readOnly,
+    }) }}
+
+    {# Lightswitch — disabled #}
+    {{ forms.lightswitchField({
+        label: 'Enabled'|t('my-plugin'),
+        name: 'enabled',
+        on: item.enabled,
+        disabled: readOnly,
+    }) }}
+
+    {# Editable table — static in read-only mode #}
+    {% if readOnly %}
+        {# Render a plain HTML table instead of the editable version #}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Site'|t('my-plugin') }}</th>
+                    <th>{{ 'URI Format'|t('my-plugin') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in item.siteSettings %}
+                    <tr>
+                        <td>{{ row.site.name }}</td>
+                        <td><code>{{ row.uriFormat }}</code></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        {{ forms.editableTableField({
+            label: 'Site Settings'|t('my-plugin'),
+            name: 'siteSettings',
+            cols: siteSettingsCols,
+            rows: siteSettingsRows,
+        }) }}
+    {% endif %}
+
+    {# Element select — disabled #}
+    {{ forms.elementSelectField({
+        label: 'Related Entries'|t('my-plugin'),
+        name: 'relatedEntries',
+        elements: relatedEntries,
+        elementType: 'craft\\elements\\Entry',
+        disabled: readOnly,
+    }) }}
+{% endblock %}
+```
+
+### Key template techniques
+
+| Technique | Purpose |
+|-----------|---------|
+| `{% set fullPageForm = not readOnly %}` | Hides the save button and form wrapper in read-only mode |
+| `disabled: readOnly` on form fields | Grays out inputs and prevents interaction |
+| `readonly: readOnly` on text inputs | Prevents editing but allows text selection |
+| Static HTML table fallback | Replaces editable tables with a plain display |
+| `{% if not readOnly %}` around action buttons | Hides delete, reorder, and add buttons |
+
+### Read-only notice
+
+Show a notice at the top of the page so admins understand why they can't edit:
+
+```twig
+{% if readOnly %}
+    {% set notice %}
+        {{ 'Settings are read-only because allowAdminChanges is disabled in this environment.'|t('my-plugin') }}
+    {% endset %}
+    <div class="readable">
+        <blockquote class="note">{{ notice }}</blockquote>
+    </div>
+{% endif %}
+```

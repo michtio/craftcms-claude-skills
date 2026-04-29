@@ -1,8 +1,114 @@
 # Changelog
 
+## 1.2.1 -- 2026-04-29
+
+Object template syntax, element display modes, element partials, generated fields, read-only settings pattern, Chrome DevTools MCP integration, security patterns from Craft Core, quality audit with reference file splits and description optimization across all 8 skills, expanded CP form macros and editable tables, Element Index JS loading pattern for Garnish, PHPStan pitfalls for magic property access and queue-injected properties, Address element propagation documentation.
+
+### New
+
+- **object-templates.md** (334 lines, craft-content-modeling) — Complete reference for Craft's mini-template system used in URI formats, asset subpaths, title formats, preview target URLs. Covers both syntaxes (`{attribute}` shortcut vs `{{ twig }}` expressions), context variables by nesting level, `owner` and `rootOwner` (since 5.4.0) for Matrix/CKEditor nested entries, structure URI patterns with automatic slash handling, asset subpath patterns with the Matrix gotcha (moving fields into Matrix changes context variables), preview target tokens, date formatting, and error handling.
+- **element-partials.md** (197 lines, craft-site) — The `entry.render()` pattern for reusable front-end element rendering. Template lookup path (`_partials/{refHandle}/{providerHandle}.twig` → `_partials/{refHandle}.twig`), available variables, passing custom variables, common patterns (blog card grids, type-specific partials, Matrix block rendering), `.eagerly()` for N+1 prevention inside partials, `partialTemplatesPath` configuration.
+
+### Changed
+
+- **elements.md** — New "Generated Fields (5.8.0)" section documenting computed field values stored on elements. Covers the field layout API (`getGeneratedFields()`), storage and querying, use cases (computed summaries, denormalized data, sequential numbering), and limitations.
+- **element-index.md** — New "Element Display Modes" section documenting all three CP display modes: chips (`chipLabelHtml()`, `showStatusIndicator()`, sizing), cards (`cardBodyHtml()`, `getCardTitle()`, field layout card view), and table rows (`attributeHtml()`). Expanded card attributes with default attributes list. Expanded thumbnails section with full resolution chain (`getThumbHtml()` → `thumbUrl()` → `thumbSvg()`), checkered/rounded options, and lazy-loading. Expanded "Index View Modes" from 10-line stub to full reference with mode table, `defaultIndexViewMode()`, and registration pattern.
+- **cp.md** — New "Read-Only Mode (allowAdminChanges)" section with full controller + template pattern: `requireAdmin(false)` for view actions, `readOnly` variable threading, disabled/readonly form fields, static HTML table fallback for editable tables, `fullPageForm` toggle, and read-only notice banner.
+
+### Chrome DevTools MCP integration
+
+- **ddev SKILL.md** — New "Browser Debugging with Chrome DevTools MCP" section: installation command, capabilities table (page inspection, console logs, network requests, DOM queries, screenshots, navigation/login), use cases (front-end debugging, CP template verification, Garnish/JS debugging, Sprig/htmx, auth flows, read-only mode, visual regression), CP authentication pattern.
+- **craft-project-setup SKILL.md** — Detection step now checks `.claude.json` for existing MCP config and offers installation during scaffolding (user choice, not forced).
+- **craft-debugger agent** — New "Browser Debugging" section: front-end template inspection, CP template debugging (login, navigate to plugin pages, verify form macros and Garnish widgets), Sprig/htmx debugging, visual verification with screenshots. Code-level debugging first, browser when you need to see what the user sees.
+- **craft-feature-builder agent** — New gate #6 "Browser verification": after building CP templates, log in and visually confirm forms render, editable tables work, element selects open modals, read-only mode disables fields. Console check for JS errors.
+- **craft-site-builder agent** — New gate #7 "Browser verification": navigate to built pages, confirm layout, test responsive at multiple widths, walk through auth flows end-to-end. Final verification includes screenshot for user review.
+- **craft-code-reviewer agent** — New "Browser Verification" section: optionally verify XSS concerns in the running site, inspect CP templates, check permission gating. Supplementary to code review, not a replacement.
+
+### Security patterns from Craft Core fixes
+
+- **controllers.md** — Two new pitfalls from Craft Core security fixes: (1) TOCTOU — re-check permissions after model population when POST data can change the authorization context (e.g., sectionId swap). (2) Element/block ID manipulation in POST — always verify `canSave()`/`canView()` on the resolved element after loading from a user-supplied ID.
+- **craft-feature-builder agent** — Two new prevention rules: TOCTOU in save actions, element ID manipulation.
+- **craft-code-reviewer agent** — Two new checklist items matching the builder's prevention rules.
+
+### UserQuery column exclusion pitfall
+
+- **elements.md** — New pitfall: `UserQuery::beforePrepare()` intentionally excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, `lastLoginAttemptIp`). These properties are `null` on User elements from element queries. Query `Table::USERS` directly to access them.
+- **sessions-and-auth.md** — Cross-referenced the same pitfall for developers working with password/session features.
+
+### Session-reported fixes
+
+- **ddev SKILL.md** — New "Craft CLI First, Raw SQL Last" section: prefer `ddev craft` commands over `ddev mysql`, with examples.
+- **ddev SKILL.md** — New "Composer Path Repos and Volume Mounts" section: setup for local plugin development, docker-compose volume mapping, path matching requirement. Common mistakes: wrong path context, missing mount, `platform` in composer.json.
+- **config-bootstrap.md** — Strengthened db.php language from "usually unnecessary" to "Deprecated in Craft 5. Remove from new projects."
+- **deployment.md** — New "rebuild vs apply --force — know the direction" table: YAML→DB vs DB→YAML, which is destructive to what.
+- **architecture.md** — Added `dateModified` requirement to Project Config section. Expanded edition switching to 4 steps (including dateModified update). New "Edition Helper Methods" section with constants pattern. New "Edition in Migrations" section.
+- **config-bootstrap.md** — Expanded `@web` Problem section to warn about filesystem URLs being unreliable.
+- **infrastructure.md** — New `@web` filesystem URL warning with wrong vs correct YAML examples and env var pattern.
+- **craft-content-modeling SKILL.md** — New pitfall: using `@web` in filesystem URLs.
+- **craft-site SKILL.md** — New pitfall: forgetting `project-config/touch` after manual YAML edits.
+- **craft-site-builder agent** — Added `project-config/touch` note on content model gate.
+
+### Quality fixes (from skill-creator review)
+
+- **cp.md** — Fixed typo: `adminChanges` → `allowAdminChanges` in read-only notice. Added split settings and markup patterns to Contents TOC.
+- **craft-code-reviewer agent** — Rewrote Browser Verification section: the reviewer has read-only file tools but CAN use Chrome DevTools MCP for observation (inspecting pages, checking console, screenshots). Qualitative review needs to see the rendered output. Removed duplicate empty `## Rules` heading.
+- **craft-site-builder agent** — Fixed inconsistent "Chrome DevTools" → "Chrome DevTools MCP" in gate 8.
+- **craft-debugger agent** — Added `ddev` skill cross-reference for Chrome DevTools MCP setup docs.
+- **ddev SKILL.md** — Clarified restart instruction ("Quit and reopen Claude Code"). Fixed `.claude.json` instruction to use `claude mcp add` command instead of manual file editing. Clarified that MCP server handles DevTools Protocol connection automatically.
+- **email.md** — Standardized version format: `(5.6+)` → `(since 5.6.0)`.
+
+### Improved project detection
+
+- **craft-project-setup SKILL.md** — Detection step completely rewritten. New dependency detection table (12 packages mapped to capabilities: SEOmatic = `???` available, Blitz = static caching, etc.). Explicit "Detect, don't assume" instruction. Front-end detection (Tailwind v3 vs v4, Alpine, Vue, Vite). Git detection (branch name, commit style). "Do not ask about things you already detected" — present results for confirmation, not as open questions.
+
+### Community-reported fixes
+
+- **craft-twig-guidelines SKILL.md** — New pitfall #11: blocks cannot nest inside conditionals (`{% if %}{% block %}{% endblock %}{% endif %}` is invalid Twig). New pitfall #12: hardcoded `/admin` CP URL — cpTrigger is configurable.
+- **cp.md** — New "Split Settings Pages" section documenting the `savePluginSettings()` footgun: only submitted keys persist, split-settings pages must merge with existing settings. Full code pattern included.
+- **cp.md** — New "CP Markup Patterns" section: sidebar badge markup (`<span class="badge">`), notice/warning semantic markup with `has-icon` pattern, `tip`/`warning` parameters on form field macros.
+- **email.md** — New "Per-site email overrides" section documenting `Mailer::$siteOverrides` (since 5.6.0) with `$message->siteId` usage for multi-site plugins.
+- **craftcms SKILL.md** — Added cross-cutting pitfalls: hardcoded `/admin` CP URLs, `savePluginSettings()` on split-settings pages.
+
+### Skill routing
+
+- **craft-content-modeling SKILL.md** — Added object-templates.md to reference table. New task routing: "Configure URI format for a structure section", "Set up dynamic asset upload subpath", "Asset subpath broken after moving field into Matrix".
+- **craft-site SKILL.md** — Added element-partials.md to reference table. New task routing: "Use entry.render()", "Set up _partials/ templates", "Render Matrix blocks with partials".
+- **craftcms SKILL.md** — New task routing: "Add generated fields to a custom element", "Customize chip/card appearance", "Make plugin settings read-only".
+
+### Quality audit & reference splits
+
+- **auth-flows.md** (878 lines) — Split into `auth-flows.md` (442 lines: login, registration, password reset, set new password) and `auth-account.md` (452 lines: edit profile, email verification, navigation partial, access control tags, user session helpers, GeneralConfig auth settings). Updated craft-site SKILL.md reference table and task routing.
+- **config-general.md** (861 lines) — Split into `config-general.md` (431 lines: system, routing, security, users, sessions, search, assets, images) and `config-general-extended.md` (433 lines: content, templates, performance, GC, localization, aliases, headless/GraphQL, accessibility, preview, development, dangerous interactions). Updated craftcms SKILL.md reference table.
+- **ckeditor.md** — Added warning that direct output (`{{ entry.richContent }}`) renders `Array` when nested entries exist. Chunk loop pattern is now documented as the safe default.
+- **fields.md** — Added 12-entry Table of Contents for navigation (423-line file had no TOC).
+- **ui-widgets.md** — Added `Craft.Slideout` cross-reference in See Also section (extends `Garnish.Modal` but was undocumented in Garnish skill).
+- **integration.md** — Expanded MixedInput documentation: usage example, 4 additional methods (`focus()`, `blur()`, `onPaste()`, `reset()`), context about where it's used in Craft.
+- **sprig.md** — Rewrote Blitz compatibility section: added `{% dynamicInclude %}` as preferred approach, explicit warning against wrapping Sprig in `{% cache %}` tags, 4 strategies instead of 3.
+- **integration.md** — New "Element Index JS Loading" section documenting why Vite `type="module"` breaks `Craft.registerElementIndexClass()` timing. Full 3-file pattern (AssetBundle reading Vite manifest, controller registration, clean template), data injection via `POS_HEAD`, execution order diagram, and "when Vite IS fine" exemptions. Modeled after Commerce's `ProductIndexAsset`. Added `afterInit()` lifecycle hook documentation (a `Craft.BaseElementIndex` method, not `Garnish.Base`).
+- **plugin-vite.md** — New top pitfall warning against using Vite for element index JS, with cross-reference to craft-garnish's integration.md pattern.
+- **craft-php-guidelines SKILL.md** — New pitfall: prefer explicit getters (`getSettings()`, `getView()`) over magic property access (`->settings`, `->view`). PHPStan can't resolve `__get()` calls.
+- **queue-jobs.md** — New pitfall: queue-injected `$this->queue` requires `@property Queue $queue` docblock annotation. Applies to `BaseJob`, `BaseBatchedJob`, and custom base classes.
+- **quality.md** — Two new PHPStan error table rows: `$queue` undefined property fix and `__get()` magic access fix.
+- **cp.md** (622 → 819 lines) — Major expansion of CP form macros. Editable table: full column type reference (12 types), raw vs field-wrapped variants, server-side handling pattern, row population from models, Garnish JS interaction (`Craft.EditableTable`), `defaultValues`/`minRows`/`maxRows`/`staticRows`. Form macros reference: expanded from 10 to 17 macros with key params table, common parameters reference, detailed examples for `autosuggestField` (env vars, aliases), `elementSelectField` (relation selector with modal), `lightswitchField` toggle pattern.
+- **elements.md** — New pitfall: `NestedElementTrait` does not handle site propagation. Address elements fall through to primary site only. Matrix entries get multi-site because Entry overrides `getSupportedSites()`, not the trait. New explanation in Propagation section documenting the base Element default and the Entry-specific delegation chain.
+- **infrastructure.md** — New warning: Address elements don't propagate with their owner despite being nested elements.
+
+### Description optimization
+
+All 8 skill descriptions rewritten for better triggering accuracy. Added explicit `NOT for` / `Do NOT trigger` clauses to reduce cross-skill false positives, with redirects to the correct skill.
+
+- **craftcms** — Added `batch processing, data sync, permissions, registerUserPermissions, requirePermission`, config references (`config/app.php`, `config/general.php`, Redis, SMTP).
+- **craft-site** — Added `front-end auth, login form, registration form, tabs, accordions, interactive components, meta tags, OpenGraph, JSON-LD, dynamic caching with Sprig, hreflang, form styling`.
+- **craft-content-modeling** — Added `field layout design, field type selection`. Disambiguated `permissions` to `content permissions`.
+- **craft-garnish** — Added `CP memory leak, event listener cleanup, jQuery .on() in CP, selection interface, multi-select grid`.
+- **craft-php-guidelines** — Added `documenting exceptions, strict_types, declare(strict_types=1), typed properties, void return types, early returns, match over switch, writing service classes, models, controllers`.
+- **craft-twig-guidelines** — Added `comment headers with ========= separators, blank lines in output, minify alternatives, Twig file headers, svg() with styling and aria, polymorphic elements, class string building`.
+- **ddev** — Added `ddev share, temporary public URLs, ddev logs, ddev delete, port conflicts, ran npm/composer on host instead of ddev, wrong node_modules architecture`.
+- **craft-project-setup** — Added `monorepo, create CLAUDE.md, missing CLAUDE.md`. Strong negative boundary for non-Craft projects.
+
 ## 1.2.0 -- 2026-04-20
 
-Complete rewrite of configuration reference and expansion of 4 thin reference files. Full coverage of all Craft CMS 5 config settings, mail transport, search performance, app component configuration, migrations, queue jobs, code quality tooling, and CP templates. Agent architecture overhaul with explicit build-verify gates, mandatory todo lists, and removal of the redundant simplifier agent. Content modeling improvement: reuse-first field workflow. New Garnish JS skill for CP JavaScript development. Quality audit with reference file splits and description optimization across all 8 skills. Gap analysis: 9 new reference files (element authorization, sessions, custom field types, conditions, email, deployment, drafts/revisions, search, feeds) filling 12 identified coverage gaps. Headless/GraphQL consumer patterns moved from craftcms to craft-site. New /docs directory with getting-started guide, skills overview, 43-prompt guide, agent documentation, and contributing guide. GitHub issue templates upgraded to YAML forms with structured data collection.
+Complete rewrite of configuration reference and expansion of 4 thin reference files. Full coverage of all Craft CMS 5 config settings, mail transport, search performance, app component configuration, migrations, queue jobs, code quality tooling, and CP templates. Agent architecture overhaul with explicit build-verify gates, mandatory todo lists, and removal of the redundant simplifier agent. Content modeling improvement: reuse-first field workflow. New Garnish JS skill for CP JavaScript development. Gap analysis: 9 new reference files (element authorization, sessions, custom field types, conditions, email, deployment, drafts/revisions, search, feeds) filling 12 identified coverage gaps. Headless/GraphQL consumer patterns moved from craftcms to craft-site. New /docs directory with getting-started guide, skills overview, 43-prompt guide, agent documentation, and contributing guide. GitHub issue templates upgraded to YAML forms with structured data collection.
 
 ### New skill: craft-garnish
 
@@ -74,35 +180,6 @@ Complete rewrite of configuration reference and expansion of 4 thin reference fi
 - **auth-flows.md** (new, 878 lines) — complete front-end authentication templates: login, registration, password reset request, set new password, edit profile, email verification, navigation partial, access control tags, user session helpers, 17 GeneralConfig auth settings (craft-site skill)
 - **caching.md** (new, 517 lines) — caching decision guide, full `{% cache %}` tag reference with all options, data caching with TagDependency, static caching strategy (Blitz), CDN/edge patterns, five-layer caching architecture, invalidation patterns, development debugging
 - **permissions.md** (new, 424 lines) — complete built-in permission handles, user groups, admin bypass behavior, Twig/PHP permission checking, custom permission registration, element authorization events, member area/editor workflow/multi-site permission strategies
-
-### Quality audit & reference splits
-
-- **auth-flows.md** (878 lines) — Split into `auth-flows.md` (442 lines: login, registration, password reset, set new password) and `auth-account.md` (452 lines: edit profile, email verification, navigation partial, access control tags, user session helpers, GeneralConfig auth settings). Updated craft-site SKILL.md reference table and task routing.
-- **config-general.md** (861 lines) — Split into `config-general.md` (431 lines: system, routing, security, users, sessions, search, assets, images) and `config-general-extended.md` (433 lines: content, templates, performance, GC, localization, aliases, headless/GraphQL, accessibility, preview, development, dangerous interactions). Updated craftcms SKILL.md reference table.
-- **ckeditor.md** — Added warning that direct output (`{{ entry.richContent }}`) renders `Array` when nested entries exist. Chunk loop pattern is now documented as the safe default.
-- **fields.md** — Added 12-entry Table of Contents for navigation (423-line file had no TOC).
-- **ui-widgets.md** — Added `Craft.Slideout` cross-reference in See Also section (extends `Garnish.Modal` but was undocumented in Garnish skill).
-- **integration.md** — Expanded MixedInput documentation: usage example, 4 additional methods (`focus()`, `blur()`, `onPaste()`, `reset()`), context about where it's used in Craft.
-- **sprig.md** — Rewrote Blitz compatibility section: added `{% dynamicInclude %}` as preferred approach, explicit warning against wrapping Sprig in `{% cache %}` tags, 4 strategies instead of 3.
-- **integration.md** — New "Element Index JS Loading" section documenting why Vite `type="module"` breaks `Craft.registerElementIndexClass()` timing. Full 3-file pattern (AssetBundle reading Vite manifest, controller registration, clean template), data injection via `POS_HEAD`, execution order diagram, and "when Vite IS fine" exemptions. Modeled after Commerce's `ProductIndexAsset`. Added `afterInit()` lifecycle hook documentation (a `Craft.BaseElementIndex` method, not `Garnish.Base`).
-- **plugin-vite.md** — New top pitfall warning against using Vite for element index JS, with cross-reference to craft-garnish's integration.md pattern.
-- **craft-php-guidelines SKILL.md** — New pitfall: prefer explicit getters (`getSettings()`, `getView()`) over magic property access (`->settings`, `->view`). PHPStan can't resolve `__get()` calls.
-- **queue-jobs.md** — New pitfall: queue-injected `$this->queue` requires `@property Queue $queue` docblock annotation. Applies to `BaseJob`, `BaseBatchedJob`, and custom base classes.
-- **quality.md** — Two new PHPStan error table rows: `$queue` undefined property fix and `__get()` magic access fix.
-- **cp.md** (622 → 819 lines) — Major expansion of CP form macros. Editable table: full column type reference (12 types), raw vs field-wrapped variants, server-side handling pattern, row population from models, Garnish JS interaction (`Craft.EditableTable`), `defaultValues`/`minRows`/`maxRows`/`staticRows`. Form macros reference: expanded from 10 to 17 macros with key params table, common parameters reference, detailed examples for `autosuggestField` (env vars, aliases), `elementSelectField` (relation selector with modal), `lightswitchField` toggle pattern.
-
-### Description optimization
-
-All 8 skill descriptions rewritten for better triggering accuracy. Added explicit `NOT for` / `Do NOT trigger` clauses to reduce cross-skill false positives, with redirects to the correct skill.
-
-- **craftcms** — Added `batch processing, data sync, permissions, registerUserPermissions, requirePermission`, config references (`config/app.php`, `config/general.php`, Redis, SMTP).
-- **craft-site** — Added `front-end auth, login form, registration form, tabs, accordions, interactive components, meta tags, OpenGraph, JSON-LD, dynamic caching with Sprig, hreflang, form styling`.
-- **craft-content-modeling** — Added `field layout design, field type selection`. Disambiguated `permissions` to `content permissions`.
-- **craft-garnish** — Added `CP memory leak, event listener cleanup, jQuery .on() in CP, selection interface, multi-select grid`.
-- **craft-php-guidelines** — Added `documenting exceptions, strict_types, declare(strict_types=1), typed properties, void return types, early returns, match over switch, writing service classes, models, controllers`.
-- **craft-twig-guidelines** — Added `comment headers with ========= separators, blank lines in output, minify alternatives, Twig file headers, svg() with styling and aria, polymorphic elements, class string building`.
-- **ddev** — Added `ddev share, temporary public URLs, ddev logs, ddev delete, port conflicts, ran npm/composer on host instead of ddev, wrong node_modules architecture`.
-- **craft-project-setup** — Added `monorepo, create CLAUDE.md, missing CLAUDE.md`. Strong negative boundary for non-Craft projects.
 
 ### Removed
 

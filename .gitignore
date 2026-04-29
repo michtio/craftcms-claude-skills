@@ -22,6 +22,9 @@ npm-debug.log*
 # Eval workspaces (skill-creator test artifacts)
 *-workspace/
 
+# Local tasks
+TASKS.md
+
 # Temp
 *.log
 *.tmp

@@ -33,6 +33,8 @@ Available for channels and structures. Singles always propagate to all sites.
 
 Matrix fields have their **own** propagation method, independent of the section's.
 
+**Address elements do NOT propagate with their owner.** Despite implementing `NestedElementInterface` via `NestedElementTrait`, Address elements don't override `getSupportedSites()` or `isLocalized()`. They fall through to the base Element default: primary site only. Matrix entries get multi-site behavior because the Entry class delegates to the field's propagation config — this is Entry-specific, not trait behavior. When working with Addresses on a multi-site project, the address exists only on the primary site regardless of which sites the owner (User, Entry) propagates to.
+
 ### Field Translation Methods
 
 Per-field setting controlling how values behave across sites:
@@ -132,6 +134,32 @@ When a draft is created, unchanged nested entries are not duplicated — they ar
 **Subpath rules:** When volumes share a filesystem, each must have a unique first-level subpath directory. If Volume A uses `images/`, Volume B cannot use `images/` or `images/photos/` — but `documents/` is fine.
 
 **Environment variables:** Filesystem handles and subpaths support `$ENV_VAR` syntax via `App::parseEnv()`, so storage can differ between local/staging/production.
+
+**Never use `@web` for filesystem URLs.** `@web` is auto-detected from the HTTP request's `Host` header — it can be spoofed if `trustedHostPatterns` isn't configured, and it resolves to empty in console/queue contexts (no HTTP request). Use environment variables instead:
+
+```yaml
+# Wrong — @web is unreliable
+fs:
+  localImages:
+    url: '@web/uploads'
+    settings:
+      path: '@webroot/uploads'
+
+# Correct — explicit env vars
+fs:
+  localImages:
+    url: '$ASSETS_URL'
+    settings:
+      path: '$ASSETS_PATH'
+```
+
+```
+# .env
+ASSETS_URL=https://mysite.ddev.site/uploads
+ASSETS_PATH=/var/www/html/web/uploads
+```
+
+`@webroot` for the `path` is less dangerous (filesystem path, not URL) but env vars are still preferred for portability. The URL is the critical one — it generates `<img src>` and download links, so a wrong value breaks every asset on the site.
 
 ### Volume Settings for Content Modeling
 

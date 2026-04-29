@@ -6,14 +6,16 @@
 - Sources (defineSources, context values)
 - Table Attributes (defineTableAttributes, attributeHtml, prepElementQueryForTableAttribute)
 - Sort Options (defineSortOptions)
+- Element Display Modes — chips, cards, table rows: when each renders, customization methods
 - Card Attributes (Craft 5.5+)
-- Thumbnails
+- Thumbnails — hasThumbs, thumbUrl, thumbSvg, checkered/rounded
 - Conditions (createCondition, custom condition rules)
 - Actions (defineActions, includeSetStatusAction, custom actions)
 - Exporters
 - Sidebar and Metadata
 - Preview Targets
-- Index View Modes
+- Index View Modes — table, cards, structure; defaultIndexViewMode()
+- Extending Element Indexes via Events — adding columns, sources, bulk actions, condition rules to any element type
 
 ## Documentation
 
@@ -148,7 +150,79 @@ protected static function defineSortOptions(): array
 
 Simple form: `'column' => 'Label'`. Array form: `label`, `orderBy` (SQL expression or column), optional `attribute` (matches a table attribute key).
 
+## Element Display Modes
+
+Craft 5 renders elements in three display modes depending on context. Each mode uses different methods for customization.
+
+### Chips (compact inline)
+
+Chips appear in relation fields, breadcrumbs, inline references, and anywhere elements are shown compactly. Rendered by `Cp::elementChipHtml()` or the Twig function `elementChip()`.
+
+```php
+// Customize the chip label (default: uiLabel, which is usually the title)
+protected function chipLabelHtml(): string
+{
+    return Html::encode($this->getUiLabel());
+}
+
+// Control whether the status pip shows on chips
+public function showStatusIndicator(): bool  // Since 5.4.0
+{
+    return true;
+}
+```
+
+Sizing: `Cp::CHIP_SIZE_LARGE`, `Cp::CHIP_SIZE_SMALL`. Plugins can modify chip output via `Cp::EVENT_DEFINE_ELEMENT_CHIP_HTML`.
+
+### Cards (visual with thumbnail)
+
+Cards appear in card view of element indexes, Matrix card mode, and relation field card display. Rendered by `Cp::elementCardHtml()` or the Twig function `elementCard()`.
+
+```php
+// Custom card body content (default: renders card body elements from field layout)
+protected function cardBodyHtml(): ?string
+{
+    // Default iterates getFieldLayout()->getCardBodyElements($this)
+    return parent::cardBodyHtml();
+}
+
+// Custom card title (since 5.7.0)
+protected function getCardTitle(): ?string
+{
+    return $this->title;
+}
+```
+
+Card layout (which attributes appear in the card body) is configured via `FieldLayout::getCardView()`/`setCardView()` (since 5.5.0).
+
+### Table rows (column-based)
+
+Table rows are the classic element index view. Each column is rendered by `attributeHtml()`:
+
+```php
+protected function attributeHtml(string $attribute): string
+{
+    return match ($attribute) {
+        'category' => $this->getCategory()?->name ?? '',
+        'externalId' => Html::tag('code', Html::encode($this->externalId)),
+        default => parent::attributeHtml($attribute),
+    };
+}
+```
+
+The base implementation handles `contentBlock:*` and `generatedField:*` prefixed attributes automatically.
+
+### Summary
+
+| Mode | Where it appears | Customization method | Size control |
+|------|-----------------|---------------------|-------------|
+| **Chip** | Relation fields, breadcrumbs, inline refs | `chipLabelHtml()` | `CHIP_SIZE_SMALL`, `CHIP_SIZE_LARGE` |
+| **Card** | Card view, Matrix cards, relation card display | `cardBodyHtml()`, `defineCardAttributes()` | Field layout card view config |
+| **Table** | Table view of element indexes | `attributeHtml()`, `defineTableAttributes()` | Column selection |
+
 ## Card Attributes (Craft 5.5+)
+
+Define which attributes are available in card view:
 
 ```php
 protected static function defineCardAttributes(): array
@@ -174,21 +248,49 @@ protected static function defineDefaultCardAttributes(): array
 }
 ```
 
-Placeholders show in the field layout designer as preview content.
+Placeholders show in the field layout designer as preview content. Default card attributes include `dateCreated`, `dateUpdated`, `id`, `uid`, plus `link`/`slug`/`uri` for elements with URIs.
 
 ## Thumbnails
 
+Thumbnails appear on chips (small) and cards (larger). The resolution chain:
+
+1. `getThumbHtml(int $size)` — checks field layout's `thumbFieldKey` first (admin-configurable)
+2. Falls back to `thumbUrl(int $size)` — override this for custom thumb logic
+3. Falls back to `thumbSvg()` — SVG placeholder when no image exists
+
 ```php
+// Declare that this element type supports thumbnails
 public static function hasThumbs(): bool
 {
     return true;
 }
 
+// Provide the thumbnail URL
 protected function thumbUrl(int $size): ?string
 {
     return $this->getFeatureImage()?->getThumbUrl($size);
 }
+
+// SVG fallback when no thumb URL exists — returns SVG markup, not a file path
+protected function thumbSvg(): ?string
+{
+    return file_get_contents(Craft::getAlias('@my-plugin/icon.svg'));
+}
+
+// Checkered background for transparent images (like Assets)
+protected function hasCheckeredThumb(): bool
+{
+    return false;
+}
+
+// Rounded thumbnail (like Users)
+protected function hasRoundedThumb(): bool
+{
+    return false;
+}
 ```
+
+Thumbnails are lazy-loaded in the CP via `Craft.cp.elementThumbLoader` — no custom JS needed.
 
 ## Conditions
 
@@ -350,13 +452,26 @@ protected function previewTargets(): array
 
 ## Index View Modes
 
-Override to add structure view for hierarchical elements:
+Element indexes support multiple view modes. Users switch between them via toolbar buttons.
+
+### Built-in modes
+
+| Mode | Icon | When to use | Rendering |
+|------|------|-------------|-----------|
+| **Table** | list | Default for all elements. Column-based with sort headers. | `attributeHtml()` per column |
+| **Cards** | grid | Visual overview with thumbnails. Good for media, products. | `cardBodyHtml()` + `defineCardAttributes()` |
+| **Structure** | structure | Hierarchical elements with drag-to-reorder. | Table with nesting indicators |
+
+Table mode is always available. Cards require `defineCardAttributes()`. Structure requires the element type to support structures.
+
+### Registering view modes
 
 ```php
 public static function indexViewModes(): array
 {
     $viewModes = parent::indexViewModes();
 
+    // Add structure view for hierarchical elements
     $viewModes[] = [
         'mode' => 'structure',
         'title' => Craft::t('app', 'Display in a structure'),
@@ -366,6 +481,19 @@ public static function indexViewModes(): array
     return $viewModes;
 }
 ```
+
+Each mode entry has: `mode` (string key), `title` (tooltip text), `icon` (CP icon name).
+
+### Default view mode
+
+```php
+protected static function defaultIndexViewMode(): string
+{
+    return 'cards'; // or 'table' (default) or 'structure'
+}
+```
+
+This controls which view the user sees when first opening the element index. Users can switch and their preference is remembered per-element-type.
 
 ## Extending Element Indexes via Events
 

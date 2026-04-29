@@ -14,6 +14,7 @@ How Craft CMS 5's session and authentication system works under the hood: the du
 - Calling `Craft::$app->getUser()->logout()` to invalidate other sessions — this only logs out the current user. To invalidate all sessions for a specific user, delete their rows from `Table::SESSIONS`.
 - Setting `elevatedSessionDuration` to `0` in production — this disables the password re-entry requirement for sensitive operations entirely. `getHasElevatedSession()` always returns `true`.
 - Not understanding that `securityKey` change invalidates everything — changing `CRAFT_SECURITY_KEY` invalidates all sessions, password reset tokens, and encrypted field values across all users.
+- Reading `$user->lastPasswordChangeDate` from an element query and getting `null` — `UserQuery::beforePrepare()` intentionally excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, `lastLoginAttemptIp`). Query `Table::USERS` directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`.
 
 ## Contents
 

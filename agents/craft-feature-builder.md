@@ -38,9 +38,10 @@ For plugin work, the gate order is:
 3. **Service** → minimal method callable via `ddev craft` command or Pest test returns expected shape.
 4. **Controller** → actual request (`curl` or browser) returns expected response and status code.
 5. **CP templates (if element type)** → edit/index pages render without Twig errors, field layout designer loads.
-6. **Tests** → `ddev craft pest/test` green.
-7. **Simplification pass** → see below.
-8. **Final verification** → `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
+6. **Browser verification (if Chrome DevTools MCP is available)** → log into the CP, navigate to the pages you just built, visually confirm: forms render correctly, editable tables are interactive, element selects open modals, read-only mode disables fields when `allowAdminChanges` is off. Check console for JS errors from Garnish widgets. This is not optional "nice to have" — if the MCP is available, use it. Screenshots help the user see what you see.
+7. **Tests** → `ddev craft pest/test` green.
+8. **Simplification pass** → see below.
+9. **Final verification** → `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
 
 A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Never plaster over a failed gate by writing the next layer.
 
@@ -71,6 +72,8 @@ A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." I
 - **User input**: always `Db::parseParam()` for query parameters from user input, never interpolate directly.
 - **Migrations**: must be idempotent. Use `muteEvents` on project config writes to prevent circular event firing.
 - **`defineSources()`**: use aggregate queries for dynamic sources, never `::find()->all()` to extract grouping values.
+- **TOCTOU in save actions**: if POST data can change the permission context (e.g., sectionId, ownerId), re-check permissions after populating the model. Check → populate → re-check.
+- **Element ID manipulation**: never trust element/block IDs from POST without verifying the user can access the resolved element. Load the element, then `canSave()`/`canView()`.
 
 ## Simplification pass (before handoff)
 

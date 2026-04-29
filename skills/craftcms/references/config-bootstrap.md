@@ -14,7 +14,7 @@ How Craft CMS 5 loads configuration: environment variables, aliases, config file
 
 - `CRAFT_*` env vars always win over config files — this is a silent override. If `CRAFT_DEV_MODE=1` is set in `.env`, setting `->devMode(false)` in `config/general.php` has no effect. No warning is emitted.
 - Putting secrets in `config/general.php` instead of `.env` — config files are committed to version control, secrets are not.
-- Using `config/db.php` when DDEV auto-injects `CRAFT_DB_*` vars — the db config file just adds a maintenance surface with no benefit.
+- Using `config/db.php` — deprecated in Craft 5. DB config belongs in `.env` via `CRAFT_DB_*` variables. Remove `db.php` unless you need settings not covered by env vars (`charset`, `tablePrefix`, `attributes`).
 - Editing `config/app.php` without understanding merge order — `ArrayHelper::merge()` replaces array values by key, so a partial component definition can silently drop Craft's own settings. Define complete component configs or use closures.
 - `@web` is empty in console context (queue jobs, CLI) unless `CRAFT_WEB_URL` is set — queue jobs that generate absolute URLs will produce broken links.
 - Not setting `CRAFT_APP_ID` when multiple Craft installs share a cache backend — cache key collisions cause cross-site data leaks.
@@ -40,7 +40,7 @@ How Craft CMS 5 loads configuration: environment variables, aliases, config file
 | `config/general.php` | General settings — routing, security, sessions, assets, dev mode |
 | `config/general.web.php` | Web-only general config overrides |
 | `config/general.console.php` | Console-only general config overrides |
-| `config/db.php` | Database connection (usually unnecessary — DDEV auto-injects `CRAFT_DB_*` vars) |
+| `config/db.php` | Database connection (deprecated — use `CRAFT_DB_*` env vars instead) |
 | `config/app.php` | Yii2 component overrides — cache, session, queue, mailer, mutex |
 | `config/app.web.php` | Web-only component overrides (session, CORS) |
 | `config/app.console.php` | Console-only component overrides |
@@ -219,9 +219,9 @@ Custom aliases are used in:
 
 `@web` is auto-detected from the HTTP request. In console commands (queue jobs, CLI), there is no request, so `@web` resolves from the primary site's Base URL. If that Base URL is empty or relative, `@web` is empty in console context.
 
-This breaks queue jobs that generate absolute URLs (e.g., asset transforms, search index URLs, email links).
+This breaks queue jobs that generate absolute URLs (e.g., asset transforms, search index URLs, email links) and makes **filesystem URLs unreliable** — asset `<img src>` and download links generated from a filesystem `url` of `@web/uploads` will be wrong in queue context and spoofable without `trustedHostPatterns`.
 
-The fix: set `CRAFT_WEB_URL` and `CRAFT_WEB_ROOT` environment variables. These provide explicit values that work in both web and console contexts.
+The fix: never use `@web` in filesystem URLs or anywhere that generates public-facing URLs. Use explicit environment variables instead:
 
 ```
 # .env
@@ -265,7 +265,7 @@ The legacy multi-environment `'*'` key pattern works but is unnecessary — `App
 
 ## Database Config
 
-Usually not needed — DDEV and most hosting platforms inject `CRAFT_DB_*` environment variables that Craft reads automatically. Only create `config/db.php` when you need settings not covered by env vars (like `charset`, `tablePrefix`, or connection `attributes`).
+**Deprecated in Craft 5.** DDEV and most hosting platforms inject `CRAFT_DB_*` environment variables that Craft reads automatically. Remove `db.php` from new projects — it adds maintenance surface with no benefit. Only keep it when you need settings not covered by env vars (`charset`, `tablePrefix`, connection `attributes`).
 
 ```php
 // config/db.php
