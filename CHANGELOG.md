@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.2 -- unreleased
+
+CP UI pattern gaps from real-world plugin development, full CLI command reference.
+
+### New
+
+- **cp.md** — New "CP UI Patterns" section with 6 battle-tested patterns from Craft core and first-party plugins: (1) Tri-state inheritance controls (webhooks plugin pattern with `<div class="btn">`, `data-icon`, `.status.inactive`). (2) Status indicator classes (all modifiers — bare `.status` is invisible in Craft 5). (3) Field `warning:` parameter for "overrides global" indicators (Blitz pattern). (4) `[hidden]` attribute gotcha with `display: flex` override. (5) Craft CSS custom properties (`--bg-enabled`, `--bg-disabled`, grey/red/blue/yellow scales). (6) Platform PHP version mismatch fix.
+- **console-commands.md** — Full CLI rewrite: expanded from ~25 to 80+ commands. New groups: `sections/*` (create, delete), `entry-types/merge`, `fields/*` (auto-merge, delete, merge), `elements/*` (delete, restore, delete-all-of-type), `plugin/*` (install, uninstall, enable, disable, list), `graphql/*` (create-token, dump-schema), `mailer/test`, `utils/*` (prune-revisions, prune-orphaned-entries, repair), `env/*`, `update/*`. Expanded existing groups: `users/*` (3→11 commands), `migrate/*` (1→9), `project-config/*` (4→9 with `pc/` alias), `resave/*` (full flags reference), `clear-caches/*` (4→8), `db/*` (3→6).
+
+### Changed
+
+- **cp.md** — New "Tabbed Settings Pages" section: three patterns for multi-tab CP pages. Twig-level tabs (separate URL per tab with `selectedTab`), anchor-based tabs (single-page with Craft JS auto show/hide), and PHP-level tabs via `asCpScreen()->tabs()` and `addTab()` fluent API.
+- **cp.md** — New `buttonGroupField` form macro with tri-state caveat (not for inheritance UI — use the webhook pattern instead).
+- **ddev SKILL.md** — New pitfall: host PHP version mismatch causing `platform_check.php` failures.
+- **craftcms SKILL.md** — 4 new task routing entries for CP UI patterns (tri-state, tabs, field warnings, CSS variables).
+
 ## 1.2.1 -- 2026-04-29
 
 Object template syntax, element display modes, element partials, generated fields, read-only settings pattern, Chrome DevTools MCP integration, security patterns from Craft Core, quality audit with reference file splits and description optimization across all 8 skills, expanded CP form macros and editable tables, Element Index JS loading pattern for Garnish, PHPStan pitfalls for magic property access and queue-injected properties, Address element propagation documentation.

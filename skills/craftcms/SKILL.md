@@ -81,6 +81,10 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Create a custom validator" → read `architecture.md` (Custom Validators section)
 - "Create a custom filesystem type" → read `events.md` (Filesystem Types section)
 - "Build a custom condition rule for an element index" → read `cp.md` (Condition Builders section)
+- "Build a tri-state on/inherit/off control" → read `cp.md` (CP UI Patterns — Tri-State Inheritance)
+- "Add tabbed settings page to a plugin" → read `cp.md` (Tabbed Settings Pages)
+- "Show an 'overrides global' warning on a field" → read `cp.md` (CP UI Patterns — Field Warning Parameter)
+- "What CSS variables does Craft CP use?" → read `cp.md` (CP UI Patterns — Craft CSS Custom Properties)
 - "Set up pre-commit hooks for code quality" → read `quality.md` (Pre-Commit Hooks section)
 - "Restrict element access by user group" → read `element-authorization.md` + `permissions.md`
 - "Scope CP element index by permission" → read `element-authorization.md` (Layer 3: Query Scoping)

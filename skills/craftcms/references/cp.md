@@ -35,6 +35,7 @@ Complete reference for CP extension points: templates, navigation, settings page
 - [Ajax Endpoints for CP](#ajax-endpoints-for-cp)
 - [CP Alerts and Notices](#cp-alerts-and-notices)
 - [Form Macros Reference](#form-macros-reference)
+- [CP UI Patterns](#cp-ui-patterns) — tri-state inheritance, status indicators, field warnings, CSS variables, `[hidden]` gotcha
 - [Condition Builders](#condition-builders)
 - [Asset Bundles](#asset-bundles)
 - [Permissions](#permissions)
@@ -864,6 +865,115 @@ Options can be a flat hash (`{ value: label }`) or an array of objects with `lab
 ```
 
 Server-side, the POST value is the selected option's `value` string. The raw variant (`forms.buttonGroup`) renders without the field wrapper — use it inside custom layouts or inline with other inputs.
+
+`buttonGroupField` is for simple exclusive selects (display mode, priority level). It is **not** the right tool for tri-state inheritance controls (off/inherit/on) — its hidden input doesn't distinguish empty (inherit) from explicit values, and the uniform button styling doesn't convey state semantics. For inheritance UI, use the webhook table pattern below.
+
+## CP UI Patterns
+
+Battle-tested patterns from Craft core and first-party plugins. Check this section before building custom CP UI — most non-trivial patterns already exist.
+
+### Tri-State Inheritance Controls
+
+The `craftcms/webhooks` plugin (3.x branch, `_manage/edit.html`) is the reference implementation for "off / inherit / on" controls in table rows. Key details:
+
+- Buttons use `<div class="btn">` not `<button class="btn">` (different default styles in Craft CP)
+- `<div class="btngroup" tabindex="0">` wraps the three buttons
+- Icons via `data-icon="remove"` (X mark) and `data-icon="checkmark"` (check) — uses Craft's built-in icon font
+- Middle "inherit" button uses `<div class="status inactive">` for a hollow grey circle
+- Hidden input stores the actual value; clicking a button updates it via JS
+- Custom CSS is minimal (~15 lines) — colors, border resets, icon margin
+
+```html
+<div class="btngroup" tabindex="0">
+    <div class="btn off-btn{% if value == false %} active{% endif %}"
+         data-icon="remove" title="Off"></div>
+    <div class="btn inherit-btn{% if value is null %} active{% endif %}"
+         title="Inherit"><div class="status inactive"></div></div>
+    <div class="btn on-btn{% if value == true %} active{% endif %}"
+         data-icon="checkmark" title="On"></div>
+</div>
+<input type="hidden" name="settings[{{ handle }}]" value="{{ value }}">
+```
+
+Don't reinvent with `buttonGroupField` + custom captions. The webhook table pattern wins on compactness and clarity.
+
+### Status Indicator Classes
+
+Bare `<div class="status"></div>` renders **invisibly** in Craft 5 — no border-width/style on the base rule. Always add a modifier:
+
+| Class | Appearance | Use for |
+|-------|-----------|---------|
+| `.status.green` / `.status.live` / `.status.active` | Green filled circle | Enabled, live, active |
+| `.status.red` / `.status.off` | Red filled circle | Disabled, off, error |
+| `.status.gray` / `.status.grey` | Grey filled circle | Neutral, pending |
+| `.status.inactive` / `.status.disabled` | Hollow outlined circle (`box-shadow inset`) | Inherit, unset, neutral indicator |
+| `.status.orange` / `.status.pending` | Orange filled circle | Pending, warning |
+
+For "inherit/neutral" indicators, use `.status.inactive` (hollow). When placing an inactive status inside a dark `.active` button background, override the outline color for WCAG contrast: `--outline-color: var(--white)` (the default `var(--gray-500)` fails 3:1 contrast against dark backgrounds).
+
+### Field Warning Parameter for Override Indicators
+
+The `warning:` parameter on any form field macro is the canonical way to show "overridden by..." messages. Blitz uses this pattern extensively (`putyourlightson/blitz`):
+
+```twig
+{# Define a reusable macro #}
+{% macro overrideWarning(globalValue) -%}
+    {{ 'This overrides the global value of `{value}`.'|t('my-plugin', { value: globalValue })|markdown(inlineOnly=true) }}
+{%- endmacro %}
+
+{# Use on any field — renders inside the .field wrapper, no spacing hacks needed #}
+{% from 'my-plugin/_macros' import overrideWarning %}
+
+{{ forms.textField({
+    label: 'Min Length'|t('my-plugin'),
+    id: 'minLength',
+    name: 'minLength',
+    value: policy.minLength,
+    warning: policy.minLength is not null ? overrideWarning(globalSettings.minLength),
+}) }}
+```
+
+Server-rendered, visible after save and reload. Don't build custom `<p class="warning">` markup or JS-driven dynamic warnings — Craft's pattern is save-and-see. The `tip:` parameter works the same way for informational hints (green instead of orange).
+
+For selects where the global value isn't visible via a placeholder, build an `inheritsGlobal()` macro that shows informational text revealing the current global setting when "Inherit global" is selected.
+
+### The `[hidden]` Attribute Gotcha
+
+Craft's `.warning.has-icon { display: flex }` (and similar utility classes) overrides the browser default `*[hidden] { display: none }`. Setting `element.hidden = true` in JavaScript does nothing visible — the element stays displayed because the CSS specificity wins.
+
+Avoid this by using server-rendered `warning:` / `tip:` parameters (see above) instead of dynamic show/hide. If dynamic toggling is unavoidable, force the override with a namespaced rule:
+
+```css
+.my-plugin-element[hidden] { display: none !important; }
+```
+
+### Craft CSS Custom Properties
+
+Don't hardcode hex colors. Craft provides semantic CSS variables that adapt to light/dark mode and are pre-tested for WCAG accessibility:
+
+| Variable | Purpose | Notes |
+|----------|---------|-------|
+| `var(--ui-control-color)` | Default control/text color | |
+| `var(--ui-control-active-color)` | Active/selected state | |
+| `var(--bg-enabled)` | Live/on/active green | Passes WCAG AA against white |
+| `var(--bg-disabled)` | Off/disabled red | Passes WCAG AA against white |
+| `var(--white)` | High-contrast text on filled backgrounds | |
+| `var(--gray-050)` through `var(--gray-900)` | Grey scale | |
+| `var(--red-050)` through `var(--red-600)` | Red scale | |
+| `var(--blue-050)` through `var(--blue-600)` | Blue scale | |
+| `var(--yellow-050)` through `var(--yellow-600)` | Yellow/warning scale | |
+
+White text on hardcoded `#27ae60` is 2.6:1 — fails AA (needs 4.5:1). Use `var(--bg-enabled)` instead.
+
+### Platform PHP Version Mismatch
+
+If `vendor/` was installed with host PHP (e.g., 8.4) but DDEV runs a different version (e.g., 8.3), `composer check-cs` and `composer phpstan` fail with `platform_check.php` errors. Always install dependencies inside DDEV:
+
+```bash
+ddev composer install
+```
+
+This ensures `vendor/` matches the container's PHP version. Never run `composer install` on the host for a DDEV-managed project.
 
 ## Condition Builders
 

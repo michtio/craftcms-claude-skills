@@ -33,6 +33,7 @@ When unsure about a DDEV feature, `WebFetch` the relevant docs page.
 - Editing `.ddev/config.yaml` while containers are running without restarting — changes to config require `ddev restart` to take effect.
 - Using `ddev import-db` without `--target-db=db` on multi-database setups — the default target is `db`, but if you've configured additional databases, be explicit.
 - Adding `#ddev-generated` to custom commands you've customized — DDEV overwrites files with this comment during updates. Only use it for add-on-managed commands. Custom commands you maintain should omit it.
+- Running `composer install` on the host then `ddev composer check-cs`/`ddev composer phpstan` — if the host PHP version differs from DDEV's (e.g., host PHP 8.4, DDEV PHP 8.3), `vendor/composer/platform_check.php` fails. Always run `ddev composer install` so `vendor/` matches the container's PHP version.
 
 ## Craft CLI First, Raw SQL Last
 
