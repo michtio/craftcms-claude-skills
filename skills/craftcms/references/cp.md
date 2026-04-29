@@ -242,7 +242,7 @@ Each tab is a separate template (or a shared template with conditional blocks). 
 
 #### Anchor-based tabs (single page)
 
-For tabs that switch content without a page reload, use anchor-based tab IDs. Craft's JS handles showing/hiding `#content-{tabId}` containers automatically:
+For tabs that switch content without a page reload, use anchor-based tab IDs. Craft's JS handles showing/hiding containers whose IDs match the tab anchors:
 
 ```twig
 {% set tabs = {
