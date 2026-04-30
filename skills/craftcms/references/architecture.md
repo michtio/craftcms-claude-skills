@@ -17,6 +17,7 @@
 - Not firing before/after events on save and delete — other plugins can't extend your code without them.
 - Deleting managed entities without cleaning up Craft elements first — CASCADE on the FK won't touch the `elements` table.
 - Skipping the rebuild handler — without `EVENT_REBUILD`, `project-config/rebuild` breaks your plugin's config.
+- Assigning ActiveRecord datetime columns directly to typed Model properties — ActiveRecord returns raw SQL strings, not `DateTime` objects. Use `DateTimeHelper::toDateTime($record->dateCreated) ?: null`. See [Record-to-Model Hydration Boundary](#record-to-model-hydration-boundary).
 
 ## Table of Contents
 
@@ -208,6 +209,38 @@ class MyEntity extends ActiveRecord
     {
         return Table::MY_ENTITIES;
     }
+}
+```
+
+### Record-to-Model Hydration Boundary
+
+ActiveRecord does NOT coerce datetime columns into `DateTime` objects on read. Columns come back as raw SQL strings (e.g., `'2026-04-30 17:08:41'`). If your Model has typed `?DateTime` properties, direct assignment throws a `TypeError`:
+
+```php
+// WRONG — throws TypeError: Cannot assign string to property of type ?DateTime
+$model->dateCreated = $record->dateCreated;
+
+// RIGHT — wrap with DateTimeHelper
+use craft\helpers\DateTimeHelper;
+
+$model->dateCreated = DateTimeHelper::toDateTime($record->dateCreated) ?: null;
+$model->dateUpdated = DateTimeHelper::toDateTime($record->dateUpdated) ?: null;
+```
+
+`DateTimeHelper::toDateTime()` handles strings, integers (unix timestamps), and `DateTime` instances. It returns `false` for invalid input — the `?: null` is needed when assigning to a `?DateTime` property.
+
+This applies to every ActiveRecord-to-Model boundary, not just `dateCreated`/`dateUpdated`. Any custom timestamp column in your plugin tables needs the same wrapping. Build a `fromRecord()` static method on your Model to centralize the conversion:
+
+```php
+public static function fromRecord(MyEntityRecord $record): self
+{
+    $model = new self();
+    $model->id = $record->id;
+    $model->handle = $record->handle;
+    $model->dateCreated = DateTimeHelper::toDateTime($record->dateCreated) ?: null;
+    $model->dateUpdated = DateTimeHelper::toDateTime($record->dateUpdated) ?: null;
+    $model->uid = $record->uid;
+    return $model;
 }
 ```
 

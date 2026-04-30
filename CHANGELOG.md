@@ -15,6 +15,8 @@ CP UI pattern gaps from real-world plugin development, full CLI command referenc
 - **cp.md** — New `buttonGroupField` form macro with tri-state caveat (not for inheritance UI — use the webhook pattern instead).
 - **ddev SKILL.md** — New pitfall: host PHP version mismatch causing `platform_check.php` failures.
 - **craftcms SKILL.md** — 4 new task routing entries for CP UI patterns (tri-state, tabs, field warnings, CSS variables).
+- **queue-jobs.md** — New "BaseBatchedJob Subclass Contract" section: method override table (overridable vs final), `defaultDescription()` pattern, full example. New pitfalls: `getDescription()` is final on `BaseBatchedJob`, `$user->lastPasswordChangeDate` returns null from element queries.
+- **architecture.md** — New "Record-to-Model Hydration Boundary" section: ActiveRecord returns datetime columns as raw SQL strings, not DateTime objects. `DateTimeHelper::toDateTime()` wrapping pattern with `fromRecord()` example. New pitfall in Common Pitfalls.
 
 ## 1.2.1 -- 2026-04-29
 

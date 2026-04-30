@@ -38,6 +38,8 @@ Complete reference for queue job development in Craft CMS 5. For queue component
 - Not reporting progress in long-running jobs -- CP shows a "stuck" indicator, admins retry thinking it failed.
 - Memory leaks in batch operations -- element caches grow unbounded. Use `Db::each()` or paginated queries.
 - Removing `@property` docblock hints for queue-injected properties -- the queue runner dynamically assigns `$this->queue` to job instances. Without a `@property Queue $queue` annotation on the class docblock, PHPStan reports an undefined property error. This applies to `BaseJob`, `BaseBatchedJob`, and any custom base job class. Always keep `@property` hints for properties that are injected by the framework rather than declared in the class body.
+- Overriding `getDescription()` on `BaseBatchedJob` -- fatal error: "Cannot override final method." The extension point is `defaultDescription()`, not `getDescription()`. Same pattern applies to `BaseJob`. See [BaseBatchedJob Subclass Contract](#basebatchedjob-subclass-contract) below.
+- Reading `$user->lastPasswordChangeDate` from a User element query -- returns `null` even when the DB column has a value. `UserQuery::beforePrepare()` doesn't select this column. Query `Table::USERS` directly instead. See `elements.md` Common Pitfalls for the full list of excluded columns and the workaround pattern.
 
 ## Scaffold
 
@@ -272,6 +274,54 @@ for ($offset = 0; $offset < $query->count(); $offset += 100) {
 ```
 
 For parent jobs that spawn child operations, use `craft\queue\BaseBatchedJob` for automatic memory monitoring and configurable `$batchSize`.
+
+### BaseBatchedJob Subclass Contract
+
+`BaseBatchedJob` has `final` methods that cannot be overridden. Read the parent class before assuming any method is overridable — this pattern applies to other Craft base classes too.
+
+| Method | Overridable | Purpose |
+|--------|:-----------:|---------|
+| `loadData()` | Yes (abstract) | Return a `Batchable` (query or collection) of items to process |
+| `processItem(mixed $item)` | Yes (abstract) | Handle a single item from the batch |
+| `beforeBatch()` | Yes | Hook before processing starts |
+| `afterBatch()` | Yes | Hook after processing completes |
+| `defaultDescription()` | Yes | Return the job's display name for the CP queue monitor |
+| `getTtr()` | Yes | Time-to-reserve override |
+| `canRetry($attempt, $error)` | Yes | Retry logic override |
+| `getDescription()` | **No (final)** | Reads from `$this->description ?? $this->defaultDescription()`. Override `defaultDescription()` instead. |
+| `execute($queue)` | **No (final)** | Contains the batch loop, memory monitoring, and progress reporting. Override `processItem()` for per-item logic. |
+
+```php
+use craft\queue\BaseBatchedJob;
+
+class SendPasswordExpiryReminders extends BaseBatchedJob
+{
+    /**
+     * @inheritdoc
+     */
+    protected function defaultDescription(): ?string
+    {
+        return Craft::t('my-plugin', 'Sending password expiry reminders');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function loadData(): Batchable
+    {
+        return User::find()->status(User::STATUS_ACTIVE);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function processItem(mixed $item): void
+    {
+        /** @var User $item */
+        // Process single user
+    }
+}
+```
 
 ## Common Queue Job Patterns
 
