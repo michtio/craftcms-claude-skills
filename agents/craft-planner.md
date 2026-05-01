@@ -29,8 +29,9 @@ Each step should include:
 ## Rules
 
 - Build one feature at a time. Complete implementation + tests + verification before starting the next feature. Never build multiple features in parallel — it compounds debugging complexity.
+- **Tests are part of each layer, not a trailing step.** When planning a service, the step includes the service AND its tests. When planning a controller, the step includes the action AND the HTTP test. Never plan "Step 5: write all tests" — that's the pattern that produces untested codebases. A "Tests" step at the end should only be a full-suite regression run, not the first time tests are written.
 - Never plan more than one session of work per step.
-- Each step must end with a runnable verification gate (a command, not a description).
+- Each step must end with a runnable verification gate (a command, not a description). The best gate is a passing test, not a curl command.
 - Order steps so each layer can be verified before the next depends on it: migrations before records, records before services, services before controllers, controllers before CP templates. No step should require a later step to verify.
 - Surface architectural decisions as explicit decision points, not assumptions.
 - Flag: multi-site implications, project config impacts, migration safety concerns.

@@ -36,13 +36,15 @@ For plugin work, the gate order is:
 
 1. **Migration** → `ddev craft migrate/up` succeeds, schema exists.
 2. **Record / Model** → class resolves, `ddev craft` doesn't throw on boot.
-3. **Service** → minimal method callable via `ddev craft` command or Pest test returns expected shape.
-4. **Controller** → actual request (`curl` or browser) returns expected response and status code.
+3. **Service + service tests** → write the service method, then immediately write the Pest test that covers it. The test IS the gate — `ddev exec vendor/bin/pest --filter=MyServiceTest` green. Don't move to the controller until the service layer is tested. This catches bad logic before it gets buried under controller/template code.
+4. **Controller + controller tests** → build the action, then write the HTTP test (`actingAs()->post()` → assert status, assert DB state). For API/webhook endpoints, test the happy path and at least one authorization failure.
 5. **CP templates (if element type)** → edit/index pages render without Twig errors, field layout designer loads.
 6. **Browser verification (if Chrome DevTools MCP is available)** → log into the CP, navigate to the pages you just built, visually confirm: forms render correctly, editable tables are interactive, element selects open modals, read-only mode disables fields when `allowAdminChanges` is off. Check console for JS errors from Garnish widgets. This is not optional "nice to have" — if the MCP is available, use it. Screenshots help the user see what you see.
-7. **Tests** → `ddev craft pest/test` green.
+7. **Full test suite** → `ddev exec vendor/bin/pest` green (all tests, not just the ones you wrote). Catches regressions from your changes affecting other tests.
 8. **Simplification pass** → see below.
 9. **Final verification** → `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
+
+Tests are written WITH each layer, not batched at the end. A service without tests is not a completed gate — it's a liability waiting to compound. The full suite run at gate 7 is a regression check, not the first time tests are written.
 
 A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Never plaster over a failed gate by writing the next layer.
 
@@ -98,6 +100,7 @@ After the sweep, re-run `ddev composer check-cs` and `ddev composer phpstan`. If
 
 ## Testing
 
-- Write Pest tests for every change when the test suite exists.
+- Write tests alongside the code, not after. The service test is written in the same gate as the service. The controller test is written in the same gate as the controller. If you're about to move to the next layer and haven't written a test for the current one, stop.
 - Use `->site('*')` in test queries to avoid site-context issues.
 - Test edge cases: empty results, missing instance, expired elements.
+- The gate 7 full-suite run catches regressions — it should not be the first time your new code is tested.
