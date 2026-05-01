@@ -115,6 +115,7 @@ Generate `CLAUDE.md` and `.claude/rules/` files using the templates in `template
 ```
 CLAUDE.md                          # Project overview, commands, structure
 .claude/
+  settings.local.json             # Pre-approved permissions (gitignored)
   rules/
     coding-style.md               # PHP conventions (plugin/module)
     architecture.md               # Architecture patterns (plugin/module)
@@ -125,6 +126,75 @@ CLAUDE.md                          # Project overview, commands, structure
     testing.md                    # Test conventions (if Pest exists)
     migrations.md                 # Migration rules (plugin/module)
 ```
+
+### Step 3b: Generate permissions
+
+Generate `.claude/settings.local.json` with pre-approved permissions for commands the agents run repeatedly. Without this, every `ddev composer check-cs` or `ddev craft up` triggers a permission prompt, breaking the autonomous flow.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(ddev composer *)",
+      "Bash(ddev craft *)",
+      "Bash(ddev npm *)",
+      "Bash(ddev exec *)",
+      "Bash(ddev ssh)",
+      "Bash(ddev start)",
+      "Bash(ddev stop)",
+      "Bash(ddev restart)",
+      "Bash(ddev describe)",
+      "Bash(ddev logs *)",
+      "Bash(ddev import-db *)",
+      "Bash(ddev export-db *)",
+      "Bash(ddev xdebug *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git branch *)",
+      "Bash(gh *)"
+    ]
+  }
+}
+```
+
+Use `.claude/settings.local.json` (not `settings.json`) — local settings are gitignored by default, so each developer can adjust permissions without affecting the team. Note this in the generated CLAUDE.md under a "Permissions" section.
+
+For **plugin projects**, also add read access to the Craft installation where the plugin is tested:
+
+```json
+"Bash(tail *storage/logs/*)"
+```
+
+#### Connected projects
+
+After generating the base permissions, ask: **"Are there connected projects or folders Claude should have access to?"**
+
+Common patterns:
+
+| Scenario | Example paths | What to add |
+|----------|--------------|-------------|
+| Plugin dev with test site | `/path/to/craft-site/` (the Craft install where the plugin is symlinked) | Read/write on the site's `vendor/`, `storage/logs/`, `config/` |
+| Headless frontend | `/path/to/frontend/` (Next.js, Nuxt, Astro alongside Craft backend) | Read on the frontend project for cross-referencing GraphQL queries |
+| Multi-repo site | `/path/to/shared-modules/` (shared modules repo) | Read/write on the shared repo |
+| Monorepo packages | Already covered — everything is in the same working directory | No extra paths needed |
+
+If the user identifies connected paths, add them to `settings.local.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(/path/to/connected-project/**)",
+      "Edit(/path/to/connected-project/**)",
+      "Bash(tail */path/to/connected-project/storage/logs/*)"
+    ]
+  }
+}
+```
+
+If the user says no connected projects, skip this. Don't press — it's an advanced concern and many projects are self-contained.
 
 ### Step 4: Review with the user
 
@@ -177,6 +247,10 @@ Do not include "Test plan" sections in PR descriptions.
 Use `ddev` shorthand commands: `ddev composer`, `ddev craft`, `ddev npm`. Never run `php`, `composer`, or `npm` on the host — everything goes through DDEV.
 
 Use `gh` for all GitHub operations — it's already authenticated.
+
+## Permissions
+
+`.claude/settings.local.json` pre-approves DDEV and git commands so agents run without permission prompts. This file is gitignored — each developer can adjust it locally. If commands are being blocked, check this file first.
 ```
 
 ## Template Files
