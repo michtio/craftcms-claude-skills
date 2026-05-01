@@ -27,19 +27,19 @@ Complete reference for queue job development in Craft CMS 5. For queue component
 
 ## Common Pitfalls
 
-- Naming jobs with a "Job" suffix -- Craft convention has no suffix: `ResaveElements`, not `ResaveElementsJob`.
-- Missing `site('*')` on element queries -- queue workers run in primary site context, elements on non-primary sites are invisible.
-- Forgetting `->status(null)` -- disabled/expired elements are filtered out by default.
-- Not overriding `getTtr()` for long-running jobs -- default is 300s (5 min). Exceeding TTR causes re-reservation and duplicate execution.
-- Using `$this->setProgress()` with wrong math -- denominator must be total items, not current index.
-- Forgetting `App::maxPowerCaptain()` -- Craft calls this automatically, but custom long operations within a job may still hit limits.
-- Using `runQueueAutomatically` on high-traffic production sites -- the web runner blocks PHP-FPM workers. Use `craft queue/listen` instead.
-- Accessing `Craft::$app->getUser()` in queue jobs -- no user session in queue context. Pass needed user IDs as job properties.
-- Not reporting progress in long-running jobs -- CP shows a "stuck" indicator, admins retry thinking it failed.
-- Memory leaks in batch operations -- element caches grow unbounded. Use `Db::each()` or paginated queries.
-- Removing `@property` docblock hints for queue-injected properties -- the queue runner dynamically assigns `$this->queue` to job instances. Without a `@property Queue $queue` annotation on the class docblock, PHPStan reports an undefined property error. This applies to `BaseJob`, `BaseBatchedJob`, and any custom base job class. Always keep `@property` hints for properties that are injected by the framework rather than declared in the class body.
-- Overriding `getDescription()` on `BaseBatchedJob` -- fatal error: "Cannot override final method." The extension point is `defaultDescription()`, not `getDescription()`. Same pattern applies to `BaseJob`. See [BaseBatchedJob Subclass Contract](#basebatchedjob-subclass-contract) below.
-- Assuming User element properties are fully populated in queue jobs -- `UserQuery::beforePrepare()` excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `verificationCode`, and others). These return `null` even when the DB has values. In queue context this is especially deceptive because there's no browser session to hint at the problem. Query `Table::USERS` directly for excluded columns. See `elements.md` Common Pitfalls for the full list and workaround.
+- Naming jobs with a "Job" suffix — Craft convention has no suffix: `ResaveElements`, not `ResaveElementsJob`.
+- Missing `site('*')` on element queries — queue workers run in primary site context, elements on non-primary sites are invisible.
+- Forgetting `->status(null)` — disabled/expired elements are filtered out by default.
+- Not overriding `getTtr()` for long-running jobs — default is 300s (5 min). Exceeding TTR causes re-reservation and duplicate execution.
+- Using `$this->setProgress()` with wrong math — denominator must be total items, not current index.
+- Forgetting `App::maxPowerCaptain()` — Craft calls this automatically, but custom long operations within a job may still hit limits.
+- Using `runQueueAutomatically` on high-traffic production sites — the web runner blocks PHP-FPM workers. Use `craft queue/listen` instead.
+- Accessing `Craft::$app->getUser()` in queue jobs — no user session in queue context. Pass needed user IDs as job properties.
+- Not reporting progress in long-running jobs — CP shows a "stuck" indicator, admins retry thinking it failed.
+- Memory leaks in batch operations — element caches grow unbounded. Use `Db::each()` or paginated queries.
+- Removing `@property` docblock hints for queue-injected properties — the queue runner dynamically assigns `$this->queue` to job instances. Without a `@property Queue $queue` annotation on the class docblock, PHPStan reports an undefined property error. This applies to `BaseJob`, `BaseBatchedJob`, and any custom base job class. Always keep `@property` hints for properties that are injected by the framework rather than declared in the class body.
+- Overriding `getDescription()` on `BaseBatchedJob` — fatal error: "Cannot override final method." The extension point is `defaultDescription()`, not `getDescription()`. Same pattern applies to `BaseJob`. See [BaseBatchedJob Subclass Contract](#basebatchedjob-subclass-contract) below.
+- Assuming User element properties are fully populated in queue jobs — `UserQuery::beforePrepare()` excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `verificationCode`, and others). These return `null` even when the DB has values. In queue context this is especially deceptive because there's no browser session to hint at the problem. Query `Table::USERS` directly for excluded columns. See `elements.md` Common Pitfalls for the full list and workaround.
 
 ## Scaffold
 
@@ -112,7 +112,7 @@ public function getTtr(): int
 | Web runner | `runQueueAutomatically => true` (default) | Development, low-traffic sites |
 | Daemon | `craft queue/listen` | Production, high-traffic, long-running jobs |
 
-The web runner piggybacks on HTTP requests -- PHP stays alive after page delivery to process jobs. This blocks a PHP-FPM worker for the job's duration. On high-traffic sites, this exhausts the worker pool. Disable in `config/general.php` with `'runQueueAutomatically' => false`.
+The web runner piggybacks on HTTP requests — PHP stays alive after page delivery to process jobs. This blocks a PHP-FPM worker for the job's duration. On high-traffic sites, this exhausts the worker pool. Disable in `config/general.php` with `'runQueueAutomatically' => false`.
 
 ### Console commands
 
@@ -151,7 +151,7 @@ Lower number = higher priority. Default is 1024. Methods chain: `->delay(30)->pr
 | Priority | Use case |
 |----------|----------|
 | 100 | User-triggered actions (exports, imports the user is waiting for) |
-| 1024 | Default -- standard background tasks |
+| 1024 | Default — standard background tasks |
 | 2048 | Background maintenance (cleanup, stats aggregation) |
 | 4096 | Low-priority bulk operations (re-indexing, cache warming) |
 
@@ -208,7 +208,7 @@ In `config/app.php` (default: 1). Per-job `canRetry()` takes precedence when def
 No built-in exponential backoff. Pattern: add a custom `$attempt` property, catch errors, re-push with increasing delay:
 
 ```php
-public int $attempt = 0; // Custom property -- not built-in
+public int $attempt = 0; // Custom property — not built-in
 
 public function execute($queue): void
 {
@@ -243,7 +243,7 @@ To investigate, query the `queue` table: `SELECT id, description, error FROM que
 
 ### Progress reporting
 
-Always report progress in jobs taking more than a few seconds. Include a meaningful message -- users see this in the CP:
+Always report progress in jobs taking more than a few seconds. Include a meaningful message — users see this in the CP:
 
 ```php
 $this->setProgress($queue, ($i + 1) / $total, "Processing {$entry->title} (" . ($i + 1) . " of {$total})");
@@ -458,7 +458,7 @@ ddev craft queue/info       # Shows waiting, delayed, reserved, done, failed cou
 ddev craft queue/release    # Release stuck/reserved jobs (worker crashed mid-job)
 ```
 
-A job is "stuck" when reserved for longer than its TTR but not released -- typically means the worker process crashed. Signs: `reserved` count stays non-zero, CP shows spinning with no progress.
+A job is "stuck" when reserved for longer than its TTR but not released — typically means the worker process crashed. Signs: `reserved` count stays non-zero, CP shows spinning with no progress.
 
 The CP queue manager (gear icon, bottom-left) shows pending/failed counts, a progress bar for running jobs, and a retry button for failures.
 

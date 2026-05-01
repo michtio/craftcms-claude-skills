@@ -13,16 +13,16 @@ Complete reference for CP extension points: templates, navigation, settings page
 
 ## Common Pitfalls
 
-- Not wrapping settings UI in `allowAdminChanges` checks -- settings should be read-only in production.
+- Not wrapping settings UI in `allowAdminChanges` checks — settings should be read-only in production.
 - Hardcoding plugin name strings instead of using `Craft::t()` with the plugin handle translation category.
-- Missing `actionInput()` and `redirectInput()` in full-page forms -- form submission won't route correctly.
-- Not passing `errors: entity.getErrors('field')` to form macros -- validation errors won't display.
-- Registering CP nav items without checking user permissions first -- users see nav items they can't access, leading to 403 errors.
-- Using raw HTML in CP templates instead of Craft's form macros -- loses consistency, dark mode support, and accessibility features.
-- Not handling the `readonly` state for fields when `allowAdminChanges` is false -- users can edit values they can't save.
-- Forgetting `csrfInput()` in custom forms that don't use `fullPageForm` -- POST requests will be rejected.
-- Using `size` attribute with `type: 'number'` on `textField` -- browsers ignore the HTML `size` attribute on `<input type="number">`. Craft's own Number field works around this by using `type: 'text'` with `inputmode: 'numeric'`. For number inputs, constrain width with `inputAttributes: { style: 'width: 6rem' }` or switch to a text input with `inputmode="numeric"` pattern.
-- Expensive `badgeCount` computation in `getCpNavItem()` -- this method runs on **every CP page load** across the entire install, not just your plugin's pages. Badge counts must be extremely cheap: use a cached value (invalidated on relevant saves) or a simple indexed `COUNT(*)` query. Never run complex queries, N+1 patterns, or element queries with eager loading here.
+- Missing `actionInput()` and `redirectInput()` in full-page forms — form submission won't route correctly.
+- Not passing `errors: entity.getErrors('field')` to form macros — validation errors won't display.
+- Registering CP nav items without checking user permissions first — users see nav items they can't access, leading to 403 errors.
+- Using raw HTML in CP templates instead of Craft's form macros — loses consistency, dark mode support, and accessibility features.
+- Not handling the `readonly` state for fields when `allowAdminChanges` is false — users can edit values they can't save.
+- Forgetting `csrfInput()` in custom forms that don't use `fullPageForm` — POST requests will be rejected.
+- Using `size` attribute with `type: 'number'` on `textField` — browsers ignore the HTML `size` attribute on `<input type="number">`. Craft's own Number field works around this by using `type: 'text'` with `inputmode: 'numeric'`. For number inputs, constrain width with `inputAttributes: { style: 'width: 6rem' }` or switch to a text input with `inputmode="numeric"` pattern.
+- Expensive `badgeCount` computation in `getCpNavItem()` — this method runs on **every CP page load** across the entire install, not just your plugin's pages. Badge counts must be extremely cheap: use a cached value (invalidated on relevant saves) or a simple indexed `COUNT(*)` query. Never run complex queries, N+1 patterns, or element queries with eager loading here.
 
 ## Contents
 
@@ -505,7 +505,7 @@ class MyUtility extends Utility
 
 ### Utility Template
 
-Does not extend a layout -- Craft wraps it. Use `csrfInput()` since this is not a `fullPageForm`:
+Does not extend a layout — Craft wraps it. Use `csrfInput()` since this is not a `fullPageForm`:
 
 ```twig
 {% import '_includes/forms.twig' as forms %}
@@ -638,15 +638,15 @@ Event::on(Dashboard::class, Dashboard::EVENT_REGISTER_WIDGET_TYPES,
 
 ### How Slideouts Work
 
-In Craft 5, element chips and cards automatically trigger slideout editors when clicked -- no custom JS needed. Slideouts load the element's edit form in a side panel without leaving the current page.
+In Craft 5, element chips and cards automatically trigger slideout editors when clicked — no custom JS needed. Slideouts load the element's edit form in a side panel without leaving the current page.
 
 ### Customizing Slideout Content
 
 Override these methods on your element class:
 
-- `getSidebarHtml()` -- sidebar content (metadata fields, status indicators)
-- `getMetadataHtml()` -- metadata table at the bottom of the sidebar
-- `cpEditUrl()` -- full edit page URL (slideout links to it)
+- `getSidebarHtml()` — sidebar content (metadata fields, status indicators)
+- `getMetadataHtml()` — metadata table at the bottom of the sidebar
+- `cpEditUrl()` — full edit page URL (slideout links to it)
 
 Use `Craft::$app->getRequest()->getAcceptsJson()` to detect slideout context if you need to render differently.
 
@@ -981,9 +981,9 @@ Craft's UI for user-configurable filtering. Appears in element indexes (custom s
 
 ### Key Classes
 
-- `craft\base\conditions\BaseCondition` -- condition container holding rules
-- `BaseMultiSelectConditionRule`, `BaseTextConditionRule`, `BaseDateRangeConditionRule` -- common rule bases
-- `ElementConditionRuleInterface` -- implement for rules that filter element queries
+- `craft\base\conditions\BaseCondition` — condition container holding rules
+- `BaseMultiSelectConditionRule`, `BaseTextConditionRule`, `BaseDateRangeConditionRule` — common rule bases
+- `ElementConditionRuleInterface` — implement for rules that filter element queries
 
 ### Custom Condition Rule
 
