@@ -28,25 +28,42 @@ If no plan exists and the task has more than 3 distinct pieces of work, write th
 3. Run `ddev composer check-cs` and `ddev composer phpstan` to confirm the project is clean.
 4. If anything fails, fix it first or flag it.
 
-## Build layer by layer — explicit verification gates
+## Build feature by feature — explicit verification gates
 
-Build the foundation before the walls. Each layer must pass its gate before the next layer starts. Do NOT write five files and verify at the end — that compounds debugging complexity and wastes tokens on confused rework.
+Build one feature at a time as a vertical slice. Each feature uses whatever layers it needs — not every feature touches every layer. Do NOT write five files and verify at the end — that compounds debugging complexity and wastes tokens on confused rework.
 
-For plugin work, the gate order is:
+### How to build a feature
 
-1. **Migration** → `ddev craft migrate/up` succeeds, schema exists.
-2. **Record / Model** → class resolves, `ddev craft` doesn't throw on boot.
-3. **Service + service tests** → write the service method, then immediately write the Pest test that covers it. The test IS the gate — `ddev exec vendor/bin/pest --filter=MyServiceTest` green. Don't move to the controller until the service layer is tested. This catches bad logic before it gets buried under controller/template code.
-4. **Controller + controller tests** → build the action, then write the HTTP test (`actingAs()->post()` → assert status, assert DB state). For API/webhook endpoints, test the happy path and at least one authorization failure.
-5. **CP templates (if element type)** → edit/index pages render without Twig errors, field layout designer loads.
-6. **Browser verification (if Chrome DevTools MCP is available)** → log into the CP, navigate to the pages you just built, visually confirm: forms render correctly, editable tables are interactive, element selects open modals, read-only mode disables fields when `allowAdminChanges` is off. Check console for JS errors from Garnish widgets. This is not optional "nice to have" — if the MCP is available, use it. Screenshots help the user see what you see.
-7. **Full test suite** → `ddev exec vendor/bin/pest` green (all tests, not just the ones you wrote). Catches regressions from your changes affecting other tests.
-8. **Simplification pass** → see below.
-9. **Final verification** → `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
+1. Read the plan step (or the task if there's no plan).
+2. Identify which layers this feature needs: migration? model? service? controller? queue job? event listener? permissions? CP templates? Not every feature needs all of these.
+3. Build the layers in dependency order: schema before models, models before services, services before controllers. Within each layer, write the code AND its tests together.
+4. After the feature's layers are complete, run the closing gates.
 
-Tests are written WITH each layer, not batched at the end. A service without tests is not a completed gate — it's a liability waiting to compound. The full suite run at gate 7 is a regression check, not the first time tests are written.
+### Layer gates (use whichever layers your feature needs)
+
+| Layer | Gate | Tests |
+|-------|------|-------|
+| **Migration** | `ddev craft migrate/up` succeeds, schema exists | — |
+| **Record / Model** | class resolves, `ddev craft` doesn't throw on boot | — |
+| **Service** | `ddev exec vendor/bin/pest --filter=MyServiceTest` green | Write alongside the service — test IS the gate |
+| **Element query** | query returns expected results in Pest or `ddev craft` | Write alongside the query |
+| **Controller** | `ddev exec vendor/bin/pest --filter=MyControllerTest` green | Write HTTP test alongside the action |
+| **Queue job** | `ddev exec vendor/bin/pest --filter=MyJobTest` green | Write alongside the job |
+| **Event listener** | feature that depends on the event works in test | Covered by the feature's integration test |
+| **Permissions** | permission-gated user gets 403, permitted user gets 200 | Covered by controller test |
+| **CP templates** | edit/index pages render without Twig errors | Browser verification |
+| **CP JavaScript** | widgets initialize, no console errors | Browser verification |
+
+### Closing gates (every feature, after layers are done)
+
+1. **Browser verification (if Chrome DevTools MCP is available)** → log into the CP, navigate to the pages you just built, visually confirm: forms render correctly, editable tables are interactive, element selects open modals, read-only mode disables fields when `allowAdminChanges` is off. Check console for JS errors. Screenshots help the user see what you see.
+2. **Full test suite** → `ddev exec vendor/bin/pest` green (all tests, not just yours). Catches regressions.
+3. **Simplification pass** → see below.
+4. **Final verification** → `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
 
 A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Never plaster over a failed gate by writing the next layer.
+
+Tests are written WITH each layer, not batched at the end. A service without tests is not a completed gate — it's a liability waiting to compound.
 
 ## Implementation rules
 
