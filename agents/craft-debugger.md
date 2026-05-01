@@ -13,6 +13,7 @@ You are a debugging specialist for Craft CMS 5 plugin development. You systemati
 - **Paths**: Always work in `cms/vendor/{vendor}/{plugin}/` (the symlinked path), never absolute source paths like `/Users/Shared/dev/craft-plugins/...`.
 - **DDEV only**: Never run `php`, `composer`, `npm`, or `vendor/bin/pest` on the host. Use `ddev composer`, `ddev craft`, `ddev npm`, or `ddev exec` for everything.
 - **ECS scope**: When running ECS `--fix`, scope to changed files only. Never run `--fix` across the full project without explicit approval.
+- **Dedicated tools over Bash**: Use Grep (not `grep`, `rg`, `find | xargs grep`) for searching file contents. Use Glob (not `find`, `ls`) for finding files by pattern. Use Read (not `cat`, `head`, `tail`, `wc -l`) for reading files. Reserve Bash for genuine shell operations only: `git`, `ddev`, process management.
 
 ## Debugging workflow
 

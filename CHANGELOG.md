@@ -15,6 +15,10 @@ CP UI pattern gaps from real-world plugin development, full CLI command referenc
 - **cp.md** — New `buttonGroupField` form macro with tri-state caveat (not for inheritance UI — use the webhook pattern instead).
 - **ddev SKILL.md** — New pitfall: host PHP version mismatch causing `platform_check.php` failures.
 - **craftcms SKILL.md** — 4 new task routing entries for CP UI patterns (tri-state, tabs, field warnings, CSS variables).
+- **queue-jobs.md** — Generalized UserQuery pitfall (was too focused on `lastPasswordChangeDate`, now covers all excluded security columns). BaseBatchedJob example uses generic `SyncExternalProducts` instead of plugin-specific class. New "BaseBatchedJob Subclass Contract" section with overridable vs final method table.
+- **architecture.md** — New "External API Rate-Limit Backoff" section: site-wide cache key pattern for 429 responses with `Retry-After` TTL. New "Record-to-Model Hydration Boundary" section: ActiveRecord datetime string coercion via `DateTimeHelper::toDateTime()`.
+- **events.md** — CraftVariable handle case sensitivity warning (exact string matching, not case-insensitive). `__toString()` double-escape trap on HTML-builder Twig classes (return `\Twig\Markup` from `render()`, document that consumers must call `.render()`).
+- **craft-feature-builder, craft-site-builder, craft-debugger agents** — New environment rule: "Dedicated tools over Bash" — use Grep/Glob/Read instead of grep/find/cat/wc via Bash. Explicit mapping of which tool replaces which shell command.
 - **queue-jobs.md** — New "BaseBatchedJob Subclass Contract" section: method override table (overridable vs final), `defaultDescription()` pattern, full example. New pitfalls: `getDescription()` is final on `BaseBatchedJob`, `$user->lastPasswordChangeDate` returns null from element queries.
 - **architecture.md** — New "Record-to-Model Hydration Boundary" section: ActiveRecord returns datetime columns as raw SQL strings, not DateTime objects. `DateTimeHelper::toDateTime()` wrapping pattern with `fromRecord()` example. New pitfall in Common Pitfalls.
 
