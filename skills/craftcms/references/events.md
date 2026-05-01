@@ -346,6 +346,8 @@ Event::on(CraftVariable::class, CraftVariable::EVENT_INIT,
 
 Then in Twig: `craft.myPlugin.someMethod()`.
 
+The handle passed to `$variable->set()` is the **exact string** used in Twig templates. If you register `$variable->set('myplugin', ...)` (lowercase), templates must use `craft.myplugin` — not `craft.myPlugin` (camelCase). Modern Craft convention is camelCase (`craft.myPlugin`), so register with camelCase. A case mismatch between the registered handle and your documentation silently returns `null` in templates with no error.
+
 ### Variable Class Pattern
 
 The variable class exposes your plugin's data to Twig templates. Typically returns element queries and service results:
@@ -400,6 +402,7 @@ Extend `\Twig\Extension\AbstractExtension` and override `getFunctions()`, `getFi
 - Twig functions must **return** values, not `echo` them. Using `echo` bypasses Twig's output escaping and produces unpredictable template output.
 - Extensions should delegate to services — keep the extension as a thin adapter over your service layer, not a place for direct record queries or business logic.
 - Use `'is_safe' => ['html']` only when the function returns pre-sanitized HTML. Otherwise let Twig auto-escape.
+- `__toString()` on HTML-builder classes is a double-escape trap. `__toString()` must return `string` (PHP constraint), but Twig auto-escapes strings. If a consumer writes `{{ myBuilder }}` instead of `{{ myBuilder.render() }}`, the HTML is escaped and rendered as visible tags. Fix: have `render()` return `\Twig\Markup` (which Twig treats as pre-escaped), and document clearly that consumers must call `.render()`. `__toString()` is a convenience fallback for non-Twig contexts (logging, debugging) — not the primary rendering path.
 
 ### Conditional asset bundle registration
 

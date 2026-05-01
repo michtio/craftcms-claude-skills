@@ -39,7 +39,7 @@ Complete reference for queue job development in Craft CMS 5. For queue component
 - Memory leaks in batch operations -- element caches grow unbounded. Use `Db::each()` or paginated queries.
 - Removing `@property` docblock hints for queue-injected properties -- the queue runner dynamically assigns `$this->queue` to job instances. Without a `@property Queue $queue` annotation on the class docblock, PHPStan reports an undefined property error. This applies to `BaseJob`, `BaseBatchedJob`, and any custom base job class. Always keep `@property` hints for properties that are injected by the framework rather than declared in the class body.
 - Overriding `getDescription()` on `BaseBatchedJob` -- fatal error: "Cannot override final method." The extension point is `defaultDescription()`, not `getDescription()`. Same pattern applies to `BaseJob`. See [BaseBatchedJob Subclass Contract](#basebatchedjob-subclass-contract) below.
-- Reading `$user->lastPasswordChangeDate` from a User element query -- returns `null` even when the DB column has a value. `UserQuery::beforePrepare()` doesn't select this column. Query `Table::USERS` directly instead. See `elements.md` Common Pitfalls for the full list of excluded columns and the workaround pattern.
+- Assuming User element properties are fully populated in queue jobs -- `UserQuery::beforePrepare()` excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `verificationCode`, and others). These return `null` even when the DB has values. In queue context this is especially deceptive because there's no browser session to hint at the problem. Query `Table::USERS` directly for excluded columns. See `elements.md` Common Pitfalls for the full list and workaround.
 
 ## Scaffold
 
@@ -294,14 +294,14 @@ For parent jobs that spawn child operations, use `craft\queue\BaseBatchedJob` fo
 ```php
 use craft\queue\BaseBatchedJob;
 
-class SendPasswordExpiryReminders extends BaseBatchedJob
+class SyncExternalProducts extends BaseBatchedJob
 {
     /**
      * @inheritdoc
      */
     protected function defaultDescription(): ?string
     {
-        return Craft::t('my-plugin', 'Sending password expiry reminders');
+        return Craft::t('my-plugin', 'Syncing external products');
     }
 
     /**
@@ -309,7 +309,7 @@ class SendPasswordExpiryReminders extends BaseBatchedJob
      */
     protected function loadData(): Batchable
     {
-        return User::find()->status(User::STATUS_ACTIVE);
+        return Entry::find()->section('products')->status(null)->site('*');
     }
 
     /**
@@ -317,8 +317,8 @@ class SendPasswordExpiryReminders extends BaseBatchedJob
      */
     protected function processItem(mixed $item): void
     {
-        /** @var User $item */
-        // Process single user
+        /** @var Entry $item */
+        // Sync single product entry with external API
     }
 }
 ```

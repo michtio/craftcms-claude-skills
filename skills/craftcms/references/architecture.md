@@ -131,6 +131,34 @@ public function getApiClient(int $instanceId): Api
 }
 ```
 
+### External API Rate-Limit Backoff
+
+When your plugin calls rate-limited external APIs (HIBP, Stripe, Mailgun, geocoding services, etc.), use a **site-wide** cache key for backoff — not a per-user or per-entity key. A 429 response means the API is throttled for your entire install, not for a single request:
+
+```php
+$cacheKey = 'my-plugin:api-name:429-backoff';
+$cache = Craft::$app->getCache();
+
+// Check if we're in a backoff window
+if ($cache->get($cacheKey)) {
+    // Skip the API call — still rate-limited
+    return null;
+}
+
+try {
+    $response = $client->request('GET', $endpoint);
+} catch (ClientException $e) {
+    if ($e->getResponse()->getStatusCode() === 429) {
+        $retryAfter = (int)($e->getResponse()->getHeaderLine('Retry-After') ?: 60);
+        $cache->set($cacheKey, true, $retryAfter);
+        return null;
+    }
+    throw $e;
+}
+```
+
+Key the cache by **service name**, not by user/entity/request. Per-entity dedup keys mean every concurrent request burns a new API call inside the rate-limit window. The sentinel key with `Retry-After` TTL ensures the entire install backs off together.
+
 ### Date Arithmetic in Services
 
 Use `Carbon` for comparison and arithmetic:
