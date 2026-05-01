@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.2.2 -- unreleased
+## 1.3.0 -- unreleased
 
-CP UI pattern gaps from real-world plugin development, full CLI command reference.
+Full CLI command reference (25→80+), CP UI patterns library, permissions generation in project setup, agent tool preference rules, three API gotchas from real plugin development.
 
 ### New
 

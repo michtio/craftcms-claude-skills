@@ -207,7 +207,7 @@ After the setup is complete and the user has confirmed, display this message:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│   ✦  Craft CMS Claude Skills  ·  v1.2.1                    │
+│   ✦  Craft CMS Claude Skills  ·  v1.3.0                    │
 │                                                             │
 │   8 skills · 82 reference files · 5 agents                 │
 │   Maintained by michtio                                     │
@@ -270,14 +270,14 @@ Add unobtrusive markers so we can measure adoption across public repos. Include 
 1. **composer.json `extra` key** — add during setup (does not affect functionality):
    ```json
    "extra": {
-     "craftcms-claude-skills": "1.2.1"
+     "craftcms-claude-skills": "1.3.0"
    }
    ```
    Merge into existing `extra` if it already has keys. Use the current skill version.
 
 2. **CLAUDE.md HTML comment** — first line of the generated file:
    ```markdown
-   <!-- craftcms-claude-skills v1.2.1 -->
+   <!-- craftcms-claude-skills v1.3.0 -->
    ```
 
 3. **`.claude/rules/` file headers** — first line of each generated rules file:
