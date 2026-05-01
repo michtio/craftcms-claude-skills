@@ -2,7 +2,7 @@
 
 ## 1.3.0 -- unreleased
 
-Full CLI command reference (25→80+), CP UI patterns library, permissions generation in project setup, agent tool preference rules, three API gotchas from real plugin development.
+Full CLI command reference (25→80+), CP UI patterns library, feature-first build order (replacing layer-first), full-stack code reviewer (PHP + Twig + JS + CSS), planner research/audit capabilities, permissions generation in project setup, manual testing gates, three API gotchas from real plugin development.
 
 ### New
 

@@ -88,14 +88,14 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 
 | Skill | Track | Key Coverage |
 |-------|-------|--------------|
-| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates, debugging. 28 reference files. |
+| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, editable tables, tabbed settings, CP UI patterns), console commands (80+ commands), debugging. 28 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 6 reference files. |
 | `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files + 22 plugin references. |
 | `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
-| `ddev` | Shared | Commands, services, configuration, Xdebug, troubleshooting. |
-| `craft-project-setup` | Shared | Interactive project scaffolding. Generates CLAUDE.md and .claude/rules/. |
+| `ddev` | Shared | Commands, services, configuration, Xdebug, site sharing, troubleshooting. |
+| `craft-project-setup` | Shared | Interactive project scaffolding. Generates CLAUDE.md, .claude/rules/, and .claude/settings.local.json (permissions). |
 
 8 skills, 84 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
@@ -103,13 +103,13 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `craft-planner` | Opus | Break features into scoped steps with runnable verification gates |
-| `craft-feature-builder` | Opus | Build plugin code layer by layer with build-verify gates |
-| `craft-site-builder` | Opus | Site templates and components with build-verify gates |
+| `craft-planner` | Opus | Decompose features into vertical slices with verification gates. Can research/audit public plugins via `gh` and `git clone`. |
+| `craft-feature-builder` | Opus | Build plugin code feature by feature with automated + manual test gates |
+| `craft-site-builder` | Opus | Site templates and components feature by feature with build-verify gates |
 | `craft-debugger` | Sonnet | Systematic bug investigation |
-| `craft-code-reviewer` | Sonnet | Code review with findings report |
+| `craft-code-reviewer` | Sonnet | Full-stack review: PHP, Twig, JS, CSS, config (45 checklist items) |
 
-Builder agents enforce layered build-verify gates and mandatory todo lists. The builder and reviewer maintain prevention/detection parity -- 14 prevention rules map to 19 checklist items. See [docs/agents.md](docs/agents.md) for details.
+Agents build feature by feature (vertical slices), not layer by layer. Tests are written alongside each layer, not batched at the end. Manual testing gates (required + optional) are identified per feature. The builder's 16 prevention rules map to the reviewer's 45 checklist items across PHP, Twig, JS, and CSS. See [docs/agents.md](docs/agents.md) for details.
 
 ### Plugin Reference Library
 
