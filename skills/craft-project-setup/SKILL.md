@@ -99,6 +99,7 @@ Confirm the detected type and gather project-specific details. Keep it short —
 - Confirm detected tooling: ECS, PHPStan, Pest (from `composer.json` scripts)
 - Git workflow: main branch name, PR-based workflow?
 - Chrome DevTools MCP: offer installation if not already in `.claude.json`
+- Dev root folder: "Where is your development root? (e.g., `~/dev/`)" — this is the parent folder where the planner can clone public repos for research and audits. Detect by looking at the project's parent directory. Store in the generated CLAUDE.md as `devRootPath`.
 
 **Do not ask about things you already detected.** If `composer.json` shows `nystudio107/craft-seomatic` is installed, the generated templates.md should state "`???` operator is available (provided by SEOmatic)" — not flag it as unknown. If `phpstan/phpstan` is in `require-dev`, include PHPStan commands in the generated CLAUDE.md — don't ask "do you use PHPStan?" Present your detection results for confirmation, not as questions.
 
@@ -196,6 +197,20 @@ If the user identifies connected paths, add them to `settings.local.json`:
 
 If the user says no connected projects, skip this. Don't press — it's an advanced concern and many projects are self-contained.
 
+#### Research folder permissions
+
+Always add permissions for the dev root's research folder — the planner uses it to clone and audit public plugins:
+
+```json
+"Bash(git clone * {devRootPath}/research/*)",
+"Bash(gh repo view *)",
+"Bash(gh api *)",
+"Read({devRootPath}/research/**)",
+"Bash(rm -rf {devRootPath}/research/*)"
+```
+
+Replace `{devRootPath}` with the actual path. The research folder is ephemeral — clones are shallow (`--depth 1`) and cleaned up after planning.
+
 ### Step 4: Review with the user
 
 After generating, show the user what was created and ask them to review. Highlight any decisions that were made based on detection vs assumptions.
@@ -247,6 +262,11 @@ Do not include "Test plan" sections in PR descriptions.
 Use `ddev` shorthand commands: `ddev composer`, `ddev craft`, `ddev npm`. Never run `php`, `composer`, or `npm` on the host — everything goes through DDEV.
 
 Use `gh` for all GitHub operations — it's already authenticated.
+
+## Paths
+
+- **Dev root**: `{devRootPath}` — parent folder for all projects. The planner clones public repos here for research/audits (`{devRootPath}/research/`).
+- **Research folder**: `{devRootPath}/research/` — ephemeral. Shallow clones for plugin audits and pattern research. Cleaned up after use.
 
 ## Permissions
 

@@ -14,6 +14,7 @@ You are a senior Craft CMS plugin developer. You receive implementation plans an
 - **DDEV only**: Never run `php`, `composer`, `npm`, or `vendor/bin/pest` on the host. Use `ddev composer`, `ddev craft`, `ddev npm`, or `ddev exec` for everything.
 - **ECS scope**: When running ECS `--fix`, scope to changed files only (`git diff --name-only | grep '\.php$'`). Never run `--fix` across the full project without explicit approval.
 - **Dedicated tools over Bash**: Use Grep (not `grep`, `rg`, `find | xargs grep`) for searching file contents. Use Glob (not `find`, `ls`) for finding files by pattern. Use Read (not `cat`, `head`, `tail`) for reading files. Exception: `tail -n` on log files (`storage/logs/`) is fine for debugging. Reserve Bash for shell operations only: `git`, `ddev composer`, `ddev craft`, `ddev exec vendor/bin/pest`, and build/process commands.
+- **Token efficiency**: Read reference files only when you need specific API details for the layer you're building. Don't front-load all references — read the elements.md reference when building an element type, not when writing a migration. Load `craft-garnish` only when building CP JavaScript, not for every feature. Use `Read` with `offset`/`limit` on large files instead of reading the whole thing.
 
 ## Todo list — mandatory
 
