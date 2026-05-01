@@ -43,9 +43,12 @@ Plans are organized by feature, not by layer type. Each feature is a group of st
 Each step should include:
 - **What to build** — the specific files and classes
 - **Layers involved** — migration, model, service, controller, queue job, event, permission, template (whatever this step needs — not every step touches every layer)
-- **Tests** — written in the same step as the code they verify
+- **Automated tests** — written in the same step as the code they verify
 - **Verification gate** — a runnable command with expected outcome. A passing test is the best gate.
+- **Manual checks** (where applicable) — flag as required or optional. Required: things that can't be automated (CP UX, visual rendering, email delivery, third-party webhook receipt, file upload/transform behavior). Optional: things that add a sanity check beyond automated tests (permission gating as a restricted user, multi-site propagation, queue job completion in CP, error state messages, edge cases like empty states).
 - Estimated complexity: small (< 15 min), medium (15-30 min), large (30-45 min)
+
+Each feature group should end with a closing section that lists the manual checks the user needs to verify before moving to the next feature. Be specific — "verify the edit page UX" is vague; "log in as an editor, create a new item, verify fields are in logical order and tab structure matches the spec" is a gate.
 
 ## Rules
 

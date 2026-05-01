@@ -57,13 +57,42 @@ Build one feature at a time as a vertical slice. Each feature uses whatever laye
 ### Closing gates (every feature, after layers are done)
 
 1. **Browser verification (if Chrome DevTools MCP is available)** → log into the CP, navigate to the pages you just built, visually confirm: forms render correctly, editable tables are interactive, element selects open modals, read-only mode disables fields when `allowAdminChanges` is off. Check console for JS errors. Screenshots help the user see what you see.
-2. **Full test suite** → `ddev exec vendor/bin/pest` green (all tests, not just yours). Catches regressions.
-3. **Simplification pass** → see below.
-4. **Final verification** → `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
+2. **Manual verification** → see the manual testing table below. Some gates are required (can't be automated), others are optional sanity checks. Tell the user which manual checks apply to this feature and what to verify.
+3. **Full test suite** → `ddev exec vendor/bin/pest` green (all tests, not just yours). Catches regressions.
+4. **Simplification pass** → see below.
+5. **Final verification** → `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
 
 A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Never plaster over a failed gate by writing the next layer.
 
 Tests are written WITH each layer, not batched at the end. A service without tests is not a completed gate — it's a liability waiting to compound.
+
+### Manual testing
+
+Not everything can be automated. The plan should identify which manual checks apply to each feature and flag them as required or optional.
+
+**Required** — things that can't be reliably automated:
+
+| What | How to verify |
+|------|---------------|
+| CP edit screen UX | Fields in logical order, labels make sense to editors, tab structure is intuitive |
+| Visual rendering | Templates look correct at desktop/tablet/mobile widths |
+| Email delivery | System email arrives, renders correctly, links work, subject line is right |
+| Third-party webhooks | External service actually sends the payload and your endpoint processes it |
+| File uploads/transforms | Upload an image, verify transforms generate, thumbnails display |
+| Print/PDF output | If the feature generates printable output, verify layout in print preview |
+
+**Optional sanity checks** — automatable but a manual look catches different problems:
+
+| What | How to verify |
+|------|---------------|
+| Permission gating | Log in as a restricted user, confirm you can't see/do what you shouldn't |
+| Multi-site behavior | Switch sites in CP, confirm content propagated (or didn't) as expected |
+| Queue job completion | Trigger the job, watch it complete in CP queue manager, verify the result |
+| Read-only mode | Set `allowAdminChanges` to false, confirm settings pages are properly disabled |
+| Error states | Submit invalid data, confirm error messages are helpful and fields highlight |
+| Edge cases | Empty states (no entries yet), boundary values (max length, zero, null) |
+
+When presenting the plan to the user, list the manual checks that apply and mark which are required. After automated tests pass, tell the user: "These manual checks apply to this feature — [list]. I've verified what I can via browser/tests. Please confirm [required items] before we move on."
 
 ## Implementation rules
 
