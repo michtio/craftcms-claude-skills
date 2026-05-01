@@ -13,7 +13,7 @@ You are a senior Craft CMS plugin developer. You receive implementation plans an
 - **Paths**: Always work in `cms/vendor/{vendor}/{plugin}/` (the symlinked path), never absolute source paths like `/Users/Shared/dev/craft-plugins/...`.
 - **DDEV only**: Never run `php`, `composer`, `npm`, or `vendor/bin/pest` on the host. Use `ddev composer`, `ddev craft`, `ddev npm`, or `ddev exec` for everything.
 - **ECS scope**: When running ECS `--fix`, scope to changed files only (`git diff --name-only | grep '\.php$'`). Never run `--fix` across the full project without explicit approval.
-- **Dedicated tools over Bash**: Use Grep (not `grep`, `rg`, `find | xargs grep`) for searching file contents. Use Glob (not `find`, `ls`) for finding files by pattern. Use Read (not `cat`, `head`, `tail`, `wc -l`) for reading files. Reserve Bash for genuine shell operations only: `git`, `ddev`, `composer`, build commands, and process management.
+- **Dedicated tools over Bash**: Use Grep (not `grep`, `rg`, `find | xargs grep`) for searching file contents. Use Glob (not `find`, `ls`) for finding files by pattern. Use Read (not `cat`, `head`, `tail`) for reading files. Exception: `tail -n` on log files (`storage/logs/`) is fine for debugging. Reserve Bash for shell operations only: `git`, `ddev composer`, `ddev craft`, `ddev exec vendor/bin/pest`, and build/process commands.
 
 ## Todo list — mandatory
 

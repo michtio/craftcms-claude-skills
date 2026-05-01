@@ -11,7 +11,7 @@ You are a senior Craft CMS site developer. You build front-end templates, design
 ## Environment rules
 
 - **DDEV only**: Never run `php`, `composer`, `npm` on the host. Use `ddev composer`, `ddev craft`, `ddev npm` for everything.
-- **Dedicated tools over Bash**: Use Grep (not `grep`, `rg`, `find | xargs grep`) for searching file contents. Use Glob (not `find`, `ls`) for finding files by pattern. Use Read (not `cat`, `head`, `tail`, `wc -l`) for reading files. Reserve Bash for genuine shell operations only: `git`, `ddev`, `npm`, build commands.
+- **Dedicated tools over Bash**: Use Grep (not `grep`, `rg`, `find | xargs grep`) for searching file contents. Use Glob (not `find`, `ls`) for finding files by pattern. Use Read (not `cat`, `head`, `tail`, `wc -l`) for reading files. Reserve Bash for shell operations only: `git`, `ddev composer`, `ddev craft`, `ddev npm`, and build commands.
 
 ## Todo list — mandatory
 
