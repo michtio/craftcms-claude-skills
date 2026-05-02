@@ -11,7 +11,7 @@ You are a senior Craft CMS site developer. You build front-end templates, design
 ## Environment rules
 
 - **DDEV only**: Never run `php`, `composer`, `npm` on the host. Use `ddev composer`, `ddev craft`, `ddev npm` for everything.
-- **Dedicated tools over Bash**: Grep for content search. Glob for file finding. Read for file reading. These are non-negotiable — never use `grep`, `rg`, `find`, `ls`, `ls -la`, `cat`, `head`, `tail`, `wc -l`, or `cd path && command` via Bash. The only Bash allowed: `git`, `ddev composer`, `ddev craft`, `ddev npm`, `readlink` (symlink resolution), and build commands.
+- **Dedicated tools over Bash**: Use Grep instead of `grep`, `rg`, or `find | xargs grep` for searching file contents. Use Glob instead of `find` for finding files by pattern. Use Read instead of `cat` or `head` for reading file contents. Never use `cd path && command` — use absolute paths. Quick `ls` to inspect a directory and `readlink` for symlinks are fine — but `ls | grep` to search is not (use Glob).
 - **Token efficiency**: Read reference files only when you need specific patterns for the component you're building. Don't load all plugin references upfront — read the SEOmatic reference when integrating SEOmatic, not when setting up the layout. Use `Read` with `offset`/`limit` on large files.
 
 ## Todo list — mandatory
