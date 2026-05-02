@@ -105,27 +105,35 @@ Confirm the detected type and gather project-specific details. Keep it short —
 
 ### Step 3: Generate the configuration
 
-Generate `CLAUDE.md` and `.claude/rules/` files using the templates in `templates/` as a starting point. Customize based on the answers:
+Generate `CLAUDE.md` and `.claude/rules/` files. Two sources:
 
-- Replace placeholders: `{{pluginHandle}}`, `{{vendorNamespace}}`, `{{pluginName}}`
-- Include only relevant rules files for the project type
-- Include only the tooling commands that actually exist in the project
+1. **From templates** — files in `templates/{type}/` are starting points. Replace placeholders (`{{pluginHandle}}`, `{{vendorNamespace}}`, `{{pluginName}}`), customize based on detection results. These exist and are ready to use.
+2. **Generated from context** — files not in `templates/` must be written from scratch based on the project's actual setup. Use the skill references, detection results, and user answers to produce these. Don't skip a file just because no template exists.
+
+Before generating, **verify which templates exist** for the detected project type:
+
+```bash
+ls templates/{type}/.claude/rules/
+ls templates/{type}/.claude/settings.local.json
+```
+
+For any file listed below that doesn't have a template, generate it from the project context and skill knowledge. Flag to the user: "These files were generated from your project's conventions (no starter template exists): [list]."
 
 **File structure to generate:**
 
 ```
 CLAUDE.md                          # Project overview, commands, structure
 .claude/
-  settings.local.json             # Pre-approved permissions (gitignored)
+  settings.local.json             # Pre-approved permissions (gitignored) — generate from Step 3b
   rules/
-    coding-style.md               # PHP conventions (plugin/module)
-    architecture.md               # Architecture patterns (plugin/module)
-    templates.md                  # Twig conventions (site)
-    git-workflow.md               # Commit conventions (all)
-    scaffolding.md                # Generator commands (plugin/module)
-    security.md                   # Security rules (all)
-    testing.md                    # Test conventions (if Pest exists)
-    migrations.md                 # Migration rules (plugin/module)
+    coding-style.md               # PHP conventions (plugin/module) — template
+    architecture.md               # Architecture patterns (plugin/module) — template
+    templates.md                  # Twig conventions (site) — template
+    git-workflow.md               # Commit conventions (all) — template
+    scaffolding.md                # Generator commands (plugin/module) — template
+    security.md                   # Security rules (all) — template
+    testing.md                    # Test conventions (if Pest exists) — generate from project's test setup
+    migrations.md                 # Migration rules (plugin/module) — generate from project conventions
 ```
 
 ### Step 3b: Generate permissions
