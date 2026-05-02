@@ -15,6 +15,7 @@ How Craft CMS 5's session and authentication system works under the hood: the du
 - Setting `elevatedSessionDuration` to `0` in production — this disables the password re-entry requirement for sensitive operations entirely. `getHasElevatedSession()` always returns `true`.
 - Not understanding that `securityKey` change invalidates everything — changing `CRAFT_SECURITY_KEY` invalidates all sessions, password reset tokens, and encrypted field values across all users.
 - Reading `$user->lastPasswordChangeDate` from an element query and getting `null` — `UserQuery::beforePrepare()` intentionally excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, `lastLoginAttemptIp`). Query `Table::USERS` directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`.
+- Missing `User::EVENT_BEFORE_AUTHENTICATE` for password inspection — this is the only Craft 5 hook where the plaintext password is in scope (passed on the event). Plaintext is cleared after authentication completes. If your plugin needs to check the password against an external service (HIBP breach detection, policy validation), listen here. Hash inside the handler, never log the plaintext or the full hash.
 
 ## Contents
 

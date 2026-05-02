@@ -27,8 +27,11 @@
 - Not calling `parent::_fixtures()` when extending test classes -- silently drops the parent's fixtures.
 - Testing against element IDs that differ across environments -- use handles, UIDs, or factory-created elements.
 - Missing `autoload-dev` in `composer.json` for the test namespace -- Pest/PHPUnit can't find test helpers.
-- Running Pest on the host instead of through DDEV -- use `ddev craft pest/test` or `ddev exec "cd /var/www/html && vendor/bin/pest"`.
-- Not refreshing sites after fixture changes -- call `Craft::$app->getSites()->refreshSites()` or cached data goes stale.
+- Running Pest on the host instead of through DDEV — use `ddev craft pest/test` or `ddev exec "cd /var/www/html && vendor/bin/pest"`.
+- Not refreshing sites after fixture changes — call `Craft::$app->getSites()->refreshSites()` or cached data goes stale.
+- Using `craft\test\TestSetup` helpers in a Pest-only setup — `TestSetup::configureCraft()` transitively autoloads `craft\test\Craft` which extends `Codeception\Module\Yii2`. If Codeception isn't installed, you get a fatal class-not-found error. For Pest-only projects, inline-replicate the ~40 lines of bootstrap logic instead of calling `TestSetup`.
+- PHPUnit 12's `<env name="X" value="Y" force="true"/>` doesn't overwrite `$_SERVER` — DDEV exports `CRAFT_DB_SERVER`, `CRAFT_DB_USER`, etc. into `$_SERVER`, and `App::env()` reads `$_SERVER` first. Tests silently connect to the DDEV database instead of the test database. Fix: set `$_SERVER[]`, `$_ENV[]`, and `putenv()` in your bootstrap file before Craft boots.
+- Solo edition silently caps user creation at 1 — `User::beforeSave()` vetoes saves beyond the admin user without throwing. Test factories that create additional users fail silently. Fix: set `Craft::$app->edition = CmsEdition::Pro` directly in the test (not via project config — that re-fires events and causes side effects).
 
 ## Two Testing Approaches
 

@@ -18,6 +18,8 @@
 - Deleting managed entities without cleaning up Craft elements first — CASCADE on the FK won't touch the `elements` table.
 - Skipping the rebuild handler — without `EVENT_REBUILD`, `project-config/rebuild` breaks your plugin's config.
 - Assigning ActiveRecord datetime columns directly to typed Model properties — ActiveRecord returns raw SQL strings, not `DateTime` objects. Use `DateTimeHelper::toDateTime($record->dateCreated) ?: null`. See [Record-to-Model Hydration Boundary](#record-to-model-hydration-boundary).
+- Using `if ($cached !== false)` to check cache hits — Yii's `cache->get()` returns `false` for missing keys, which collides with a legitimately cached `false` value. If you cache booleans, use string sentinels (`'on'`/`'off'`) or check `cache->exists()` before `get()`.
+- Plugin controller directory case not matching namespace — `controllers/Front/` vs `controllers/front/` works on macOS (case-insensitive APFS) but breaks on Linux containers, CI, and production (case-sensitive ext4). The directory name must exactly match the namespace segment casing.
 
 ## Table of Contents
 
