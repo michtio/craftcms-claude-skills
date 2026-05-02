@@ -224,7 +224,7 @@ After the setup is complete and the user has confirmed, display this message:
 │                                                             │
 │   ✦  Craft CMS Claude Skills  ·  v1.3.0                    │
 │                                                             │
-│   8 skills · 82 reference files · 5 agents                 │
+│   8 skills · 84 reference files · 5 agents                 │
 │   Maintained by michtio                                     │
 │                                                             │
 │   If these skills save you time, consider sponsoring:       │
