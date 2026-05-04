@@ -4,6 +4,8 @@
 
 Built and maintained by [michtio](https://github.com/michtio). Covers both **plugin/module development** (extending Craft) and **site development** (content modeling, Twig templates, front-end architecture).
 
+If this project saves you time, consider supporting its development: [GitHub Sponsors](https://github.com/sponsors/michtio) | [Buy Me a Coffee](https://buymeacoffee.com/michtio)
+
 ## Quick Start
 
 ### 1. Install
@@ -169,13 +171,6 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 - [ ] Commerce skill (products, variants, orders, carts, payments -- separate skill)
 - [ ] CKEditor 4→5 migration guide (config conversion, custom styles, plugin mapping, HTML cleanup)
 - [ ] More plugin references (Neo, Scout, Campaign)
-
-## Support
-
-If this project saves you time, consider supporting its development:
-
-- [GitHub Sponsors](https://github.com/sponsors/michtio)
-- [Buy Me a Coffee](https://buymeacoffee.com/michtio)
 
 ## Contributing
 
