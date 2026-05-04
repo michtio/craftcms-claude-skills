@@ -19,7 +19,7 @@ If this project saves you time, consider supporting its development:
 # Claude Code Plugin (recommended)
 # First time: add the marketplace, then install
 /plugin marketplace add michtio/craftcms-claude-skills
-/plugin install craftcms-claude-skills@michtio/craftcms-claude-skills
+/plugin install craftcms-claude-skills@craftcms-claude-skills
 
 # Or via Vercel Skills CLI
 npx skills add michtio/craftcms-claude-skills --all
