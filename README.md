@@ -88,7 +88,7 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 
 | Skill | Track | Key Coverage |
 |-------|-------|--------------|
-| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, editable tables, tabbed settings, CP UI patterns), console commands (80+ commands), debugging. 28 reference files. |
+| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, settings, navigation), CP components (widgets, utilities, slideouts), CP UI patterns (tri-state, condition builders, asset bundles), console commands (80+ commands), debugging. 30 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 6 reference files. |
 | `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files + 22 plugin references. |
@@ -97,7 +97,7 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `ddev` | Shared | Commands, services, configuration, Xdebug, site sharing, troubleshooting. |
 | `craft-project-setup` | Shared | Project scaffolding, upgrade, and audit. Generates CLAUDE.md, .claude/rules/, .claude/settings.local.json (permissions). Gap analysis for existing configs. |
 
-8 skills, 84 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+8 skills, 86 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 

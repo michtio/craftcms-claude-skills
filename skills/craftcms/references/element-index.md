@@ -4,13 +4,13 @@
 
 - Common Pitfalls
 - Sources (defineSources, context values)
-- Table Attributes (defineTableAttributes, attributeHtml, prepElementQueryForTableAttribute)
+- Table Attributes (defineTableAttributes, attributeHtml, status pills, prepElementQueryForTableAttribute)
 - Sort Options (defineSortOptions)
 - Element Display Modes — chips, cards, table rows: when each renders, customization methods
 - Card Attributes (Craft 5.5+)
 - Thumbnails — hasThumbs, thumbUrl, thumbSvg, checkered/rounded
 - Conditions (createCondition, custom condition rules)
-- Actions (defineActions, includeSetStatusAction, custom actions)
+- Actions (defineActions, includeSetStatusAction, custom actions, per-element edit-screen action menu)
 - Exporters
 - Sidebar and Metadata
 - Preview Targets
@@ -30,6 +30,8 @@
 - Forgetting `includeSetStatusAction()` — without it, users can't bulk-change status from the index, even though your element has statuses.
 - Sources returning stale data — sources are memoized per-request. Use service getters that read from MemoizableArray, not static arrays.
 - Returning all table attributes as defaults — clutters the index. Pick the 4-5 columns users need most; they can customize from there.
+- Using `<span class="status red">` for status labels — produces a 10×10 px dot, not a pill. Text inside it wraps vertically one character per line. Use `Cp::statusLabelHtml()` instead.
+- Registering bulk actions (`EVENT_REGISTER_ACTIONS`) but forgetting per-element actions (`EVENT_DEFINE_ACTION_MENU_ITEMS`) — plugin actions appear on the index multi-select menu but not on the per-element edit screen "..." menu.
 - Loading all elements in `defineSources()` to extract grouping values — `defineSources()` runs on every element index page load. Use an aggregate query (`GROUP BY`) to get distinct values, never `::find()->all()` followed by array extraction.
 
 ## Sources
@@ -109,6 +111,34 @@ protected function attributeHtml(string $attribute): string
     };
 }
 ```
+
+### Status Pills in Table Attributes
+
+Status pills in custom table attributes use `Cp::statusLabelHtml()`, not `<span class="status">`. The raw `<span class="status red">` produces a 10×10 px dot indicator — putting text inside it causes one-character-per-line vertical wrapping in narrow element-index columns.
+
+The correct helper (Craft 5.2.0+) is `\craft\helpers\Cp::statusLabelHtml()` — the same helper Craft uses for the native Status column's "ACTIVE" pill:
+
+```php
+use craft\enums\Color;
+use craft\helpers\Cp;
+
+protected function attributeHtml(string $attribute): string
+{
+    return match ($attribute) {
+        'syncStatus' => Cp::statusLabelHtml([
+            'color' => Color::Red,           // Color enum: Red, Orange, Amber, Yellow, Green, Teal, Blue, …
+            'label' => 'Reset required',
+            'icon' => 'warning',             // optional — Lucide icon key
+            'indicatorClass' => 'pending',   // optional — overrides the dot's CSS class
+        ]),
+        default => parent::attributeHtml($attribute),
+    };
+}
+```
+
+The `Color` enum at `\craft\enums\Color` ships 20 named colors. For elements that implement `Statusable`, use `Cp::componentStatusLabelHtml($component)` as a one-call wrapper that resolves the color + label from the component's status definition.
+
+**Symptom of the wrong pattern:** label text appears stacked vertically one character per line ("R\ne\ns\ne\nt") in narrow element-index cells.
 
 ### Prepare Query for Table Attribute
 
@@ -386,6 +416,42 @@ class SyncItems extends ElementAction
 }
 ```
 
+### Per-Element Edit-Screen Action Menu
+
+Bulk actions (`EVENT_REGISTER_ACTIONS` / `defineActions()`) and the per-element edit-screen "..." disclosure menu are **two different surfaces**, wired to two different events. Registering a bulk action does not add it to the per-element menu.
+
+The per-element menu is built from `Element::getActionMenuItems()` and fires `Element::EVENT_DEFINE_ACTION_MENU_ITEMS` (since Craft 5.0). Plugins append to `$event->items` using the `Cp::disclosureMenu()` item shape:
+
+```php
+use craft\base\Element;
+use craft\elements\User;
+use craft\events\DefineMenuItemsEvent;
+use yii\base\Event;
+
+Event::on(
+    User::class,
+    Element::EVENT_DEFINE_ACTION_MENU_ITEMS,
+    function(DefineMenuItemsEvent $event): void {
+        /** @var User $user */
+        $user = $event->sender;
+
+        $event->items[] = [
+            'id' => 'pp-force-reset',
+            'icon' => 'rotate',
+            'label' => Craft::t('my-plugin', 'Force password reset'),
+            'action' => 'my-plugin/user-password/force-reset',
+            // OR 'url' => UrlHelper::cpUrl(...) for navigable items
+        ];
+    },
+);
+```
+
+For destructive items (red-tinted, segregated below safe items), pass `'destructive' => true`.
+
+**Which surface to register on:** match the registration to the security model of the action. "Change password..." should never be a bulk action — applying the same input to N users is a security anti-pattern. "Force password reset" and "Send password reset email" are useful on both surfaces. If in doubt, register per-element only and add bulk when the action is safe for N-at-a-time.
+
+**Symptom of forgetting the per-element hook:** plugin actions appear absent from the per-user edit screen "..." menu, even though the index shows them when you bulk-select.
+
 ## Exporters
 
 Craft provides `Raw` and `Expanded` by default:
@@ -508,7 +574,8 @@ Plugins can extend any element type's index (including Craft's built-in Users, E
 | `EVENT_DEFINE_ATTRIBUTE_HTML` | `DefineAttributeHtmlEvent` | Custom column rendering |
 | `EVENT_PREP_QUERY_FOR_TABLE_ATTRIBUTE` | `ElementIndexTableAttributeEvent` | Modify query for custom column data |
 | `EVENT_REGISTER_SOURCES` | `RegisterElementSourcesEvent` | Add sidebar sources |
-| `EVENT_REGISTER_ACTIONS` | `RegisterElementActionsEvent` | Add bulk actions |
+| `EVENT_REGISTER_ACTIONS` | `RegisterElementActionsEvent` | Add bulk actions (index multi-select) |
+| `EVENT_DEFINE_ACTION_MENU_ITEMS` | `DefineMenuItemsEvent` | Add per-element edit-screen "..." menu items |
 | `EVENT_REGISTER_SORT_OPTIONS` | `RegisterElementSortOptionsEvent` | Add sort options |
 | `EVENT_REGISTER_SEARCHABLE_ATTRIBUTES` | `RegisterElementSearchableAttributesEvent` | Add searchable attributes |
 | `EVENT_REGISTER_CARD_ATTRIBUTES` | `RegisterElementCardAttributesEvent` | Add card view attributes (5.5+) |

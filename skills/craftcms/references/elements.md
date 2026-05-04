@@ -14,7 +14,7 @@
 - URI/Routing
 - Searchable Attributes
 - Propagation
-- CP Edit Pages — getCpEditUrl, elements/edit route, asCpScreen, slide-outs
+- CP Edit Pages — getCpEditUrl, elements/edit route, asCpScreen, slide-outs, extending User edit screens
 - Preview Targets — previewTargets, EVENT_REGISTER_PREVIEW_TARGETS
 - Generated Fields (5.8.0) — computed values saved on elements
 - Eager Loading — eagerLoadingMap
@@ -627,6 +627,38 @@ public function actionEdit(?int $elementId = null): Response
 ```
 
 `asCpScreen()` automatically handles both full-page and slide-out (modal) contexts — no need to detect which mode is active.
+
+### Extending User Edit Screens
+
+Craft 5.0 ships `UsersController::EVENT_DEFINE_EDIT_SCREENS`, fired from `EditUserTrait::asEditUserScreen()` between the native screens (Profile, Permissions, Preferences, Addresses) and the auth screens (Password & Verification, Passkeys). Plugin-defined screens render as left-nav items alongside the natives — no template hacks or sidebar workarounds needed.
+
+```php
+use craft\controllers\UsersController;
+use craft\events\DefineEditUserScreensEvent;
+use craft\helpers\UrlHelper;
+use yii\base\Event;
+
+Event::on(
+    UsersController::class,
+    UsersController::EVENT_DEFINE_EDIT_SCREENS,
+    function(DefineEditUserScreensEvent $event): void {
+        // Permission gate first — same pattern as the controller's beforeAction()
+        if (!MyController::callerHasViewPermission()) {
+            return;
+        }
+
+        $userId = $event->editedUser->id;
+        $event->screens['my-screen'] = [
+            'label' => Craft::t('my-plugin', 'My Screen'),
+            'url' => UrlHelper::cpUrl("my-plugin/users/{$userId}/my-screen"),
+        ];
+    },
+);
+```
+
+**Payload:** `DefineEditUserScreensEvent` carries `currentUser`, `editedUser`, and `screens` (`array<string, array>` keyed by screen ID — each entry requires `label`, `url` is optional and defaults to `myaccount/<id>` or `users/<id>/<id>`).
+
+**When to use sidebar instead:** `Element::EVENT_DEFINE_SIDEBAR_HTML` filtered to `User::class` is still the right tool for adding read-only metadata or status pointers to the right meta-sidebar — but for navigable screens, use `EVENT_DEFINE_EDIT_SCREENS`.
 
 ### Propagation Method Settings UI
 
