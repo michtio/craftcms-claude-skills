@@ -170,6 +170,13 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 - [ ] CKEditor 4→5 migration guide (config conversion, custom styles, plugin mapping, HTML cleanup)
 - [ ] More plugin references (Neo, Scout, Campaign)
 
+## Support
+
+If this project saves you time, consider supporting its development:
+
+- [GitHub Sponsors](https://github.com/sponsors/michtio)
+- [Buy Me a Coffee](https://buymeacoffee.com/michtio)
+
 ## Contributing
 
 Contributions welcome. See [docs/contributing.md](docs/contributing.md) for how to add plugin references, improve skills, and report issues.
