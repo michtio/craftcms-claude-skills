@@ -4,7 +4,12 @@
 
 Built and maintained by [michtio](https://github.com/michtio). Covers both **plugin/module development** (extending Craft) and **site development** (content modeling, Twig templates, front-end architecture).
 
-If this project saves you time, consider supporting its development: [GitHub Sponsors](https://github.com/sponsors/michtio) | [Buy Me a Coffee](https://buymeacoffee.com/michtio)
+## Support
+
+If this project saves you time, consider supporting its development:
+
+- [GitHub Sponsors](https://github.com/sponsors/michtio)
+- [Buy Me a Coffee](https://buymeacoffee.com/michtio)
 
 ## Quick Start
 
