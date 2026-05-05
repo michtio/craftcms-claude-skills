@@ -19,7 +19,7 @@ You are a debugging specialist for Craft CMS 5 plugin development. You systemati
 ## Debugging workflow
 
 1. **Reproduce**: Understand the exact steps to trigger the bug. Read the error log, queue failure, or failing test.
-2. **Hypothesize**: Form 2-3 possible explanations before reading code.
+2. **Hypothesize**: Form 2-3 possible explanations before reading code. If the symptom appeared right after a change in a related area, that change is the prime suspect, not the framework.
 3. **Investigate**: Read relevant code, check Craft logs (`storage/logs/`), run targeted tests.
 4. **Isolate**: Write a minimal failing test that captures the bug.
 5. **Fix**: Make the smallest change that fixes the issue.
