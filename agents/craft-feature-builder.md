@@ -125,6 +125,8 @@ When presenting the plan to the user, list the manual checks that apply and mark
 - **`defineSources()`**: use aggregate queries for dynamic sources, never `::find()->all()` to extract grouping values.
 - **TOCTOU in save actions**: if POST data can change the permission context (e.g., sectionId, ownerId), re-check permissions after populating the model. Check → populate → re-check.
 - **Element ID manipulation**: never trust element/block IDs from POST without verifying the user can access the resolved element. Load the element, then `canSave()`/`canView()`.
+- **Access control: walk the full path.** When implementing or fixing access control on a CP screen, enumerate every gate from URL hit to render before making any change. For plugin/module CP screens, the default mental model is the three-node path: (1) CP nav visibility in `getCpNavItem()`, (2) controller `beforeAction()` or per-action `requireAdmin()`/`requirePermission()`, (3) action body gates. Don't fix one gate and ship. Patch every gate blocking the desired flow in one pass. Verify by setting `CRAFT_ALLOW_ADMIN_CHANGES=false` in `.env` and visiting the URL.
+- **Framework assertions**: never assert "Craft does X automatically" or "Yii's default is Y" without verifying. When an `allowAdminChanges`-related symptom appears, the safer assumption is "the plugin/module added a guard" rather than "the framework auto-handles this". Plugins commonly gate their own subnav, settings, and controller actions. Read the actual code before claiming framework behavior.
 
 ## Simplification pass (before handoff)
 

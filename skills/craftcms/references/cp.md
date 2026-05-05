@@ -23,6 +23,7 @@ CP templates, form macros, navigation, settings pages, permissions, and read-onl
 - Forgetting `csrfInput()` in custom forms that don't use `fullPageForm` — POST requests will be rejected.
 - Using `size` attribute with `type: 'number'` on `textField` — browsers ignore the HTML `size` attribute on `<input type="number">`. Craft's own Number field works around this by using `type: 'text'` with `inputmode: 'numeric'`. For number inputs, constrain width with `inputAttributes: { style: 'width: 6rem' }` or switch to a text input with `inputmode="numeric"` pattern.
 - Expensive `badgeCount` computation in `getCpNavItem()` — this method runs on **every CP page load** across the entire install, not just your plugin's pages. Badge counts must be extremely cheap: use a cached value (invalidated on relevant saves) or a simple indexed `COUNT(*)` query. Never run complex queries, N+1 patterns, or element queries with eager loading here.
+- Gating subnav entries on `allowAdminChanges` in `getCpNavItem()` — hides the settings link on production, making the page unreachable from the CP nav even though it should be viewable in read-only mode. Gate on permission (`can()`), not on admin changes. See Read-Only Mode section for the full three-node access path.
 
 ## Contents
 
@@ -650,46 +651,83 @@ Element-level checks (`canView()`, `canSave()`, `canDelete()`) are in `elements.
 
 ## Read-Only Mode (allowAdminChanges)
 
-When `allowAdminChanges` is `false` (production), plugin settings pages should be viewable but not editable. This requires coordination between the controller and the template. For the controller-side pattern, see `controllers.md` (the `requireAdmin(false)` pattern).
+When `allowAdminChanges` is `false` (production), plugin settings pages should be viewable but not editable. Getting this right requires fixing **all three gates** in a single pass, not patching one and waiting for the next symptom.
 
-### Controller setup
+### The three-node access path
+
+Every CP plugin/module screen has three gates between the URL and the rendered page. All three must be aligned for read-only access to work:
+
+| Gate | Where | What blocks read-only access |
+|------|-------|------------------------------|
+| **1. CP nav** | `getCpNavItem()` | Subnav entry gated on `allowAdminChanges` hides the link (page still reachable by direct URL) |
+| **2. Controller beforeAction** | `beforeAction()` | `$this->requireAdmin()` with no args checks `allowAdminChanges` and throws 403 |
+| **3. Action body** | `actionEdit()` etc. | Explicit `allowAdminChanges` throw or `requireAdmin()` inside the action |
+
+When making a screen read-only-accessible, **walk all three gates** before shipping. Don't fix gate 3 and leave gates 1 and 2 blocking.
+
+### Gate 1: CP nav (getCpNavItem)
+
+The subnav entry for settings must be visible regardless of `allowAdminChanges`. Gate on permission, not on admin changes:
 
 ```php
-private bool $readOnly;
-
-public function beforeAction($action): bool
+public function getCpNavItem(): ?array
 {
-    if (!parent::beforeAction($action)) {
-        return false;
+    $item = parent::getCpNavItem();
+    $item['subnav'] = [
+        'dashboard' => ['label' => Craft::t('my-plugin', 'Dashboard'), 'url' => 'my-plugin'],
+        'items' => ['label' => Craft::t('my-plugin', 'Items'), 'url' => 'my-plugin/items'],
+    ];
+
+    // Gate on permission, NOT on allowAdminChanges
+    if (Craft::$app->getUser()->getIdentity()?->can('my-plugin:settings')) {
+        $item['subnav']['settings'] = [
+            'label' => Craft::t('my-plugin', 'Settings'),
+            'url' => 'my-plugin/settings',
+        ];
     }
 
-    // View actions: admin without allowAdminChanges check
-    if (in_array($action->id, ['index', 'edit'])) {
-        $this->requireAdmin(false);
-    } else {
-        // Save/delete actions: require allowAdminChanges
-        $this->requireAdmin();
-    }
-
-    $this->readOnly = !Craft::$app->getConfig()->getGeneral()->allowAdminChanges;
-
-    return true;
-}
-
-public function actionEdit(?int $itemId = null): Response
-{
-    // Block creation in read-only mode
-    if ($itemId === null && $this->readOnly) {
-        throw new ForbiddenHttpException('New items cannot be created when allowAdminChanges is disabled.');
-    }
-
-    $variables['readOnly'] = $this->readOnly;
-
-    return $this->renderTemplate('my-plugin/_edit', $variables);
+    return $item;
 }
 ```
 
-### Template patterns
+Craft does **not** auto-hide subnav entries when `allowAdminChanges` is false. If the settings link vanishes on production, the plugin's own `getCpNavItem()` is gating it. Check there first.
+
+### Gate 2: requireAdmin() per-action
+
+`requireAdmin()` with no args bundles two checks: (1) user is admin, (2) `allowAdminChanges` is true. The default `$requireAdminChanges = true` is the gotcha. Calling `$this->requireAdmin()` in `beforeAction()` blocks **all** actions on production, including view actions.
+
+Place `requireAdmin()` calls **per-action**, not in `beforeAction()`:
+
+```php
+// View action: admin check only, no allowAdminChanges gate
+public function actionEdit(?int $itemId = null): Response
+{
+    $this->requireAdmin(false);
+
+    $readOnly = !Craft::$app->getConfig()->getGeneral()->allowAdminChanges;
+
+    if ($itemId === null && $readOnly) {
+        throw new ForbiddenHttpException('New items cannot be created when allowAdminChanges is disabled.');
+    }
+
+    return $this->renderTemplate('my-plugin/_edit', [
+        'item' => $this->_getItem($itemId),
+        'readOnly' => $readOnly,
+    ]);
+}
+
+// Write action: admin + allowAdminChanges required
+public function actionSave(): ?Response
+{
+    $this->requireAdmin();
+    $this->requirePostRequest();
+    // ... save logic
+}
+```
+
+**Anti-pattern:** dispatch in `beforeAction()` using `in_array($action->id, ['index', 'edit'])` or `str_starts_with($action->id, 'save')`. This is brittle. A future write action with a non-`save*` name slips through silently. Per-action calls are explicit and self-documenting.
+
+### Gate 3: Template patterns
 
 Pass `readOnly` to the template and use it to disable inputs and hide save buttons:
 
@@ -699,7 +737,7 @@ Pass `readOnly` to the template and use it to disable inputs and hide save butto
 {% set fullPageForm = not readOnly %}
 
 {% block content %}
-    {# Text field — disabled in read-only mode #}
+    {# Text field #}
     {{ forms.textField({
         label: 'Name'|t('my-plugin'),
         name: 'name',
@@ -709,7 +747,7 @@ Pass `readOnly` to the template and use it to disable inputs and hide save butto
         readonly: readOnly,
     }) }}
 
-    {# Lightswitch — disabled #}
+    {# Lightswitch #}
     {{ forms.lightswitchField({
         label: 'Enabled'|t('my-plugin'),
         name: 'enabled',
@@ -717,9 +755,8 @@ Pass `readOnly` to the template and use it to disable inputs and hide save butto
         disabled: readOnly,
     }) }}
 
-    {# Editable table — static in read-only mode #}
+    {# Editable table: static fallback in read-only mode #}
     {% if readOnly %}
-        {# Render a plain HTML table instead of the editable version #}
         <table class="data fullwidth">
             <thead>
                 <tr>
@@ -745,7 +782,7 @@ Pass `readOnly` to the template and use it to disable inputs and hide save butto
         }) }}
     {% endif %}
 
-    {# Element select — disabled #}
+    {# Element select #}
     {{ forms.elementSelectField({
         label: 'Related Entries'|t('my-plugin'),
         name: 'relatedEntries',
@@ -780,3 +817,14 @@ Show a notice at the top of the page so admins understand why they can't edit:
     </div>
 {% endif %}
 ```
+
+### Verification
+
+After implementing read-only mode, verify it actually works. In `.env`, set `CRAFT_ALLOW_ADMIN_CHANGES=false`, then:
+
+1. Check the CP nav: is the settings link still visible?
+2. Visit the settings URL directly: does it render without 403?
+3. Confirm fields are disabled and the save button is hidden.
+4. Try submitting via direct POST: does the write action reject it?
+
+Set `CRAFT_ALLOW_ADMIN_CHANGES=true` to restore normal mode after testing.

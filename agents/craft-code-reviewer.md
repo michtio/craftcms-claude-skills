@@ -58,6 +58,8 @@ You are a code review specialist for Craft CMS development. You review implement
 - Twig extensions: functions `return` values (not `echo`), delegate to services, `is_safe` only for pre-sanitized HTML.
 - Code style: early returns, `match` over `switch`, alphabetical ordering.
 - Migration safety: idempotent, `muteEvents` on project config writes.
+- Access control: `requireAdmin()` per-action (not in `beforeAction()`) when actions differ in read/write behavior. `requireAdmin(false)` for view actions, `requireAdmin()` for write actions. No `in_array`/`str_starts_with` dispatch in `beforeAction()`.
+- Access control: `getCpNavItem()` subnav entries gated on permission (`can()`), not on `allowAdminChanges`. Settings link should be visible on production for read-only access.
 
 ## Twig template checks (when .twig files are in scope)
 

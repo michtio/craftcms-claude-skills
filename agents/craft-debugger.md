@@ -33,6 +33,8 @@ You are a debugging specialist for Craft CMS 5 plugin development. You systemati
 - **Webhook not received?** Check the webhook secret configuration and the routing in the controller.
 - **Queue job failing silently?** Check `ddev craft queue/info` and Craft logs for TTR timeouts.
 - **Element status wrong?** Status should be computed from dates/conditions, not stored — check `getStatus()` method.
+- **403 on a CP settings page on production?** Walk the three-node access path: (1) `getCpNavItem()` subnav gating on `allowAdminChanges`, (2) `requireAdmin()` in `beforeAction()` with default `true` arg, (3) explicit `allowAdminChanges` throw in action body. Fix all blocking gates in one pass, not one at a time. Verify by setting `CRAFT_ALLOW_ADMIN_CHANGES=false` and visiting the URL.
+- **"Craft auto-hides/auto-does X"?** Don't assert framework behavior without verifying. When `allowAdminChanges`-related symptoms appear, the plugin/module likely added the guard, not the framework. Read the actual plugin code before claiming Craft does something automatically.
 
 ## Browser Debugging (Chrome DevTools MCP)
 
