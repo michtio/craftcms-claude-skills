@@ -181,6 +181,32 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 
 Contributions welcome. See [docs/contributing.md](docs/contributing.md) for how to add plugin references, improve skills, and report issues.
 
+## For PHP consumers (composer)
+
+The same repo also ships as a small composer package, exposing the bundled skills' markdown to PHP code through a thin static helper. The primary consumer is [`craftpulse/craft-cortex`](https://github.com/craftpulse/craft-cortex) — a Craft CMS 5 MCP server plugin that surfaces these skills as MCP prompts and resources to AI agents.
+
+```bash
+composer require michtio/craftcms-claude-skills
+```
+
+```php
+use Michtio\CraftCmsClaudeSkills\Skills;
+
+Skills::skillNames();
+// ['craft-content-modeling', 'craft-garnish', 'craft-php-guidelines', ...]
+
+Skills::content('craftcms');
+// Full SKILL.md content as a string
+
+Skills::references('craftcms');
+// ['architecture', 'caching', 'conditions', ...]
+
+Skills::referenceContent('craftcms', 'elements');
+// Full reference markdown as a string
+```
+
+The helper is read-only and does no caching — wrap it in your own registry if you need that. PHP 8.2+.
+
 ## License
 
 MIT -- see [LICENSE](LICENSE).

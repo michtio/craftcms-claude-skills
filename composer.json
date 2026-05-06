@@ -1,0 +1,30 @@
+{
+    "name": "michtio/craftcms-claude-skills",
+    "description": "Craft CMS 5 expertise as Claude Code skills + a thin PHP API. Consumed by Claude Code (skills plugin) and craftpulse/craft-cortex (MCP prompts/resources).",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "craft-cms",
+        "craftcms",
+        "claude",
+        "mcp",
+        "skills",
+        "twig",
+        "php"
+    ],
+    "homepage": "https://github.com/michtio/craftcms-claude-skills",
+    "authors": [
+        {
+            "name": "michtio",
+            "email": "michael@bleuchaud.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Michtio\\CraftCmsClaudeSkills\\": "src/"
+        }
+    }
+}
