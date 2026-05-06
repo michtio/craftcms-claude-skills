@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.4.0 -- 2026-05-06
+
+PHP API for composer consumers. The skills repo now doubles as a composer package (`michtio/craftcms-claude-skills`) exposing the bundled Markdown content through a thin static helper. The primary consumer is [`craftpulse/craft-cortex`](https://github.com/craftpulse/craft-cortex) — a Craft CMS 5 MCP server plugin that surfaces these skills as MCP prompts and resources to AI agents (Claude Code, Cursor, Claude Desktop, anything speaking MCP). The Claude Code skills plugin format is unchanged; this is a parallel consumption path against the same source content. No skills moved or renamed.
+
+### Added
+
+- **`composer.json`** — package manifest. Name `michtio/craftcms-claude-skills`, type `library`, MIT, `php: ^8.2`, PSR-4 autoload `Michtio\CraftCmsClaudeSkills\` → `src/`.
+- **`src/Skills.php`** — final, static, read-only helper. Public surface:
+  - `skillNames(): array<int,string>` — sorted directory-backed skill names
+  - `hasSkill(string $name): bool`
+  - `content(string $name): string` — SKILL.md contents; throws `\InvalidArgumentException` on missing
+  - `references(string $name): array<int,string>` — sorted reference filenames (no extension); throws on missing skill
+  - `hasReference(string $name, string $reference): bool`
+  - `referenceContent(string $name, string $reference): string` — reference contents; throws on missing
+  - `path(): string` — package root absolute path
+  - All name-accepting methods reject path-traversal (`.`, `..`, slashes, null bytes); hidden entries are treated as absent.
+- **README** — "For PHP consumers (composer)" section documenting install and a quick `Skills::skillNames()` / `Skills::content('craftcms')` example.
+
+### Notes
+
+- API was validated end-to-end against `craftpulse/craft-cortex` Gate 6 before tagging — every public method is exercised by cortex's prompt and resource registries.
+- No caching inside the helper. Consumers layer their own registries.
+- No PHPUnit / Pest in this repo; the helper has no logic complex enough to test in isolation, and cortex's integration tests cover every code path end-to-end.
+
 ## 1.3.1 -- 2026-05-06
 
 Manifest-sync hotfix. Both `1.2.1` and `1.3.0` shipped with stale `1.2.0` versions in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` — the manifest hadn't been bumped since the v1.2.0 prep work on 2026-04-17. Marketplace surfaces and any plugin metadata scrapers therefore reported `1.2.0` for two releases. This patch corrects all three version sites (`plugin.json` → `version`, `marketplace.json` → `metadata.version` + `plugins[0].version`) and adds release tooling to prevent recurrence.
