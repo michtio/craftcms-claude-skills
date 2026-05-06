@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.1 -- 2026-05-06
+
+Path-repo development hotfix. Without `branch-alias`, downstream packages declaring `michtio/craftcms-claude-skills: ^1.4` couldn't resolve when installed via a composer path repository — the path repo serves the working tree as `dev-main` (the branch name), and `dev-main` doesn't match `^1.4`. This patch makes path-repo consumers work without sacrificing the symlink-based live dev loop.
+
+### Fixed
+
+- **`composer.json`** — added `extra.branch-alias` mapping `dev-main` to `1.x-dev`. End-users on Packagist are unaffected (they always resolve tagged versions); path-repo developers can now declare `^1.4` constraints against the package and have them satisfied by the working tree.
+
 ## 1.4.0 -- 2026-05-06
 
 PHP API for composer consumers. The skills repo now doubles as a composer package (`michtio/craftcms-claude-skills`) exposing the bundled Markdown content through a thin static helper. The primary consumer is [`craftpulse/craft-cortex`](https://github.com/craftpulse/craft-cortex) — a Craft CMS 5 MCP server plugin that surfaces these skills as MCP prompts and resources to AI agents (Claude Code, Cursor, Claude Desktop, anything speaking MCP). The Claude Code skills plugin format is unchanged; this is a parallel consumption path against the same source content. No skills moved or renamed.

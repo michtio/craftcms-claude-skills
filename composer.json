@@ -26,5 +26,10 @@
         "psr-4": {
             "Michtio\\CraftCmsClaudeSkills\\": "src/"
         }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        }
     }
 }
