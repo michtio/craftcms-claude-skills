@@ -1,0 +1,62 @@
+name: release-validation
+
+# Fires on every tag push that looks like a version (`v1.2.3`, `v1.2.3-beta.1`, etc.)
+# and verifies that the manifest version sites all match the tag. The point is
+# to catch the kind of drift that produced 1.2.1 and 1.3.0 with stale 1.2.0
+# manifests — those slipped because nothing was checking.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-manifest-versions:
+    name: Manifest versions match tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare versions
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="${GITHUB_REF_NAME}"        # e.g. v1.3.1
+          EXPECTED="${TAG#v}"             # strip leading 'v' → 1.3.1
+
+          PLUGIN_VERSION=$(jq -r '.version' .claude-plugin/plugin.json)
+          MARKETPLACE_METADATA_VERSION=$(jq -r '.metadata.version' .claude-plugin/marketplace.json)
+          MARKETPLACE_PLUGIN_VERSION=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
+
+          echo "tag                                : ${TAG}"
+          echo "expected version                   : ${EXPECTED}"
+          echo "plugin.json .version               : ${PLUGIN_VERSION}"
+          echo "marketplace.json .metadata.version : ${MARKETPLACE_METADATA_VERSION}"
+          echo "marketplace.json .plugins[0].ver.  : ${MARKETPLACE_PLUGIN_VERSION}"
+
+          fail=0
+          if [ "${PLUGIN_VERSION}" != "${EXPECTED}" ]; then
+            echo "::error file=.claude-plugin/plugin.json::version is '${PLUGIN_VERSION}', expected '${EXPECTED}'"
+            fail=1
+          fi
+          if [ "${MARKETPLACE_METADATA_VERSION}" != "${EXPECTED}" ]; then
+            echo "::error file=.claude-plugin/marketplace.json::metadata.version is '${MARKETPLACE_METADATA_VERSION}', expected '${EXPECTED}'"
+            fail=1
+          fi
+          if [ "${MARKETPLACE_PLUGIN_VERSION}" != "${EXPECTED}" ]; then
+            echo "::error file=.claude-plugin/marketplace.json::plugins[0].version is '${MARKETPLACE_PLUGIN_VERSION}', expected '${EXPECTED}'"
+            fail=1
+          fi
+
+          if [ "${fail}" -ne 0 ]; then
+            echo
+            echo "Manifest versions do not match the pushed tag. Run \`bin/release.sh ${EXPECTED}\` and re-tag." >&2
+            exit 1
+          fi
+
+          echo
+          echo "All manifest versions match ${TAG}."

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.1 -- 2026-05-06
+
+Manifest-sync hotfix. Both `1.2.1` and `1.3.0` shipped with stale `1.2.0` versions in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` — the manifest hadn't been bumped since the v1.2.0 prep work on 2026-04-17. Marketplace surfaces and any plugin metadata scrapers therefore reported `1.2.0` for two releases. This patch corrects all three version sites (`plugin.json` → `version`, `marketplace.json` → `metadata.version` + `plugins[0].version`) and adds release tooling to prevent recurrence.
+
+### Fixed
+
+- **`.claude-plugin/plugin.json`** — `version` now `1.3.1` (was `1.2.0` since 2026-04-17, despite v1.2.1 and v1.3.0 having shipped).
+- **`.claude-plugin/marketplace.json`** — `metadata.version` and `plugins[0].version` both now `1.3.1` (same drift).
+
+### Added
+
+- **`bin/release.sh`** — single-command version bump across all three manifest sites + CHANGELOG date stamp. File-only — the developer still reviews the diff and handles the commit / tag / push themselves. Usage: `bin/release.sh <version>`.
+- **`.github/workflows/release-validation.yml`** — fires on tag push (`v*`); fails the workflow if `plugin.json` or `marketplace.json` versions don't match the tag. Catches the same kind of drift before a release goes public.
+
 ## 1.3.0 -- 2026-05-04
 
 Full CLI command reference (25→80+), CP UI patterns library, feature-first build order (replacing layer-first), full-stack code reviewer (PHP + Twig + JS + CSS), planner research/audit capabilities, permissions generation in project setup, manual testing gates, 6 API gotchas from real plugin development, 3 testing-specific pitfalls, stronger Bash restriction rules, token budget measurement tooling, cp.md split for input token efficiency, output density constraints on all agents.
