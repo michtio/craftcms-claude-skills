@@ -19,6 +19,7 @@ Complete reference for queue job development in Craft CMS 5. For queue component
 - [Pushing to Queue](#pushing-to-queue)
 - [Job Priority](#job-priority)
 - [Retry Strategies](#retry-strategies)
+- [Best-Effort Helpers in Queue Jobs](#best-effort-helpers-in-queue-jobs) — docblock/behavior contract, rethrow = duplicate side effects
 - [Failed Job Handling](#failed-job-handling)
 - [Long-Running Job Patterns](#long-running-job-patterns)
 - [Common Queue Job Patterns](#common-queue-job-patterns)
@@ -37,6 +38,7 @@ Complete reference for queue job development in Craft CMS 5. For queue component
 - Accessing `Craft::$app->getUser()` in queue jobs — no user session in queue context. Pass needed user IDs as job properties.
 - Not reporting progress in long-running jobs — CP shows a "stuck" indicator, admins retry thinking it failed.
 - Memory leaks in batch operations — element caches grow unbounded. Use `Db::each()` or paginated queries.
+- Rethrowing from a "best-effort" helper inside `processItem()` — causes `BaseBatchedJob` to retry the item. For non-idempotent operations (HTTP forward, email send), this produces duplicate side effects. Best-effort means log and return, not log and rethrow.
 - Removing `@property` docblock hints for queue-injected properties — the queue runner dynamically assigns `$this->queue` to job instances. Without a `@property Queue $queue` annotation on the class docblock, PHPStan reports an undefined property error. This applies to `BaseJob`, `BaseBatchedJob`, and any custom base job class. Always keep `@property` hints for properties that are injected by the framework rather than declared in the class body.
 - Overriding `getDescription()` on `BaseBatchedJob` — fatal error: "Cannot override final method." The extension point is `defaultDescription()`, not `getDescription()`. Same pattern applies to `BaseJob`. See [BaseBatchedJob Subclass Contract](#basebatchedjob-subclass-contract) below.
 - Assuming User element properties are fully populated in queue jobs — `UserQuery::beforePrepare()` excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `verificationCode`, and others). These return `null` even when the DB has values. In queue context this is especially deceptive because there's no browser session to hint at the problem. Query `Table::USERS` directly for excluded columns. See `elements.md` Common Pitfalls for the full list and workaround.
@@ -226,6 +228,38 @@ public function execute($queue): void
     }
 }
 ```
+
+## Best-Effort Helpers in Queue Jobs
+
+When a private method inside `processItem()` or `execute()` is documented as "best-effort" (e.g., recording an outcome, updating a cursor, writing an audit log), its catch block must log and return — not rethrow:
+
+```php
+// Correct — best-effort: logs failure, does not rethrow
+private function _recordRowOutcome(int $rowId, string $status): void
+{
+    try {
+        Db::update('{{%my_outcomes}}', ['status' => $status], ['rowId' => $rowId]);
+    } catch (\Throwable $e) {
+        Craft::error("Failed to record outcome for row {$rowId}: {$e->getMessage()}", 'my-plugin');
+        return; // best-effort — the primary operation already succeeded
+    }
+}
+
+// Wrong — docblock says "never rethrown" but catch rethrows
+private function _recordRowOutcome(int $rowId, string $status): void
+{
+    try {
+        Db::update('{{%my_outcomes}}', ['status' => $status], ['rowId' => $rowId]);
+    } catch (\Throwable $e) {
+        Craft::error($e->getMessage(), 'my-plugin');
+        throw new \RuntimeException("..."); // contradicts "best-effort" contract
+    }
+}
+```
+
+Rethrowing from a best-effort helper causes `BaseBatchedJob` to mark the item failed and retry it. For non-idempotent operations (HTTP forward, email send, webhook dispatch), retry produces duplicate side effects — the primary operation already succeeded, only the bookkeeping failed.
+
+When rethrowable failure IS the intended behavior, the docblock must say so: "Throws on transport failure — caller handles retry." The default contract for private helpers called from `processItem()` is best-effort unless documented otherwise.
 
 ## Failed Job Handling
 
