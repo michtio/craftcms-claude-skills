@@ -3,6 +3,7 @@
 ## Contents
 
 - Common Pitfalls
+- Architecture: One Element Class with Native Structure — default to Structure for hierarchies, code-only field layouts, native fields for plugin attributes
 - Static Configuration Methods — displayName, hasTitles, hasUris, hasDrafts, etc.
 - Element Save Lifecycle (15 steps) — beforeSave, afterSave, afterPropagate
 - Attributes, Field Values, and Mass Assignment — native vs custom, safe rules, CP save chain, silent drop trap
@@ -45,6 +46,7 @@
 - Loading all elements in `defineSources()` — runs on every index page load. See `element-index.md` Common Pitfalls for details.
 - Declaring element query properties without wiring them in `beforePrepare()` — unused properties are dead code that mislead developers. Every property on the query class must have corresponding `andWhere` logic in `beforePrepare()`.
 - Assuming `NestedElementTrait` handles site propagation — it doesn't. The trait manages owner relationships (eager loading, owner getters/setters, sort order) but does NOT override `getSupportedSites()` or `isLocalized()`. Address elements fall through to the base `Element` default: primary site only. Matrix entries get multi-site support because the `Entry` class explicitly overrides `getSupportedSites()` and delegates to `$this->getField()->getSupportedSitesForElement($this)` when `$this->fieldId` is set. If your custom nested element type needs multi-site propagation, you must override `getSupportedSites()` yourself — the trait won't do it for you.
+- Inventing two parallel element classes (e.g., `Item` + `ItemReference`) when the relationship is parent/child — that's what Structure was built for. One element class with `structureId` gives you drag-sort, drafts, revisions, multi-site, search, conditions, and the full element query API for free. See "Architecture: One Element Class with Native Structure" above.
 - Assuming all User properties are populated from element queries — `UserQuery::beforePrepare()` only selects a subset of columns from the `users` table. Security-sensitive columns like `lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, and `lastLoginAttemptIp` are intentionally excluded. These properties are `null` on User elements loaded via `Craft::$app->getUser()->getIdentity()` or any element query, even when the database has values. To access them, query the `users` table directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`. Craft's CP profile page does this internally — it loads the User record separately from the element.
 
 ## Scaffold
@@ -54,6 +56,65 @@ ddev craft make element-type --with-docblocks
 ```
 
 Generates: element class, element query, element condition, migration, CP controller routes, and templates.
+
+## Architecture: One Element Class with Native Structure
+
+When a custom element type has a hierarchical relationship (parent/child, tree, nested categories), **default to one element class participating in Craft's native Structure**. Don't invent two parallel element classes when Structure handles the relationship.
+
+The canonical pattern is `craft\elements\Category` with `CategoryGroup`:
+- `structureId` property on the element, set from a parent group model
+- Parent/child operations via `Craft::$app->getStructures()->append()` / `prependToRoot()`
+- Depth limits via `maxLevels` on the parent model
+- `defineFieldLayouts()` returns the in-code layout
+
+**What you get for free from native Structure participation:** drag-sort reordering, drafts and revisions, multi-site propagation, search indexing, element conditions, element index with hierarchy view, eager loading, and the full element query API. Inventing a parallel element class or hand-rolled storage abandons all of these.
+
+### Code-Only Field Layouts (No Designer)
+
+For plugin-owned elements where the field layout is controlled by the plugin (not configurable by admins), define the layout in code via `defineFieldLayouts()` and don't register a CP route for the field layout designer:
+
+```php
+// On the element class
+protected static function defineFieldLayouts(?string $source): array
+{
+    $layout = new FieldLayout(['type' => static::class]);
+
+    $tab = new FieldLayoutTab(['name' => 'Content']);
+    $tab->setElements([
+        new TitleField(),
+        new MyDescriptionField(),   // BaseNativeField subclass
+        new MyStatusField(),        // BaseNativeField subclass
+    ]);
+
+    $layout->setTabs([$tab]);
+    return [$layout];
+}
+```
+
+The layout exists only in code and is rebuilt on each boot. The CP edit screen consumes it directly. To prevent admin edits, simply don't expose a designer route.
+
+### Native Fields for Plugin-Owned Attributes
+
+For attributes that need to appear in the edit screen, subclass `BaseNativeField` (or reuse built-ins like `TextField`, `TextareaField`, `TitleField`, `SlugField`):
+
+```php
+class MyDescriptionField extends BaseNativeField
+{
+    public string $attribute = 'description';
+
+    protected function inputHtml(?ElementInterface $element, bool $static): ?string
+    {
+        return Craft::$app->getView()->renderTemplate('my-plugin/_fields/description', [
+            'value' => $element?->description,
+            'static' => $static,
+        ]);
+    }
+}
+```
+
+The `$attribute` value lives in PHP property namespace, not the global `fields` table. No collision with user-created custom fields of the same handle. Users can only attach custom fields to your element type if you explicitly register via `EVENT_REGISTER_FIELD_LAYOUT_TYPES`.
+
+Reference: `vendor/craftcms/cms/src/fieldlayoutelements/TitleField.php` for the canonical shape, `vendor/craftcms/cms/src/elements/Category.php` for the structure-aware element pattern.
 
 ## Static Configuration Methods
 

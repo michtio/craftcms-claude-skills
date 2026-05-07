@@ -41,7 +41,8 @@ Use `WebFetch` on specific doc pages when a reference file doesn't cover enough 
 Read the relevant reference file(s) for your task. Multiple files often apply together.
 
 **Task examples:**
-- "Build a custom element type" → read `elements.md` + `element-index.md` + `fields.md` + `migrations.md` + `cp.md`
+- "Build a custom element type" → read `elements.md` (Architecture section first) + `element-index.md` + `fields.md` + `migrations.md` + `cp.md`
+- "Build a hierarchical/tree element type" → read `elements.md` (Architecture: One Element Class with Native Structure)
 - "Add a webhook endpoint" → read `controllers.md` + `events.md`
 - "Create a queue job that syncs elements" → read `queue-jobs.md` + `elements.md` + `debugging.md`
 - "Add a settings page with form fields" → read `controllers.md` + `cp.md` + `architecture.md`
