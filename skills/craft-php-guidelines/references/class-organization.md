@@ -69,6 +69,30 @@ class MyService extends Component
 - **Properties**: Alphabetical within each visibility group.
 - **Methods**: Lifecycle methods first (`init()`, `beforeAction()`, `afterSave()`), then alphabetical within each visibility group.
 
+## Shared Constants — Visibility and Ownership
+
+Constants whose value is part of an external contract (hash chain canonical input, signature algorithm name, sentinel values, header names that go on the wire) must be `public const` on the single authoritative source class — the service that owns the contract. All other consumers reference it as `OwnerService::CONSTANT_NAME`. Never duplicate the value as `private const` on multiple consumers.
+
+PHPStan does not flag two `private const` declarations in different files holding identical values being out of sync. Tests don't assert cross-class constant equality unless you explicitly write one. A "keep in lockstep" comment is future rot — the first refactor or typo that touches one site silently breaks the contract.
+
+```php
+// Wrong — same value in three files, invisible drift risk
+// AuditLogService.php
+private const CANONICAL_DATE_FORMAT = 'Y-m-d\TH:i:s\Z';
+
+// AuditController.php
+private const CANONICAL_DATE_FORMAT = 'Y-m-d\TH:i:s\Z'; // drift here silently invalidates
+
+// Correct — one authoritative source, consumers reference it
+// AuditLogService.php (the service that owns the contract)
+public const CANONICAL_DATE_FORMAT = 'Y-m-d\TH:i:s\Z';
+
+// AuditController.php
+$formatted = $date->format(AuditLogService::CANONICAL_DATE_FORMAT);
+```
+
+This rule applies only to values that participate in an external contract. Internal-only constants that happen to share a value across classes are fine as `private const` — the semantic meaning belongs to each class independently. Don't extract all shared constants to a global "Constants" class; constants belong with the class that owns their meaning.
+
 ## Enums
 
 Use PHP backed enums with PascalCase case names and lowercase backing values:
