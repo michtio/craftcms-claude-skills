@@ -51,6 +51,7 @@ The rule of thumb: register a route only when the URL is visible to humans (brow
 - [CP Entity Controller Pattern](#cp-entity-controller-pattern)
 - [Webhook/API Controller Pattern](#webhookapi-controller-pattern)
 - [CP Screen Response](#cp-screen-response)
+- [Streaming and Download Responses](#streaming-and-download-responses) — asRaw, stream resource, callable closure, sendContentAsFile
 - [Action Routing](#action-routing)
 - [Authorization Summary](#authorization-summary)
 
@@ -334,6 +335,51 @@ $response = $this->asCpScreen()
 
 return $response;
 ```
+
+## Streaming and Download Responses
+
+Three forms for sending data from a controller, in order of preference:
+
+**1. Full payload in memory** — use `asRaw()` + headers when the content fits in memory:
+
+```php
+public function actionExportCsv(): Response
+{
+    $csv = $this->_buildCsv();
+    $response = Craft::$app->getResponse();
+    $response->getHeaders()
+        ->set('Content-Type', 'text/csv; charset=UTF-8')
+        ->set('Content-Disposition', 'attachment; filename="export.csv"');
+    return $this->asRaw($csv);
+}
+```
+
+**2. Stream resource** — use `$response->stream` with a file handle when the source is a file or `php://temp`:
+
+```php
+$response->stream = fopen($tempPath, 'rb');
+```
+
+Yii reads with `feof()`/`fread()` until EOF.
+
+**3. Callable closure for lazy generation** — use when the dataset doesn't fit in memory. The closure must **return** the data chunk and finished flag, not echo:
+
+```php
+$offset = 0;
+$response->stream = function () use (&$offset, $query): array {
+    $batch = $query->offset($offset)->limit(1000)->all();
+    $offset += 1000;
+    $data = $this->_formatBatch($batch);
+    $finished = count($batch) < 1000;
+    return [$data, $finished];
+};
+```
+
+Yii's send loop calls the closure repeatedly: `list($data, $finished) = call_user_func($this->stream); echo $data;` — it echoes the **returned** `$data` until `$finished` is true.
+
+**Anti-pattern:** closures that echo data inside and return a sentinel like `[true, true]`. Yii still echoes the return value, casting boolean `true` to `"1"` and corrupting the response.
+
+For Craft controllers, also consider `$response->sendContentAsFile($content, $filename, ['mimeType' => $type])` — handles headers and framing in one call. Reach for streaming only when the payload size warrants it.
 
 ## Action Routing
 
