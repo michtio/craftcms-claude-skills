@@ -4,7 +4,7 @@
 
 - Common Pitfalls
 - Two Testing Approaches
-- Pest Setup (Recommended for Plugins)
+- Pest Setup (Recommended for Plugins) — craft-pest, standalone Pest, loading \Craft/\Yii without booting
 - Element Factories
 - HTTP Testing
 - Queue Testing
@@ -31,6 +31,7 @@
 - Not refreshing sites after fixture changes — call `Craft::$app->getSites()->refreshSites()` or cached data goes stale.
 - Using `craft\test\TestSetup` helpers in a Pest-only setup — `TestSetup::configureCraft()` transitively autoloads `craft\test\Craft` which extends `Codeception\Module\Yii2`. If Codeception isn't installed, you get a fatal class-not-found error. For Pest-only projects, inline-replicate the ~40 lines of bootstrap logic instead of calling `TestSetup`.
 - PHPUnit 12's `<env name="X" value="Y" force="true"/>` doesn't overwrite `$_SERVER` — DDEV exports `CRAFT_DB_SERVER`, `CRAFT_DB_USER`, etc. into `$_SERVER`, and `App::env()` reads `$_SERVER` first. Tests silently connect to the DDEV database instead of the test database. Fix: set `$_SERVER[]`, `$_ENV[]`, and `putenv()` in your bootstrap file before Craft boots.
+- `Class "Craft" not found` in unit tests — `\Craft` and `\Yii` are global classes not covered by PSR-4 autoload. Unit tests that don't boot the full app must `require_once` both in the test bootstrap. See "Loading \Craft and \Yii" below.
 - Solo edition silently caps user creation at 1 — `User::beforeSave()` vetoes saves beyond the admin user without throwing. Test factories that create additional users fail silently. Fix: set `Craft::$app->edition = CmsEdition::Pro` directly in the test (not via project config — that re-fires events and causes side effects).
 
 ## Two Testing Approaches
@@ -84,6 +85,20 @@ Add `autoload-dev` to `composer.json`:
 ```
 
 Configure `phpunit.xml.dist` with `bootstrap="vendor/autoload.php"`, a `Unit` test suite pointing at `tests/Unit`, and a source include for `src`.
+
+### Loading \Craft and \Yii without booting the app
+
+`\Craft` and `\Yii` are global classes outside their packages' PSR-4 maps. Composer's autoloader cannot find them — Craft's web/console bootstrap normally loads them via explicit `require`. Unit tests that don't boot the full application must load them manually in the test bootstrap (`tests/Pest.php` for Pest 3):
+
+```php
+// tests/Pest.php
+require_once dirname(__DIR__) . '/vendor/yiisoft/yii2/Yii.php';
+require_once dirname(__DIR__) . '/vendor/craftcms/cms/src/Craft.php';
+```
+
+Without this, any code path that references `Craft::$app` or calls a Yii built-in validator (`'in'`, `'integer'`, `'string'` — which internally call `Yii::createObject()`) fatals with `Class "Craft" not found` or `Class "Yii" not found`.
+
+Once both are loaded, `Craft::$app` is `null` in the unit test context. Code that conditionally checks `Craft::$app instanceof \craft\web\Application` before logging or accessing services correctly skips those paths. This is the expected behavior — don't remove those guards to "simplify" the code.
 
 ### Test File Conventions
 
