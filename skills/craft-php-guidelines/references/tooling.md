@@ -37,6 +37,34 @@ parameters:
     tmpDir: %currentWorkingDirectory%/tmp/phpstan
 ```
 
+### PHPStan and Craft::$app
+
+`Craft::$app` inherits its static type from Yii: `\yii\console\Application|\yii\web\Application`. That union doesn't expose Craft-specific methods (`getConfig()`, `getView()`, `getElements()`, `getEntries()`, `getProjectConfig()`, `getRequest()`, etc.) which live on `craft\base\ApplicationTrait`. Calling `Craft::$app->getConfig()` works at runtime but PHPStan errors with `Call to an undefined method`.
+
+Narrow with a typed local. This is the pattern Craft core uses (CP controllers, dashboard widgets, debug panels):
+
+```php
+// CP-only paths (controllers, settings, CP templates)
+/** @var \craft\web\Application $app */
+$app = Craft::$app;
+$app->getConfig()->getConfigFromFile('my-plugin');
+
+// Console-only paths (console controllers, queue jobs)
+/** @var \craft\console\Application $app */
+$app = Craft::$app;
+$app->getRequest()->getParams();
+```
+
+For code that runs on both web and console where you only need `ApplicationTrait` methods:
+
+```php
+/** @var \craft\web\Application|\craft\console\Application $app */
+$app = Craft::$app;
+$app->getElements()->saveElement($element);
+```
+
+Don't use `@phpstan-ignore-line` to silence these. The typed local is the documented pattern. Reserve ignores for genuine library-typing gaps that can't be resolved with a cast.
+
 ## Scaffolding
 
 The following component types have generator support via `craftcms/generator`. Always scaffold with the generator instead of creating manually:
