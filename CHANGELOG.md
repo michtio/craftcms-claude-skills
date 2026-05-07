@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.4.3 -- 2026-05-07
+
+Seven skill gaps closed from real plugin development sessions. Focused on PHP guidelines accuracy (validator shapes, import ordering, PHPStan typing) and queue job error handling patterns.
+
+### New
+
+- **craft-php-guidelines / templates-and-patterns.md** — New "Inline Validators" subsection. Use string method name form (`[['attr'], 'validateAttr']`), not `[$this, '_validateFoo']` callable arrays or inline closures. Matches `craft\models\Section`, `craft\models\EntryType`. Validator methods are public, no underscore — Yii invokes by name.
+- **craft-php-guidelines / naming-conventions.md** — New "Visibility Exception: Yii-Invoked Methods" section. Methods that Yii invokes by name (validators, event handlers, behavior callables, `when` predicates) are public with no underscore prefix, even if they feel internal. Explicit carve-out from the general private-underscore rule.
+- **craft-php-guidelines / tooling.md** — New "PHPStan and Craft::$app" subsection. `Craft::$app` inherits Yii's base union type which doesn't expose `ApplicationTrait` methods. Narrow with a typed local (`/** @var \craft\web\Application $app */`). Patterns for web-only, console-only, and both contexts. Don't `@phpstan-ignore-line`.
+- **craft-php-guidelines / class-organization.md** — New "Shared Constants — Visibility and Ownership" section. Constants whose value is part of an external contract (hash inputs, sentinels, algorithm names) must be `public const` on the owning service, referenced as `OwnerService::CONSTANT_NAME` everywhere else. PHPStan can't catch cross-file `private const` drift.
+- **craftcms / testing.md** — New "Loading \Craft and \Yii without booting the app" subsection. `\Craft` and `\Yii` are global classes outside PSR-4 maps — must be `require_once`'d in test bootstrap for unit tests that don't boot the full application. Without this, Yii validators and `Craft::$app` references fatal.
+- **craftcms / queue-jobs.md** — New "Best-Effort Helpers in Queue Jobs" section. When a helper inside `processItem()` is documented as best-effort, its catch block must log and return — not rethrow. Rethrowing causes `BaseBatchedJob` to retry the item, producing duplicate side effects for non-idempotent operations.
+- **craftcms / controllers.md** — New "Streaming and Download Responses" section. Three forms in preference order: `asRaw()` for in-memory, stream resource for files, callable closure for lazy generation. The callable must return `[string $data, bool $finished]` — echoing inside the closure corrupts the response.
+
+### Fixed
+
+- **craft-php-guidelines / class-organization.md** — Import ordering rule corrected from "PHP built-ins first" grouping to flat case-sensitive alphabetical matching ECS's `OrderedImportsFixer`. "PHP globals first" is incompatible with `craft\ecs\SetList::CRAFT_CMS_4` — uppercase PHP globals sort after lowercase `craft\…`. Tooling wins.
+
 ## 1.4.2 -- 2026-05-08
 
 Agent PHP surface plus a craft-element-architecture refresh in the `craftcms` skill. The PHP additions unblock [`craftpulse/craft-cortex`](https://github.com/craftpulse/craft-cortex) Phase 1 ship-prep — cortex needed a way to enumerate the bundled agents from PHP so it could surface them as MCP resources alongside the skills.
