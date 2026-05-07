@@ -137,4 +137,4 @@ Before every commit:
 4. PHPDocs complete on all new/modified code
 5. `@throws` chains verified
 6. Section headers present and correct
-7. Imports alphabetical and grouped
+7. Imports flat alphabetical (ECS-enforced, not "PHP globals first")
