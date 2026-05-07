@@ -32,6 +32,7 @@ When unsure about a convention, `WebFetch` the coding guidelines page for the au
 - `@author` goes on classes and methods only — never on properties.
 - Don't use `string|null` — use `?string` (short nullable notation).
 - Forget `parent::defineRules()` and you lose all inherited validation.
+- Using `[$this, '_validateFoo']` callable arrays or inline closures in `defineRules()` — Craft core uses string method names: `[['attr'], 'validateAttr']`. The validator method is public, no underscore — Yii invokes it by name.
 - `DateTimeHelper` in elements/queries, `Carbon` in services — never mix in the same class.
 - Missing `@throws` chains — document exceptions from called methods too, not just your own throws.
 - Using magic property access (`$plugin->settings`, `$app->view`) instead of explicit getters (`$plugin->getSettings()`, `$app->getView()`) — PHPStan can't resolve `__get()` calls, so magic access passes at runtime but fails static analysis. Always use explicit getters for Yii2 components and Craft plugin properties.

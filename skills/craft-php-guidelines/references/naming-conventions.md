@@ -8,6 +8,7 @@
 | Class | StudlyCase | `MyEntity` |
 | Method | camelCase | `getEntityById()` |
 | Private method | Underscore prefix | `_registerCpUrlRules()` |
+| Yii-invoked method | Public, **no** underscore | `validateSiteSettings()` — see exception below |
 | Property | camelCase | `$entityId` |
 | Private property | Underscore prefix | `$_items` |
 | Constant | UPPER_SNAKE_CASE | `EVENT_BEFORE_SAVE` |
@@ -52,3 +53,15 @@ When importing both model and record in the same file, alias the record:
 use craftpulse\myplugin\models\MyEntity;
 use craftpulse\myplugin\records\MyEntity as MyEntityRecord;
 ```
+
+## Visibility Exception: Yii-Invoked Methods
+
+Methods that Yii invokes by name from outside the class are **public with no underscore prefix**, even if they feel "internal." Yii resolves these by string name on the object — private or underscore-prefixed methods won't be found.
+
+This applies to:
+- **Inline validator methods** referenced from `defineRules()` — `'validateSiteSettings'`
+- **`when` callables** in validator rules — `[$this, 'hasMaxRows']`
+- **Event handler methods** referenced as strings in config
+- **Behavior callables** referenced by name
+
+General principle: any method Yii invokes by name is part of the public API surface.

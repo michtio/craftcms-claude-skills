@@ -91,6 +91,44 @@ protected function defineRules(): array
 
 Always call `parent::defineRules()` first to inherit base validation. Use Craft's built-in validators (`HandleValidator`, `UniqueValidator`, `DateTimeValidator`) before writing custom ones.
 
+### Inline Validators
+
+Use the **string method name** form for inline validators. Do not use `[$this, 'method']` callable arrays or inline closures:
+
+```php
+// Correct — matches craft\models\Section, craft\models\EntryType
+$rules[] = [['siteSettings'], 'validateSiteSettings'];
+$rules[] = [['previewTargets'], 'validatePreviewTargets'];
+
+// Wrong — Craft core does not use this form
+$rules[] = [['siteSettings'], [$this, '_validateSiteSettings']];
+
+// Wrong — inline closures make rules unreadable, prevent reuse
+$rules[] = [['siteSettings'], function ($attribute) { ... }];
+```
+
+The validator method is **public, no underscore prefix**. Yii's validator dispatcher invokes it by name on the model instance, making it part of the public API surface:
+
+```php
+public function validateSiteSettings(): void
+{
+    if (empty($this->siteSettings)) {
+        $this->addError('siteSettings', Craft::t('my-plugin', 'At least one site is required.'));
+    }
+}
+```
+
+The `when` callable in validator rules follows the same pattern — public method, no underscore:
+
+```php
+$rules[] = [['maxRows'], 'integer', 'min' => 1, 'when' => [$this, 'hasMaxRows']];
+
+public function hasMaxRows(): bool
+{
+    return $this->maxRows !== null;
+}
+```
+
 ## Translations
 
 Always use the plugin handle as the translation category:
