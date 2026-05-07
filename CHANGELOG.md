@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.3 -- 2026-05-07
+## 1.4.3 -- unreleased
 
 Seven skill gaps closed from real plugin development sessions. Focused on PHP guidelines accuracy (validator shapes, import ordering, PHPStan typing) and queue job error handling patterns.
 
