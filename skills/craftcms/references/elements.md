@@ -61,20 +61,24 @@ Generates: element class, element query, element condition, migration, CP contro
 
 When a custom element type has a hierarchical relationship (parent/child, tree, nested categories), **default to one element class participating in Craft's native Structure**. Don't invent two parallel element classes when Structure handles the relationship.
 
-The canonical pattern is `craft\elements\Category` with `CategoryGroup`:
-- `structureId` property on the element, set from a parent group model
-- Parent/child operations via `Craft::$app->getStructures()->append()` / `prependToRoot()`
-- Depth limits via `maxLevels` on the parent model
-- `defineFieldLayouts()` returns the in-code layout
+Two canonical patterns exist in Craft core:
+
+- **`craft\elements\Category` with `CategoryGroup`** — the original structure-aware element. `structureId` property on the element, parent/child operations via `Craft::$app->getStructures()`, depth limits via `maxLevels` on the parent model. Still works in Craft 5 but Category groups can no longer be created (entrification).
+- **Structure sections (entries)** — the modern pattern post-entrification. `craft entrify/categories` converts category groups to Structure sections. For new projects, Structure sections replace category groups entirely. Same nested-set tree, same drag-sort, same depth limits — but as entries with full draft/revision support.
+
+For custom plugin element types, follow the Category class pattern (your element class owns its structure). For site content hierarchies (taxonomies, navigation trees), use Structure sections.
 
 **What you get for free from native Structure participation:** drag-sort reordering, drafts and revisions, multi-site propagation, search indexing, element conditions, element index with hierarchy view, eager loading, and the full element query API. Inventing a parallel element class or hand-rolled storage abandons all of these.
 
-### Code-Only Field Layouts (No Designer)
+### Field Layout: Designer vs Code-Only
 
-For plugin-owned elements where the field layout is controlled by the plugin (not configurable by admins), define the layout in code via `defineFieldLayouts()` and don't register a CP route for the field layout designer:
+This is a design decision. Two valid approaches:
+
+**Admin-configurable** — Expose the field layout designer so admins can arrange fields. Standard pattern for elements where different installs need different layouts. Include the designer in your settings template (see "Field Layout Designer in Settings" under CP Edit Pages).
+
+**Code-only** — Define the layout in `defineFieldLayouts()` and don't register a designer route. The layout exists only in code and is rebuilt on each boot. Use this when the plugin owns the layout and admin customization would break assumptions:
 
 ```php
-// On the element class
 protected static function defineFieldLayouts(?string $source): array
 {
     $layout = new FieldLayout(['type' => static::class]);
@@ -91,7 +95,7 @@ protected static function defineFieldLayouts(?string $source): array
 }
 ```
 
-The layout exists only in code and is rebuilt on each boot. The CP edit screen consumes it directly. To prevent admin edits, simply don't expose a designer route.
+To prevent admin edits, simply don't expose a designer route. The CP edit screen consumes the in-code layout directly.
 
 ### Native Fields for Plugin-Owned Attributes
 
