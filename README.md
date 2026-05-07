@@ -203,6 +203,12 @@ Skills::references('craftcms');
 
 Skills::referenceContent('craftcms', 'elements');
 // Full reference markdown as a string
+
+Skills::agentNames();
+// ['craft-code-reviewer', 'craft-debugger', 'craft-feature-builder', ...]
+
+Skills::agentContent('craft-debugger');
+// Full agent markdown (frontmatter + body) as a string
 ```
 
 The helper is read-only and does no caching — wrap it in your own registry if you need that. PHP 8.2+.

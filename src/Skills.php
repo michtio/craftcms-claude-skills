@@ -39,6 +39,14 @@ final class Skills
      */
     private const _REFERENCES_DIR = 'references';
 
+    /**
+     * Directory name (relative to the package root) that holds agent
+     * markdown files.
+     *
+     * @since 1.4.2
+     */
+    private const _AGENTS_DIR = 'agents';
+
     // Public Methods
     // =========================================================================
 
@@ -221,6 +229,100 @@ final class Skills
 
         if ($contents === false) {
             throw new InvalidArgumentException("Reference \"{$reference}\" for skill \"{$name}\" exists but could not be read.");
+        }
+
+        return $contents;
+    }
+
+    /**
+     * Returns the agent names that ship with the package.
+     *
+     * Scans the `agents/` directory and returns the basenames (without
+     * `.md` extension) of markdown files at the top level. Sorted
+     * alphabetically. Hidden entries (dotfiles) are ignored. Returns an
+     * empty array when the package has no `agents/` directory.
+     *
+     * Agents are Claude Code's specialised sub-prompts (markdown files
+     * with YAML frontmatter declaring `name` and `description`). Cortex
+     * surfaces them as MCP resources alongside the skills they
+     * complement.
+     *
+     * @return array<int, string>
+     *
+     * @author Craftpulse
+     * @since 1.4.2
+     */
+    public static function agentNames(): array
+    {
+        $dir = self::path() . '/' . self::_AGENTS_DIR;
+
+        if (!is_dir($dir)) {
+            return [];
+        }
+
+        $names = [];
+
+        foreach (scandir($dir) ?: [] as $entry) {
+            if ($entry === '' || $entry[0] === '.') {
+                continue;
+            }
+
+            if (substr($entry, -3) !== '.md') {
+                continue;
+            }
+
+            if (!is_file($dir . '/' . $entry)) {
+                continue;
+            }
+
+            $names[] = substr($entry, 0, -3);
+        }
+
+        sort($names);
+
+        return $names;
+    }
+
+    /**
+     * Returns whether the named agent exists.
+     *
+     * @param string $name
+     * @return bool
+     *
+     * @author Craftpulse
+     * @since 1.4.2
+     */
+    public static function hasAgent(string $name): bool
+    {
+        if (!self::_isSafeName($name)) {
+            return false;
+        }
+
+        return is_file(self::path() . '/' . self::_AGENTS_DIR . '/' . $name . '.md');
+    }
+
+    /**
+     * Returns the contents of an agent's markdown document.
+     *
+     * @param string $name
+     * @return string
+     *
+     * @throws InvalidArgumentException if the agent does not exist or cannot be read.
+     *
+     * @author Craftpulse
+     * @since 1.4.2
+     */
+    public static function agentContent(string $name): string
+    {
+        if (!self::hasAgent($name)) {
+            throw new InvalidArgumentException("Agent \"{$name}\" does not exist.");
+        }
+
+        $path = self::path() . '/' . self::_AGENTS_DIR . '/' . $name . '.md';
+        $contents = @file_get_contents($path);
+
+        if ($contents === false) {
+            throw new InvalidArgumentException("Agent \"{$name}\" exists but could not be read.");
         }
 
         return $contents;
