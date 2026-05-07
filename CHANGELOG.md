@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.4.2 -- 2026-05-08
+
+Agent PHP surface plus a craft-element-architecture refresh in the `craftcms` skill. The PHP additions unblock [`craftpulse/craft-cortex`](https://github.com/craftpulse/craft-cortex) Phase 1 ship-prep — cortex needed a way to enumerate the bundled agents from PHP so it could surface them as MCP resources alongside the skills.
+
+### Added
+
+- **`Skills::agentNames(): array<int,string>`** — sorted list of agent basenames (without `.md`) under `agents/`. Returns `[]` when the directory is absent.
+- **`Skills::hasAgent(string $name): bool`** — existence probe with the same path-traversal validation as the skill probes.
+- **`Skills::agentContent(string $name): string`** — full agent markdown (YAML frontmatter + body); throws `\InvalidArgumentException` on missing or unreadable.
+
+### Changed
+
+- **`craftcms` skill — element architecture guidance.** Default to ONE element class with native Structure participation when modelling hierarchies (mirror `craft\elements\Category`), instead of inventing parallel `Foo` + `FooReference` classes. Code-defined field layouts via `defineFieldLayouts()` and `BaseNativeField` subclasses for plugin-owned attributes. Field layout designer vs code-only is now framed as a deliberate design decision with guidance on when each applies, replacing the previous "always suppress designer" advice. Structure sections (post-entrification) get equal billing with Category as canonical structure-aware patterns.
+
+### Fixed
+
+- **Agents** — `bin/install` and the agent definitions use `git -C <path>` instead of `cd <path> && git ...`, avoiding the `untrusted hook` prompt some shells raise on directory transitions.
+
+### Notes
+
+- The `agents/` directory has been on disk and listed in `plugin.json` since v1.0.0 — this release just exposes it through the PHP API. Agent content is unchanged.
+- README has a new `Skills::agentNames()` / `agentContent()` example in the PHP-consumers section.
+- API addition is additive and forward-compatible. Existing consumers of `Skills::skillNames()` etc. need no changes.
+
 ## 1.4.1 -- 2026-05-06
 
 Path-repo development hotfix. Without `branch-alias`, downstream packages declaring `michtio/craftcms-claude-skills: ^1.4` couldn't resolve when installed via a composer path repository — the path repo serves the working tree as `dev-main` (the branch name), and `dev-main` doesn't match `^1.4`. This patch makes path-repo consumers work without sacrificing the symlink-based live dev loop.
