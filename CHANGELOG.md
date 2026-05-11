@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.4.3 -- unreleased
+## 1.4.3 -- 2026-05-11
 
-Seven skill gaps closed from real plugin development sessions. Focused on PHP guidelines accuracy (validator shapes, import ordering, PHPStan typing) and queue job error handling patterns.
+Skill gaps closed from real plugin development sessions — PHP guidelines accuracy (validator shapes, import ordering, PHPStan typing), queue job error handling, controller streaming responses. Plus: marketplace description trims for three skills so they fit under Claude Code's listing cap, and yii2-redis 2.1 breaking-change docs for Craft Redis configs.
 
 ### New
 
@@ -13,10 +13,16 @@ Seven skill gaps closed from real plugin development sessions. Focused on PHP gu
 - **craftcms / testing.md** — New "Loading \Craft and \Yii without booting the app" subsection. `\Craft` and `\Yii` are global classes outside PSR-4 maps — must be `require_once`'d in test bootstrap for unit tests that don't boot the full application. Without this, Yii validators and `Craft::$app` references fatal.
 - **craftcms / queue-jobs.md** — New "Best-Effort Helpers in Queue Jobs" section. When a helper inside `processItem()` is documented as best-effort, its catch block must log and return — not rethrow. Rethrowing causes `BaseBatchedJob` to retry the item, producing duplicate side effects for non-idempotent operations.
 - **craftcms / controllers.md** — New "Streaming and Download Responses" section. Three forms in preference order: `asRaw()` for in-memory, stream resource for files, callable closure for lazy generation. The callable must return `[string $data, bool $finished]` — echoing inside the closure corrupts the response.
+- **craftcms / config-app.md** — New yii2-redis 2.1+ compatibility callout at the top of the Redis Cache section. Explains the `Can not instantiate yii\redis\ConnectionInterface` bootstrap failure introduced by yii2-redis 2.1.0, which changed `Cache`/`Session`/`Mutex` internal type hints from concrete `Connection` to `ConnectionInterface`. References yii2-redis PR [#276](https://github.com/yiisoft/yii2-redis/pull/276) and the [2.1.0 changelog](https://github.com/yiisoft/yii2-redis/blob/2.1.2/CHANGELOG.md).
+
+### Changed
+
+- **`craftcms`, `craft-site`, `craft-garnish` SKILL.md descriptions** — Trimmed below Claude Code's `skillListingMaxDescChars` cap (1536). Previously 2849 / 1938 / 1753 chars; now 1449 / 1512 / 1466. Cut redundant trigger-keyword pile-ups (e.g. four separate `EVENT_REGISTER_*` / `DEFINE_*` / `BEFORE_*` / `AFTER_*` patterns collapsed to wildcard form, near-duplicate concept/keyword pairs deduplicated). All three negative ("Do NOT trigger for…") clauses now name the sibling skills explicitly (`craft-site`, `craft-content-modeling`, `craftcms`) for clearer cross-skill routing.
 
 ### Fixed
 
 - **craft-php-guidelines / class-organization.md** — Import ordering rule corrected from "PHP built-ins first" grouping to flat case-sensitive alphabetical matching ECS's `OrderedImportsFixer`. "PHP globals first" is incompatible with `craft\ecs\SetList::CRAFT_CMS_4` — uppercase PHP globals sort after lowercase `craft\…`. Tooling wins.
+- **craftcms / config-app.md** — Added the required `'class' => yii\redis\Connection::class` line to every previously-broken nested `redis` sub-array (Redis Cache snippet, Redis Session snippet, plus the cache and session blocks of the Complete Production Example). Prior snippets relied on yii2-redis defaulting the connection class internally; under 2.1+ the inline arrays must declare it or Yii's DI container can't pick a concrete class to instantiate. The Redis Queue (`proxyQueue`) and Redis Mutex snippets already declared `class` and are unchanged.
 
 ## 1.4.2 -- 2026-05-08
 

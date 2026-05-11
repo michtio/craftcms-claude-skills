@@ -103,6 +103,8 @@ Craft uses `yii\caching\DbCache` by default. No config needed -- it works out of
 
 The most common production upgrade. Requires `yiisoft/yii2-redis` (`ddev composer require yiisoft/yii2-redis`).
 
+> **yii2-redis 2.1+ requires `'class' => yii\redis\Connection::class`** in every nested `redis` sub-array. 2.1.0 changed the internal type hint in `Cache`, `Session`, and `Mutex` from concrete `Connection` to `ConnectionInterface`. Yii's DI container has no default class to instantiate when given an inline config array, so bootstrap dies with `Can not instantiate yii\redis\ConnectionInterface` and every console command and web request fails. The `class` line is included in all snippets below — keep it. Reference: yii2-redis [2.1.0 changelog](https://github.com/yiisoft/yii2-redis/blob/2.1.2/CHANGELOG.md), PR [#276](https://github.com/yiisoft/yii2-redis/pull/276).
+
 ```php
 // config/app.php
 use craft\helpers\App;
@@ -112,6 +114,7 @@ return [
         'cache' => [
             'class' => yii\redis\Cache::class,
             'redis' => [
+                'class' => yii\redis\Connection::class,
                 'hostname' => App::env('REDIS_HOSTNAME') ?: 'localhost',
                 'port' => App::env('REDIS_PORT') ?: 6379,
                 'password' => App::env('REDIS_PASSWORD') ?: null,
@@ -184,6 +187,7 @@ return [
             $config = App::sessionConfig();
             $config['class'] = yii\redis\Session::class;
             $config['redis'] = [
+                'class' => yii\redis\Connection::class,
                 'hostname' => App::env('REDIS_HOSTNAME') ?: 'localhost',
                 'port' => App::env('REDIS_PORT') ?: 6379,
                 'password' => App::env('REDIS_PASSWORD') ?: null,
@@ -593,6 +597,7 @@ return [
         'cache' => [
             'class' => yii\redis\Cache::class,
             'redis' => [
+                'class' => yii\redis\Connection::class,
                 'hostname' => App::env('REDIS_HOSTNAME') ?: 'localhost',
                 'port' => App::env('REDIS_PORT') ?: 6379,
                 'password' => App::env('REDIS_PASSWORD') ?: null,
@@ -651,6 +656,7 @@ return [
             $config = App::sessionConfig();
             $config['class'] = yii\redis\Session::class;
             $config['redis'] = [
+                'class' => yii\redis\Connection::class,
                 'hostname' => App::env('REDIS_HOSTNAME') ?: 'localhost',
                 'port' => App::env('REDIS_PORT') ?: 6379,
                 'password' => App::env('REDIS_PASSWORD') ?: null,
