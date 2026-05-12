@@ -130,20 +130,31 @@ Skip rules or configure them per-project in `ecs.php`:
 | 7 | Union types fully enforced, partial matches flagged |
 | 8 | Nullable types strictly enforced, method calls on possibly-null values flagged |
 | 9 | Mixed type strictness -- operations on `mixed` flagged unless narrowed |
+| 10 | Even stricter mixed handling, including implicit mixed from missing types (PHPStan 2.0+) |
 
-**Recommendation:** Start at level 5 for new plugins. It catches real bugs (wrong argument types) without drowning you in missing-typehint noise. Raise to 6-8 as the codebase matures.
+`--level max` is an alias for the highest level (currently 10).
+
+**Recommendation:** Start at level 5 for new plugins. It catches real bugs (wrong argument types) without drowning you in missing-typehint noise from Craft's loose-typed APIs (largely magic getters on Yii Components). Raise incrementally as the codebase matures — level 8 enforces null-strictness which is genuinely valuable; level 9-10 push into territory where the noise/value ratio gets thin on plugin code. The Craft community baseline is 5.
 
 ## craftcms/phpstan Package
 
-Without `craftcms/phpstan`, PHPStan cannot understand Craft's service locator, element queries, or component accessors.
+Every Craft 5 plugin should use the official PHPStan extension. Without it, PHPStan cannot understand Craft's service locator, element queries, or component accessors — and hand-rolled `scanFiles` / `scanDirectories` pointed at `vendor/craftcms/cms/src` or `vendor/yiisoft/yii2` will silently miss the stubs.
 
-What it provides:
-- **Type stubs** for `Craft::$app->getXxx()` service accessors
-- **Element query return types** -- `Entry::find()->one()` returns `?Entry`, not `mixed`
-- **Config component awareness** -- `Craft::$app->getConfig()->getGeneral()` returns `GeneralConfig`
-- **Plugin instance types** -- `MyPlugin::getInstance()` return type resolution
+What it ships (verified against [craftcms/phpstan](https://github.com/craftcms/phpstan)):
 
-Install: `ddev composer require --dev craftcms/phpstan:dev-main`
+- **Stubs** for `yii\BaseYii`, `craft\web\Application`, `craft\console\Application`. The `BaseYii.stub` declares `Craft::$app` as the non-nullable union `\craft\web\Application|\craft\console\Application`. Without it, PHPStan at level 5+ flags every `Craft::$app->getView()` / `getRequest()` / `getConfig()` / `getElements()` call as "call on possibly null" or "undefined method on Yii union" — the union those methods live on (`craft\base\ApplicationTrait`) isn't visible without the stub.
+- **`scanFiles`** entries for `Craft.php`, `Yii.php`, and Twig's `CoreExtension.php` so static analysis sees those globals/macros.
+- **`earlyTerminatingMethodCalls`** for `Craft::dd`, `yii\base\Application::end`, and `yii\base\ErrorHandler::convertExceptionToError` — code after those calls is correctly treated as unreachable.
+
+Install:
+
+```json
+"require-dev": {
+    "craftcms/phpstan": "dev-main"
+}
+```
+
+Then `ddev composer update craftcms/phpstan`.
 
 Include in `phpstan.neon` (before your baseline):
 
@@ -151,6 +162,8 @@ Include in `phpstan.neon` (before your baseline):
 includes:
     - vendor/craftcms/phpstan/phpstan.neon
 ```
+
+That's the full required wiring. Don't roll your own `scanFiles` / `scanDirectories` pointed at Craft or Yii source — the extension is the canonical reference and removes variance. The failure mode otherwise is a paradox: a hand-rolled config sometimes passes locally (cached PHPStan results, an older `craftcms/cms` in `vendor/`) and then fails on a fresh CI install when newer Craft versions tighten type declarations.
 
 ## PHPStan Configuration
 
@@ -172,6 +185,25 @@ parameters:
 ```
 
 Run: `ddev composer phpstan`
+
+### Why `treatPhpDocTypesAsCertain: false`
+
+The `craftcms/phpstan` stubs declare `Craft::$app` as `\craft\web\Application|\craft\console\Application` — a non-nullable union. That assertion holds during normal request handling but is wrong in two situations:
+
+1. **Unit tests that don't bootstrap a full Craft app.** A Pest/PHPUnit test that instantiates a service directly to test a pure-PHP method may run with `Craft::$app === null`.
+2. **Very early bootstrap**, before `BaseYii::createApplication()` has run.
+
+If your code carries defensive guards like:
+
+```php
+if (!Craft::$app instanceof WebApplication && !Craft::$app instanceof ConsoleApplication) {
+    return;
+}
+```
+
+PHPStan with the stubs flags the second clause as "always false" because the stub asserts `$app` is one of those two types. Setting `treatPhpDocTypesAsCertain: false` tells PHPStan to treat stub-declared types as advisory rather than certain, so the guards remain live code rather than dead branches.
+
+Only set it when you actually carry these guards. If every code path in your plugin runs inside a request and you don't need null-defensive code, leave the setting off and let the stubs do their job.
 
 ### Common fix patterns
 
@@ -290,51 +322,121 @@ Craft-specific rules rename deprecated methods, update event class references, a
 
 ## CI/CD Integration
 
-### GitHub Actions workflow
+A published Craft 5 plugin typically ships with **two** GitHub Actions workflows in `.github/workflows/`:
 
-Run checks in order: ECS first (fastest), PHPStan second, tests last (slowest).
+1. **`code-analysis.yaml`** — runs ECS, PHPStan, and tests on every PR and push. The quality gate.
+2. **`create-release.yml`** — listens for a `repository_dispatch` event from the Craft Console plugin store and creates the GitHub release with the supplied notes. The publish path.
+
+Missing either one ships an unfinished plugin: without `code-analysis`, regressions land silently; without `create-release`, every Craft Console publish leaves you with a git tag but no GitHub release page, and users clicking through release links land on a 404.
+
+### code-analysis.yaml
 
 ```yaml
-name: Quality
+name: Code Analysis
+
 on:
-  pull_request:
-    branches: [main, develop]
+  pull_request: null
+  push:
+    branches:
+      - main          # or develop-v5, develop, whatever your release branch is
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  quality:
+  code_analysis:
+    name: PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
         with:
-          php-version: '8.2'
-          extensions: mbstring, intl, pdo_mysql
-          coverage: none
-      - uses: actions/cache@v4
+          path: /tmp/composer-cache
+          key: ${{ runner.os }}-php-${{ matrix.php }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-php-${{ matrix.php }}-
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
-      - uses: actions/cache@v4
-        with:
-          path: tmp/phpstan
-          key: phpstan-${{ github.sha }}
-          restore-keys: phpstan-
-      - run: composer install --no-interaction --prefer-dist
-      - run: vendor/bin/ecs check
-      - run: vendor/bin/phpstan analyse
-      - run: vendor/bin/pest
+          php-version: ${{ matrix.php }}
+          extensions: 'ctype,curl,dom,iconv,intl,json,mbstring,openssl,pcre,pdo,reflection,spl,zip'
+          ini-values: post_max_size=256M, max_execution_time=180, memory_limit=512M
+          tools: composer:v2
+      - name: Install Composer dependencies
+        # --no-blocking lets the install proceed despite upstream advisories on
+        # Craft's transitive deps (yii2, graphql-php). They're Craft's surface
+        # to fix; this plugin can't and shouldn't gate its own CI on them.
+        run: composer install --no-interaction --no-ansi --no-progress --no-blocking
+      - name: PHPStan
+        run: composer phpstan
+      - name: Coding Standards
+        run: composer check-cs
+      - name: Pest
+        run: composer test
 ```
 
-### Order rationale
+Notes:
 
-1. **ECS** (seconds) -- fails fast on formatting, cheapest to fix
-2. **PHPStan** (10-30s) -- catches type errors before expensive test runs
-3. **Pest** (varies) -- integration tests last, only if static checks pass
+- **PHP matrix matters.** Craft 5 supports PHP 8.2–8.4. Test all three; 8.4 surfaces deprecation warnings that 8.2 doesn't, and 8.2 catches accidental use of features that only landed in 8.3/8.4.
+- **`--no-blocking` is the canonical flag.** Composer 2.5+ refuses to install packages flagged in the security-advisories registry by default. Craft 5.9.x transitively depends on `yiisoft/yii2 2.0.54` (CVE-2026-39850, fixed in 2.0.55) and `webonyx/graphql-php 14.11.10` (covered by advisories on `<=15.32.2`). Both are upstream concerns Craft will pick up on its next release; a downstream plugin can't fix them. The flag bypasses the block.
+- **Legacy flag name.** Older Composer versions used `--no-security-blocking`. Composer's own docs deprecated that in favour of `--no-blocking`. Existing workflows using the old name still work but should be updated.
+- **Don't substitute `--no-audit`.** Different flag with different scope: `--no-audit` suppresses the post-install audit *report*, but it doesn't bypass the install-time blocking *policy*. You'll still hit the advisory error.
+- **Plugins that don't ship a `composer.lock`** (the common library pattern, since the consuming project pins versions) hit this on every fresh CI run. Plugins that *do* commit a lockfile only hit it when they regenerate.
+- **`pull_request: null`** is a deliberate shorthand for "run on all PR events with default config" — equivalent to `pull_request: {}`.
+
+### create-release.yml
+
+When Craft Console (the plugin marketplace) publishes a new version of your plugin, it sends a `repository_dispatch` event with the release metadata. This workflow listens for it and creates the matching GitHub release:
+
+```yaml
+name: Create Release
+run-name: Create release for ${{ github.event.client_payload.version }}
+
+on:
+  repository_dispatch:
+    types:
+      - craftcms/new-release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: ncipollo/release-action@v1
+        with:
+          body: ${{ github.event.client_payload.notes }}
+          makeLatest: ${{ github.event.client_payload.latest }}
+          name: ${{ github.event.client_payload.version }}
+          prerelease: ${{ github.event.client_payload.prerelease }}
+          tag: ${{ github.event.client_payload.tag }}
+```
+
+What's happening:
+
+- **Trigger:** `repository_dispatch` with the literal event type `craftcms/new-release`. Craft Console fires this when you cut a release through their UI.
+- **Payload:** `github.event.client_payload` carries `version`, `notes`, `latest`, `prerelease`, `tag` — all populated from your Craft Console release form (the notes come from the matching CHANGELOG section that Craft parsed).
+- **Action:** `ncipollo/release-action@v1` creates the GitHub release with the supplied tag and notes, marking it latest/prerelease according to the payload.
+- **Permissions:** the job needs `contents: write` to create releases. The default token's `contents: read` isn't enough.
+
+The release workflow doesn't need a Composer install or test run — the assumption is `code-analysis.yaml` already gated the merged code. The release flow is purely a "wrap the tag in a release object" operation.
+
+### Order rationale (code-analysis)
+
+1. **PHPStan / ECS** (seconds to a minute) — fail fast on type errors and formatting before expensive test runs
+2. **Pest** — integration tests last, only if static checks pass
+
+Whether to run ECS or PHPStan first is preference; both fail fast on cheap signals. craft-tailwind runs PHPStan first; the previous version of this doc recommended ECS first. Either is defensible.
 
 ### Caching
 
-- **Composer vendor** -- keyed by `composer.lock` hash
-- **PHPStan result cache** -- keyed by commit SHA with branch prefix fallback
+- **Composer vendor** — keyed by `composer.json` hash (or `composer.lock` if your plugin ships one).
+- **PHPStan result cache** — keyed by commit SHA with branch prefix fallback. Optional but cuts repeated-PR runtime substantially. Add a separate `actions/cache@v4` step pointing at `tmp/phpstan` and reference it from `phpstan.neon` via `tmpDir`.
 
 ### Parallel jobs for larger projects
 

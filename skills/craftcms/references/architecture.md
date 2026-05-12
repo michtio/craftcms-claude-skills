@@ -228,6 +228,33 @@ class SettingsModel extends Model
 }
 ```
 
+### Settings Lifecycle (Plugins)
+
+Plugin settings are merged and frozen at plugin construction — not lazily on each `getSettings()` call. The order:
+
+1. `craft\services\Plugins::createPlugin()` merges the project-config row with `config/{handle}.php` overrides before the plugin object exists:
+
+    ```php
+    $settings = array_merge(
+        $info['settings'] ?? [],                              // project config row
+        Craft::$app->getConfig()->getConfigFromFile($handle), // config/{handle}.php
+    );
+    $config['settings'] = $settings;
+    $plugin = Craft::createObject($config, [$handle, Craft::$app]);
+    ```
+
+2. Yii applies `$config['settings']` via the `setSettings()` setter during construction. `setSettings()` calls `getSettings()` (which lazily instantiates the empty model via `createSettingsModel()`), then writes the merged attributes onto it with `setAttributes($settings, false)`.
+
+3. From that point on, `Plugin::getSettings()` returns the memoized `$_settings` model for the rest of the request. Every later call — from `init()`, from event closures registered in `init()`, from controllers, from Twig — returns the same instance with the same merged values.
+
+**Consequence:** capturing `$settings` outside an event listener closure is equivalent to resolving it inside. Both observe the same merged model within a single request. There is no "stale-before-load" window in Craft's bootstrap.
+
+This differs from Laravel/Symfony service containers where settings/config can be mutated mid-request through the container. Code reviewers should not flag the outside-the-closure pattern as a runtime bug by analogy; flag only with a concrete repro through Craft's actual call paths.
+
+Settings *do* change between requests when the CP settings form saves: the flow is `Plugins::savePluginSettings()` → project config write → next request reads the merged values fresh from `Plugins::createPlugin()`. Within a single request the settings model is effectively immutable.
+
+References: `craft\base\Plugin::getSettings()` (memoization), `craft\base\Plugin::setSettings()` (population), `craft\services\Plugins::createPlugin()` (merge).
+
 ## Records (ActiveRecord)
 
 Records are thin — just the table mapping. No business logic, no validation:

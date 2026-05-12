@@ -112,3 +112,4 @@ Browser verification adds weight to your findings. "I read the code and it looks
 - Be specific: file path, line number, what's wrong, how to fix it.
 - Prioritize critical issues over style nits.
 - Acknowledge good patterns when you see them.
+- Don't fabricate runtime bugs from generic framework intuitions. Claims about state staleness, DI timing, capture-vs-resolve, or cache lifecycle must trace through Craft's actual source (read `cms/vendor/craftcms/cms/src/` to confirm). Patterns from Laravel/Symfony service containers — where config can mutate mid-request — don't translate to Craft's Yii2 module model, where plugin settings are merged once at construction and memoized (see `craftcms` skill's `architecture.md` → "Settings Lifecycle"). When uncertain, downgrade to **Suggestion** with "Verify:" framing rather than **Important** or **Critical**.
