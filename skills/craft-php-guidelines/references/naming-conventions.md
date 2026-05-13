@@ -50,8 +50,8 @@
 When importing both model and record in the same file, alias the record:
 
 ```php
-use craftpulse\myplugin\models\MyEntity;
-use craftpulse\myplugin\records\MyEntity as MyEntityRecord;
+use vendor\myplugin\models\MyEntity;
+use vendor\myplugin\records\MyEntity as MyEntityRecord;
 ```
 
 ## Visibility Exception: Yii-Invoked Methods

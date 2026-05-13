@@ -64,7 +64,7 @@ class MyService extends Component
 
 ## Ordering Within Sections
 
-- **Imports**: Flat alphabetical (case-sensitive), matching ECS's `OrderedImportsFixer` from `craft\ecs\SetList::CRAFT_CMS_4`. Blank lines between logical groups are tolerated as long as the order stays alphabetical. In practice this means `craft\…` < `craftpulse\…` < `Twig\…` — which naturally groups by namespace. **Do not** move PHP globals (`Stringable`, `Closure`, `DateTime`) to the top — uppercase PHP globals sort after lowercase `craft\…` in ECS's alphabetical order. "PHP first" grouping and ECS are incompatible; tooling wins.
+- **Imports**: Flat alphabetical (case-sensitive), matching ECS's `OrderedImportsFixer` from `craft\ecs\SetList::CRAFT_CMS_4`. Blank lines between logical groups are tolerated as long as the order stays alphabetical. In practice this means `craft\…` < `vendor\…` < `Twig\…` — which naturally groups by namespace. **Do not** move PHP globals (`Stringable`, `Closure`, `DateTime`) to the top — uppercase PHP globals sort after lowercase `craft\…` in ECS's alphabetical order. "PHP first" grouping and ECS are incompatible; tooling wins.
 - **Const Properties**: Alphabetical.
 - **Properties**: Alphabetical within each visibility group.
 - **Methods**: Lifecycle methods first (`init()`, `beforeAction()`, `afterSave()`), then alphabetical within each visibility group.

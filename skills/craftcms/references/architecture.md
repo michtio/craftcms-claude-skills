@@ -24,6 +24,7 @@
 ## Table of Contents
 
 - [Scaffolding](#scaffolding)
+- [Plugin Class Structure](#plugin-class-structure) — entry class naming, ServicesTrait + PluginTrait split
 - [Services](#services)
 - [Models](#models)
 - [Records (ActiveRecord)](#records-activerecord)
@@ -42,9 +43,31 @@ ddev craft make record --with-docblocks
 
 Then customize: add section headers, `@author`, `@since`, `@throws` chains.
 
-## Services
+## Plugin Class Structure
 
-### Registration via ServicesTrait
+### Entry Class Naming
+
+The entry file and class name match the plugin handle in PascalCase: handle `forum` → `src/Forum.php` / `class Forum`; handle `userProfile` → `src/UserProfile.php` / `class UserProfile`.
+
+The Craft generator and most starter templates produce `src/Plugin.php` / `class Plugin`. Rename both before going further, and update `composer.json` `extra.class` to match the new FQN:
+
+```json
+{
+    "extra": {
+        "handle": "forum",
+        "class": "vendor\\forum\\Forum"
+    }
+}
+```
+
+### Trait Split
+
+As the plugin grows, the entry class accumulates service wiring, event listeners, URL rule registration, and settings-form overrides — quickly becoming unreadable. Split these into two traits so the main class stays a thin orchestrator:
+
+- **`src/services/ServicesTrait.php`** — service registration. Implements `static config()` (Craft reads this during plugin construction and merges it into the Yii config; no `setComponents()` call in `init()`), typed `getX(): X` accessors that wrap `$this->get('x')`, and `@property X $name` docblocks on the trait class so PHPStan and IDEs pick up the magic-property types.
+- **`src/base/PluginTrait.php`** — private `_register*` methods (events, URL rules), plugin lifecycle overrides (`getSettingsResponse()`, `getReadOnlySettingsResponse()`, `createSettingsModel()`), and anything else that would clutter `init()`.
+
+The trait body holds the registration and the accessor:
 
 ```php
 trait ServicesTrait
@@ -65,6 +88,33 @@ trait ServicesTrait
     }
 }
 ```
+
+The main plugin class then collapses to:
+
+```php
+class Forum extends Plugin
+{
+    public static Forum $plugin;
+    public string $schemaVersion = '5.0.0';
+    public bool $hasCpSettings = true;
+    public bool $hasCpSection = true;
+
+    use ServicesTrait;
+    use PluginTrait;
+
+    public function init(): void
+    {
+        parent::init();
+        self::$plugin = $this;
+        Craft::setAlias('@vendor/forum', __DIR__);
+
+        $this->_registerEvents();
+        $this->_registerCpRoutes();
+    }
+}
+```
+
+## Services
 
 ### MemoizableArray Pattern
 

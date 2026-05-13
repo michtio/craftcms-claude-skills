@@ -12,4 +12,3 @@ paths:
 - Mirror source path: `src/services/Instances.php` → `tests/services/InstancesTest.php`.
 - Always `->site('*')` in test element queries to avoid site-context issues.
 - Run with `ddev craft pest/test`.
-- Reference implementation: `putyourlightson/craft-blitz` tests.

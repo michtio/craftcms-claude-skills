@@ -54,7 +54,7 @@ For "inherit/neutral" indicators, use `.status.inactive` (hollow). When placing 
 
 ### Field Warning Parameter for Override Indicators
 
-The `warning:` parameter on any form field macro is the canonical way to show "overridden by..." messages. Blitz uses this pattern extensively (`putyourlightson/blitz`):
+The `warning:` parameter on any form field macro is the canonical way to show "overridden by..." messages:
 
 ```twig
 {# Define a reusable macro #}

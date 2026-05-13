@@ -21,7 +21,7 @@ ddev composer install                # Install deps (auto-runs craft up)
 
 ```
 src/
-├── Plugin.php               # Entry point
+├── Forum.php                # Entry point — class name matches the plugin handle in PascalCase
 ├── assetbundles/            # CP asset bundles
 ├── base/                    # Abstract base classes, shared traits
 ├── behaviors/               # Yii2 behaviors
