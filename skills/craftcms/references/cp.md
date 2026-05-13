@@ -236,6 +236,8 @@ Set the `tabs` variable in your template. Each tab links to a different URL or a
 
 Each tab is a separate template (or a shared template with conditional blocks). The `selectedTab` variable highlights the active tab. Register CP URL rules for each tab path.
 
+**Don't include `_includes/tabs.twig` directly.** It is a private helper that `_layouts/cp.twig` calls internally to render the strip from the `tabs` variable in *its own* rendering context. Including the partial yourself produces the tab strip markup but no JS wiring, no ARIA controller setup, no error highlighting per tab. The fix is always to `{% extends "_layouts/cp" %}` and `{% set tabs = ... %}` — let the layout handle the strip. If you find yourself reaching for `{% include "_includes/tabs" %}`, you're in the wrong template lineage.
+
 #### Anchor-based tabs (single page)
 
 For tabs that switch content without a page reload, use anchor-based tab IDs. Craft's JS handles showing/hiding containers whose IDs match the tab anchors:
@@ -378,7 +380,19 @@ The `icon` key accepts a Craft icon identifier (`'gear'`, `'wand'`, `'magnifying
 
 ## Settings Pages
 
-Three pieces: model, plugin class methods, and template.
+Three pieces: model, plugin class methods, and template. But before any of those, **pick the right pattern** — `settingsHtml()` and a custom controller are not interchangeable.
+
+### Choosing the pattern
+
+| You need | Use |
+|---|---|
+| Single-pane settings, save action only | `settingsHtml()` returning inert HTML |
+| Tabs, multi-section layout, hash deep-links, error highlighting per tab | `getSettingsResponse()` redirect → custom controller → template extending `_layouts/cp` |
+| Custom actions beyond save (test connection, sync now, reset to defaults) | Custom controller |
+
+The boundary is structural, not cosmetic. `settingsHtml()` returns HTML that Craft embeds inside `vendor/craftcms/cms/src/templates/settings/plugins/_settings.twig`. That wrapper extends `_layouts/cp` but never `{% set tabs = ... %}` — and `_layouts/cp.twig` reads `tabs` from *its own* rendering context (line 84 of current Craft source), not from the `{% block content %}` slot your settingsHtml ends up in. So no `tabs` variable you set inside `settingsHtml()` output can reach the layout. You'll get markup if you manually include `_includes/tabs.twig`, but no JS wiring, no ARIA controller, no per-tab error highlighting — exactly the "not quite Craft code" result that wastes hours chasing cosmetic fixes for a structural problem.
+
+If the requirement contains tabs or custom non-save actions, jump straight to the controller pattern. Don't try to retrofit tabs into `settingsHtml()`.
 
 ### Settings Model
 
@@ -441,6 +455,136 @@ protected function settingsHtml(): ?string
 ```
 
 `disabled: not allowAdminChanges` on every field prevents editing in production. `suggestEnvVars: true` shows env var dropdown when user types `$`. At runtime, resolve with `App::parseEnv($settings->apiUrl)`.
+
+### With tabs or custom actions: redirect to your own controller
+
+For tabs, multi-section layouts, or actions beyond save, override `getSettingsResponse()` to redirect to a route you own, register CP URL rules, render a template that extends `_layouts/cp` directly, and own the save flow in a controller.
+
+**Plugin class:**
+
+```php
+public bool $hasCpSettings = true;
+public bool $hasReadOnlyCpSettings = true;
+
+public function getSettingsResponse(): mixed
+{
+    return Craft::$app->getResponse()->redirect(
+        UrlHelper::cpUrl('my-plugin/settings')
+    );
+}
+```
+
+`$hasReadOnlyCpSettings = true` is required as soon as you override `getSettingsResponse()`. The base `Plugin::init()` only auto-flips this flag when the default `getSettingsResponse()` is in use — overriding it makes Craft treat the override as the source of truth and stop guessing. Without the explicit declaration, the CP nav link to your settings disappears when `allowAdminChanges = false`. See `references/cp.md` Read-Only Mode section for the broader allowAdminChanges access path.
+
+**URL rules:**
+
+```php
+use craft\events\RegisterUrlRulesEvent;
+use craft\web\UrlManager;
+use yii\base\Event;
+
+Event::on(
+    UrlManager::class,
+    UrlManager::EVENT_REGISTER_CP_URL_RULES,
+    function(RegisterUrlRulesEvent $event) {
+        $event->rules['my-plugin'] = 'my-plugin/settings/edit';
+        $event->rules['my-plugin/settings'] = 'my-plugin/settings/edit';
+    }
+);
+```
+
+The plugin handle alone (`'my-plugin'`) and the explicit `/settings` path both route to the same edit action — matching what `getSettingsResponse()` redirects to and what users land on when clicking your CP nav item.
+
+**SettingsController:**
+
+```php
+class SettingsController extends craft\web\Controller
+{
+    // =========================================================================
+    public function beforeAction($action): bool
+    {
+        // View accessible in read-only mode, save action gated separately.
+        $this->requireAdmin(false);
+        return parent::beforeAction($action);
+    }
+
+    public function actionEdit(): Response
+    {
+        $plugin = MyPlugin::getInstance();
+        return $this->renderTemplate('my-plugin/settings/_edit', [
+            'plugin' => $plugin,
+            'settings' => $plugin->getSettings(),
+        ]);
+    }
+
+    public function actionSave(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requireAdmin();
+
+        $plugin = MyPlugin::getInstance();
+        $settings = $plugin->getSettings();
+        $posted = $this->request->getBodyParam('settings', []);
+        $settings->setAttributes($posted, false);
+
+        if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings->toArray())) {
+            $this->setFailFlash(Craft::t('my-plugin', "Couldn't save settings."));
+            return $this->renderTemplate('my-plugin/settings/_edit', [
+                'plugin' => $plugin,
+                'settings' => $settings,
+            ]);
+        }
+
+        $this->setSuccessFlash(Craft::t('my-plugin', 'Settings saved.'));
+        return $this->redirectToPostedUrl();
+    }
+}
+```
+
+`requireAdmin(false)` on view, `requireAdmin()` (strict) on save — view stays accessible in read-only mode, write is gated. The body-param shape is `settings[xxx]` (a map under a single `settings` key) — matches what `savePluginSettings()` expects and avoids the [Split Settings footgun](#split-settings-pages-savepluginsettings-footgun). On validation failure, re-render with the same `$settings` instance so the form retains posted values and `settings.getErrors('xxx')` resolves.
+
+**Template (`my-plugin/templates/settings/_edit.twig`):**
+
+```twig
+{% extends "_layouts/cp" %}
+{% import "_includes/forms.twig" as forms %}
+
+{% set title = "MyPlugin Settings"|t('my-plugin') %}
+{% set fullPageForm = true %}
+
+{% set tabs = {
+    general: { label: "General"|t('my-plugin'), url: '#general' },
+    advanced: { label: "Advanced"|t('my-plugin'), url: '#advanced' },
+} %}
+
+{% set selectedTab = 'general' %}
+
+{% block content %}
+    {{ actionInput('my-plugin/settings/save') }}
+    {{ hiddenInput('pluginHandle', 'my-plugin') }}
+    {{ redirectInput('my-plugin/settings') }}
+
+    <div id="general">
+        {{ forms.textField({
+            label: "API URL"|t('my-plugin'),
+            id: 'apiUrl',
+            name: 'settings[apiUrl]',
+            value: settings.apiUrl,
+            errors: settings.getErrors('apiUrl'),
+        }) }}
+    </div>
+
+    <div id="advanced" class="hidden">
+        {# Advanced-tab fields, same settings[xxx] name shape #}
+    </div>
+{% endblock %}
+```
+
+Notes:
+- Template extends `_layouts/cp` (not `_layouts/basecp`, not a wrapper). That's the load-bearing line — setting `tabs` here reaches the layout because cp.twig reads it from this template's rendering context.
+- Initial state: every pane except the selected one gets `class="hidden"`. Craft's CP JS (auto-attached to the `.pane-tabs` strip emitted by `_includes/tabs.twig`, which cp.twig includes for you) toggles those on tab switch. You write no JS for this.
+- Field `name` attributes use the `settings[xxx]` bracket shape. The controller's `getBodyParam('settings', [])` collects them as one map, which lets `savePluginSettings($plugin, $settings->toArray())` persist the full settings model — sidestepping the per-tab-action footgun documented below.
+- `fullPageForm = true` makes cp.twig wrap your content in a `<form>` with the right CSRF token and POST target, and renders the save button in the page header automatically.
 
 ### Split Settings Pages (savePluginSettings footgun)
 
