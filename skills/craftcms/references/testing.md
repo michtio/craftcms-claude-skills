@@ -33,6 +33,7 @@
 - PHPUnit 12's `<env name="X" value="Y" force="true"/>` doesn't overwrite `$_SERVER` — DDEV exports `CRAFT_DB_SERVER`, `CRAFT_DB_USER`, etc. into `$_SERVER`, and `App::env()` reads `$_SERVER` first. Tests silently connect to the DDEV database instead of the test database. Fix: set `$_SERVER[]`, `$_ENV[]`, and `putenv()` in your bootstrap file before Craft boots.
 - `Class "Craft" not found` in unit tests — `\Craft` and `\Yii` are global classes not covered by PSR-4 autoload. Unit tests that don't boot the full app must `require_once` both in the test bootstrap. See "Loading \Craft and \Yii" below.
 - Solo edition silently caps user creation at 1 — `User::beforeSave()` vetoes saves beyond the admin user without throwing. Test factories that create additional users fail silently. Fix: set `Craft::$app->edition = CmsEdition::Pro` directly in the test (not via project config — that re-fires events and causes side effects).
+- `Install.php` edits silently fail to land in `db_test` after the first install. Custom test bootstraps that short-circuit on "plugin already installed" (the standard speed/setup trade-off) only run `Install.php::safeUp()` once per `db_test` lifetime. Later edits to Install.php — new tables, renamed columns, primary-key rewrites — never re-apply against the existing test DB. Migrations *do* run against `db_test` because their state lives in the `migrations` table, so changes shipped through a numbered migration land correctly. Changes that *only* update `Install.php` (typical for "I'll just edit fresh-install shape since this is a new plugin") don't. See "Schema migrations and db_test drift" below for the durable fix.
 
 ## Two Testing Approaches
 
@@ -117,6 +118,34 @@ describe('item creation', function () {
     it('rejects duplicate handles', function () { /* ... */ });
 });
 ```
+
+### Schema migrations and db_test drift
+
+Custom Pest bootstraps typically install Craft + the plugin once into `db_test` and short-circuit on subsequent runs:
+
+```php
+// tests/bootstrap.php (excerpt)
+if (!$app->getIsInstalled(true)) {
+    (new craft\migrations\Install([...]))->up(true);
+}
+
+if (!$plugins->isPluginInstalled('my-plugin')) {
+    $plugins->installPlugin('my-plugin');   // runs Install.php
+}
+```
+
+This trade-off is sound — slow first run, cheap re-runs — but has a consequence: **once `db_test` has your plugin installed, `Install.php::safeUp()` is never re-executed against it.** Edits to `Install.php` (new tables, renamed columns, primary-key rewrites) don't land in the existing test DB. A test that touches the new shape passes against a stale schema right up until someone manually drops the table or recreates `db_test`.
+
+Migrations under `src/migrations/m*.php` do propagate because their applied state lives in the `migrations` table — `MigrationManager` runs only the ones not yet recorded. So the symptom is asymmetric: changes shipped as a numbered migration reach `db_test`; changes that *only* update `Install.php` (typical when iterating on a brand-new plugin where "there are no users yet, I'll just edit fresh-install shape") silently don't.
+
+**Two ways to keep db_test in sync:**
+
+1. **Migration-driven (canonical).** Every schema change ships with a dated migration that handles both fresh installs (mirrors the Install.php edit) and existing installs (idempotent guards — `if (!$this->db->tableExists($table)) { ... }`). Both `Install.php` and the migration get the same edit in lockstep. `db_test` runs the migration on next test boot; `Install.php` represents the canonical fresh shape and is what brand-new installs receive. This is the same pattern your downstream users need (existing installs of your plugin run the migration on `craft up`), so the test-DB drift problem and the user-upgrade problem have the same solution.
+2. **Test-DB reset.** Drop the affected table at the top of `tests/bootstrap.php` when its schema changed, before the install-skip check. Brittle and one-shot — useful as an escape hatch for a single tricky change, not a recurring discipline.
+
+**Verification after a schema change:** drop `db_test`, recreate it (or `ddev mysql -e 'DROP DATABASE db_test; CREATE DATABASE db_test;'`), run Pest. The full bootstrap path now exercises `Install.php`. If a test passes against an already-installed `db_test` but fails against a fresh one, the migration is the regression — `Install.php` and the migration have drifted. Either the migration is missing an idempotent `createTable` it should have, or `Install.php` is missing a change that only the migration carries.
+
+**Anti-pattern:** dropping `db_test` on every test run. Slow (each run pays the full Craft + plugin install cost), breaks parallel test workers if you ever add them, and masks the actual problem (drift between Install.php and migrations) by paving over the disagreement on every run.
 
 ## Element Factories
 

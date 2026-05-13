@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.6 -- 2026-05-13
+
+Closes a recurring plugin-development gap: `Install.php` edits silently fail to land in `db_test` after the first test run, because custom Pest bootstraps short-circuit on "plugin already installed." Migrations propagate (their state lives in the `migrations` table); Install.php-only edits don't. The symptom — a test passing against a stale schema until someone manually recreates `db_test` — is asymmetric and easy to miss, especially during early plugin development when "there are no users yet, I'll just edit fresh-install shape" feels safe.
+
+### New
+
+- **craftcms / testing.md — "Schema migrations and db_test drift" subsection** under Pest Setup. Explains the mechanism (custom bootstrap's "skip if installed" check is the standard speed trade-off; consequence is `Install.php::safeUp()` only runs once per `db_test` lifetime). Documents the two paths: migration-driven (canonical — every schema change ships in BOTH `Install.php` AND a dated idempotent migration, same pattern downstream users need) and test-DB reset (escape hatch for one-off cases, brittle as a recurring discipline). Verification procedure (drop `db_test`, recreate, run Pest — if a test passes against installed-db but fails against fresh, the migration is the regression). Explicit anti-pattern call-out: don't drop `db_test` on every test run (slow, breaks parallel workers, masks the actual drift problem).
+- **craftcms / testing.md — Common Pitfalls bullet.** One-line entry surfacing the symptom ("Install.php edits silently fail to land in `db_test` after the first install") so it's grep-able when scanning the pitfalls list. Points at the new subsection for the durable fix.
+- **craftcms / migrations.md — "Schema-change discipline" paragraph** under the Install.php description. Cross-links to the testing.md section so someone editing Install.php for a schema change sees the pointer at the source location. Frames the rule: every schema change lands in BOTH `Install.php` (canonical fresh shape) AND a dated migration (idempotent upgrade), because editing only Install.php strands every existing install (including db_test) on the prior schema.
+
 ## 1.4.5 -- 2026-05-13
 
 Closes a costly skill gap surfaced from a real plugin build: the boundary between `settingsHtml()` and a custom settings controller. The two patterns aren't interchangeable — `settingsHtml()` returns HTML inside a wrapper that doesn't set `tabs`, so tabs in plugin settings require leaving `settingsHtml()` for a controller-driven pattern with a template extending `_layouts/cp` directly. Includes the full controller skeleton, URL rules, template shape, and the `$hasReadOnlyCpSettings` gotcha that bites the moment `getSettingsResponse()` is overridden.

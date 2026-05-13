@@ -60,6 +60,8 @@ The `Install.php` migration runs on plugin install. Numbered migrations run on `
 
 **Modules** don't have `Install.php` -- use content migrations created with `ddev craft migrate/create my_migration_name`. These go in the project's `migrations/` directory and share a global track.
 
+**Schema-change discipline.** Every change to plugin schema must land in BOTH `Install.php` (canonical fresh shape) AND a dated migration (idempotent upgrade path). Editing only `Install.php` leaves existing installs — including your `db_test` after the first test run — on the prior schema. See `testing.md` → "Schema migrations and db_test drift" for why this also bites your test suite even if you think there are "no users yet."
+
 ## Safety Rules
 
 ### 1. Always Mute Events in Migrations
