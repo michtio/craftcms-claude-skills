@@ -96,11 +96,14 @@ class MyPluginCpAsset extends AssetBundle
 
 ### 3. ServicesTrait Registration
 
-Register VitePluginService as a component on the plugin:
+Register VitePluginService as a component on the plugin. Follow the same trait pattern as any other service — register in `static config()`, expose a typed getter with `assert()` narrowing for PHPStan level 8, and declare the `@property` tag on the trait class:
 
 ```php
 use nystudio107\pluginvite\services\VitePluginService;
 
+/**
+ * @property VitePluginService $vite
+ */
 trait ServicesTrait
 {
     public static function config(): array
@@ -120,8 +123,17 @@ trait ServicesTrait
             ],
         ];
     }
+
+    public function getVite(): VitePluginService
+    {
+        $component = $this->get('vite');
+        assert($component instanceof VitePluginService);
+        return $component;
+    }
 }
 ```
+
+See `references/architecture.md` → Plugin Class Structure for the full trait/main-class split and the rationale behind the `assert()` narrowing pattern.
 
 **Key properties:**
 

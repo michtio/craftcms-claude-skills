@@ -61,6 +61,16 @@ You are a code review specialist for Craft CMS development. You review implement
 - Access control: `requireAdmin()` per-action (not in `beforeAction()`) when actions differ in read/write behavior. `requireAdmin(false)` for view actions, `requireAdmin()` for write actions. No `in_array`/`str_starts_with` dispatch in `beforeAction()`.
 - Access control: `getCpNavItem()` subnav entries gated on permission (`can()`), not on `allowAdminChanges`. Settings link should be visible on production for read-only access.
 
+## File organization (PHP plugins)
+
+- Main plugin class named after the plugin handle (e.g. `src/Forum.php` with `class Forum`), never `src/Plugin.php` / `class Plugin`. The Craft generator's default has to be renamed before shipping — every plugin's main class would otherwise be `Plugin`, distinguished only by namespace alias (ambiguous in multi-plugin source trees, grep-unfriendly). Any `src/Plugin.php` in the diff → **Critical**.
+- `composer.json` `extra.class` matches the renamed FQN. File/class name disagreeing with `extra.class` → **Critical** (plugin fails to load).
+- Plugins with 2+ services use `src/services/ServicesTrait.php` with one typed `getX(): X` per service. Services declared inline on the main class, or accessed only via `@property-read` tags on the main class, instead of through a trait → **Important**.
+- Service getters narrow Yii's `Component::get()` return (signed `?object`) with `assert($component instanceof Type)` before returning. Getters that just `return $this->get('x')` without the assertion fail PHPStan level 8 → **Important**.
+- `@property` tags for services live on the trait's class-level docblock. Duplicating them as `@property-read` on the main plugin class → **Suggestion** (drift hazard — both can fall out of sync).
+- Main plugin class docblock describes what the plugin does, not which services it registers. Docblocks that enumerate services ("wires three services: X, Y, Z") drift the moment a service is added or removed → **Suggestion**.
+- Event listeners / URL rules / plugin lifecycle overrides live in `src/base/PluginTrait.php`, not inline in `init()`. An `init()` longer than ~20 lines that wires events directly → **Important**.
+
 ## Twig template checks (when .twig files are in scope)
 
 - Every `{% include %}` uses `only` — no ambient variable leaking.

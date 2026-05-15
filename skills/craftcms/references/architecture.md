@@ -49,7 +49,9 @@ Then customize: add section headers, `@author`, `@since`, `@throws` chains.
 
 The entry file and class name match the plugin handle in PascalCase: handle `forum` → `src/Forum.php` / `class Forum`; handle `userProfile` → `src/UserProfile.php` / `class UserProfile`.
 
-The Craft generator and most starter templates produce `src/Plugin.php` / `class Plugin`. Rename both before going further, and update `composer.json` `extra.class` to match the new FQN:
+**Never ship a plugin as `src/Plugin.php` / `class Plugin`.** The Craft generator and most starter templates produce that default, but it has to be renamed before going further. Every plugin's main class would otherwise just be `Plugin`, distinguished only by namespace alias — call sites read `Plugin::getInstance()->tools` everywhere, which is ambiguous in multi-plugin source trees and grep-unfriendly. Renaming to `Forum::getInstance()->tools` is self-documenting and unique across the ecosystem.
+
+Update `composer.json` `extra.class` to match the new FQN:
 
 ```json
 {
@@ -60,16 +62,45 @@ The Craft generator and most starter templates produce `src/Plugin.php` / `class
 }
 ```
 
+### Renaming an Existing Plugin
+
+For plugins that shipped with `src/Plugin.php`, the migration is mechanical:
+
+```bash
+# 1. Rename file and class
+git mv src/Plugin.php src/Forum.php
+# Edit src/Forum.php: change `class Plugin` to `class Forum` and any self-type hints
+
+# 2. Update composer.json extra.class to the new FQN
+
+# 3. Sweep every reference
+grep -rln 'vendor\\forum\\Plugin' src/ tests/ docs/
+# Update each match: vendor\forum\Plugin → vendor\forum\Forum
+
+# 4. Verify
+ddev composer dump-autoload
+ddev composer phpstan        # Catches any missed references
+ddev craft pest/test
+```
+
+PHPStan is the safety net — unresolved class names surface immediately if any reference was missed.
+
 ### Trait Split
 
 As the plugin grows, the entry class accumulates service wiring, event listeners, URL rule registration, and settings-form overrides — quickly becoming unreadable. Split these into two traits so the main class stays a thin orchestrator:
 
-- **`src/services/ServicesTrait.php`** — service registration. Implements `static config()` (Craft reads this during plugin construction and merges it into the Yii config; no `setComponents()` call in `init()`), typed `getX(): X` accessors that wrap `$this->get('x')`, and `@property X $name` docblocks on the trait class so PHPStan and IDEs pick up the magic-property types.
+- **`src/services/ServicesTrait.php`** — service registration. Implements `static config()` (Craft reads this during plugin construction and merges it into the Yii config; no `setComponents()` call in `init()`), typed `getX(): X` accessors that wrap `$this->get('x')` with an `assert($component instanceof X)` narrowing call, and `@property X $name` docblocks on the trait class. **The trait owns the `@property` tags — never duplicate them on the main plugin class.**
 - **`src/base/PluginTrait.php`** — private `_register*` methods (events, URL rules), plugin lifecycle overrides (`getSettingsResponse()`, `getReadOnlySettingsResponse()`, `createSettingsModel()`), and anything else that would clutter `init()`.
 
-The trait body holds the registration and the accessor:
+Adopt `ServicesTrait` as soon as a plugin has 2+ services. A plugin with 0 or 1 services can declare its component inline in the main class without the trait — the split exists to keep service wiring out of the way once the count grows.
+
+The trait body holds the registration and the typed accessors. Each getter narrows Yii's `Component::get()` return (signed `?object`) with `assert($component instanceof Xxx)` so PHPStan level 8 resolves the type:
 
 ```php
+/**
+ * @property Items $items
+ * @property Sync $sync
+ */
 trait ServicesTrait
 {
     public static function config(): array
@@ -84,14 +115,31 @@ trait ServicesTrait
 
     public function getItems(): Items
     {
-        return $this->get('items');
+        $component = $this->get('items');
+        assert($component instanceof Items);
+        return $component;
+    }
+
+    public function getSync(): Sync
+    {
+        $component = $this->get('sync');
+        assert($component instanceof Sync);
+        return $component;
     }
 }
 ```
 
-The main plugin class then collapses to:
+The `assert()` is load-bearing. Yii's `Component::get()` is declared `?object` — PHPStan can't narrow the return without help, so the getter signature `getItems(): Items` would fail strict typing without the assertion. The trait's `@property` tags make property-style access (`$plugin->items`) work alongside method-style (`$plugin->getItems()`); Yii's `__get('items')` walks the trait's `getItems()`.
+
+The main plugin class then collapses to a thin shell. Its class-level docblock describes what the plugin **does** — not which services it registers. Any service enumeration in the docblock ("wires three services: X, Y, Z") drifts the moment a service is added or removed; let the trait be the source of truth for that map:
 
 ```php
+/**
+ * Forum — discussion threads, posts, and moderation for Craft 5.
+ *
+ * @author Vendor
+ * @since 1.0.0
+ */
 class Forum extends Plugin
 {
     public static Forum $plugin;
@@ -113,6 +161,8 @@ class Forum extends Plugin
     }
 }
 ```
+
+Note what's **not** on the main class: no `@property-read` tags duplicating the trait's `@property` map. One source of truth — the trait. Adding a service means editing the trait (new getter + new `@property` tag) and `static config()` (new component entry); the main class doesn't change.
 
 ## Services
 
