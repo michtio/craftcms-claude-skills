@@ -247,6 +247,28 @@ ddev craft ckeditor/convert
 
 Converts all Redactor fields to CKEditor fields, preserving content. Run once during the Craft 5 upgrade process. Nested-context conversion is correct as of 4.10.0.
 
+## Reference Deletion Blocker (5.6.0+ — requires Craft 5.10)
+
+Plugin 5.6.0 hooks into Craft 5.10's deletion-blocker subsystem (see `craftcms/elements.md` → Deletion Blockers) to prevent silent orphaning of CKEditor references. When an editor tries to delete an element that appears inside a CKEditor field somewhere — embedded as a nested entry, linked via the link picker, used as an image source — Craft now surfaces the conflict in the deletion modal instead of letting the delete proceed and leaving broken markup behind.
+
+The mechanism: a new `ckeditor_references` table tracks every cross-reference. `craft\ckeditor\deletionblockers\ReferenceDeletionBlocker` listens for delete attempts on any element type and consults the table. If the element is referenced, the blocker reports the offending CKEditor fields and (when possible) offers reassignment to a replacement element.
+
+### Upgrade step
+
+Existing CKEditor field data won't be in the `ckeditor_references` table until you backfill it. After upgrading to plugin 5.6.0 on a Craft 5.10 install:
+
+```bash
+ddev craft resave/all --with-fields=ckeditor
+```
+
+Adjust `--with-fields` to match the handles of the CKEditor fields you want indexed (comma-separated for multiple). The resave walks each element, parses its CKEditor field values, and populates `ckeditor_references`. Until this completes, the blocker has nothing to block on and deletions proceed as before 5.6.0.
+
+This is a one-time migration. New saves write to `ckeditor_references` automatically.
+
+### `removePlugins` config respected (5.6.0+)
+
+Before 5.6.0, custom `removePlugins` config values were silently ignored. As of 5.6.0 the value passes through to CKEditor — useful for disabling built-in plugins (like the upload adapter or autoformat) that conflict with custom workflows. Pair with `removePlugins` in your inline config or `$jsFile`.
+
 ## Extending with Custom Plugins (5.0.0+ — Breaking)
 
 Third-party CKEditor plugins ship as **ES modules** as of plugin 5.0.0 — the asset-bundle-only registration from 4.x is gone. The new pattern:
