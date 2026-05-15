@@ -48,6 +48,16 @@
 - Assuming `NestedElementTrait` handles site propagation — it doesn't. The trait manages owner relationships (eager loading, owner getters/setters, sort order) but does NOT override `getSupportedSites()` or `isLocalized()`. Address elements fall through to the base `Element` default: primary site only. Matrix entries get multi-site support because the `Entry` class explicitly overrides `getSupportedSites()` and delegates to `$this->getField()->getSupportedSitesForElement($this)` when `$this->fieldId` is set. If your custom nested element type needs multi-site propagation, you must override `getSupportedSites()` yourself — the trait won't do it for you.
 - Inventing two parallel element classes (e.g., `Item` + `ItemReference`) when the relationship is parent/child — that's what Structure was built for. One element class with `structureId` gives you drag-sort, drafts, revisions, multi-site, search, conditions, and the full element query API for free. See "Architecture: One Element Class with Native Structure" above.
 - Assuming all User properties are populated from element queries — `UserQuery::beforePrepare()` only selects a subset of columns from the `users` table. Security-sensitive columns like `lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, and `lastLoginAttemptIp` are intentionally excluded. These properties are `null` on User elements loaded via `Craft::$app->getUser()->getIdentity()` or any element query, even when the database has values. To access them, query the `users` table directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`. Craft's CP profile page does this internally — it loads the User record separately from the element.
+- **`PopulateElementEvent::$row` shape change (5.10)** — `$row` no longer carries `fieldValues` / `generatedFieldValues` keys. Those moved to the new `PopulateElementEvent::$content` property. Any plugin reading `$event->row['fieldValues']` from an `EVENT_AFTER_POPULATE_ELEMENT` handler now silently receives the wrong shape. Migrate to `$event->content`.
+- **Entry `postDate` is `null` on creation (5.10)** — previously auto-set to `dateCreated`. Now stays null until the entry is saved as enabled. Sites and queries that filter on `postDate :notempty:` or use `postDate` for sort order will see different behavior for newly-created entries. If you need the legacy "always populated" behavior, set `postDate` explicitly in `beforeSave()`.
+- **Relation-field element queries respect target sites (5.10)** — `$query->relatedTo()` now honors the parent query's `siteId` constraints. Previously a globally-scoped relation query could return elements from any site. Queries that intentionally crossed sites need an explicit `->site('*')` now.
+
+## 5.10 Element Additions
+
+- **`ElementQueryInterface::collectIds(?Connection $db = null): Collection`** — sibling to `ids()` that returns a Laravel-style `Collection` instead of a plain array. Useful when you want to chain `.filter()` / `.map()` / `.chunk()` over IDs without an intermediate `collect()` call.
+- **`ElementInterface::setDirtyFieldTracking(bool $enabled = true): void`** — toggle field-dirtiness tracking on a specific element instance. Set to `false` when programmatically populating an element for save where you've already validated upstream and want to skip the dirty-tracking side effects (propagation hints, change events). Re-enable before normal user-driven saves.
+- **`ElementHelper::belongsToCanonicalOwner(ElementInterface $element): bool`** — true when a nested element's owner is the canonical version (not a draft or revision). Use when reasoning about nested-element ownership in custom flows.
+- **`ElementActionInterface::getTriggerId()`** — element actions now expose their trigger DOM ID for JS-side hook-up.
 
 ## Scaffold
 
@@ -462,6 +472,81 @@ public function canCreateDrafts(User $user): bool
 Full authorization method list: `canView()`, `canSave()`, `canDelete()`, `canDeleteForSite()`, `canDuplicate()`, `canDuplicateAsDraft()`, `canCreateDrafts()`, `canCopy()`.
 
 Each has a corresponding event: `EVENT_AUTHORIZE_VIEW`, `EVENT_AUTHORIZE_SAVE`, etc.
+
+## Deletion Blockers (5.10+)
+
+Authorization answers "may the user delete this?". Deletion blockers answer "would the delete leave the system in a bad state?" — references that would orphan, dependents that need reassignment, content elsewhere that points at this element. The 5.10 subsystem replaces the older user-deletion content-summary flow with a generic, element-type-agnostic API.
+
+### Adding Blockers to Your Own Element
+
+Override `deletionBlockers()` to return any preconditions. Each blocker is a `DeletionBlockerInterface` instance describing the problem and (optionally) a reassignment path:
+
+```php
+use craft\elements\deletionblockers\RelationDeletionBlocker;
+
+public function deletionBlockers(): array
+{
+    $blockers = parent::deletionBlockers();
+
+    // Block deletion when this category has child entries
+    $childCount = MyEntry::find()->categoryId($this->id)->status(null)->count();
+    if ($childCount > 0) {
+        $blockers[] = new RelationDeletionBlocker([
+            'element' => $this,
+            'count' => $childCount,
+            'message' => Craft::t('my-plugin', '{count} entries reference this category.', ['count' => $childCount]),
+        ]);
+    }
+
+    return $blockers;
+}
+```
+
+When a user attempts deletion in the CP, `Craft.ElementDeletionManager` collects the blockers and presents a reassignment / cancel modal (replacing the deprecated `Craft.DeleteUserModal`).
+
+### Adding Blockers to Third-Party Elements
+
+For elements your plugin doesn't own, hook `EVENT_DEFINE_DELETION_BLOCKERS` and append to the event's `blockers` array:
+
+```php
+use craft\base\Element;
+use craft\elements\User;
+use craft\events\DefineElementDeletionBlockersEvent;
+use yii\base\Event;
+
+Event::on(
+    User::class,
+    Element::EVENT_DEFINE_DELETION_BLOCKERS,
+    function(DefineElementDeletionBlockersEvent $event) {
+        $referenceCount = MyEntry::find()->authorId($event->sender->id)->status(null)->count();
+        if ($referenceCount > 0) {
+            $event->blockers[] = new RelationDeletionBlocker([
+                'element' => $event->sender,
+                'count' => $referenceCount,
+                'message' => Craft::t('my-plugin', '{count} entries authored by this user.', ['count' => $referenceCount]),
+            ]);
+        }
+    }
+);
+```
+
+### Custom Blocker Classes
+
+Extend `craft\elements\deletionblockers\BaseDeletionBlocker` when the built-in `RelationDeletionBlocker` and `EntryAuthorsBlocker` don't fit. The interface requires `getMessage()` (user-facing) and optionally `getReassignmentOptions()` (returns selectable replacement elements for the modal).
+
+### Bulk Reassignment
+
+`Craft::$app->getEntries()->reassignEntries($entryIds, $newOwner)` handles bulk author/owner swaps — the same primitive the User-deletion flow uses for "reassign content to another user before deleting." For relation fields specifically, the new `craft\queue\jobs\ReplaceRelations` queue job rewrites pointers in the background.
+
+### Deprecations (replaced by this flow)
+
+- `craft\controllers\UsersController::EVENT_DEFINE_CONTENT_SUMMARY`
+- `craft\events\DefineUserContentSummaryEvent`
+- `craft\elements\User::$inheritorOnDelete`
+- `craft\elements\actions\DeleteUsers`
+- `Craft.DeleteUserModal` (JS)
+
+Migrate any custom user-deletion content summaries to `EVENT_DEFINE_DELETION_BLOCKERS` on `User::class`. The new API is element-type-agnostic so the same pattern works for entries, assets, and custom elements.
 
 ## Drafts and Revisions
 

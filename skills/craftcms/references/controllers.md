@@ -19,6 +19,7 @@
 - **Over-engineering with CP URL rules when action URLs suffice** — If the endpoint is an API call, AJAX handler, or utility action, the default `actions/{pluginHandle}/{controller}/{action}` URL works out of the box with query params (`?itemId=123`). CP URL rules with `<itemId:\d+>` path params are only worth the complexity for pretty URLs in CP nav or browser-facing pages. Don't register routes for endpoints that will only be called from JavaScript or `UrlHelper::actionUrl()`.
 - **TOCTOU: checking permissions before model population** — if your save action checks a permission (`requirePermission`), then populates a model from POST data, verify that the POST data hasn't changed the permission-relevant context. For example: action checks `saveEntries:{sectionUid}`, then `$entry->sectionId = $this->request->getBodyParam('sectionId')` could change which section the entry belongs to — the original permission check no longer applies. Re-check permissions after populating the model when the POST data can change the authorization context. Safe pattern: check permission, populate model, re-check if the context changed. If the permission context is immutable during the action (e.g., you strip or ignore context-changing fields from POST), document why.
 - **Element/block ID manipulation in POST data** — if a save action or custom element action accepts element IDs, block IDs, or owner IDs from POST data, an attacker can substitute IDs they don't own. Always verify that the user has permission to the referenced element after loading it: `$element = Craft::$app->getElements()->getElementById($id)` then check `Craft::$app->getElements()->canSave($element, $currentUser)`. Never trust IDs from POST without authorization checks on the resolved element.
+- **Relying on `AppController::actionResourceJs()` (removed in 5.10)** — the cross-domain JS proxy at `actions/app/resource-js` no longer exists. Plugins that loaded JS through this proxy must register normal asset bundles instead. Direct script tags work cleanly across origins now.
 
 ## Controller Access Patterns
 
@@ -430,3 +431,31 @@ $this->requireCpRequest();                              // CP only
 | Public webhook from external service | `$allowAnonymous = ['receive']` + `$enableCsrfValidation = false` — no auth, no CSRF |
 | Preview/share URL for logged-in users | `requireLogin()` — any authenticated user, not just admins |
 | Public API endpoint (headless) | `$allowAnonymous = true` on a **dedicated** API controller (no CP actions on the same controller) — validate via API key/signature in each action |
+
+## Sec-Fetch-Site Filter (5.10+)
+
+`craft\filters\SecFetchSiteFilter` is a Yii `ActionFilter` that verifies the `Sec-Fetch-Site` header on non-safe HTTP methods. Browsers set this header automatically and it can't be forged from cross-origin contexts, which makes it a stronger origin guarantee than CSRF tokens for internal AJAX endpoints.
+
+Attach via `behaviors()` on any controller:
+
+```php
+use craft\filters\SecFetchSiteFilter;
+
+public function behaviors(): array
+{
+    return array_merge(parent::behaviors(), [
+        'secFetchSite' => [
+            'class' => SecFetchSiteFilter::class,
+            'only' => ['save', 'delete'],   // scope to mutating actions
+            // 'allowSameSite' => true,     // opt-in for subdomain requests
+        ],
+    ]);
+}
+```
+
+Defaults:
+- `$originOnly = true` — rejects any request that isn't `Sec-Fetch-Site: same-origin` with a 400.
+- `$allowSameSite = false` — same-domain only by default; flip to `true` if your app spans subdomains.
+- `$safeMethods` — uses the request's `csrfTokenSafeMethods` (GET/HEAD/OPTIONS skip the check automatically).
+
+This **supplements** CSRF, it doesn't replace it. The two protect against different attack shapes — keep CSRF active. Don't attach this filter to webhook controllers (external services don't send `Sec-Fetch-Site`) or to public API endpoints called by non-browser clients.

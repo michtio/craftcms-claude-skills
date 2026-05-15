@@ -60,7 +60,7 @@ When building templates:
 
 - Follow atomic design: atoms → molecules → organisms. Components named by visual treatment, never by parent context.
 - Every `{% include %}` uses `only`. No exceptions.
-- Use `??` for null handling by default. `???` (empty coalesce) is OK if the project has `nystudio107/craft-empty-coalesce` or `nystudio107/craft-seomatic` — check `composer.json` first. Never `?.` (Twig 3.21 in Craft 5 doesn't support nullsafe).
+- Use `??` for null handling by default. `???` (empty coalesce) is OK if the project has `nystudio107/craft-empty-coalesce` or `nystudio107/craft-seomatic` — check `composer.json` first. `?.` (nullsafe) is available on Craft 5.10+ (Twig 3.24) — use it for deep chains where intermediate links may be null, not for single-property access.
 - Use `.eagerly()` on every relational field access inside loops.
 - Use `{% include '_blocks/' ~ block.type.handle ignore missing only %}` for Matrix rendering.
 - Props via `collect({})`, classes via named-key collections.

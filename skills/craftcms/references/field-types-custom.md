@@ -363,6 +363,31 @@ public function getStaticHtml(mixed $value, ElementInterface $element): string
 }
 ```
 
+## Defaultable Fields (5.10+)
+
+Implement `craft\base\DefaultableFieldInterface` when your field has a sensible "factory default" value that should be writable to existing elements on demand. Pairs with the new `--to-default` flag on `resave/*` console commands — operators can backfill a column with the field's default without writing a migration.
+
+```php
+use craft\base\DefaultableFieldInterface;
+use craft\base\Field;
+
+class MyField extends Field implements DefaultableFieldInterface
+{
+    public function getDefaultValue(): mixed
+    {
+        return ['status' => 'pending', 'priority' => 1];
+    }
+}
+```
+
+The single interface method `getDefaultValue(): mixed` returns whatever shape your field's `serializeValue()` would write. Operators invoke the backfill via:
+
+```bash
+ddev craft resave/entries --to-default --with-fields=myFieldHandle
+```
+
+Don't implement this just to give new elements a default — `normalizeValue()` already handles initialization for new values. The interface specifically exists for backfilling existing elements when an operator runs `resave --to-default`.
+
 ## Element Lifecycle Hooks
 
 Methods called during element save/delete lifecycle. Always call `parent::` — base implementations handle relation storage, delta writes, and propagation.

@@ -17,6 +17,11 @@
 - Using `!empty()` for optional integer arguments like `limit` — `0` is a valid value but `!empty(0)` is `true`. Use `isset()` for nullable integers.
 - Tokens are stored in the database only, not project config — forgetting to create tokens per environment leaves staging/production with no API access.
 
+## Craft 5.10 Additions
+
+- **`hardDelete` argument on `delete*` mutations** — every built-in delete mutation now accepts `hardDelete: Boolean` (default `false`). When `true`, bypasses soft-delete and removes the element immediately. Custom delete mutations should mirror this argument shape for consistency.
+- **Assets' `url` field `immediately` argument is no longer deprecated** — earlier docs said to avoid `immediately: true` on `url` queries; that deprecation was reversed in 5.10. The argument forces synchronous transform generation instead of returning a queued URL.
+
 ## Table of Contents
 
 - [Scaffold](#scaffold)

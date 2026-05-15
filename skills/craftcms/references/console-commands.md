@@ -143,7 +143,7 @@ The `project-config/` controller has a `pc/` shorthand alias — `craft pc/apply
 | `craft elements/restore` | Restore soft-deleted elements by ID. |
 | `craft update-statuses` | Update entry statuses based on post/expiry dates. Required when `staticStatuses` is enabled in `config/general.php`. |
 
-Common resave flags: `--queue` (push to queue instead of running inline), `--batch-size`, `--element-id`, `--uid`, `--site`, `--status`, `--offset`, `--limit`, `--update-search-index`, `--touch` (update `dateUpdated` without re-saving), `--set=fieldHandle`, `--to=value`, `--if-empty` (only set if field is empty), `--if-invalid` (only resave elements that fail validation).
+Common resave flags: `--queue` (push to queue instead of running inline), `--batch-size`, `--element-id`, `--uid`, `--site`, `--status`, `--offset`, `--limit`, `--update-search-index`, `--touch` (update `dateUpdated` without re-saving), `--set=fieldHandle`, `--to=value`, `--to-default` (5.10+, writes the field type's default value — requires the field to implement `craft\base\DefaultableFieldInterface`), `--if-empty` (only set if field is empty), `--if-invalid` (only resave elements that fail validation).
 
 Element type-specific flags: `--section=blog`, `--type=post` (entries), `--volume=images` (assets), `--group=myGroup` (users).
 
