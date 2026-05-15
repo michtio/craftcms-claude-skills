@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.9 -- 2026-05-15
+
+First release on the maintained 1.4.x line (Craft 5.9 realm) since the versioning policy landed — see the policy framing in `README.md` → Versioning. Picks up the CKEditor plugin 5.x reference rewrite that's also shipping on the 1.5.x line; the plugin 5.0.0–5.5.0 range works on Craft 5.9 + CKEditor 5.x, so its surface changes are part of the 5.9 realm too. The plugin 5.6.0 deletion-blocker integration (which requires Craft 5.10) lands only on 1.5.x.
+
+### New
+
+- **README.md → Versioning section** + **bin/release.sh policy comment** (cherry-picked from main). Documents the minor-version-mirrors-Craft-minor mapping (1.4.x = Craft 5.9, 1.5.x = Craft 5.10, etc.), the dual-maintenance commitment, the `1.4.x` branch convention, and the cherry-pick workflow for cross-line content. `bin/release.sh` now prints the current branch in its "git push" hint instead of hardcoding `main` — important for tagging 1.4.x releases off this branch.
+
+### Changed
+
+- **craft-site / plugins/ckeditor.md — major rewrite for plugin 5.0.0–5.5.0.** Covers: a new Field Settings table enumerating every settable property (`$toolbar`, `$headingLevels`, `$imageMode`, `$imageEntryTypeUid`, `$imageFieldUid`, `$advancedLinkFields`, `$fullGraphqlData`, `$jsFile`, `$cssFile`, plus the inline `$options`/`$styles`) and the `getJson()`/`setJson()` programmatic accessors; Config as Files (5.3.0+) using `config/ckeditor/*.js|.json|.css`; `@import` working in custom-styles CSS (5.2.1+); a new Image Mode section (5.0.0+) covering `IMAGE_MODE_IMG` vs `IMAGE_MODE_ENTRIES`, the entry-type-as-image pattern, and drag-and-drop upload behavior refined in 5.2.0; a new Link Configuration section for the rebuilt 5.0.0 link modal and `$advancedLinkFields`; a new GraphQL Mode section documenting `CkeditorData` vs `CkeditorMarkup` types and the `$fullGraphqlData` toggle (the GraphQL Mode toggle itself shipped in 4.8.0 but wasn't documented before); a new Fullscreen Toolbar Item note; a new Value Helpers subsection covering `FieldData::getEntries()`, `Markup::getMarkdown()`, `Markup::getPlainText()` (also 4.8.0, also previously undocumented); a major rewrite of "Extending with Custom Plugins" for the **breaking** ES-module registration pattern in 5.0.0 (`BaseCkeditorPackageAsset::$namespace`, `CkeditorConfig::registerPackageAsset()`, the asset-bundle skeleton); updated Nested Entries → Setup for the per-entry-type toolbar buttons that replaced the removed "'New' Button Label" setting; new Common Pitfalls bullets for the breaking 5.0.0 plugin registration and the migration of pre-5.0 CKEditor Config records to field-level settings.
+- **craft-site / SKILL.md — plugin table summary** for `ckeditor.md` expanded to reflect the broader surface now documented (field settings, image mode, link configuration, GraphQL Mode, ES-module custom plugins).
+
 ## 1.4.8 -- 2026-05-15
 
 Tightens the plugin-class conventions added in 1.4.7 after they surfaced gaps in a real plugin review. Three additions: a hard prohibition on shipping `src/Plugin.php` / `class Plugin` (with the multi-plugin-source-tree rationale that makes it not just a style nit), the `assert($component instanceof Type)` narrowing pattern on service getters (required for PHPStan level 8 since Yii's `Component::get()` returns `?object`), and a "trait owns the `@property` map, main-class docblock describes responsibility" rule that prevents the drift mode where a docblock says "wires three services" while the code has nine. Also: a code-reviewer file-organization checklist so these conventions get caught at review time instead of slipping through.
