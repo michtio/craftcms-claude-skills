@@ -27,6 +27,15 @@
 # preserve alignment. A bump that changes width (e.g. 1.4.9 → 1.4.10) will push the right
 # border by one character — fix manually after release if it crosses a width boundary.
 #
+# Versioning policy:
+#   The minor version of this package mirrors the Craft CMS minor version it
+#   documents — 1.4.x = Craft 5.9 realm, 1.5.x = Craft 5.10 realm, etc. Craft
+#   major bumps drive package major bumps (1.x = Craft 5, 2.x = Craft 6).
+#   Both lines stay actively maintained — cross-version content is cherry-picked
+#   between branches. Run this script on the branch that corresponds to the line
+#   being released (e.g. `1.4.x` branch for a v1.4.x tag, `main` for the latest
+#   line). See README → Versioning for the full policy.
+#
 # Requires: jq (every dev box, every CI runner has it).
 
 set -euo pipefail
@@ -117,12 +126,14 @@ else
   echo "  warn: no '## ${VERSION}' heading found in CHANGELOG.md — add the entry before tagging." >&2
 fi
 
+CURRENT_BRANCH="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)"
+
 echo
 echo "Done. Review the diff:"
 echo "  git diff -- .claude-plugin/ CHANGELOG.md"
 echo
-echo "Then commit, tag, push:"
+echo "Then commit, tag, push (on branch ${CURRENT_BRANCH}):"
 echo "  git add .claude-plugin/ CHANGELOG.md"
 echo "  git commit -m 'chore(release): v$VERSION'"
 echo "  git tag -a v$VERSION -m 'v$VERSION'"
-echo "  git push origin main v$VERSION"
+echo "  git push origin ${CURRENT_BRANCH} v$VERSION"

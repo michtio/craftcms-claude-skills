@@ -169,6 +169,20 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 - Craft CMS 5.x
 - Bash (macOS/Linux) for the install script
 
+## Versioning
+
+The minor version of this package mirrors the Craft CMS minor version it documents:
+
+- **1.4.x** — Craft 5.9 realm
+- **1.5.x** — Craft 5.10 realm
+- **1.6.x** — Craft 5.11 realm (when it ships)
+
+When Craft bumps its major version (5.x → 6.x), this package follows (1.x → 2.x).
+
+**Both lines stay actively maintained.** New plugin references, cross-version conventions, and fixes that apply to multiple Craft minors land on every supported line via cherry-pick. Content specific to a Craft minor — APIs introduced in that version, breaking shape changes, new core conventions — lands only on the line(s) that target it.
+
+Development happens on `main` (currently 1.5.x). Older lines live on their own branches (`1.4.x` etc.). Releases tag from the appropriate branch — `v1.5.0` from `main`, `v1.4.9` from `1.4.x`. The `release-validation` workflow enforces that manifest versions match the tag regardless of which branch shipped it.
+
 ## Roadmap
 
 - [ ] Upgrade guide (Craft 3→4, 4→5, 3→5) with deprecated plugin mapping and migration paths
