@@ -1,9 +1,18 @@
 name: release-validation
 
-# Fires on every tag push that looks like a version (`v1.2.3`, `v1.2.3-beta.1`, etc.)
-# and verifies that the manifest version sites all match the tag. The point is
-# to catch the kind of drift that produced 1.2.1 and 1.3.0 with stale 1.2.0
-# manifests — those slipped because nothing was checking.
+# Fires on every tag push that looks like a version (`v1.2.3`, `v1.2.3-beta.1`, etc.).
+# Two jobs run in sequence:
+#   1. validate-manifest-versions — confirms the .claude-plugin/* version sites
+#      match the tag. Catches drift like 1.2.1 / 1.3.0 shipping with stale 1.2.0
+#      manifests.
+#   2. publish-release — extracts the matching CHANGELOG.md section and creates
+#      a GitHub Release with the tag, title, and notes. Closes the
+#      tag-pushed-but-no-release gap that left v1.4.7 through v1.5.1 unpublished
+#      as Releases until manually backfilled.
+#
+# Both jobs run for every `v*` tag push on every branch. The CHANGELOG is read
+# from the tagged commit, so each branch's CHANGELOG governs its own line's
+# release notes (1.4.x's CHANGELOG for 1.4.x releases, main's for 1.5.x+).
 
 on:
   push:
@@ -11,7 +20,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate-manifest-versions:
@@ -60,3 +69,44 @@ jobs:
 
           echo
           echo "All manifest versions match ${TAG}."
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: validate-manifest-versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract CHANGELOG section for tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+
+          # Extract everything between "## VERSION " and the next "## " heading.
+          # Skips the heading line itself (gh release will set the title separately).
+          awk -v ver="$VERSION" '
+            $0 ~ "^## " ver "[ \t]" { capture=1; next }
+            capture && /^## [0-9]/ { exit }
+            capture { print }
+          ' CHANGELOG.md > /tmp/release-notes.md
+
+          # Reject empty notes — that signals a missing CHANGELOG entry, which
+          # is a release-prep mistake worth failing the workflow over.
+          if [ -z "$(tr -d '[:space:]' < /tmp/release-notes.md)" ]; then
+            echo "::error file=CHANGELOG.md::No '## ${VERSION}' section found. Add the entry and re-tag."
+            exit 1
+          fi
+
+          echo "Release notes (first 20 lines):"
+          head -20 /tmp/release-notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file /tmp/release-notes.md
