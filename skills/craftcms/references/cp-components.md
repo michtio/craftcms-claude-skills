@@ -209,7 +209,7 @@ The reload preserves the slideout's open state and scroll position; only the for
 
 ### Queue Completion Event (5.10+)
 
-`Craft.CP` fires a `queueCompleted` event when the last queue job in the running batch finishes. Useful for CP screens that want to refresh themselves once a long-running queue (resave, propagation, batch import) is done:
+`Craft.cp` fires a `queueCompleted` event when the last queue job in the running batch finishes. Useful for CP screens that want to refresh themselves once a long-running queue (resave, propagation, batch import) is done:
 
 ```js
 Craft.cp.on('queueCompleted', () => {

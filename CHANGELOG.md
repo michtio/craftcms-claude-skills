@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.5.1 -- 2026-05-18
+
+Correctness patch for v1.5.0. The new Deletion Blockers section and the `heading()` Twig helper documentation shipped with API signature errors — verified against `craft/cms@5.10.1` source after the fact. Code examples in those sections would have failed at runtime if a reader copy-pasted them. This patch fixes the signatures, framings, and a small consistency issue around the `Craft.cp` JS singleton.
+
+### Fixed
+
+- **craftcms / elements.md — Deletion Blockers section.** Rewrote the three code examples and surrounding prose to match the actual upstream API:
+  - `deletionBlockers()` is a **static** method taking `(ElementCollection $elements, bool $hardDelete)` — was documented as an instance method using `$this->id`. The override pattern now correctly uses `parent::deletionBlockers($elements, $hardDelete)` and operates on the passed collection.
+  - `RelationDeletionBlocker` constructor is positional `(string $sourceElementType, ElementCollection $elements, bool $hardDelete, array $config = [])` — was documented as taking a config array with keys `element`/`count`/`message`. The blocker computes `relationCount` internally in `init()`; no manual count is passed. The new example uses named-argument syntax for readability.
+  - `EVENT_DEFINE_DELETION_BLOCKERS` listener — was accessing `$event->sender` for the element under deletion, but `$event->sender` is the **class name** for static-context events. Corrected to use `$event->elements` (the `ElementCollection`) and `$event->hardDelete` (the bool flag).
+  - New "Method Signature" subsection up front clarifies the static-method shape before the worked examples land.
+- **craftcms / elements.md — `ElementHelper::belongsToCanonicalOwner()` signature.** Was documented as `(ElementInterface $element): bool`; actual signature is `(NestedElementInterface $element, ElementInterface $owner): bool` — two args, first is `NestedElementInterface`. Updated the description to match the actual semantics: "true when `$element`'s primary owner is `$owner` (or `$owner`'s canonical version)."
+- **craft-twig-guidelines / SKILL.md — `heading()` helper.** Rewrote the section. Was documented as "auto-incrementing" with `heading('Page title', { class: '...' })` examples — neither was correct. Actual signature is `headingFunction(int $level, array|string $attributes = '')`; the first argument is an **explicit int level** (1-6), not a tracked counter. Verified against PR #18524 description and `craft/cms@5.10.1` `src/web/twig/Extension.php`. Corrected examples use `heading(2, 'Section title')` and the bound shortcuts `h1()…h6()` that only take attributes. Removed the false "tracks the current heading level" framing.
+
+### Changed
+
+- **craftcms / cp-components.md — `Craft.CP` → `Craft.cp` consistency.** The Queue Completion Event paragraph mixed `Craft.CP` (prose) and `Craft.cp` (code example). Source consistently uses `Craft.cp` (the singleton instance); `Craft.CP` is the class definition. Both prose and code now use `Craft.cp`.
+- **craftcms / elements.md — Contents TOC.** Added the missing entries for `5.10 Element Query and Save Utilities` and `Deletion Blockers (5.10+)` sections that landed in 1.5.0 without making it into the file's own TOC.
+- **craftcms / elements.md — Renamed `5.10 Element Additions` section to `5.10 Element Query and Save Utilities`.** Disambiguates from the much larger `Deletion Blockers (5.10+)` section further down the file. The smaller section is plumbing utilities; the larger one is a substantive subsystem.
+
 ## 1.5.0 -- 2026-05-15
 
 Opens the 1.5.x line — the Craft 5.10 realm — per the versioning policy that landed alongside this release (see `README.md` → Versioning). This is the Craft 5.10 + CKEditor 5.x ecosystem catch-up: the new deletion-blocker subsystem, Twig 3.24 surface, `SecFetchSiteFilter` CSRF alternative, `DefaultableFieldInterface`, element-query and CP-JS additions, and a full CKEditor plugin 5.x reference rewrite covering plugin 5.0.0 through 5.6.0. The CKEditor 5.0.0–5.5.0 content is also on 1.4.x (cherry-picked into 1.4.9) since it works on Craft 5.9; the plugin 5.6.0 reference-deletion-blocker integration is 1.5.x-only because it requires Craft 5.10. Craft 5.10 also carries security fixes (one high-severity RCE, two moderate) — upgrading production sites is the right call.

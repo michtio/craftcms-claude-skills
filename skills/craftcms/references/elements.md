@@ -3,6 +3,7 @@
 ## Contents
 
 - Common Pitfalls
+- 5.10 Element Query and Save Utilities — collectIds, setDirtyFieldTracking, belongsToCanonicalOwner, getTriggerId
 - Architecture: One Element Class with Native Structure — default to Structure for hierarchies, code-only field layouts, native fields for plugin attributes
 - Static Configuration Methods — displayName, hasTitles, hasUris, hasDrafts, etc.
 - Element Save Lifecycle (15 steps) — beforeSave, afterSave, afterPropagate
@@ -10,6 +11,7 @@
 - Element Query — beforePrepare()
 - Status from Dates
 - Authorization — canView, canSave, canDelete + 5 more
+- Deletion Blockers (5.10+) — DeletionBlockerInterface, EVENT_DEFINE_DELETION_BLOCKERS, bulk reassignment
 - Drafts and Revisions
 - Field Layouts — getFieldLayout, defineFieldLayouts
 - URI/Routing
@@ -52,11 +54,13 @@
 - **Entry `postDate` is `null` on creation (5.10)** — previously auto-set to `dateCreated`. Now stays null until the entry is saved as enabled. Sites and queries that filter on `postDate :notempty:` or use `postDate` for sort order will see different behavior for newly-created entries. If you need the legacy "always populated" behavior, set `postDate` explicitly in `beforeSave()`.
 - **Relation-field element queries respect target sites (5.10)** — `$query->relatedTo()` now honors the parent query's `siteId` constraints. Previously a globally-scoped relation query could return elements from any site. Queries that intentionally crossed sites need an explicit `->site('*')` now.
 
-## 5.10 Element Additions
+## 5.10 Element Query and Save Utilities
+
+Smaller plumbing additions in 5.10 (the substantive new subsystem is [Deletion Blockers](#deletion-blockers-510) further down):
 
 - **`ElementQueryInterface::collectIds(?Connection $db = null): Collection`** — sibling to `ids()` that returns a Laravel-style `Collection` instead of a plain array. Useful when you want to chain `.filter()` / `.map()` / `.chunk()` over IDs without an intermediate `collect()` call.
 - **`ElementInterface::setDirtyFieldTracking(bool $enabled = true): void`** — toggle field-dirtiness tracking on a specific element instance. Set to `false` when programmatically populating an element for save where you've already validated upstream and want to skip the dirty-tracking side effects (propagation hints, change events). Re-enable before normal user-driven saves.
-- **`ElementHelper::belongsToCanonicalOwner(ElementInterface $element): bool`** — true when a nested element's owner is the canonical version (not a draft or revision). Use when reasoning about nested-element ownership in custom flows.
+- **`ElementHelper::belongsToCanonicalOwner(NestedElementInterface $element, ElementInterface $owner): bool`** — true when `$element`'s primary owner is `$owner` (or `$owner`'s canonical version). Use when reasoning about nested-element ownership in custom flows where you have a candidate owner and need to confirm the element belongs to it across draft/revision derivatives.
 - **`ElementActionInterface::getTriggerId()`** — element actions now expose their trigger DOM ID for JS-side hook-up.
 
 ## Scaffold
@@ -477,40 +481,52 @@ Each has a corresponding event: `EVENT_AUTHORIZE_VIEW`, `EVENT_AUTHORIZE_SAVE`, 
 
 Authorization answers "may the user delete this?". Deletion blockers answer "would the delete leave the system in a bad state?" — references that would orphan, dependents that need reassignment, content elsewhere that points at this element. The 5.10 subsystem replaces the older user-deletion content-summary flow with a generic, element-type-agnostic API.
 
-### Adding Blockers to Your Own Element
+### Method Signature
 
-Override `deletionBlockers()` to return any preconditions. Each blocker is a `DeletionBlockerInterface` instance describing the problem and (optionally) a reassignment path:
+`deletionBlockers()` is a **static method** taking an `ElementCollection` (Craft can delete multiple elements in one operation), not an instance method:
 
 ```php
+public static function deletionBlockers(ElementCollection $elements, bool $hardDelete): array
+```
+
+The base implementation gathers blockers + fires `EVENT_DEFINE_DELETION_BLOCKERS`. Override to add type-specific blockers; always call `parent::deletionBlockers($elements, $hardDelete)` first to preserve the event chain.
+
+### Adding Blockers to Your Own Element
+
+Override the static method on your element class. Each blocker is a `DeletionBlockerInterface` instance:
+
+```php
+use craft\base\Element;
 use craft\elements\deletionblockers\RelationDeletionBlocker;
+use craft\elements\ElementCollection;
 
-public function deletionBlockers(): array
+public static function deletionBlockers(ElementCollection $elements, bool $hardDelete): array
 {
-    $blockers = parent::deletionBlockers();
+    $blockers = parent::deletionBlockers($elements, $hardDelete);
 
-    // Block deletion when this category has child entries
-    $childCount = MyEntry::find()->categoryId($this->id)->status(null)->count();
-    if ($childCount > 0) {
-        $blockers[] = new RelationDeletionBlocker([
-            'element' => $this,
-            'count' => $childCount,
-            'message' => Craft::t('my-plugin', '{count} entries reference this category.', ['count' => $childCount]),
-        ]);
-    }
+    // Block deletion when any of these categories has child entries
+    $blockers[] = new RelationDeletionBlocker(
+        sourceElementType: MyEntry::class,
+        elements: $elements,
+        hardDelete: $hardDelete,
+    );
 
     return $blockers;
 }
 ```
 
-When a user attempts deletion in the CP, `Craft.ElementDeletionManager` collects the blockers and presents a reassignment / cancel modal (replacing the deprecated `Craft.DeleteUserModal`).
+`RelationDeletionBlocker` computes its own `relationCount` in `init()` by querying `$sourceElementType::find()->relatedTo(...)` against `$elements`. You don't pass a count manually. The blocker auto-deactivates (`isActive()` returns `false`) when no relations exist, so it's safe to always append it.
+
+When a user attempts deletion in the CP, `Craft.ElementDeletionManager` collects the active blockers and presents a reassignment / cancel modal (replacing the deprecated `Craft.DeleteUserModal`).
 
 ### Adding Blockers to Third-Party Elements
 
-For elements your plugin doesn't own, hook `EVENT_DEFINE_DELETION_BLOCKERS` and append to the event's `blockers` array:
+For elements your plugin doesn't own, hook `EVENT_DEFINE_DELETION_BLOCKERS` on the foreign element class. The event carries `$event->elements` (an `ElementCollection` — the elements pending deletion) and `$event->hardDelete`. Note that `$event->sender` is the **class name** for static events, not an instance — use `$event->elements` for the actual elements:
 
 ```php
 use craft\base\Element;
 use craft\elements\User;
+use craft\elements\deletionblockers\RelationDeletionBlocker;
 use craft\events\DefineElementDeletionBlockersEvent;
 use yii\base\Event;
 
@@ -518,21 +534,18 @@ Event::on(
     User::class,
     Element::EVENT_DEFINE_DELETION_BLOCKERS,
     function(DefineElementDeletionBlockersEvent $event) {
-        $referenceCount = MyEntry::find()->authorId($event->sender->id)->status(null)->count();
-        if ($referenceCount > 0) {
-            $event->blockers[] = new RelationDeletionBlocker([
-                'element' => $event->sender,
-                'count' => $referenceCount,
-                'message' => Craft::t('my-plugin', '{count} entries authored by this user.', ['count' => $referenceCount]),
-            ]);
-        }
+        $event->blockers[] = new RelationDeletionBlocker(
+            sourceElementType: MyEntry::class,
+            elements: $event->elements,
+            hardDelete: $event->hardDelete,
+        );
     }
 );
 ```
 
 ### Custom Blocker Classes
 
-Extend `craft\elements\deletionblockers\BaseDeletionBlocker` when the built-in `RelationDeletionBlocker` and `EntryAuthorsBlocker` don't fit. The interface requires `getMessage()` (user-facing) and optionally `getReassignmentOptions()` (returns selectable replacement elements for the modal).
+Extend `craft\elements\deletionblockers\BaseDeletionBlocker` when the built-in `RelationDeletionBlocker` and `EntryAuthorsBlocker` don't fit. The base class constructor takes `(ElementCollection $elements, bool $hardDelete, array $config = [])`. Override `init()` to compute conflict counts, `isActive(): bool` to skip the blocker when no conflict exists, and `getMessage(): string` for the user-facing modal copy. Optionally implement reassignment-options getters for the modal's "reassign to…" picker.
 
 ### Bulk Reassignment
 
