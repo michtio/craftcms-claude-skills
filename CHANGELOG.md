@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.5.2 -- 2026-05-21
+
+Documents Craft's reserved CP DOM IDs — a footgun surfaced from a real plugin build where a tab pane defined as `<div id="notifications">` collided with Craft's toast container (`<div id="notifications" role="status">`). Craft's CP JavaScript caches chrome refs via `$('#foo')` during `Craft.CP` init and returns the first match in DOM order, so a plugin element reusing one of these IDs silently hijacks notification toasts, ARIA modal masking, or tab/layout wiring. The result is "not quite Craft" symptoms — toasts that stop appearing, modal screen-reader isolation that leaks, panes that render in the wrong layout region — without any error to grep for. Verified against `craftcms/cms@5.10` (`src/web/assets/cp/src/js/CP.js`, `src/templates/_layouts/cp.twig`, `src/web/assets/garnish/src/Garnish.js`).
+
+### New
+
+- **craftcms / cp.md — "Reserved DOM IDs" section.** Categorized list of every `#id` Craft's CP JavaScript looks up directly, grouped outer-to-inner to match the CP layout flow: Layout regions, Notifications & a11y, Global header & nav, Page header, Content pane, Sidebar / details, Footer. Documents the failure mode (`$('#foo')` returns the first DOM match), the symptoms, and the "how to apply" rule for tab keys, pane containers, and slideout/HUD roots. Includes a wrong/right code example for tab-key naming and a cross-reference to Garnish's modal background masking (`hideModalBackgroundLayers()`'s `.not('#notifications')` exception is exactly why `#notifications` is reserved).
+- **craftcms / cp.md — Common Pitfalls entry + tab-key callout** on the Anchor-based tabs subsection. Surfaces the rule at the two most likely entry points so a reader picking tab keys or scanning the pitfalls list sees the warning before hitting the section.
+- **craft-garnish / integration.md — Common Pitfalls entry.** Brief warning for plugin CP-JS authors that `Craft.CP` caches chrome refs by ID during init; points at the canonical list in `craftcms/cp.md`.
+- **craft-garnish / utilities.md — ARIA & Focus Management note.** Explains why `Garnish.hideModalBackgroundLayers()` excludes `#notifications` from its mask, and the consequence for plugin authors: a body-level plugin element with `id="notifications"` also escapes the mask, breaking the modal's screen-reader isolation.
+
+### Changed
+
+- **craftcms / cp.md — `asCpScreen()` tabs example.** Renamed the example tab keys from `content` / `settings` to `itemContent` / `itemSettings`. `#content` is itself a reserved CP DOM ID (the main content pane), so the previous example demonstrated exactly the collision the new Reserved DOM IDs section warns against.
+
 ## 1.5.1 -- 2026-05-18
 
 Correctness patch for v1.5.0. The new Deletion Blockers section and the `heading()` Twig helper documentation shipped with API signature errors — verified against `craft/cms@5.10.1` source after the fact. Code examples in those sections would have failed at runtime if a reader copy-pasted them. This patch fixes the signatures, framings, and a small consistency issue around the `Craft.cp` JS singleton.

@@ -24,10 +24,11 @@ CP templates, form macros, navigation, settings pages, permissions, and read-onl
 - Using `size` attribute with `type: 'number'` on `textField` — browsers ignore the HTML `size` attribute on `<input type="number">`. Craft's own Number field works around this by using `type: 'text'` with `inputmode: 'numeric'`. For number inputs, constrain width with `inputAttributes: { style: 'width: 6rem' }` or switch to a text input with `inputmode="numeric"` pattern.
 - Expensive `badgeCount` computation in `getCpNavItem()` — this method runs on **every CP page load** across the entire install, not just your plugin's pages. Badge counts must be extremely cheap: use a cached value (invalidated on relevant saves) or a simple indexed `COUNT(*)` query. Never run complex queries, N+1 patterns, or element queries with eager loading here.
 - Gating subnav entries on `allowAdminChanges` in `getCpNavItem()` — hides the settings link on production, making the page unreachable from the CP nav even though it should be viewable in read-only mode. Gate on permission (`can()`), not on admin changes. See Read-Only Mode section for the full three-node access path.
+- Giving a plugin element one of Craft's reserved CP DOM IDs (`#notifications`, `#content`, `#tabs`, `#sidebar`, etc.) — Craft's CP JS caches chrome refs via `$('#foo')` during init and returns the first match in DOM order, so a plugin element with the same ID silently hijacks notification toasts, ARIA masking, or layout wiring. Pick feature-specific names (e.g. `notificationSettings`, not `notifications`) for tab keys, pane containers, slideout/HUD roots — anything you give an `id`. See [Reserved DOM IDs](#reserved-dom-ids) for the full list.
 
 ## Contents
 
-- [CP Templates](#cp-templates) — form macros, editable tables, tabbed settings, VueAdminTable
+- [CP Templates](#cp-templates) — form macros, editable tables, tabbed settings, reserved DOM IDs, VueAdminTable
 - [CP Navigation](#cp-navigation)
 - [Settings Pages](#settings-pages) — settings model, env var support, split settings pages (savePluginSettings footgun)
 - [Form Macros Reference](#form-macros-reference)
@@ -269,6 +270,8 @@ For tabs that switch content without a page reload, use anchor-based tab IDs. Cr
 
 Craft's CP JavaScript automatically shows the panel matching the selected tab and hides the others. Initial state: all panels except the first get `class="hidden"`.
 
+> **Tab keys become DOM IDs — pick names that don't collide with Craft's chrome.** A tab key like `notifications` generates `url: '#notifications'` and a matching `<div id="notifications">`, which collides with Craft's toast container (`<div id="notifications" role="status">`). Because `$('#notifications')` returns the first DOM match, your pane wins — toasts stop appearing and the pane renders in the wrong layout region. Use feature-specific keys (`notificationSettings`, not `notifications`). See [Reserved DOM IDs](#reserved-dom-ids) for the full list.
+
 #### PHP-level tabs via asCpScreen()
 
 For controller-driven screens (custom element edit pages, non-template responses), use the `tabs()` fluent method on `CpScreenResponseBehavior`:
@@ -280,13 +283,13 @@ $response = $this->asCpScreen()
     ->action('my-plugin/items/save')
     ->redirectUrl('my-plugin/items')
     ->tabs([
-        'content' => [
+        'itemContent' => [
             'label' => Craft::t('my-plugin', 'Content'),
-            'url' => '#content',
+            'url' => '#itemContent',
         ],
-        'settings' => [
+        'itemSettings' => [
             'label' => Craft::t('my-plugin', 'Settings'),
-            'url' => '#settings',
+            'url' => '#itemSettings',
         ],
     ])
     ->contentTemplate('my-plugin/items/_edit', [
@@ -305,6 +308,42 @@ $response->addTab(
 ```
 
 `addTab()` accepts optional `class` (string or array) and `visible` (bool, default `true`) parameters. Set `visible: false` to hide a tab conditionally.
+
+### Reserved DOM IDs
+
+Craft's CP JavaScript caches chrome refs via `$('#foo')` during `Craft.CP` init, and `$('#foo')` returns the **first** match in document order. A plugin element that reuses one of these IDs and appears in the DOM before Craft's own — or that replaces it inside a `{% block %}` — silently hijacks Craft's reference. Common symptoms: toast notifications stop appearing, modal ARIA masking breaks, the tab strip wires to the wrong pane, or a pane renders inside the global nav.
+
+The full list of IDs Craft's CP JS looks up directly, grouped by where they appear in the layout (outer to inner):
+
+| Category | Reserved IDs |
+|---|---|
+| Layout regions | `#global-container`, `#page-container`, `#main`, `#main-container`, `#main-content`, `#main-form` |
+| Notifications & a11y | `#notifications`, `#cp-notification-heading`, `#alerts`, `#global-live-region`, `#global-skip-links` |
+| Global header & nav | `#global-sidebar`, `#nav`, `#nav-utilities`, `#crumbs`, `#crumb-list`, `#primary-nav-toggle`, `#announcements-btn`, `#user-info`, `#account-menu`, `#context-menu-container` |
+| Page header | `#header`, `#header-container`, `#page-title`, `#page-heading`, `#revision-indicators`, `#toolbar`, `#action-buttons` |
+| Content pane | `#content`, `#content-container`, `#content-header`, `#content-notice`, `#tabs` |
+| Sidebar / details | `#sidebar`, `#sidebar-container`, `#sidebar-toggle`, `#details`, `#details-container`, `#details-toggle`, `#details-toggle-wrapper` |
+| Footer | `#footer`, `#app-info`, `#edition-logo`, `#trial-info` |
+
+Verified against `vendor/craftcms/cms/src/web/assets/cp/src/js/CP.js` and `vendor/craftcms/cms/src/templates/_layouts/cp.twig` in Craft 5.
+
+**How to apply.** When picking a tab key, container ID, or HUD/slideout root ID, prefix or suffix with your plugin handle or feature name. The tab key, the `url: '#...'` anchor, and the matching `<div id="...">` must all line up — so changing the key changes all three:
+
+```twig
+{# Wrong — collides with Craft's #notifications toast container #}
+{% set tabs = {
+    notifications: { label: 'Notifications'|t('my-plugin'), url: '#notifications' },
+} %}
+<div id="notifications" class="hidden">...</div>
+
+{# Right — feature-specific, no collision #}
+{% set tabs = {
+    notificationSettings: { label: 'Notifications'|t('my-plugin'), url: '#notificationSettings' },
+} %}
+<div id="notificationSettings" class="hidden">...</div>
+```
+
+This also applies to Garnish's modal background masking: `Garnish.hideModalBackgroundLayers()` does `.not('#notifications')` against body children, so a plugin element with `id="notifications"` at body level stays visible to screen readers when a modal opens, breaking the modal's ARIA isolation. See `craft-garnish` skill `references/utilities.md` (ARIA & Focus Management).
 
 ### VueAdminTable
 
