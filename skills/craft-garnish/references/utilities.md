@@ -233,6 +233,8 @@ Garnish.hasJsAriaClass(element);
 
 The ARIA hiding system preserves the original `aria-hidden` state using CSS class markers, so it can be restored correctly even for elements that had `aria-hidden="false"` or `aria-hidden="true"` before the modal opened.
 
+`hideModalBackgroundLayers()` walks body children and applies `aria-hidden` to each *except* the topmost modal layer and `#notifications` (the toast container, which must stay announceable above modals). This is one reason `#notifications` is a reserved CP DOM ID — a body-level plugin element with `id="notifications"` is also skipped by the mask, so it stays announceable when a modal opens and breaks the modal's screen-reader isolation. See `craftcms` skill `references/cp.md` (Reserved DOM IDs) for the full reserved-ID list.
+
 ---
 
 ## UiLayerManager

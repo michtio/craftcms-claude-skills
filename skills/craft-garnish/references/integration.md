@@ -19,6 +19,7 @@
 - Requiring Garnish before `CpAsset` is loaded — if your asset bundle doesn't depend on `CpAsset` (or `GarnishAsset`), Garnish won't be available.
 - Using `Craft.MyClass = function() {}` instead of `Garnish.Base.extend()` — loses event system, listener management, settings, and destroy lifecycle.
 - Calling `Craft.initUiElements()` on content without context — it re-initializes all UI widgets in the container, which can double-instantiate.
+- Reusing Craft's reserved CP DOM IDs (`#notifications`, `#content`, `#tabs`, `#sidebar`, `#details`, `#main`, etc.) on plugin markup — `Craft.CP` caches chrome refs via `$('#foo')` during init and takes the first match in DOM order, so a same-named plugin element silently hijacks notification toasts, ARIA masking, or layout wiring. Pick feature-specific names for tab keys, slideout/HUD roots, and any container you give an `id`. See `craftcms` skill `references/cp.md` (Reserved DOM IDs) for the full list.
 
 ## Table of Contents
 

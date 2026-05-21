@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.10 -- 2026-05-21
+
+Backports the Reserved CP DOM IDs documentation from v1.5.2 to the 1.4.x line. The surface is identical between Craft 5.9 and 5.10 — `Craft.CP::init()` caches chrome refs via `$('#foo')` in the same way on both versions, and a plugin element reusing a reserved ID (`#notifications`, `#content`, `#tabs`, `#sidebar`, etc.) silently hijacks notification toasts, ARIA modal masking, or tab/layout wiring on either line. Verified against `craftcms/cms@5.9` (`src/web/assets/cp/src/js/CP.js`, `src/templates/_layouts/cp.twig`, `src/web/assets/garnish/src/Garnish.js`). See v1.5.2 for the full rationale.
+
+### New
+
+- **craftcms / cp.md — "Reserved DOM IDs" section.** Categorized list of every `#id` Craft's CP JavaScript looks up directly, grouped outer-to-inner: Layout regions, Notifications & a11y, Global header & nav, Page header, Content pane, Sidebar / details, Footer. Documents the failure mode (`$('#foo')` returns the first DOM match), the symptoms, and the rule for tab keys, pane containers, and slideout/HUD roots. Includes a wrong/right tab-key example and a cross-reference to Garnish's modal background masking.
+- **craftcms / cp.md — Common Pitfalls entry + tab-key callout** on the Anchor-based tabs subsection.
+- **craft-garnish / integration.md — Common Pitfalls entry** for plugin CP-JS authors; points at the canonical list in `craftcms/cp.md`.
+- **craft-garnish / utilities.md — ARIA & Focus Management note** on why `Garnish.hideModalBackgroundLayers()` excludes `#notifications` from its mask, and the consequence for plugin authors.
+
+### Changed
+
+- **craftcms / cp.md — `asCpScreen()` tabs example.** Renamed example tab keys from `content` / `settings` to `itemContent` / `itemSettings`. `#content` is itself a reserved CP DOM ID.
+
 ## 1.4.9 -- 2026-05-15
 
 First release on the maintained 1.4.x line (Craft 5.9 realm) since the versioning policy landed — see the policy framing in `README.md` → Versioning. Picks up the CKEditor plugin 5.x reference rewrite that's also shipping on the 1.5.x line; the plugin 5.0.0–5.5.0 range works on Craft 5.9 + CKEditor 5.x, so its surface changes are part of the 5.9 realm too. The plugin 5.6.0 deletion-blocker integration (which requires Craft 5.10) lands only on 1.5.x.
