@@ -11,7 +11,7 @@
 - Generating random UIDs when project config YAML already ships from dev -- check if the config path exists first.
 - Non-idempotent steps -- always check column/table existence before adding.
 - Using `null` for FK name but specifying one for index -- use `null` for both, Craft generates deterministic names.
-- Missing `TRUNCATE cache` after failed migrations on Craft Cloud -- stale mutex locks block retries.
+- Missing `TRUNCATE cache` after failed migrations on Craft Cloud -- stale mutex locks block retries. See the `craft-cloud` skill (`commands-and-cron.md`) for running the truncate via the Console command runner.
 - Not thinking about ON DELETE behavior -- `CASCADE` for owned data, `SET NULL` for references, `RESTRICT` for protected refs.
 - Running raw SQL without checking column/table existence first -- `addColumn` on an existing column throws, `dropColumn` on a missing one throws.
 - Creating project config entries in migrations AND in YAML -- double-apply causes UID collisions or duplicate structures.
@@ -419,7 +419,7 @@ Each plugin has its own migration track, triggered when the plugin's `schemaVers
 
 ## Deployment
 
-These apply to every Craft deployment -- Craft Cloud, Servd, Forge, bare metal, or any CI/CD pipeline:
+These apply to every Craft deployment -- Craft Cloud, Servd, Forge, bare metal, or any CI/CD pipeline. (On Craft Cloud specifically, migrations run automatically during the Migrate phase via `php craft cloud/up` — see the `craft-cloud` skill's `deploy-pipeline.md` for the full sequence.)
 
 - Always run `ddev craft up` locally before deploying -- this runs pending migrations and applies project config changes in one command.
 - Migrations should run before the application serves traffic. Most hosting platforms and CI/CD pipelines handle this as a separate deploy step.

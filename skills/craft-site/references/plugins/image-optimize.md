@@ -18,7 +18,7 @@ When unsure about an ImageOptimize feature, `WebFetch` the relevant docs page.
 - Adding the OptimizedImages field to a Section field layout instead of the Asset Volume field layout — the field must be on the Asset Volume, not the Section. It generates variants for the asset itself.
 - Forgetting to call `.render()` on tag builders — `.imgTag()` and `.pictureTag()` return builder objects, not HTML strings. Chain `.render()` at the end.
 - Not running `ddev craft image-optimize/optimize/create` after adding new variants — existing assets don't auto-regenerate unless you resave them or run the console command.
-- Using ImageOptimize on Craft Cloud — Craft Cloud handles transforms via Cloudflare Images at the edge. ImageOptimize is for self-hosted or imgix/Thumbor setups. Don't use both.
+- Using ImageOptimize on Craft Cloud — Craft Cloud handles transforms via Cloudflare Images at the edge. ImageOptimize is for self-hosted or imgix/Thumbor setups. Don't use both. See the `craft-cloud` skill's `assets-and-transforms.md` for Cloud's transform limits and `limitations.md` for the broader plugin-compatibility map.
 - Missing `--force` flag when adding WebP variants after the fact — existing transforms won't be recreated unless forced.
 - Expecting real-time transform generation — transforms are pre-generated as queue jobs on asset save, not at request time. Large uploads may take a moment.
 

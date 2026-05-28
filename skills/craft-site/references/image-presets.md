@@ -215,7 +215,7 @@ Add to the `presets` hash in `_image--props.twig`:
 | Strategy | When to use | Notes |
 |----------|-------------|-------|
 | **ImageOptimize plugin** | VPS / Servd hosting | Full srcset/webp generation at upload. Best quality control. Not compatible with Craft Cloud. |
-| **Craft Cloud transforms** | Craft Cloud hosting | Native Craft transforms. Craft Cloud intercepts and serves via Cloudflare Images — no special template syntax needed. |
+| **Craft Cloud transforms** | Craft Cloud hosting | Native Craft transforms. Craft Cloud intercepts and serves via Cloudflare Images — no special template syntax needed. See the `craft-cloud` skill's `assets-and-transforms.md` for the edge transform limits (70MB, 100MP, 12,000px max). |
 | **Small Pics / Cloudflare Images** | External transform service | URL-based. Best for CDN-first architectures. |
 
 The image atom handles both paths. It checks for the `optimizedImages` field

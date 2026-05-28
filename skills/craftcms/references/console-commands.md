@@ -86,7 +86,7 @@ Every Craft CLI command supports these inherited options:
 | `craft setup/db` | Configure database connection settings in `.env`. |
 | `craft setup/db-cache-table` | Create the `cache` table for DB-based cache driver. |
 | `craft setup/php-session-table` | Create the `phpsessions` table for DB-based session driver. |
-| `craft setup/cloud` | Configure Craft Cloud settings. |
+| `craft setup/cloud` | Scaffold Craft Cloud extension config on the project. See the `craft-cloud` skill's `extension.md` for what this installs and `migration.md` for when to run it during a self-hosted → Cloud migration. |
 | `craft setup/welcome` | Display post-install welcome information. |
 | `craft update/info` | Show available Craft and plugin updates. |
 | `craft update/update` | Apply updates. Accepts `--minor-only`, `--patch-only`, `--force`, `--backup`. |
