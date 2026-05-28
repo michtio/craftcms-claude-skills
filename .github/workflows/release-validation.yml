@@ -76,6 +76,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Need history (and origin/main) to determine whether this tag
+          # belongs to the main line or a maintenance branch.
+          fetch-depth: 0
+
+      - name: Determine "Latest" flag
+        id: latest
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # The release should be marked "Latest" only when the tagged commit
+          # is part of the current line. We treat `origin/main` as the current
+          # line. Maintenance-branch releases (e.g. 1.4.x while main is on
+          # 1.5.x) should NOT displace main's Latest badge — GitHub's default
+          # behavior is to set "Latest" by publish timestamp, which gives the
+          # wrong result when a 1.4.x release is published a few seconds
+          # after a 1.5.x release.
+          #
+          # `git merge-base --is-ancestor` returns 0 iff the first commit is
+          # reachable from the second — i.e. the tag is on main's history.
+          if git merge-base --is-ancestor "${GITHUB_SHA}" origin/main 2>/dev/null; then
+            LATEST=true
+          else
+            LATEST=false
+          fi
+
+          echo "Tag ${GITHUB_REF_NAME} (commit ${GITHUB_SHA:0:8}) → --latest=${LATEST}"
+          echo "latest=${LATEST}" >> "${GITHUB_OUTPUT}"
 
       - name: Extract CHANGELOG section for tag
         shell: bash
@@ -109,4 +138,5 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" \
             --title "${GITHUB_REF_NAME}" \
-            --notes-file /tmp/release-notes.md
+            --notes-file /tmp/release-notes.md \
+            --latest=${{ steps.latest.outputs.latest }}
