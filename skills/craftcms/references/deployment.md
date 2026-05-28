@@ -270,4 +270,4 @@ Every `GeneralConfig` property maps to `CRAFT_UPPER_SNAKE_CASE` automatically.
 | **Ploi** | Git push + deploy hook | Built-in daemon | Native zero-downtime support |
 | **Servd** | Git push | Managed | Handles `craft up` automatically |
 | **Docker/K8s** | Container image | Sidecar or init container | Run `craft up` as init container. Shared storage (S3, Redis) mandatory. |
-| **Craft Cloud** | Git push | Managed | Automatic config apply. Cloudflare Images for transforms. |
+| **Craft Cloud** | Git push | Managed (auto-processed) | Build → Migrate → Release pipeline, Cloudflare Images for transforms, edge static caching, MySQL 8 / Postgres 15 only. Full surface in the **`craft-cloud`** skill — different enough from generic Craft deployment that none of the patterns in this file apply directly. |

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.4.11 -- 2026-05-28
+
+Backports the new **`craft-cloud`** skill from v1.5.3 to the 1.4.x line. Craft Cloud's minimum-supported Craft version is 4.6, which sits below both the 1.4.x (Craft 5.9 realm) and 1.5.x (Craft 5.10 realm) floors — the platform surface is identical regardless of which Craft 5.x line you're on. The full skill (SKILL.md + 12 reference files) plus all cross-skill edits (`craftcms`/`craft-site`/`craft-project-setup` companion wiring, expanded deployment table row, pointer updates on existing Cloud mentions, README and docs updates) ships unchanged from v1.5.3. See the v1.5.3 entry for the per-file breakdown.
+
+### New
+
+- **`skills/craft-cloud/`** — ninth skill covering Craft Cloud serverless hosting end-to-end. SKILL.md + 12 reference files (config-file, deploy-pipeline, extension, assets-and-transforms, database, caching-and-edge, domains, commands-and-cron, plugin-development, migration, local-dev, limitations). Verified against `craftcms.com/docs/cloud/` and `craftcms/cloud-extension-yii2@main` source.
+
+### Changed
+
+- Companion-skill wiring added to **`craftcms/SKILL.md`** and **`craft-site/SKILL.md`** so `craft-cloud` auto-loads on Cloud projects (detection: `craft-cloud.yaml` at repo root or `craftcms/cloud` in `composer.json`).
+- **`craft-project-setup/SKILL.md`** detects Cloud projects from both signals AND asks about hosting target when neither signal is present (so fresh projects planning to deploy to Cloud get Cloud context baked into the generated CLAUDE.md in a single setup pass).
+- **`agents/craft-code-reviewer.md`** — new Cloud-compatibility audit section, conditional on Cloud-project detection. Severity-tagged checks for raw CSRF token output, runtime asset publishing, `tablePrefix`/MariaDB references, file writes without `App::isEphemeral()`, hardcoded asset bundle paths, file-based logging, unbounded queue jobs, and other Cloud-specific anti-patterns. Skipped silently on self-hosted projects.
+- Pointer updates on existing Cloud mentions: `craftcms/references/deployment.md` (expanded table row), `craftcms/references/migrations.md` (two cross-refs), `craftcms/references/console-commands.md` (`craft setup/cloud` row), `craft-site/references/plugins/image-optimize.md`, `craft-site/references/image-presets.md`.
+- **`README.md`** and **`docs/skills-overview.md`** updated for 9 skills and 117 reference files; `craft-cloud` added to the skills table and skills-overview detail.
+- **`.claude-plugin/plugin.json`** and **`.claude-plugin/marketplace.json`** — descriptions mention Craft Cloud and "9 skills"; marketplace keywords include `craft-cloud` and `serverless-hosting`.
+
 ## 1.4.10 -- 2026-05-21
 
 Backports the Reserved CP DOM IDs documentation from v1.5.2 to the 1.4.x line. The surface is identical between Craft 5.9 and 5.10 — `Craft.CP::init()` caches chrome refs via `$('#foo')` in the same way on both versions, and a plugin element reusing a reserved ID (`#notifications`, `#content`, `#tabs`, `#sidebar`, etc.) silently hijacks notification toasts, ARIA modal masking, or tab/layout wiring on either line. Verified against `craftcms/cms@5.9` (`src/web/assets/cp/src/js/CP.js`, `src/templates/_layouts/cp.twig`, `src/web/assets/garnish/src/Garnish.js`). See v1.5.2 for the full rationale.

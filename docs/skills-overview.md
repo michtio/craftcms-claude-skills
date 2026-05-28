@@ -1,6 +1,6 @@
 # Skills Overview
 
-8 skills covering both plugin development (extending Craft) and site development (content modeling, Twig templates, front-end architecture). 73 reference files totaling approximately 25,500 lines of context.
+9 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), and Craft Cloud serverless hosting. Reference files spread across each skill's `references/` directory.
 
 ## How Skills Load
 
@@ -139,6 +139,22 @@ Interactive project scaffolding. Detects project type from `composer.json`, `.dd
 **Companion skills:** None at activation (it generates config that references other skills).
 
 **Boundary:** Does NOT trigger for non-Craft projects, installing Craft itself, or writing code.
+
+---
+
+## craft-cloud
+
+**Track:** Shared (both plugin and site development, when hosted on Cloud)
+**Reference files:** 12
+**SKILL.md:** 114 lines
+
+Craft Cloud, Pixel & Tonic's serverless hosting platform. Covers the `craft-cloud.yaml` config file, the Build → Migrate → Release deploy pipeline, the `craftcms/cloud` extension package (with `App::isEphemeral()` patterns and the `cloud.esi(...)` Twig helper), edge image transforms via Cloudflare Images, edge static caching with `cache.rules`, MySQL 8 / Postgres 15 constraints (no MariaDB, no `tablePrefix`), Console-based command runner and scheduled cron (hourly minimum), auto-processed queue jobs (15-minute cap), plugin Cloud-compatibility requirements, and self-hosted → Cloud migration.
+
+**When it triggers:** Prompts like "deploy to Craft Cloud", "configure `craft-cloud.yaml`", "make this plugin Cloud-compatible", "migrate to Craft Cloud", or any mention of `App::isEphemeral()`, `cloud.esi()`, the `craftcms/cloud` package, or `CRAFT_CLOUD_*` env vars. Also auto-loaded as a companion to `craftcms` and `craft-site` when the project is detected as a Cloud project (`craft-cloud.yaml` at repo root, or `craftcms/cloud` in `composer.json`).
+
+**Companion skills:** `craftcms` (for plugin Cloud-compat work), `craft-site` (for edge caching / ESI in templates), `ddev` (for local-dev parity), `craft-php-guidelines` (for plugin PHP edits).
+
+**Boundary:** Does NOT cover generic Craft deployment (Forge, Servd, bare metal — see `craftcms/deployment.md`). Does NOT cover general DDEV usage unrelated to Cloud parity.
 
 ---
 

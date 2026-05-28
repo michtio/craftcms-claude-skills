@@ -103,8 +103,9 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, site sharing, troubleshooting. |
 | `craft-project-setup` | Shared | Project scaffolding, upgrade, and audit. Generates CLAUDE.md, .claude/rules/, .claude/settings.local.json (permissions). Gap analysis for existing configs. |
+| `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, self-hosted → Cloud migration. 12 reference files. |
 
-8 skills, 86 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+9 skills, 117 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 
@@ -157,7 +158,7 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | Guide | What it covers |
 |-------|----------------|
 | [Getting Started](docs/getting-started.md) | Installation, project setup, how skills auto-trigger, first steps |
-| [Skills Overview](docs/skills-overview.md) | All 8 skills with triggers, companion skills, reference counts, boundaries |
+| [Skills Overview](docs/skills-overview.md) | All 9 skills with triggers, companion skills, reference counts, boundaries |
 | [Prompt Guide](docs/prompt-guide.md) | 40+ real-world prompts organized by task type |
 | [Agents](docs/agents.md) | 5 agents with tools, gate patterns, composition examples |
 | [Contributing](docs/contributing.md) | Adding plugin references, improving skills, reporting issues |
