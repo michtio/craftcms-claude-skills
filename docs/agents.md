@@ -1,6 +1,6 @@
 # Agents
 
-Five specialized sub-agents, each with a dedicated model and tool scope. Agents are invoked from within Claude Code to handle specific types of work. They load relevant skills automatically and enforce project conventions.
+Six specialized sub-agents, each with a dedicated model and tool scope. Agents are invoked from within Claude Code to handle specific types of work. They load relevant skills automatically and enforce project conventions.
 
 ## When to Use Agents
 
@@ -13,6 +13,7 @@ Use agents when work is scoped and repeatable. A single conversation can delegat
 | Building site templates, components, or content architecture | `craft-site-builder` |
 | Investigating a bug or unexpected behavior | `craft-debugger` |
 | Reviewing code before merge | `craft-code-reviewer` |
+| Deep review of a high-stakes change (release branch, security-sensitive code, migrations, multi-service flows) | `craft-code-reviewer-deep` |
 
 For complex work (more than 3 steps), always plan first, then build. The planner's output feeds directly into the builder.
 
@@ -92,7 +93,7 @@ When a plan has more than 3 steps, the builder creates a todo list before writin
 
 ### Prevention rules
 
-The builder enforces 14 rules that the reviewer will flag if violated:
+The builder enforces these rules that the reviewer will flag if violated:
 
 - `andWhere()` not `where()` on element queries
 - No hardcoded site IDs
@@ -232,7 +233,7 @@ Code review with a structured findings report. Read-only -- it never modifies fi
 
 1. Identify changed files via `git diff`
 2. Read each changed file thoroughly
-3. Check against the 19-item checklist
+3. Check against the checklist
 4. Generate a findings report grouped by severity
 
 ### Report format
@@ -241,7 +242,7 @@ Code review with a structured findings report. Read-only -- it never modifies fi
 - **Important** (should fix) -- missing PHPDocs, incomplete `@throws`, architectural violations
 - **Suggestions** (nice to have) -- naming improvements, simplification opportunities, test coverage gaps
 
-### The 19-item checklist
+### The checklist
 
 **Security (5 checks):**
 1. `$allowAnonymous` uses specific action names, never blanket `true`
@@ -289,9 +290,45 @@ Review the changes in the job-listings branch before I open a PR.
 
 ---
 
+## craft-code-reviewer-deep
+
+**Model:** Opus (xhigh effort)
+**Tools:** Read, Grep, Glob, Bash (read-only — `git diff`/`log`/`show`/`blame` only)
+**Skills loaded:** `craftcms`, `craft-php-guidelines`, `craft-garnish`, `craft-twig-guidelines`, `craft-site`
+
+The deep-review counterpart to `craft-code-reviewer`. The standard reviewer (Sonnet) catches checklist violations per file; this one (Opus, xhigh) catches what surface pattern-matching misses. Use it when the extra scrutiny is worth the token cost — release branches, security-sensitive code, large architectural changes, migrations, multi-service flows. Use the standard reviewer for daily review.
+
+### Where it looks that the standard reviewer doesn't
+
+- **Cross-file data flow** — traces request data controller → service → element → DB to catch multi-file authorization gaps and TOCTOU escalations.
+- **Untested paths** — reads the test suite and identifies new branches, exception paths, and negative cases the diff doesn't cover.
+- **Architecture** — whether the abstraction is right, whether a service should exist, whether a migration can roll back.
+- **Race conditions & transaction boundaries** — read-then-write without locking, resaves inside loops without `muteEvents`, single-worker assumptions in queue jobs.
+- **N+1 at production scale** — eager-loading gaps in services called from loops elsewhere, with the math run at real data volume.
+- **Semantic correctness** — does the code do what was *intended*, including empty arrays, soft-deleted parents, disabled multi-site, drafts.
+- **Migration safety at scale** — add-column on million-row tables, unbatched long migrations, index additions that lock.
+- **Plugin lifecycle correctness** — settings that mutate mid-request, events wired after they fire, DB hits during plugin boot.
+
+### Discipline
+
+It does not fabricate runtime bugs from generic framework intuition — claims about state staleness, DI timing, or cache lifecycle must trace through Craft's actual Yii2 source, or they're downgraded to "Verify". Depth means *more accurate*, not longer: a correct one-line finding beats a three-paragraph speculation.
+
+### Report format
+
+Same severity grouping as the standard reviewer (Critical / Important / Suggestions), but each finding adds *why it matters at depth* — the subtle issue surface scanning would miss. Read-only; never modifies files.
+
+### Example delegation
+
+```
+Deep-review the release/1.6.0 branch before tagging — it touches migrations,
+the asset filesystem, and the permission layer.
+```
+
+---
+
 ## Prevention/Detection Parity
 
-The builder and reviewer are designed as complementary pairs. The builder's 14 prevention rules map to the reviewer's 19 checklist items. Everything the builder prevents, the reviewer detects -- and vice versa.
+The builder and reviewer are designed as complementary pairs. The builder's prevention rules map to the reviewer's checklist items. Everything the builder prevents, the reviewer detects -- and vice versa.
 
 This means code built by the `craft-feature-builder` agent passes the `craft-code-reviewer` agent's checklist with zero findings if the builder followed its own rules. The overlap is intentional: if the builder misses something (it sometimes does), the reviewer catches it.
 

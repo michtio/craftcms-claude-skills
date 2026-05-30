@@ -37,7 +37,7 @@ Open Claude Code in your Craft project and say:
 Set up Claude for this Craft project
 ```
 
-The `craft-project-setup` skill detects your project type (plugin, site, module) and generates a tailored `CLAUDE.md` and `.claude/rules/` directory.
+The `craft-project-setup` skill detects your project type (plugin, site, module, hybrid, or monorepo) and generates a tailored `CLAUDE.md` and `.claude/rules/` directory.
 
 ### 3. Start Building
 
@@ -51,7 +51,9 @@ Claude loads the right skills, follows Craft conventions, and uses the correct f
 
 ## Example Prompts
 
-Just describe what you need. Skills trigger automatically and produce high-quality results.
+Just describe what you need — skills trigger automatically and produce high-quality results. A few to show the range, grouped by domain:
+
+**Content modeling & architecture**
 
 ```
 Plan the content architecture for a multi-language corporate site with
@@ -59,11 +61,15 @@ news, team members, office locations, and a service catalog. We need
 English, German, and French with subfolder-per-language routing.
 ```
 
+**Plugins & modules**
+
 ```
 Build a custom element type for "Job Listings" with postDate/expiryDate
 status, a categories relation for departments, and a CP edit page with
 field layout designer.
 ```
+
+**Control panel & author experience**
 
 ```
 I need a modal dialog for my Craft plugin that opens when clicking
@@ -71,14 +77,11 @@ I need a modal dialog for my Craft plugin that opens when clicking
 plugin's save action, and closes on success. Make it keyboard accessible.
 ```
 
+**Front-end & Twig**
+
 ```
 Create an atomic button component that supports links, form submits,
 and disabled states. It needs size variants and a loading spinner option.
-```
-
-```
-Configure Redis for cache, sessions, and mutex in our Craft project.
-We're running DDEV locally and deploying to a VPS with Redis installed.
 ```
 
 ```
@@ -87,7 +90,20 @@ profile editing. Users should be in the "Members" group and only see
 content in the gated section.
 ```
 
-See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by task type.
+**Hosting & deployment**
+
+```
+Set this project up to deploy on Servd: Servd asset storage, static
+caching with Blitz in reverse-proxy mode, and the dedicated queue
+runner. Document the constraints in CLAUDE.md.
+```
+
+```
+Configure Redis for cache, sessions, and mutex in our Craft project.
+We're running DDEV locally and deploying to a VPS with Redis installed.
+```
+
+See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by task type — content modeling, plugin development, field types, security, Twig, CP/JS, configuration & deployment, testing, and headless.
 
 ## What's Inside
 
@@ -98,14 +114,15 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, settings, navigation), CP components (widgets, utilities, slideouts), CP UI patterns (tri-state, condition builders, asset bundles), console commands (80+ commands), debugging. 30 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 6 reference files. |
-| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files + 22 plugin references. |
+| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files + 23 plugin references. |
 | `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, site sharing, troubleshooting. |
 | `craft-project-setup` | Shared | Project scaffolding, upgrade, and audit. Generates CLAUDE.md, .claude/rules/, .claude/settings.local.json (permissions). Gap analysis for existing configs. |
 | `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, self-hosted → Cloud migration. 12 reference files. |
+| `servd` | Shared | Servd managed hosting: git push-to-deploy + `servd.yaml`, local → staging → production sync, the `servd/craft-asset-storage` plugin (svdcdn CDN, off-server transforms), Servd static caching + Blitz reverse-proxy mode, MariaDB/MySQL over SSH, backups, Dedicated Queue Runner, ephemeral filesystem. 6 reference files. |
 
-9 skills, 117 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+10 skills, 105 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 
@@ -115,16 +132,17 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craft-feature-builder` | Opus | Build plugin code feature by feature with automated + manual test gates |
 | `craft-site-builder` | Opus | Site templates and components feature by feature with build-verify gates |
 | `craft-debugger` | Sonnet | Systematic bug investigation |
-| `craft-code-reviewer` | Sonnet | Full-stack review: PHP, Twig, JS, CSS, config (45 checklist items) |
+| `craft-code-reviewer` | Sonnet | Full-stack review against a structured checklist: PHP, Twig, JS, CSS, config |
+| `craft-code-reviewer-deep` | Opus | Deep review for high-stakes PRs (release branches, security, migrations, multi-service flows): cross-file data flow, untested paths, race conditions, scale concerns |
 
-Agents build feature by feature (vertical slices), not layer by layer. Tests are written alongside each layer, not batched at the end. Manual testing gates (required + optional) are identified per feature. The builder's 16 prevention rules map to the reviewer's 45 checklist items across PHP, Twig, JS, and CSS. See [docs/agents.md](docs/agents.md) for details.
+Agents build feature by feature (vertical slices), not layer by layer. Tests are written alongside each layer, not batched at the end. Manual testing gates (required + optional) are identified per feature. The builder's prevention rules map directly to the reviewer's checklist across PHP, Twig, JS, and CSS; `craft-code-reviewer-deep` (Opus) goes further for high-stakes changes. See [docs/agents.md](docs/agents.md) for details.
 
 ### Plugin Reference Library
 
-22 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls:
+23 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls:
 
 <details>
-<summary>View all 22 plugin references</summary>
+<summary>View all 23 plugin references</summary>
 
 | Plugin | Author | Key Surface |
 |--------|--------|-------------|
@@ -149,7 +167,8 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | Amazon SES | putyourlightson | SES mail transport |
 | Timeloop | craftpulse | Recurring dates |
 | Feed Me | craftcms | Data import from XML/JSON/CSV, CLI automation |
-| Imager-X | spacecrafttechnologies | Advanced image transforms, named presets, effects |
+| Imager-X | spacecatninja | Advanced image transforms, named presets, effects |
+| Vite | nystudio107 | Asset loading (`craft.vite.*`), critical CSS, dev server, manifest |
 
 </details>
 
@@ -158,9 +177,9 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | Guide | What it covers |
 |-------|----------------|
 | [Getting Started](docs/getting-started.md) | Installation, project setup, how skills auto-trigger, first steps |
-| [Skills Overview](docs/skills-overview.md) | All 9 skills with triggers, companion skills, reference counts, boundaries |
+| [Skills Overview](docs/skills-overview.md) | All 10 skills with triggers, companion skills, reference counts, boundaries |
 | [Prompt Guide](docs/prompt-guide.md) | 40+ real-world prompts organized by task type |
-| [Agents](docs/agents.md) | 5 agents with tools, gate patterns, composition examples |
+| [Agents](docs/agents.md) | 6 agents with tools, gate patterns, composition examples |
 | [Contributing](docs/contributing.md) | Adding plugin references, improving skills, reporting issues |
 
 ## Requirements
@@ -172,17 +191,15 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 
 ## Versioning
 
-The minor version of this package mirrors the Craft CMS minor version it documents:
+This package follows its own [semantic versioning](https://semver.org), driven by the pack's own content — it is **not** pinned to Craft's minor releases:
 
-- **1.4.x** — Craft 5.9 realm
-- **1.5.x** — Craft 5.10 realm
-- **1.6.x** — Craft 5.11 realm (when it ships)
+- **Patch** (e.g. 1.6.0 → 1.6.1) — accuracy fixes, corrections, small content updates
+- **Minor** (e.g. 1.5.x → 1.6.0) — new skills, new plugin references, significant content additions
+- **Major** (1.x → 2.x) — Craft's next major (5.x → 6.x, where APIs break) or a major reorganization of the pack
 
-When Craft bumps its major version (5.x → 6.x), this package follows (1.x → 2.x).
+The pack targets **Craft CMS 5, latest minor** (currently 5.10). Behaviour specific to a Craft minor is annotated inline in the content (e.g. "since 5.10.0"), so a single line serves projects on any Craft 5 minor — the minors are additive and backward-compatible. New content like a hosting skill or plugin reference is a feature of the pack, independent of which Craft minor is current.
 
-**Both lines stay actively maintained.** New plugin references, cross-version conventions, and fixes that apply to multiple Craft minors land on every supported line via cherry-pick. Content specific to a Craft minor — APIs introduced in that version, breaking shape changes, new core conventions — lands only on the line(s) that target it.
-
-Development happens on `main` (currently 1.5.x). Older lines live on their own branches (`1.4.x` etc.). Releases tag from the appropriate branch — `v1.5.0` from `main`, `v1.4.9` from `1.4.x`. The `release-validation` workflow enforces that manifest versions match the tag regardless of which branch shipped it.
+Development happens on `main`. The `1.4.x` branch is a **frozen snapshot targeting Craft 5.9** — it received a final quality release and no longer takes new work; all new development lands on `main`. The `release-validation` workflow enforces that manifest versions match the release tag.
 
 ## Roadmap
 

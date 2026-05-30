@@ -1,6 +1,6 @@
 # Skills Overview
 
-9 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), and Craft Cloud serverless hosting. Reference files spread across each skill's `references/` directory.
+10 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), and managed hosting (Craft Cloud and Servd). Reference files spread across each skill's `references/` directory.
 
 ## How Skills Load
 
@@ -13,8 +13,8 @@ Every skill has explicit "NOT for" boundaries to prevent cross-skill misfires. F
 ## craftcms
 
 **Track:** Plugin Development
-**Reference files:** 28 (approximately 12,950 lines)
-**SKILL.md:** 192 lines
+**Reference files:** 30 (approximately 14,900 lines)
+**SKILL.md:** 219 lines
 
 The largest skill in the pack. Covers the entire surface for extending Craft CMS 5 through plugins and modules: elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types (built-in and custom), events, behaviors, Twig extensions, utilities, widgets, filesystems, permissions, debugging, testing, GraphQL, and all configuration (general.php, app.php, bootstrap, caching, deployment, drafts/revisions, email, sessions, conditions).
 
@@ -29,8 +29,8 @@ The largest skill in the pack. Covers the entire surface for extending Craft CMS
 ## craft-php-guidelines
 
 **Track:** Plugin Development
-**Reference files:** 5 (approximately 520 lines)
-**SKILL.md:** 138 lines
+**Reference files:** 5 (approximately 630 lines)
+**SKILL.md:** 141 lines
 
 PHP coding standards and conventions for Craft CMS 5. PHPDoc requirements (every class, method, property), section headers with `=========` separators, class organization, naming conventions (services, queue jobs, records, events, enums), control flow patterns (early returns, match over switch), ECS and PHPStan configuration, and the verification checklist.
 
@@ -45,8 +45,8 @@ PHP coding standards and conventions for Craft CMS 5. PHPDoc requirements (every
 ## craft-content-modeling
 
 **Track:** Site Development
-**Reference files:** 5 (approximately 1,160 lines)
-**SKILL.md:** 297 lines
+**Reference files:** 6 (approximately 1,525 lines)
+**SKILL.md:** 303 lines
 
 Content architecture for Craft CMS 5. Covers section types (Single, Channel, Structure), entry types (global, visual identity, reserved handles), field types and field instances, Matrix configuration (CKEditor vs Matrix vs Content Block decision guide), relations and eager loading, multi-site propagation, entrification (migrating categories/tags/globals to entries), CMS editions, and the reuse-first field workflow that audits existing fields before proposing new ones.
 
@@ -61,12 +61,12 @@ Content architecture for Craft CMS 5. Covers section types (Single, Channel, Str
 ## craft-site
 
 **Track:** Site Development
-**Reference files:** 36 (approximately 8,825 lines) -- 14 core references + 22 plugin references
-**SKILL.md:** 177 lines
+**Reference files:** 41 (approximately 9,235 lines) -- 18 core references + 23 plugin references
+**SKILL.md:** 186 lines
 
 Front-end Twig development with atomic design patterns. Covers the full site template surface: atoms, molecules, organisms, the props/extends/block pattern, layout chains, view routing, content builders, image presets, Tailwind CSS conventions (named-key collections, brand tokens, utilities prop), JavaScript boundaries (Alpine/DataStar/Vue decision tree), Vite build chain, multi-site patterns (language switchers, hreflang), front-end authentication (login, registration, password reset, profile editing), search, feeds (RSS, Atom, JSON Feed, XML sitemap), headless/hybrid patterns (GraphQL API, preview tokens, Next.js/Nuxt/Astro), and third-party integration (GTM, analytics, CMP).
 
-The plugin reference library covers 22 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls: SEOMatic, Blitz, Formie, ImageOptimize, CKEditor, Sprig, Element API, Retour, Navigation, Hyper, Colour Swatches, Password Policy, Typogrify, Cache Igniter, Knock Knock, Elements Panel, Sherlock, Embedded Assets, Amazon SES, Timeloop, Feed Me, and Imager-X.
+The plugin reference library covers 23 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls: SEOMatic, Blitz, Formie, ImageOptimize, CKEditor, Sprig, Element API, Retour, Navigation, Hyper, Colour Swatches, Password Policy, Typogrify, Cache Igniter, Knock Knock, Elements Panel, Sherlock, Embedded Assets, Amazon SES, Timeloop, Feed Me, Imager-X, and Vite.
 
 **When it triggers:** Any prompt involving Craft CMS front-end templates, components, layouts, Vite setup, responsive images, search pages, feeds, authentication flows, or plugin integration (Blitz caching, SEOMatic, Sprig, Formie).
 
@@ -79,8 +79,8 @@ The plugin reference library covers 22 Craft plugins with detailed configuration
 ## craft-twig-guidelines
 
 **Track:** Site Development
-**Reference files:** 0 (self-contained at 314 lines)
-**SKILL.md:** 314 lines
+**Reference files:** 0 (self-contained at 341 lines)
+**SKILL.md:** 341 lines
 
 Twig coding standards for Craft CMS 5 templates. Variable naming (camelCase, no abbreviations), null handling (`??` operator, `???` with empty-coalesce plugin), whitespace control (`{%-` trimming, never `{%- minify -%}`), include isolation (`only` keyword always required), Craft Twig helpers (`{% tag %}`, `tag()`, `attr()`, `|attr`, `|parseAttr`, `|append`, `svg()`), `collect()` conventions for props and class collections, and comment headers with `=========` separators.
 
@@ -95,7 +95,7 @@ Twig coding standards for Craft CMS 5 templates. Variable naming (camelCase, no 
 ## craft-garnish
 
 **Track:** Plugin Development
-**Reference files:** 5 (approximately 2,100 lines)
+**Reference files:** 5 (approximately 2,120 lines)
 **SKILL.md:** 63 lines
 
 Garnish -- Craft CMS's undocumented built-in JavaScript UI toolkit for the control panel. Covers the class system (`Garnish.Base.extend`, inheritance, events, listeners, destroy lifecycle), UI widgets (Modal, HUD, DisclosureMenu, MenuBtn, Select, CustomSelect, ContextMenu), drag system (BaseDrag, DragSort, DragDrop, DragMove), form widgets (NiceText, CheckboxSelect, MixedInput, MultiFunctionBtn), utilities (key constants, custom jQuery events, ARIA/focus management), and Craft integration (GarnishAsset, webpack externals, `Craft.*` class pattern, Twig JS blocks).
@@ -113,8 +113,8 @@ This is the only documentation that exists for Garnish -- the official Craft doc
 ## ddev
 
 **Track:** Shared (both plugin and site development)
-**Reference files:** 0 (self-contained at 128 lines)
-**SKILL.md:** 128 lines
+**Reference files:** 0 (self-contained at 250 lines)
+**SKILL.md:** 250 lines
 
 DDEV local development environment for Craft CMS. Covers config.yaml settings, shorthand commands (`ddev composer`, `ddev craft`, `ddev npm`), add-ons (Redis, Mailpit), custom commands, Vite dev server exposure, database import/export, Xdebug toggling, site sharing, and troubleshooting.
 
@@ -129,8 +129,8 @@ DDEV local development environment for Craft CMS. Covers config.yaml settings, s
 ## craft-project-setup
 
 **Track:** Shared (both plugin and site development)
-**Reference files:** 0 (self-contained at 150 lines, plus template files)
-**SKILL.md:** 150 lines
+**Reference files:** 0 (self-contained at 414 lines, plus template files)
+**SKILL.md:** 414 lines
 
 Interactive project scaffolding. Detects project type from `composer.json`, `.ddev/config.yaml`, and directory structure. Generates a tailored `CLAUDE.md` and `.claude/rules/` directory for plugin, site, module, hybrid, or monorepo projects.
 
@@ -145,7 +145,7 @@ Interactive project scaffolding. Detects project type from `composer.json`, `.dd
 ## craft-cloud
 
 **Track:** Shared (both plugin and site development, when hosted on Cloud)
-**Reference files:** 12
+**Reference files:** 12 (approximately 1,935 lines)
 **SKILL.md:** 114 lines
 
 Craft Cloud, Pixel & Tonic's serverless hosting platform. Covers the `craft-cloud.yaml` config file, the Build → Migrate → Release deploy pipeline, the `craftcms/cloud` extension package (with `App::isEphemeral()` patterns and the `cloud.esi(...)` Twig helper), edge image transforms via Cloudflare Images, edge static caching with `cache.rules`, MySQL 8 / Postgres 15 constraints (no MariaDB, no `tablePrefix`), Console-based command runner and scheduled cron (hourly minimum), auto-processed queue jobs (15-minute cap), plugin Cloud-compatibility requirements, and self-hosted → Cloud migration.
@@ -154,7 +154,23 @@ Craft Cloud, Pixel & Tonic's serverless hosting platform. Covers the `craft-clou
 
 **Companion skills:** `craftcms` (for plugin Cloud-compat work), `craft-site` (for edge caching / ESI in templates), `ddev` (for local-dev parity), `craft-php-guidelines` (for plugin PHP edits).
 
-**Boundary:** Does NOT cover generic Craft deployment (Forge, Servd, bare metal — see `craftcms/deployment.md`). Does NOT cover general DDEV usage unrelated to Cloud parity.
+**Boundary:** Does NOT cover Servd (see the `servd` skill) or generic Craft deployment (Forge, bare metal — see `craftcms/deployment.md`). Does NOT cover general DDEV usage unrelated to Cloud parity.
+
+---
+
+## servd
+
+**Track:** Shared (both plugin and site development, when hosted on Servd)
+**Reference files:** 6 (approximately 550 lines)
+**SKILL.md:** 117 lines
+
+Servd (servd.host), a Craft-specialised managed hosting platform. Covers git push-to-deploy and the `servd.yaml` build config, the local → staging → production workflow with uni-directional Project Config sync, the `servd/craft-asset-storage` plugin (S3-backed Flysystem volumes on the `svdcdn.com` CDN, off-server image transforms, Imager-X/ImageOptimize integrations), Servd's static caching (full vs tag-based purge, `{% dynamicInclude %}`, CSRF injection, cache-busting) and running Blitz alongside it in reverse-proxy mode, MariaDB/MySQL over an SSH tunnel, automatic + manual backups, the Dedicated Queue Runner, the ephemeral load-balanced filesystem (Redis + remote volumes for runtime files), and Servd-vs-Craft-Cloud differences.
+
+**When it triggers:** Prompts like "deploy to Servd", "host Craft on Servd", "set up Servd asset storage", "run Blitz on Servd", or any mention of `servd.yaml`, `servd/craft-asset-storage`, `SERVD_PROJECT_SLUG`, the `*.files.svdcdn.com` CDN, or the Dedicated Queue Runner. Also auto-loaded as a companion to `craftcms` and `craft-site` when the project is detected as a Servd project (`servd.yaml`, the `servd/craft-asset-storage` package, or `SERVD_*` env vars).
+
+**Companion skills:** `craftcms` (for plugin/ephemeral-filesystem work), `craft-site` (for static caching / `{% dynamicInclude %}` in templates), `ddev` (for local dev), `craft-php-guidelines` (for plugin PHP edits).
+
+**Boundary:** Does NOT cover Craft Cloud (use the `craft-cloud` skill) or generic Craft deployment (Forge, bare metal — see `craftcms/deployment.md`).
 
 ---
 

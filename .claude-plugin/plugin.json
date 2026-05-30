@@ -1,6 +1,6 @@
 {
   "name": "craftcms-claude-skills",
-  "description": "Production-ready skills and agents for Craft CMS 5 development. Plugin development (elements, services, controllers, migrations, events, testing, headless, configuration), site development (content modeling, Twig templates, atomic design, multi-site, 22 plugin references), Craft Cloud hosting (serverless deploy pipeline, edge caching, ephemeral filesystem, plugin compatibility), and Garnish JS UI toolkit (modals, HUDs, drag-sort, menus, selection, accessibility). 9 skills, 5 specialized agents with explicit build-verify gates, project scaffolding.",
+  "description": "Production-ready skills and agents for Craft CMS 5 development. Plugin development (elements, services, controllers, migrations, events, testing, headless, configuration), site development (content modeling, Twig templates, atomic design, multi-site, 23 plugin references), Craft Cloud and Servd managed hosting (deploy pipelines, static/edge caching, ephemeral filesystem, asset storage, plugin compatibility), and Garnish JS UI toolkit (modals, HUDs, drag-sort, menus, selection, accessibility). 10 skills, 6 specialized agents with explicit build-verify gates, project scaffolding.",
   "version": "1.5.3",
   "homepage": "https://github.com/michtio/craftcms-claude-skills",
   "author": {
@@ -28,13 +28,16 @@
     "./skills/craft-php-guidelines",
     "./skills/ddev",
     "./skills/craft-project-setup",
-    "./skills/craft-garnish"
+    "./skills/craft-garnish",
+    "./skills/craft-cloud",
+    "./skills/servd"
   ],
   "agents": [
     "./agents/craft-planner.md",
     "./agents/craft-debugger.md",
     "./agents/craft-feature-builder.md",
     "./agents/craft-code-reviewer.md",
+    "./agents/craft-code-reviewer-deep.md",
     "./agents/craft-site-builder.md"
   ]
 }

@@ -28,7 +28,7 @@ If you use the Vercel Skills CLI for managing skills across projects:
 npx skills add michtio/craftcms-claude-skills --all
 ```
 
-This installs all 8 skills and 5 agents. You can also install individual skills by name if you only need a subset.
+This installs all 10 skills and 6 agents. You can also install individual skills by name if you only need a subset.
 
 ### Manual (git clone)
 

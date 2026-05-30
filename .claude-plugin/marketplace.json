@@ -12,7 +12,7 @@
     {
       "name": "craftcms-claude-skills",
       "source": "./",
-      "description": "Production-ready skills and agents for Craft CMS 5 development. 9 skills (including Craft Cloud), 5 specialized agents with explicit build-verify gates, 22 plugin references, project scaffolding.",
+      "description": "Production-ready skills and agents for Craft CMS 5 development. 10 skills (including Craft Cloud and Servd hosting), 6 specialized agents with explicit build-verify gates, 23 plugin references, project scaffolding.",
       "version": "1.5.3",
       "author": {
         "name": "michtio"
@@ -34,7 +34,9 @@
         "headless",
         "multi-site",
         "craft-cloud",
-        "serverless-hosting"
+        "serverless-hosting",
+        "servd",
+        "managed-hosting"
       ],
       "category": "cms"
     }
