@@ -110,11 +110,23 @@ For Entry, Asset, Category, and User link types:
 
 ### Checking Link Type
 
+`link.type` (from `getType()`) returns the link's fully-qualified class name, not a short string — so compare against the FQCN. Backslashes must be escaped in Twig single-quoted strings:
+
 ```twig
-{% if link.type == 'Entry' %}
+{% if link.type == 'verbb\\hyper\\links\\Entry' %}
     {# Entry-specific rendering #}
-{% elseif link.type == 'Url' %}
+{% elseif link.type == 'verbb\\hyper\\links\\Url' %}
     {# External URL rendering #}
+{% endif %}
+```
+
+Often cleaner to branch on element presence instead of the type string:
+
+```twig
+{% if link.getElement() %}
+    {# Element link (Entry, Asset, Category, User) #}
+{% elseif link.getUrl() %}
+    {# URL or other non-element link #}
 {% endif %}
 ```
 

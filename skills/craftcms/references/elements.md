@@ -440,7 +440,7 @@ public function getStatus(): ?string
 Override these to control who can do what. Base implementations return `false` and fire authorization events. Always call `parent::` to preserve the event chain:
 
 ```php
-protected function canView(User $user): bool
+public function canView(User $user): bool
 {
     if (parent::canView($user)) {
         return true;
@@ -449,7 +449,7 @@ protected function canView(User $user): bool
     return $user->can("my-plugin:view:{$this->getCategoryUid()}");
 }
 
-protected function canSave(User $user): bool
+public function canSave(User $user): bool
 {
     if (parent::canSave($user)) {
         return true;
@@ -458,7 +458,7 @@ protected function canSave(User $user): bool
     return $user->can("my-plugin:manage:{$this->getCategoryUid()}");
 }
 
-protected function canDelete(User $user): bool
+public function canDelete(User $user): bool
 {
     if (parent::canDelete($user)) {
         return true;
@@ -549,7 +549,7 @@ Extend `craft\elements\deletionblockers\BaseDeletionBlocker` when the built-in `
 
 ### Bulk Reassignment
 
-`Craft::$app->getEntries()->reassignEntries($entryIds, $newOwner)` handles bulk author/owner swaps — the same primitive the User-deletion flow uses for "reassign content to another user before deleting." For relation fields specifically, the new `craft\queue\jobs\ReplaceRelations` queue job rewrites pointers in the background.
+`Craft::$app->getEntries()->reassignEntries($oldUserId, $newUserId)` reassigns every entry authored by one or more users (`int|int[]`) to a single new user (`int`), returning the number of affected entries — the same primitive the User-deletion flow uses for "reassign content to another user before deleting." For relation fields specifically, the new `craft\queue\jobs\ReplaceRelations` queue job rewrites pointers in the background.
 
 ### Deprecations (replaced by this flow)
 

@@ -9,11 +9,13 @@ Pricing and included seats may change — check https://craftcms.com/pricing for
 | Edition | Users | User Groups | Permissions | Key Features |
 |---------|-------|-------------|-------------|-------------|
 | **Solo** | 1 admin | No | No | Full content modeling, single user |
-| **Team** | Multiple (seats included) | No | No | Multiple authors, `maxAuthors` on sections |
-| **Pro** | Unlimited | Yes | Yes | Per-group permissions, public registration |
-| **Enterprise** | Unlimited | Yes | Yes | SSO (SAML/OIDC), partner support |
+| **Team** | Up to 5 | One fixed "Team" group | Customizable (for non-admins) | Multiple authors, `maxAuthors` on sections; single editable-permission group |
+| **Pro** | Unlimited | Multiple, custom | Yes | Per-group permissions, public registration |
+| **Enterprise** | Unlimited | Multiple, custom | Yes | SSO (SAML/OIDC), partner support |
 
-Choose the edition before content modeling — it determines whether you can scope content access by user group. If any section needs per-group edit/view restrictions, you need Pro or Enterprise.
+Team includes one fixed "Team" user group (5-user cap) whose permissions are customizable for non-admin members. Multiple custom user groups require Pro or Enterprise.
+
+Choose the edition before content modeling — it determines whether you can scope content access by user group. If any section needs multiple custom groups with per-group edit/view restrictions, you need Pro or Enterprise.
 
 ## Users as Content
 

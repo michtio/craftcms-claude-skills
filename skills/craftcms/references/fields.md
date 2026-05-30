@@ -95,8 +95,8 @@ class MyField extends Field
         return Craft::t('my-plugin', 'My Field');
     }
 
-    // Column type(s) for content table. Return false to manage storage yourself.
-    public function getContentColumnType(): array|string
+    // Column type(s) for the content table. Return null to manage storage yourself.
+    public static function dbType(): array|string|null
     {
         return Schema::TYPE_STRING;
     }
@@ -435,4 +435,4 @@ public static function dbType(): string|null
 }
 ```
 
-`dbType()` is the preferred approach in Craft 5. The instance method `getContentColumnType()` still works but `dbType()` takes precedence when both are defined.
+Craft 5 removed the old instance method `getContentColumnType()` — the static `dbType()` is now the sole mechanism for declaring a custom field's column type.

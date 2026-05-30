@@ -34,7 +34,7 @@ Sequence:
    - `cd` into `node-path` (if set; defaults to repo root).
    - `npm clean-install`.
    - `npm run <npm-script>` — defaults to `build`.
-4. Artifact packaging — everything in `artifact-path` (or the whole project if unset) is uploaded for the next phase.
+4. Artifact packaging — everything in `artifact-path` (or the `webroot` if unset) is uploaded for the next phase.
 
 Constraints:
 

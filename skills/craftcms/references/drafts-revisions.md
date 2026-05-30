@@ -54,8 +54,9 @@ $draft = Craft::$app->getDrafts()->createDraft(
     false               // $provisional — true for provisional drafts
 );
 
-// Save an existing unsaved element as a draft
-$draft = Craft::$app->getDrafts()->saveElementAsDraft(
+// Save an existing unsaved element as a draft.
+// Returns a bool; $element is converted into a draft in place.
+$success = Craft::$app->getDrafts()->saveElementAsDraft(
     $element,
     $creatorId,
     'Draft Name',
@@ -152,8 +153,9 @@ Stored as derivative elements with a `revisionId`. Each revision captures the fu
 Restoring a revision **copies** its content into the canonical element and creates a new revision of the current state. History is not rewound — the restore itself becomes the latest change.
 
 ```php
-// Programmatic restore
-Craft::$app->getRevisions()->revertToRevision($revision);
+// Programmatic restore — $creatorId is required (the user crediting the restore)
+$creatorId = Craft::$app->getUser()->getId();
+Craft::$app->getRevisions()->revertToRevision($revision, $creatorId);
 ```
 
 ### Revision limits

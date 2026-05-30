@@ -9,7 +9,7 @@ Complete reference for building custom field types in Craft CMS 5: class structu
 
 ## Common Pitfalls
 
-- Overriding `getContentColumnType()` instead of `dbType()` — the legacy instance method still works, but the Craft 5 static `dbType()` takes precedence. Use `dbType()`.
+- Reaching for the old `getContentColumnType()` instance method — Craft 5 removed it. The static `dbType()` is the sole mechanism for declaring a custom field's column type.
 - Forgetting `parent::defineRules()` in field settings validation — drops validation for `handle`, `name`, and other base properties.
 - Not calling `parent::afterElementSave()` — base class handles relation storage, delta writes, and propagation. Skipping it silently breaks multi-site and delta saves.
 - Returning a query from `normalizeValue()` without implementing `EagerLoadingFieldInterface` — causes N+1 queries when multiple elements are loaded. Relation fields must be eager-loadable.
@@ -74,7 +74,6 @@ craft\base\Field
 | `supportedTranslationMethods()` | `array` | All 5 when `dbType()` is non-null | Which translation methods the field supports |
 | `queryCondition()` | `array\|ExpressionInterface\|false\|null` | Parent impl | Custom query filtering for `entry.myField(value)` |
 | `isRequirable()` | `bool` | `true` | Whether the field can be marked required |
-| `isSelectable()` | `bool` | `true` | Whether it appears in the field type selector |
 
 ### dbType() options
 

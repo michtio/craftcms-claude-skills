@@ -164,8 +164,9 @@ this.trigger('activate', { extra: 'data' }); // pass extra data
 - `focusItem` — Select
 - `dragStart` / `drag` / `dragStop` — BaseDrag and subclasses
 - `sortChange` / `insertionPointChange` — DragSort
-- `dropTarget` — DragDrop
 - `addLayer` / `removeLayer` — UiLayerManager
+
+(DragDrop triggers no instance events for drop targets — it reports changes via the `onDropTargetChange($activeDropTarget)` settings callback instead.)
 
 ## Class-Level Events
 

@@ -513,24 +513,27 @@ No cursor-based pagination — use `entryCount`/`assetCount` with `limit`/`offse
 
 ## Testing GraphQL
 
-### Craft test helper (no HTTP)
+### Executing a query in-process (no HTTP)
+
+Resolve a `GqlSchema` and run the query through `Gql::executeQuery()`. Its signature is `executeQuery(GqlSchema $schema, string $query, ?array $variables = null, ?string $operationName = null, bool $debugMode = false): array`, returning the `['data' => ..., 'errors' => ...]` result array.
 
 ```php
-use craft\test\TestCase;
+$gql = Craft::$app->getGql();
+$schema = $gql->getPublicSchema() ?? $gql->getActiveSchema();
 
-it('queries custom elements', function () {
-    $result = TestCase::graphql('{ myElements(limit: 5) { title, handle } }');
+it('queries custom elements', function () use ($gql, $schema) {
+    $result = $gql->executeQuery($schema, '{ myElements(limit: 5) { title, handle } }');
     expect($result['data']['myElements'])->toBeArray()->toHaveCount(5);
 });
 
-it('creates an element via mutation', function () {
-    $result = TestCase::graphql('mutation { saveMyElement(input: { title: "Test" }) { id, title } }');
+it('creates an element via mutation', function () use ($gql, $schema) {
+    $result = $gql->executeQuery($schema, 'mutation { saveMyElement(input: { title: "Test" }) { id, title } }');
     expect($result['data']['saveMyElement'])->toHaveKey('id')->title->toBe('Test');
 });
 
 // Multi-site: be explicit about site context
-it('queries for a specific site', function () {
-    $result = TestCase::graphql('{ entries(site: "fr", section: "blog") { title } }');
+it('queries for a specific site', function () use ($gql, $schema) {
+    $result = $gql->executeQuery($schema, '{ entries(site: "fr", section: "blog") { title } }');
     expect($result['data']['entries'])->toBeArray();
 });
 ```

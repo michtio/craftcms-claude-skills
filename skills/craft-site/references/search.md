@@ -218,9 +218,9 @@ After enabling, resave affected elements to populate the index.
 | `ddev craft resave/entries --update-search-index` | After enabling search on existing fields |
 | `ddev craft resave/entries --section=blog --update-search-index` | Rebuild for a specific section |
 | `ddev craft resave/entries --update-search-index --queue` | Async rebuild via queue |
-| `ddev craft search/reindex` | Full rebuild of entire search index (after changing search component config) |
+| `ddev craft resave/all --update-search-index` | Full rebuild across every element type |
 
-`resave` with `--update-search-index` is selective — only re-indexes the specified elements. `search/reindex` truncates and rebuilds the entire search index.
+`resave/entries` (and `resave/assets`, `resave/users`) with `--update-search-index` is selective — it only re-indexes the specified element type. `resave/all --update-search-index` re-saves every element type, rebuilding the entire search index.
 
 ## Score and Ranking
 

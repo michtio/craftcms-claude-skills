@@ -130,19 +130,25 @@ Instead of multiple image variant files, one universal atom with a preset parame
 
         {# With Craft Cloud / native transforms #}
         {%- else -%}
+            {%- set webpSrcset = props.get('config').widths|map(w =>
+                asset.getUrl({ width: w, format: 'webp' }) ~ ' ' ~ w ~ 'w'
+            )|join(', ') -%}
+            {%- set srcset = props.get('config').widths|map(w =>
+                asset.getUrl({ width: w }) ~ ' ' ~ w ~ 'w'
+            )|join(', ') -%}
+
             <picture>
-                {%- for width in props.get('config').widths -%}
-                    {%- set transform = { width: width, format: 'webp' } -%}
-                    {{ tag('source', {
-                        type: 'image/webp',
-                        srcset: asset.getUrl(transform),
-                        media: loop.last ? false : '(max-width: ' ~ width ~ 'px)',
-                    }) }}
-                {%- endfor -%}
+                {{ tag('source', {
+                    type: 'image/webp',
+                    srcset: webpSrcset,
+                    sizes: props.get('config').sizes,
+                }) }}
 
                 {{ tag('img', {
                     class: classes.implode(' '),
                     src: asset.getUrl({ width: props.get('config').widths|last }),
+                    srcset: srcset,
+                    sizes: props.get('config').sizes,
                     alt: alttext,
                     loading: props.get('loading'),
                     width: asset.width,

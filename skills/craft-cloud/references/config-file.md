@@ -33,7 +33,7 @@ That's it. Everything else is optional with sensible defaults.
 | `node-version` | string | (no Node) | Node version. **Setting this triggers `npm clean-install` + `npm run <npm-script>` during build.** Omit if your project doesn't need a build step. |
 | `node-path` | string | repo root | Directory to `cd` into before running `npm` commands. Set this when `package.json` lives in a subdirectory (e.g. `frontend/`). |
 | `npm-script` | string | `build` | The npm script name to run. Override when your script is named `production`, `dist`, etc. |
-| `artifact-path` | string | (whole project) | Path or paths to upload as the deploy artifact after the build phase. Useful for excluding `node_modules` or source files. |
+| `artifact-path` | string | Inherits the value of `webroot` | Path or paths to upload as the deploy artifact after the build phase. Useful for excluding `node_modules` or source files. |
 | `app-path` | string | repo root | Where Craft's PHP application lives if not at the repo root. |
 | `webroot` | string | `web` | The public document root, relative to `app-path`. Update if you've renamed `web/` to `public/`. |
 | `cache.rules` | list | (no rules) | Edge static caching rules — see [Static Cache Rules](#static-cache-rules) below. |

@@ -35,7 +35,7 @@ When unsure, `WebFetch` the relevant docs page.
     <p>{{ embed.providerName }}</p>
 
     {# Safe HTML embed code (sanitized) #}
-    {{ embed.safeHtml|raw }}
+    {{ embed.html }}
 {% endif %}
 ```
 
@@ -48,7 +48,8 @@ When unsure, `WebFetch` the relevant docs page.
 | `url` | `string` | Original URL |
 | `type` | `string` | `video`, `photo`, `rich`, `link` |
 | `image` | `string` | Primary image URL |
-| `code` | `string` | Raw embed HTML |
+| `html` | `TwigMarkup` | Sanitized, safe-to-output embed HTML (via `getHtml()`) — output directly, no `\|raw` needed |
+| `code` | `string` | Raw, unsanitized embed HTML (only safe to output when `getIsSafe()` is true) |
 | `providerName` | `string` | Provider name (YouTube, Vimeo, etc.) |
 | `providerUrl` | `string` | Provider URL |
 | `providerIcon` | `string` | Provider favicon URL |
