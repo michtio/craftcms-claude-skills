@@ -3,6 +3,7 @@ name: craft-planner
 description: Breaks down large tasks into manageable implementation steps for Craft CMS plugin development
 tools: Read, Grep, Glob, Bash, WebFetch
 model: opus
+effort: xhigh
 skills: craftcms
 ---
 

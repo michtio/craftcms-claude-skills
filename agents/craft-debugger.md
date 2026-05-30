@@ -3,6 +3,7 @@ name: craft-debugger
 description: Tracks down bugs in Craft CMS plugins with systematic investigation
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
+effort: high
 skills: craftcms, craft-php-guidelines
 ---
 

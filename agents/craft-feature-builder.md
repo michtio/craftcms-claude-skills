@@ -3,6 +3,7 @@ name: craft-feature-builder
 description: Builds new features in Craft CMS plugins following project architecture
 tools: Read, Write, Edit, Bash, Grep, Glob, TaskCreate, TaskUpdate, TaskList
 model: opus
+effort: high
 skills: craftcms, craft-php-guidelines, craft-garnish
 ---
 

@@ -3,6 +3,7 @@ name: craft-site-builder
 description: Builds Craft CMS site templates, components, and content architecture
 tools: Read, Write, Edit, Bash, Grep, Glob, TaskCreate, TaskUpdate, TaskList
 model: opus
+effort: high
 skills: craft-site, craft-twig-guidelines, craft-content-modeling
 ---
 

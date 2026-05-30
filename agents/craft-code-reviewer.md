@@ -3,6 +3,7 @@ name: craft-code-reviewer
 description: Reviews implemented code for quality, security, and Craft CMS conventions
 tools: Read, Grep, Glob, Bash
 model: sonnet
+effort: high
 skills: craftcms, craft-php-guidelines, craft-garnish, craft-twig-guidelines, craft-site
 ---
 
