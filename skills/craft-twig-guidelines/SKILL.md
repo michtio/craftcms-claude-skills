@@ -62,7 +62,7 @@ perfectly fine when needed for clarity.
 
 `??` is the default. Always safe, always portable.
 
-`???` (empty coalesce) is acceptable if the project already has `nystudio107/craft-empty-coalesce` or `nystudio107/craft-seomatic` installed — both provide the operator. But never install a plugin just for `???`. Check `composer.json` first.
+`???` (empty coalesce) is acceptable if the project already has `nystudio107/craft-emptycoalesce` or `nystudio107/craft-seomatic` installed — both provide the operator. But never install a plugin just for `???`. Check `composer.json` first.
 
 ```twig
 {# Always correct #}
@@ -254,6 +254,29 @@ For adding content to an element string:
 Combine with `|attr` for classes and aria attributes. Use `|append` for
 accessible labels inside the SVG.
 
+### Filtering and Mapping — Default to `collect()`
+
+For data manipulation in templates, **default to `collect()`** — one consistent, chainable API (`where`, `firstWhere`, `groupBy`, `keyBy`, `unique`, `pluck`, `map`, `filter`, `sortByDesc`) instead of mixing idioms:
+
+```twig
+{% set newsByYear = entries.collect
+    .where('type', 'news')
+    .sortByDesc('postDate')
+    .groupBy(e => e.postDate|date('Y')) %}
+```
+
+The bare Twig/Craft array filters are fine for a **single trivial operation inline** — `{% for e in entries|filter(e => e.enabled) %}` — where a Collection adds nothing. But Twig's `|filter`/`|map` return plain arrays and Craft's `|where`/`|firstWhere`/`|group`/`|index` go through `ArrayHelper`, so they **don't chain like Collection methods**; once you need more than one step, switch to `collect()`. Don't mix both styles arbitrarily.
+
+There is **no `|indexBy` filter** — key a list with `|index` (or `.keyBy()` on a Collection) and bucket with `|group` (or `.groupBy()`). (`|where`, `|firstWhere`, `|contains`, `|group`, `|index`, `|explodeClass`/`|explodeStyle` are all Craft-registered filters.)
+
+### Safe Output and Inline Assets
+
+- **`|t('category')`** — route every user-facing string through translation; never hardcode display copy.
+- **`|purify`** — sanitize untrusted or rich HTML rather than reaching for `|raw`. Reserve `|raw` for trusted field output (CKEditor/Redactor); never `|raw` user-submitted or query-string-derived content.
+- **`|explodeClass` / `|explodeStyle`** — normalize a class/style string to an array before merging, instead of hand-splitting on spaces.
+- **`{% js %}` / `{% css %}` / `{% script %}`** — register inline assets through the View (it dedupes and positions them) instead of hand-writing `<script>`/`<style>`. (`{% js %}`/`{% css %}` go through the asset manager; `{% script %}`/`{% html %}` are verbatim.)
+- **`{% dd %}` / `dump()`** — for debugging only; never ship them, and don't use `{{ x|json_encode }}` as a debug hack.
+
 ## `collect()` Conventions
 
 When building props and class collections, these are the style rules to enforce:
@@ -285,7 +308,7 @@ collection, `get()`/`merge()`, entry-queries-as-Collections), see `craft-site`
 
 ## Common Pitfalls
 
-1. **`???` operator without the plugin** — requires `nystudio107/craft-empty-coalesce` or `nystudio107/craft-seomatic`. Check `composer.json` before using. Default to `??`.
+1. **`???` operator without the plugin** — requires `nystudio107/craft-emptycoalesce` or `nystudio107/craft-seomatic`. Check `composer.json` before using. Default to `??`.
 2. **snake_case variables** — use camelCase: `heroImage` not `hero_image`.
 3. **Missing `only`** — silent variable leaking, invisible coupling.
 4. **`{%- minify -%}`** — deprecated. Use `{%-` whitespace control.
