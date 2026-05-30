@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.4.12 -- 2026-05-30
+
+Final quality release for the 1.4.x line (Craft 5.9). Backports the cross-version quality fixes from the 1.6.0 release — file by file, **not** a blind cherry-pick — while deliberately excluding everything 5.10-specific and the two 1.6.0 features. After this release the 1.4.x branch is frozen; all new development continues on `main`.
+
+**Excluded from this backport** (5.10-only, verified against `craftcms/cms` source — Craft 5.9 ships Twig `~3.21.1`, 5.10 ships `~3.27.0`): the `minAuthors` section setting, the Deletion Blockers subsystem, the Twig nullsafe `?.` operator, the "Models are never empty" pitfall, and the `heading()`/`h()` + 5.10 filter-additions Twig helpers. Also excluded as features (not quality fixes): the `servd` skill and the `craft-code-reviewer-deep` agent — those remain `main`-only. The Color enum count ("20 named colors") was verified identical in 5.9 and 5.10, so it stays.
+
+### New
+
+- **`skills/craft-site/references/plugins/vite.md`** — `nystudio107/craft-vite` plugin reference (asset loading, critical CSS, dev server, manifest).
+
+### Changed
+
+- **Accuracy fixes verified against Craft source** — `canView`/`canSave`/`canDelete` are public, not protected (protected would fatal); `getContentColumnType()` removed in Craft 5, use the static `dbType()` (no-column return is `null`, not `false`); `inputHtml()` returns `string`, not `?string`; `BaseRelationField::elementType()` is `public static`; replaced a fabricated `TestCase::graphql()` with `Gql::executeQuery()`; removed a nonexistent `'craft'` webpack external and fixed the `MixedInput` method list, `Craft.Slideout` superclass, and a phantom `dropTarget` event; categories/tags/globals are deprecated, not CP-disabled; corrected the Team edition and `entrify` global-set options; Cloud `artifact-path` defaults to webroot; `resave/all` (not `search/reindex`); `App::mailerConfig()` for SES; fixed an inverted `<picture>` fallback; corrected the Colour-Swatches property API, Embedded Assets `embed.html`, Imager-X vendor (`spacecatninja`), Hyper FQCN link type, and Timeloop limit default; fixed the `forms.multiselectField` macro casing and that the CP nav event lives on `craft\web\twig\variables\Cp`.
+- **`skills/craft-php-guidelines/`** — reframed the `=========` separators, method-level `@author`, and `@param` casing as deliberate house style that diverges from Craft core; softened "match over switch — always" to the actual guideline.
+- **New reference content** — the custom-field-input JS lifecycle (`namespaceInputId`/`registerJsWithVars`, the `Cp::` helper table, the `appendHeadHtml`/`appendBodyHtml`/`initUiElements` re-init order in `craft-garnish`); the hand-built CP edit-screen surface (`asCpScreen()` methods + `_layouts/cp.twig` regions) and condition-builder rendering (`getBuilderHtml()`, zero-arg `BaseConditionRule::inputHtml()`); `collect()`-first Twig filtering/mapping and safe-output guidance; native-attribute eager-loading (`.with()` not `.eagerly()`) and a one-entry-per-author dedup recipe.
+- **Cross-skill redundancy cut** — `craft-twig-guidelines` collapses `collect()`/class-collection duplication into pointers; `tooling.md` is now the canonical ECS/PHPStan config; `craftcms/caching.md` uses the fluent `GeneralConfig` API; `craft-site/blitz.md` trimmed to the integration surface; `ddev` documents built-in Mailpit, project bootstrap, `ddev launch`, and env-var injection.
+- **Count reconciliation** — README, `docs/skills-overview.md`, `docs/getting-started.md`, the `craft-project-setup` banner, and both manifests now state the true figures: **9 skills, 99 reference files, 5 agents, 23 plugin references** (the previously stated "117 reference files" and "8 skills" were stale).
+
 ## 1.4.11 -- 2026-05-28
 
 Backports the new **`craft-cloud`** skill from v1.5.3 to the 1.4.x line. Craft Cloud's minimum-supported Craft version is 4.6, which sits below both the 1.4.x (Craft 5.9 realm) and 1.5.x (Craft 5.10 realm) floors — the platform surface is identical regardless of which Craft 5.x line you're on. The full skill (SKILL.md + 12 reference files) plus all cross-skill edits (`craftcms`/`craft-site`/`craft-project-setup` companion wiring, expanded deployment table row, pointer updates on existing Cloud mentions, README and docs updates) ships unchanged from v1.5.3. See the v1.5.3 entry for the per-file breakdown.
