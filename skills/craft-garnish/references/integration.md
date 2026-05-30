@@ -29,6 +29,7 @@
 - [Plugin Asset Bundles](#plugin-asset-bundles)
 - [Craft.* Class Pattern](#craft-class-pattern)
 - [Twig JavaScript Blocks](#twig-javascript-blocks)
+- [Custom Field Input JS & Dynamic Re-init](#custom-field-input-js--dynamic-re-init)
 - [Element Index JS Loading](#element-index-js-loading)
 - [Form Widgets](#form-widgets)
 

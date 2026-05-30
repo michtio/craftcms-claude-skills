@@ -290,10 +290,12 @@ Common helpers (each takes `array $config`):
 | `Cp::textFieldHtml(array $config)` | `forms.textField` |
 | `Cp::textareaFieldHtml(array $config)` | `forms.textareaField` |
 | `Cp::selectFieldHtml(array $config)` | `forms.selectField` |
-| `Cp::multiSelectFieldHtml(array $config)` | `forms.multiSelectField` |
+| `Cp::multiSelectFieldHtml(array $config)` | `forms.multiselectField` |
 | `Cp::lightswitchFieldHtml(array $config)` | `forms.lightswitchField` |
 | `Cp::dateTimeFieldHtml(array $config)` | `forms.dateTimeField` |
 | `Cp::elementSelectFieldHtml(array $config)` | `forms.elementSelectField` |
+
+The multi-select casing is asymmetric in Craft itself — the PHP helper is `Cp::multiSelectFieldHtml` (capital `S`) but the Twig macro is `forms.multiselectField` (lowercase). That's not a typo; don't "align" them.
 
 For inputs without a dedicated helper, the generic wrapper `Cp::fieldHtml(string|callable $input, array $config = [])` renders the surrounding field shell (label, instructions, errors) around any input markup.
 
