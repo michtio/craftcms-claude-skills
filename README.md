@@ -98,14 +98,14 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, settings, navigation), CP components (widgets, utilities, slideouts), CP UI patterns (tri-state, condition builders, asset bundles), console commands (80+ commands), debugging. 30 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 6 reference files. |
-| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files + 22 plugin references. |
+| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files + 23 plugin references. |
 | `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, site sharing, troubleshooting. |
 | `craft-project-setup` | Shared | Project scaffolding, upgrade, and audit. Generates CLAUDE.md, .claude/rules/, .claude/settings.local.json (permissions). Gap analysis for existing configs. |
 | `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, self-hosted → Cloud migration. 12 reference files. |
 
-9 skills, 117 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+9 skills, 99 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 
@@ -124,7 +124,7 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 22 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls:
 
 <details>
-<summary>View all 22 plugin references</summary>
+<summary>View all 23 plugin references</summary>
 
 | Plugin | Author | Key Surface |
 |--------|--------|-------------|
@@ -150,6 +150,7 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | Timeloop | craftpulse | Recurring dates |
 | Feed Me | craftcms | Data import from XML/JSON/CSV, CLI automation |
 | Imager-X | spacecrafttechnologies | Advanced image transforms, named presets, effects |
+| Vite | nystudio107 | Asset loading (`craft.vite.*`), critical CSS, dev server, manifest |
 
 </details>
 

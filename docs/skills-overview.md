@@ -61,12 +61,12 @@ Content architecture for Craft CMS 5. Covers section types (Single, Channel, Str
 ## craft-site
 
 **Track:** Site Development
-**Reference files:** 36 (approximately 8,825 lines) -- 14 core references + 22 plugin references
+**Reference files:** 41 (approximately 8,825 lines) -- 18 core references + 23 plugin references
 **SKILL.md:** 177 lines
 
 Front-end Twig development with atomic design patterns. Covers the full site template surface: atoms, molecules, organisms, the props/extends/block pattern, layout chains, view routing, content builders, image presets, Tailwind CSS conventions (named-key collections, brand tokens, utilities prop), JavaScript boundaries (Alpine/DataStar/Vue decision tree), Vite build chain, multi-site patterns (language switchers, hreflang), front-end authentication (login, registration, password reset, profile editing), search, feeds (RSS, Atom, JSON Feed, XML sitemap), headless/hybrid patterns (GraphQL API, preview tokens, Next.js/Nuxt/Astro), and third-party integration (GTM, analytics, CMP).
 
-The plugin reference library covers 22 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls: SEOMatic, Blitz, Formie, ImageOptimize, CKEditor, Sprig, Element API, Retour, Navigation, Hyper, Colour Swatches, Password Policy, Typogrify, Cache Igniter, Knock Knock, Elements Panel, Sherlock, Embedded Assets, Amazon SES, Timeloop, Feed Me, and Imager-X.
+The plugin reference library covers 23 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls: SEOMatic, Blitz, Formie, ImageOptimize, CKEditor, Sprig, Element API, Retour, Navigation, Hyper, Colour Swatches, Password Policy, Typogrify, Cache Igniter, Knock Knock, Elements Panel, Sherlock, Embedded Assets, Amazon SES, Timeloop, Feed Me, Imager-X, and Vite.
 
 **When it triggers:** Any prompt involving Craft CMS front-end templates, components, layouts, Vite setup, responsive images, search pages, feeds, authentication flows, or plugin integration (Blitz caching, SEOMatic, Sprig, Formie).
 
