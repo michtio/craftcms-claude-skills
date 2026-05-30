@@ -33,9 +33,9 @@ PHPDocs on every class, method, and property. No exceptions.
 ```
 
 - Full sentence description, proper capitalization and punctuation.
-- `@param` / `@return`: no capitalization, no ending punctuation.
+- `@param` / `@return`: no capitalization, no ending punctuation. (The official Craft guideline says this, but core itself routinely capitalizes `@param`/`@return` descriptions; this project follows the official guideline as its house rule — lowercase, unpunctuated.)
 - `@throws`: document every thrown exception, **including uncaught exceptions from called methods**.
-- `@author` and `@since` at the bottom, after a blank line.
+- `@author` and `@since` at the bottom, after a blank line. (Craft *core* puts `@author` at the class level only — not on methods. Repeating it on each method is this project's house convention, not core style.)
 
 ## Property Docblocks
 
