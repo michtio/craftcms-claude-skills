@@ -106,7 +106,7 @@ class MyField extends Field
         return Craft::$app->getView()->renderTemplate('my-plugin/_field/settings', ['field' => $this]);
     }
 
-    protected function inputHtml(mixed $value, ?ElementInterface $element, bool $inline): ?string
+    protected function inputHtml(mixed $value, ?ElementInterface $element, bool $inline): string
     {
         return Craft::$app->getView()->renderTemplate('my-plugin/_field/input', [
             'field' => $this,
@@ -147,7 +147,7 @@ Schema::TYPE_JSON      // JSON
 // Multiple columns:
 ['date' => Schema::TYPE_DATETIME, 'timezone' => Schema::TYPE_STRING]
 // No column (manage yourself):
-false
+null
 ```
 
 ### Relation Fields
@@ -157,7 +157,7 @@ Extend `craft\fields\BaseRelationField` for element relation fields:
 ```php
 class MyRelationField extends BaseRelationField
 {
-    protected static function elementType(): string { return MyElement::class; }
+    public static function elementType(): string { return MyElement::class; }
     public static function displayName(): string { return Craft::t('my-plugin', 'My Elements'); }
 }
 ```

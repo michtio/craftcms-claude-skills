@@ -318,10 +318,39 @@ In CP templates, use `{% js %}` blocks to write JavaScript that uses Garnish:
 </div>
 ```
 
-`Craft.initUiElements($container)` automatically initializes:
-- `.menubtn` → `new Garnish.MenuBtn()`
-- `[data-disclosure-trigger]` → `new Garnish.DisclosureMenu()`
-- Various other Craft-specific widgets
+`Craft.initUiElements($container)` initializes the Craft/Garnish widgets inside `$container`: `.menubtn` / `[data-disclosure-trigger]` (menus, run last as they mutate the DOM), `.checkbox-select`, `.fieldtoggle`, `.lightswitch`, `.nicetext`, date/time inputs (`.datetimewrapper`), `.formsubmit`, `.info` icons, and expandable buttons. Always pass a container so you don't re-init the whole page (double-instantiation). There is **no** `initUi` jQuery event to listen for — `Craft.initUiElements($container)` is the idempotent re-init entry point.
+
+---
+
+## Custom Field Input JS & Dynamic Re-init
+
+The hard part of CP field types isn't the Garnish class — it's getting it to run, against the right element, in every context (main edit page, Matrix block, slideout, element editor).
+
+**Instantiate from a namespaced `{% js %}` block.** Your field's `inputHtml` registers JS keyed on the *namespaced* input id (see the `craftcms` skill's `field-types-custom.md`), so the selector matches the DOM after Craft namespaces it:
+
+```twig
+{# my-plugin/fields/_input.twig — `id` is already namespaced by inputHtml #}
+<div id="{{ id }}-wrapper" data-value="{{ value }}"></div>
+{% js %}
+  new Craft.MyPlugin.MyInput('#{{ id }}-wrapper');
+{% endjs %}
+```
+
+A hardcoded selector (`#myInput`) collides, because the same `inputHtml` renders at many namespaces. The class itself is a `Garnish.Base.extend` class (see `class-system.md`).
+
+**Re-init on dynamically loaded inputs.** When Craft loads a field into a Matrix block, slideout, or element editor, the server returns `headHtml` + `bodyHtml` and Craft runs, in order:
+
+```javascript
+await Craft.appendHeadHtml(data.headHtml);  // <link>/<script src>, deduped
+await Craft.appendBodyHtml(data.bodyHtml);  // executes inline {% js %} → your `new Craft.MyInput(...)` runs here
+Craft.initUiElements($container);           // wires Garnish/Craft widgets in the new markup
+```
+
+So your `{% js %}` re-runs automatically **because it's part of `bodyHtml`** — you wire nothing up. But if *you* build markup in JS (not from a server `bodyHtml`), you must call `Craft.initUiElements($yourMarkup)` yourself, scoped to the new container. (`appendHeadHtml`/`appendBodyHtml` return Promises — `await` them before `initUiElements`.)
+
+**Destroy discipline.** Matrix blocks get removed and slideouts torn down repeatedly. Listeners scoped to your own `$container` are GC'd when its DOM is removed — but `Garnish.on(...)` / `addListener` bound to `Garnish.$bod` / `$win` (document/window) survive and leak. Keep listeners on your container, and override `destroy()` (calling `this.base()`) for widgets that bind document/window-level events.
+
+For the higher-level `Craft.*` classes these build on (`Craft.ElementEditor`, `Craft.CpScreenSlideout`, element-select inputs), see the `craftcms` skill's `cp-components.md`.
 
 ---
 
