@@ -173,6 +173,8 @@ return $this->renderTemplate('my-plugin/settings', [
 
 #### JS interaction (Garnish)
 
+> For Garnish library primitives (`Garnish.Modal`/`HUD`/`DragSort`, `UiLayerManager`, focus/ARIA helpers, the `Garnish.Base.extend` class system), see the `craft-garnish` skill. This file covers Craft's higher-level `Craft.*` CP APIs built on top.
+
 The table auto-initializes as a `Craft.EditableTable` instance. Access it for programmatic manipulation:
 
 ```javascript

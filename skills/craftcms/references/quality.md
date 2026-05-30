@@ -2,6 +2,8 @@
 
 Static analysis, code style enforcement, and continuous integration patterns for Craft CMS 5 plugins and modules.
 
+> **Canonical config source:** the full `ecs.php` / `phpstan.neon` configuration and the `Craft::$app` typed-local narrowing pattern live in the **`craft-php-guidelines`** skill (`references/tooling.md`). This document covers Craft-specific *usage* (running the tools, reading errors, CI wiring, baselines, testing) rather than re-declaring the config files.
+
 ## Documentation
 
 - Coding guidelines: https://craftcms.com/docs/5.x/extend/coding-guidelines.html
@@ -46,23 +48,9 @@ Install: `ddev composer require --dev craftcms/ecs`
 
 ### Configuration file structure
 
-ECS is configured via `ecs.php` at the project root. The file defines rule sets, skip patterns, and paths to check.
+ECS is configured via `ecs.php` at the project root. The file defines rule sets (`SetList::CRAFT_CMS_4` — the correct set for Craft 5; there is no `CRAFT_CMS_5`), skip patterns, and paths to check.
 
-```php
-<?php
-
-declare(strict_types=1);
-
-use craft\ecs\SetList;
-use Symplify\EasyCodingStandard\Config\ECSConfig;
-
-return ECSConfig::configure()
-    ->withPaths([__DIR__ . '/src', __DIR__ . '/tests'])
-    ->withSets([SetList::CRAFT_CMS_4])
-    ->withSkip([
-        // PhpCsFixer\Fixer\Operator\NotOperatorWithSuccessorSpaceFixer::class,
-    ]);
-```
+> The canonical `ecs.php` config lives in the **`craft-php-guidelines`** skill (`references/tooling.md`). Copy it from there rather than maintaining a second version here.
 
 ### Running ECS
 
@@ -167,22 +155,7 @@ That's the full required wiring. Don't roll your own `scanFiles` / `scanDirector
 
 ## PHPStan Configuration
 
-### phpstan.neon example
-
-```neon
-includes:
-    - vendor/craftcms/phpstan/phpstan.neon
-    - phpstan-baseline.neon
-
-parameters:
-    level: 5                          # See levels table above
-    paths: [src]
-    treatPhpDocTypesAsCertain: false   # PHPDoc types are hints, not guarantees
-    tmpDir: %currentWorkingDirectory%/tmp/phpstan
-    ignoreErrors:
-        - '#PHPDoc tag @mixin contains invalid type#'
-        - '#^Dead catch#'
-```
+The canonical `phpstan.neon` config (includes, `level: 5`, `treatPhpDocTypesAsCertain: false`, `tmpDir`, `ignoreErrors`) lives in the **`craft-php-guidelines`** skill (`references/tooling.md`). Copy it from there. The notes below cover Craft-specific *usage* — when each setting matters and how to read the errors — not the config file itself.
 
 Run: `ddev composer phpstan`
 

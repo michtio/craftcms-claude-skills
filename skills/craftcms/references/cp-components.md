@@ -168,6 +168,8 @@ Event::on(Dashboard::class, Dashboard::EVENT_REGISTER_WIDGET_TYPES,
 
 ## Slideout Editors
 
+> For Garnish library primitives (`Garnish.Modal`/`HUD`/`DragSort`, `UiLayerManager`, focus/ARIA helpers, the `Garnish.Base.extend` class system), see the `craft-garnish` skill. This file covers Craft's higher-level `Craft.*` CP APIs built on top.
+
 ### How Slideouts Work
 
 In Craft 5, element chips and cards automatically trigger slideout editors when clicked — no custom JS needed. Slideouts load the element's edit form in a side panel without leaving the current page.
