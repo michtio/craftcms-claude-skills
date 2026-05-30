@@ -225,7 +225,7 @@ public function getSettingsHtml(): ?string
 ## Input HTML
 
 ```php
-protected function inputHtml(mixed $value, ?ElementInterface $element, bool $inline): ?string
+protected function inputHtml(mixed $value, ?ElementInterface $element, bool $inline): string
 {
     // $value is already normalized
     // $element is null for default-value scenarios
@@ -243,6 +243,78 @@ protected function inputHtml(mixed $value, ?ElementInterface $element, bool $inl
 ```
 
 Set `useFieldset()` to return `true` to wrap input in a `<fieldset>` with label (instead of `<div>` with `<label>`).
+
+### Namespacing the input id + wiring JS
+
+This is the **#1 custom-field-type bug**: a field rendered inside a field layout is wrapped by `View::namespaceInputs()`, so a bare `id="myInput"` in your template becomes `id="fields-myInput"` in the DOM — and the *same* `inputHtml` renders at different namespaces in a Matrix block or nested entry. JS that does `getElementById('myInput')` then silently fails.
+
+Resolve the namespaced id in PHP and register JS against it — never hardcode the id:
+
+```php
+protected function inputHtml(mixed $value, ?ElementInterface $element, bool $inline): string
+{
+    $view = Craft::$app->getView();
+    $id = $view->namespaceInputId(Html::id($this->handle));   // id after namespacing
+
+    // registerJsWithVars JSON-encodes the values safely into the script:
+    $view->registerJsWithVars(fn($id, $settings) => <<<JS
+new Craft.MyPlugin.MyInput('#' + $id, $settings);
+JS, [$id, ['someSetting' => $this->someSetting]]);
+
+    return $view->renderTemplate('my-plugin/fields/_input', [
+        'id' => $id,
+        'name' => $this->handle,   // Craft namespaces the `name` automatically during layout render
+        'value' => $value,
+    ]);
+}
+```
+
+- `namespaceInputId()` / `namespaceInputName()` (and the `|namespaceInputId` / `|namespaceInputName` Twig filters) return the post-namespacing id/name.
+- Prefer `registerJsWithVars()` over string-concatenating values into JS.
+- Rendering CP templates from a **controller** (outside a field layout)? Wrap with `$view->namespaceInputs(fn() => ..., 'myNamespace')`, and call `$view->setTemplateMode(View::TEMPLATE_MODE_CP)` if the request isn't already in CP mode.
+
+The JS class is a `Garnish.Base.extend` class that must re-initialise when loaded dynamically (Matrix blocks, slideouts, element editors) — see the `craft-garnish` skill's `integration.md` ("Custom Field Input JS & Dynamic Re-init").
+
+### Building input HTML in PHP (`Cp::` helpers)
+
+The `Cp::` helper methods are the PHP-side equivalents of the Twig `forms.*` macros — use them to build `inputHtml()`, `getSettingsHtml()`, or native-field HTML inline, without a separate Twig template. For small field types this is often cleaner than maintaining a one-control template.
+
+```php
+use craft\helpers\Cp;
+```
+
+Common helpers (each takes `array $config`):
+
+| Method | Twig equivalent |
+|--------|-----------------|
+| `Cp::textFieldHtml(array $config)` | `forms.textField` |
+| `Cp::textareaFieldHtml(array $config)` | `forms.textareaField` |
+| `Cp::selectFieldHtml(array $config)` | `forms.selectField` |
+| `Cp::multiSelectFieldHtml(array $config)` | `forms.multiSelectField` |
+| `Cp::lightswitchFieldHtml(array $config)` | `forms.lightswitchField` |
+| `Cp::dateTimeFieldHtml(array $config)` | `forms.dateTimeField` |
+| `Cp::elementSelectFieldHtml(array $config)` | `forms.elementSelectField` |
+
+For inputs without a dedicated helper, the generic wrapper `Cp::fieldHtml(string|callable $input, array $config = [])` renders the surrounding field shell (label, instructions, errors) around any input markup.
+
+The config keys match the `forms.*` macros: `label`, `id`, `name`, `value`, `instructions`, `errors`, `required`, and so on.
+
+```php
+protected function inputHtml(mixed $value, ?ElementInterface $element, bool $inline): string
+{
+    $view = Craft::$app->getView();
+    $id = $view->namespaceInputId(Html::id($this->handle));
+
+    return Cp::textFieldHtml([
+        'id' => $id,
+        'name' => $this->handle,   // Craft namespaces the `name` during layout render
+        'value' => $value,
+        'label' => Craft::t('my-plugin', 'My Field'),
+    ]);
+}
+```
+
+The id/name still need namespacing exactly as in "Namespacing the input id + wiring JS" above — passing a bare `id` here produces the same `getElementById` failures inside Matrix blocks and nested entries.
 
 ## Validation
 
