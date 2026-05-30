@@ -130,7 +130,7 @@ In the partial, guard with defaults:
 {# templates/blog/index.twig #}
 {% set entries = craft.entries()
     .section('blog')
-    .with(['featuredImage'])
+    .with(['featuredImage', 'author', 'topics'])
     .limit(12)
     .all() %}
 
@@ -173,16 +173,18 @@ Each block type gets its own partial: `_partials/entry/heroBlock.twig`, `_partia
 
 ### Eager loading inside partials
 
-Use `.eagerly()` to avoid N+1 queries when rendering a list:
+Use `.eagerly()` on **custom relation fields** to avoid N+1 queries when rendering a list:
 
 ```twig
 {# _partials/entry/article.twig #}
-{% set image = entry.featuredImage.eagerly().one() %}
-{% set author = entry.author.eagerly().one() %}
-{% set categories = entry.topics.eagerly().all() %}
+{% set image = entry.featuredImage.eagerly().one() %}   {# custom Assets field #}
+{% set categories = entry.topics.eagerly().all() %}     {# custom relation field #}
+{% set author = entry.author %}                          {# native attribute — access directly #}
 ```
 
 `.eagerly()` batches queries across all partials in the same render cycle.
+
+**Native attributes can't be `.eagerly()`-loaded.** `entry.author` (also `entry.authors`, an asset's `uploader`, a user's `photo`) returns the element directly — not a query — so there's no `.eagerly()`/`.one()` to chain; `entry.author.eagerly()` throws. Cover them with `.with(['author'])` on the **outer** query instead, as the Blog card grid above does. See `craft-content-modeling` → `relations-and-eager-loading.md` for the full `.with()`-vs-`.eagerly()` rules.
 
 ### Asset partials
 
