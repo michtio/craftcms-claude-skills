@@ -78,8 +78,8 @@ perfectly fine when needed for clarity.
 {% if entry.heading is not defined %}
 ```
 
-Twig 3.21.x (Craft 5) does not have the nullsafe operator (`?.`). That requires
-Twig 3.23+. Use `??` and ternaries instead:
+Twig 3.21.x (Craft 5.9) does not have the nullsafe operator (`?.`). That requires
+Twig 3.23+ (Craft 5.10). Use `??` and ternaries instead:
 
 ```twig
 {# Can't do this yet #}
@@ -256,31 +256,21 @@ accessible labels inside the SVG.
 
 ## `collect()` Conventions
 
-`collect()` wraps a Twig hash into a Collection object. Primary use cases:
+When building props and class collections, these are the style rules to enforce:
 
-### Props collection
-
-```twig
-{%- set props = collect({
-    heading: heading ?? null,
-    content: content ?? null,
-    utilities: utilities ?? null,
-}) -%}
-
-{# Access with get() #}
-{{ props.get('heading') }}
-{{ props.get('size', 'text-base') }}
-
-{# Merge additional props #}
-{%- set props = props.merge({ icon: icon ?? null }) -%}
-```
-
-### Class collection (named keys)
+- **camelCase keys** — `heroImage`, never `hero_image`.
+- **One named key per concern** — a class collection gets one key per style
+  concern (`layout`, `color`, `spacing`, …), never two classes fighting over the
+  same element.
+- **Build class strings with `.implode(' ')`** — never string concatenation
+  (`'flex ' ~ extraClass`).
+- **Null/empty values are harmless** — `implode(' ')` joins them as empty strings,
+  producing extra spaces that browsers normalize in class attributes.
 
 ```twig
 {%- set classes = collect({
     layout: 'flex items-center gap-2',
-    color: 'bg-brand-primary text-white',
+    color: 'bg-brand-primary text-brand-on-primary',
     hover: 'hover:bg-brand-accent',
     utilities: props.get('utilities'),
 }) -%}
@@ -288,18 +278,10 @@ accessible labels inside the SVG.
 class="{{ classes.implode(' ') }}"
 ```
 
-Null values in `collect()` produce harmless extra spaces when joined — browsers
-normalize whitespace in class attributes. Use `classes.filter(v => v).implode(' ')`
-if you want pristine output for devMode inspection, but plain `implode(' ')`
-is fine for production.
-
-### Entry queries as Collections
-
-```twig
-{# .collect instead of .all() when you need Collection methods #}
-{%- set entries = craft.entries.section('blog').eagerly().collect -%}
-{%- set featured = entries.filter(e => e.featured).first -%}
-```
+For the full `collect()` method reference and architecture patterns (props
+collection, `get()`/`merge()`, entry-queries-as-Collections), see `craft-site`
+(`references/twig-collections.md`); for the named-key Tailwind class pattern, see
+`craft-site` (`references/tailwind-conventions.md`).
 
 ## Common Pitfalls
 

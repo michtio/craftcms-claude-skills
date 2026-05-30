@@ -10,17 +10,17 @@ declare(strict_types=1);
 use craft\ecs\SetList;
 use Symplify\EasyCodingStandard\Config\ECSConfig;
 
-return static function(ECSConfig $ecsConfig): void {
-    $ecsConfig->parallel();
-    $ecsConfig->paths([
-        __DIR__ . '/src',
-        __FILE__,
+return ECSConfig::configure()
+    ->withPaths([__DIR__ . '/src', __DIR__ . '/tests'])
+    ->withSets([SetList::CRAFT_CMS_4])
+    ->withSkip([
+        // PhpCsFixer\Fixer\Operator\NotOperatorWithSuccessorSpaceFixer::class,
     ]);
-    $ecsConfig->sets([SetList::CRAFT_CMS_4]);
-};
 ```
 
 Note: `ecs.php` uses `declare(strict_types=1)` because it's standalone config. Plugin source files do not.
+
+There is no `CRAFT_CMS_5` set — `SetList::CRAFT_CMS_4` is the correct, current set for Craft 5 projects.
 
 ## PHPStan Configuration
 
@@ -30,11 +30,13 @@ includes:
     - phpstan-baseline.neon
 
 parameters:
-    level: 5
-    paths:
-        - src
-    treatPhpDocTypesAsCertain: false
+    level: 5                          # level 5 is the Craft community baseline
+    paths: [src]
+    treatPhpDocTypesAsCertain: false   # PHPDoc types are hints, not guarantees
     tmpDir: %currentWorkingDirectory%/tmp/phpstan
+    ignoreErrors:
+        - '#PHPDoc tag @mixin contains invalid type#'
+        - '#^Dead catch#'
 ```
 
 ### PHPStan and Craft::$app

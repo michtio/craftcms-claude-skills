@@ -301,11 +301,10 @@ On first request (or during cache warming), Blitz renders the page through Craft
 
 ```php
 // config/general.php
-return [
-    '*' => [
-        'asyncCsrfInputs' => true,
-    ],
-];
+use craft\config\GeneralConfig;
+
+return GeneralConfig::create()
+    ->asyncCsrfInputs(true);
 ```
 
 **Forms:** Even with `asyncCsrfInputs`, forms inside Blitz-cached pages need careful handling. Use `{% dynamicInclude %}` for form blocks, or use Sprig components that fetch fresh tokens on load.
@@ -463,11 +462,12 @@ This is automatic for element-based content. For non-element changes (e.g., glob
 
 ```php
 // config/general.php
-return [
-    'dev' => [
-        'enableTemplateCaching' => false,
-    ],
-];
+use craft\config\GeneralConfig;
+use craft\helpers\App;
+
+return GeneralConfig::create()
+    // Env var wins; defaults to disabled in dev (when CRAFT_DEV_MODE is true)
+    ->enableTemplateCaching(App::env('CRAFT_ENABLE_TEMPLATE_CACHING') ?? false);
 ```
 
 This causes `{% cache %}` tags to execute their contents on every request without reading or writing cache entries. Essential for development -- without this, template changes appear not to work because stale cached HTML is served.

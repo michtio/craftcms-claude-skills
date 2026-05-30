@@ -150,6 +150,11 @@ hashed `.css` file in production, and the nystudio107 plugin generates the
 
 ## Loading Assets in Twig
 
+> For the full `craft.vite.*` Twig API (`register`, `asset`, `integrity`,
+> `inline`, `includeCriticalCssTags`, `devServerRunning`) and the complete
+> `vite.php` key list, see `plugins/vite.md`. This section covers the two
+> functions used in the standard buildchain flow.
+
 ### `craft.vite.script()`
 
 The primary function. Outputs complete `<script>` and `<link>` HTML tags.

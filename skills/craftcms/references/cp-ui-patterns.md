@@ -168,6 +168,8 @@ Event::on(EntryCondition::class, EntryCondition::EVENT_REGISTER_CONDITION_RULE_T
 
 ## Asset Bundles
 
+> For Garnish library primitives (`Garnish.Modal`/`HUD`/`DragSort`, `UiLayerManager`, focus/ARIA helpers, the `Garnish.Base.extend` class system), see the `craft-garnish` skill. This file covers Craft's higher-level `Craft.*` CP APIs built on top.
+
 ### CP Asset Bundle
 
 ```php
