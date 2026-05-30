@@ -1,6 +1,6 @@
 # Control Panel — Templates, Navigation, Settings
 
-CP templates, form macros, navigation, settings pages, permissions, and read-only mode. For controller patterns (CRUD, webhooks, API, routing), see `controllers.md`. For standalone components (widgets, utilities, slideouts, ajax), see `cp-components.md`. For visual patterns (tri-state controls, CSS variables, condition builders, asset bundles), see `cp-ui-patterns.md`.
+CP templates, form macros, navigation, settings pages, permissions, and read-only mode. For controller patterns (CRUD, webhooks, API, routing), see `controllers.md`. For standalone components (widgets, utilities, slideouts, ajax), see `cp-components.md`. For visual patterns (tri-state controls, CSS variables, condition builders, asset bundles), see `cp-ui-patterns.md`. For building an element index (sources, columns, actions, sort options — `defineSources()`, `defineTableAttributes()`, `defineDefaultTableAttributes()`, `attributeHtml()`, `defineActions()`, `defineSortOptions()`), see `element-index.md`.
 
 ## Documentation
 
@@ -208,6 +208,52 @@ $('#sites').on('deleteRow', function(ev) {
 {% endblock %}
 ```
 
+#### Layout regions for an edit screen
+
+`{% block content %}` fills only the main pane. A hand-built edit screen also wants a metadata sidebar and a collapsible details panel. `_layouts/cp.twig` reads each region as either a `{% block %}` or a same-named `{% set %}` var (verified against `vendor/craftcms/cms/src/templates/_layouts/cp.twig` — see the `{% set sidebar = (sidebar ?? block('sidebar') ?? '')|trim %}` lines). The var form wins when both are present, and is handier when the region is built with `{% set ... %}{% endset %}` capture:
+
+```twig
+{% extends '_layouts/cp.twig' %}
+{% import '_includes/forms.twig' as forms %}
+
+{% set title = item.title %}
+{% set fullPageForm = true %}
+
+{# Right-hand collapsible details panel (metadata: status, dates, slug) #}
+{% block details %}
+    {{ forms.lightswitchField({
+        label: 'Enabled'|t('my-plugin'), name: 'enabled', on: item.enabled,
+    }) }}
+    {{ forms.dateTimeField({
+        label: 'Post Date'|t('my-plugin'), name: 'postDate', value: item.postDate,
+    }) }}
+{% endblock %}
+
+{# Left-hand page sidebar (e.g. a structure tree or filters) #}
+{% block sidebar %}
+    {# nav, tree, or secondary controls #}
+{% endblock %}
+
+{% block content %}
+    {{ actionInput('my-plugin/items/save') }}
+    {{ redirectInput('my-plugin/items') }}
+    {# main fields #}
+{% endblock %}
+```
+
+The layout exposes these regions (each available as a block or a `{% set %}` var of the same name):
+
+| Region | What it renders |
+|--------|-----------------|
+| `content` | The main content pane (always present). |
+| `sidebar` | Left-hand page sidebar. Adds the `has-sidebar` class to `#main-content`. |
+| `details` | Right-hand collapsible details panel — metadata, status, dates. Adds `has-details`. |
+| `footer` | A footer strip inside the content pane (below `content`). |
+| `contextMenu` | Markup beside the breadcrumbs in the global header. |
+| `toolbar` | Toolbar row beside the page title. |
+
+Setting `details` (block or var) is what makes the right-hand panel and its disclosure toggle appear — there's no separate flag. The same goes for `sidebar` and `footer`: the region only renders if its block/var is non-empty.
+
 ### Tabbed Settings Pages
 
 Two approaches for multi-tab CP pages: Twig-level tabs (template-driven) and PHP-level tabs (controller-driven via `asCpScreen()`).
@@ -311,6 +357,41 @@ $response->addTab(
 
 `addTab()` accepts optional `class` (string or array) and `visible` (bool, default `true`) parameters. Set `visible: false` to hide a tab conditionally.
 
+#### Fuller edit screen via asCpScreen()
+
+A real element/edit screen needs more than tabs and content — a right-hand meta sidebar, save/redirect wiring, an error summary, and extra header buttons. All of these are fluent methods on `CpScreenResponseBehavior` (verified against `vendor/craftcms/cms/src/web/CpScreenResponseBehavior.php`):
+
+```php
+/** @var Response|CpScreenResponseBehavior $response */
+$response = $this->asCpScreen()
+    ->title($item->id ? $item->title : Craft::t('my-plugin', 'Create a new item'))
+    ->selectedSubnavItem('items')
+    ->action('my-plugin/items/save')
+    ->redirectUrl('my-plugin/items')
+    ->errorSummary($item->hasErrors() ? $this->_errorSummaryHtml($item) : null)
+    ->additionalButtonsHtml($item->id ? $this->_previewButtonHtml($item) : null)
+    ->tabs([
+        'itemContent' => ['label' => Craft::t('my-plugin', 'Content'), 'url' => '#itemContent'],
+        'itemSettings' => ['label' => Craft::t('my-plugin', 'Settings'), 'url' => '#itemSettings'],
+    ])
+    ->contentTemplate('my-plugin/items/_edit', ['item' => $item])
+    ->metaSidebarTemplate('my-plugin/items/_meta', ['item' => $item]);
+```
+
+| Method | Sets |
+|--------|------|
+| `action($route)` | The controller action the form posts to (`my-plugin/items/save`). |
+| `redirectUrl($url)` | Where the form redirects after a successful save. |
+| `selectedSubnavItem($key)` | Highlights the matching subnav entry in the global sidebar. |
+| `errorSummary($html)` | The errors-summary block rendered above the content pane. Pair with `errorSummaryTemplate($template, $vars)`. |
+| `additionalButtonsHtml($html)` | Extra buttons in the page header, left of the Save button (e.g. Preview). Pair with `additionalButtonsTemplate($template, $vars)`. |
+| `metaSidebarHtml($html)` | The right-hand meta panel (slug, dates, status). Pair with `metaSidebarTemplate($template, $vars)`. |
+| `pageSidebarHtml($html)` | The left-hand page sidebar (full-page screens only). Pair with `pageSidebarTemplate($template, $vars)`. |
+
+The `*Html()` methods accept a string or a `callable` returning a string; the `*Template()` variants are sugar that render a CP-mode Twig template for you. `errorSummary`, `additionalButtonsHtml`, `pageSidebarHtml`, `selectedSubnavItem`, and `redirectUrl` only apply to full-page screens — slideouts ignore them.
+
+For element-backed screens, prefer `Element::cpEditUrl()` / the element's own `prepareEditScreen()` over hand-assembling this; the manual chain above is for custom non-element edit screens.
+
 ### Reserved DOM IDs
 
 Craft's CP JavaScript caches chrome refs via `$('#foo')` during `Craft.CP` init, and `$('#foo')` returns the **first** match in document order. A plugin element that reuses one of these IDs and appears in the DOM before Craft's own — or that replaces it inside a `{% block %}` — silently hijacks Craft's reference. Common symptoms: toast notifications stop appearing, modal ARIA masking breaks, the tab strip wires to the wrong pane, or a pane renders inside the global nav.
@@ -397,9 +478,11 @@ public function getCpNavItem(): ?array
 
 ### Module CP Navigation
 
-Modules cannot use `hasCpSection`. Register nav items via event:
+Modules cannot use `hasCpSection`. Register nav items via event — note this event lives on `craft\web\twig\variables\Cp`, **not** `craft\helpers\Cp`:
 
 ```php
+use craft\web\twig\variables\Cp;
+
 Event::on(Cp::class, Cp::EVENT_REGISTER_CP_NAV_ITEMS,
     function(RegisterCpNavItemsEvent $event) {
         if (!Craft::$app->getUser()->getIdentity()?->can('accessModule')) {
@@ -690,7 +773,7 @@ Every `*Field` macro wraps its input in a `<div class="field">` with label, inst
 | `forms.textareaField` | Multi-line text | `rows`, `placeholder`, `maxlength` |
 | `forms.passwordField` | Password input | `placeholder` |
 | `forms.selectField` | Dropdown | `options` (array of `{label, value}` or flat `{value: label}`) |
-| `forms.multiSelectField` | Multi-select list | `options`, `values` (array of selected values) |
+| `forms.multiselectField` | Multi-select list | `options`, `values` (array of selected values) |
 | `forms.lightswitchField` | Toggle switch | `on` (bool), `toggle` (CSS selector to show/hide) |
 | `forms.checkboxField` | Single checkbox | `checked` (bool), `toggle` (CSS selector) |
 | `forms.checkboxGroupField` | Multiple checkboxes | `options`, `values` (array of checked values) |

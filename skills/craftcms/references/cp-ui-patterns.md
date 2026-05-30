@@ -5,7 +5,7 @@ Battle-tested CP patterns from Craft core and first-party plugins, plus conditio
 ## Contents
 
 - CP UI Patterns — tri-state inheritance, status indicators, field warnings, CSS variables, `[hidden]` gotcha, platform PHP mismatch
-- Condition Builders — BaseCondition, custom condition rules, registration
+- Condition Builders — BaseCondition, custom condition rules, rule input HTML, rendering in templates, registration
 - Asset Bundles — CP asset bundle, JS configuration injection, registration
 - CP Markup Patterns — sidebar badges, notice/warning blocks, tip/warning on form fields
 
@@ -74,7 +74,7 @@ The `warning:` parameter on any form field macro is the canonical way to show "o
 }) }}
 ```
 
-Server-rendered, visible after save and reload. Don't build custom `<p class="warning">` markup or JS-driven dynamic warnings — Craft's pattern is save-and-see. The `tip:` parameter works the same way for informational hints (green instead of orange).
+Server-rendered, visible after save and reload. Don't build custom `<p class="warning">` markup or JS-driven dynamic warnings — Craft's pattern is save-and-see. The `tip:` parameter works the same way for informational hints (see "Form field tip/warning parameters" under CP Markup Patterns).
 
 For selects where the global value isn't visible via a placeholder, build an `inheritsGlobal()` macro that shows informational text revealing the current global setting when "Inherit global" is selected.
 
@@ -156,6 +156,10 @@ class ItemTypeConditionRule extends BaseMultiSelectConditionRule implements Elem
 }
 ```
 
+#### A rule's own input HTML
+
+A `BaseConditionRule` subclass renders its input by overriding `protected function inputHtml(): string` — **zero arguments**. This is distinct from a *field type's* `inputHtml(mixed $value, ?ElementInterface $element, bool $inline): string`. A condition rule stores its own value on the instance (e.g. `$this->value`), so the method takes no parameters; the common bases (`BaseMultiSelectConditionRule`, `BaseTextConditionRule`, etc.) already implement it for you, so you only override `inputHtml()` for a fully custom control.
+
 ### Registration
 
 ```php
@@ -165,6 +169,27 @@ Event::on(EntryCondition::class, EntryCondition::EVENT_REGISTER_CONDITION_RULE_T
     }
 );
 ```
+
+### Rendering a condition builder in a CP template
+
+Build the condition via the `conditions` service factory, then hand it to the template. `createCondition()` accepts a class name or a serialized config array (so you can rebuild a saved condition):
+
+```php
+$condition = Craft::$app->getConditions()->createCondition(MyCondition::class);
+$condition->id = 'my-condition'; // namespaced into the builder markup
+
+return $this->renderTemplate('my-plugin/_settings', [
+    'condition' => $condition,
+]);
+```
+
+In Twig, output the builder with `getBuilderHtml()` (on `BaseCondition`) — it returns the full `.condition-container` markup and registers the JS that initialises the UI elements:
+
+```twig
+{{ condition.getBuilderHtml()|raw }}
+```
+
+On submit, the posted config comes back under the condition's input name; rebuild it server-side with `createCondition($request->getBodyParam('condition'))` and persist the result of `condition.getConfig()`.
 
 ## Asset Bundles
 
@@ -234,7 +259,9 @@ Semantic notice/warning markup for CP templates. No inline styles — use Craft'
 </p>
 ```
 
-Form field macros also accept `tip` and `warning` parameters:
+### Form field tip/warning parameters
+
+Form field macros also accept `tip` (green) and `warning` (orange) parameters, rendered inside the `.field` wrapper. Both are server-rendered — visible after save and reload:
 
 ```twig
 {{ forms.textField({
