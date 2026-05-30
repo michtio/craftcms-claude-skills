@@ -28,13 +28,16 @@
 # border by one character — fix manually after release if it crosses a width boundary.
 #
 # Versioning policy:
-#   The minor version of this package mirrors the Craft CMS minor version it
-#   documents — 1.4.x = Craft 5.9 realm, 1.5.x = Craft 5.10 realm, etc. Craft
-#   major bumps drive package major bumps (1.x = Craft 5, 2.x = Craft 6).
-#   Both lines stay actively maintained — cross-version content is cherry-picked
-#   between branches. Run this script on the branch that corresponds to the line
-#   being released (e.g. `1.4.x` branch for a v1.4.x tag, `main` for the latest
-#   line). See README → Versioning for the full policy.
+#   This package follows its own semantic versioning, driven by the pack's own
+#   content — it is NOT pinned to Craft's minor releases. Patch = accuracy
+#   fixes/small updates; minor = new skills, new plugin references, significant
+#   content additions; major = Craft's next major (5.x → 6.x, where APIs break)
+#   or a major pack reorganization. The pack targets Craft 5 at its latest
+#   minor; behaviour specific to a Craft minor is annotated inline so one line
+#   serves any Craft 5 minor. Development happens on `main`; the `1.4.x` branch
+#   is a frozen Craft 5.9 snapshot. Run this script on the branch being released
+#   (e.g. `1.4.x` for a v1.4.x tag, `main` for the latest line). See README →
+#   Versioning for the full policy.
 #
 # Requires: jq (every dev box, every CI runner has it).
 
