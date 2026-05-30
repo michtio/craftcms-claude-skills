@@ -2,6 +2,8 @@
 
 Every class uses section headers with separator lines. Only include sections that have content.
 
+> **House style vs. core.** Craft *core* uses dash separators (`// ----`) with functional/domain labels (`// Statuses`, `// Events`, `// Element index methods`). The `=====` separators and visibility-based labels (`// Public Methods`, etc.) shown below are a deliberate house convention for consistency across this project's plugins — they are not core style. Apply them anyway.
+
 ## Full Example
 
 ```php
@@ -145,7 +147,8 @@ $result = $element instanceof ElementInterface
     ? $element->title
     : 'A default value';
 
-// match over switch
+// Prefer match for value-mapping/returns (switch is still fine where clearer;
+// the official guideline is only "don't use switch when a single if suffices")
 $label = match ($status) {
     'live' => Craft::t('app', 'Live'),
     'pending' => Craft::t('app', 'Pending'),
