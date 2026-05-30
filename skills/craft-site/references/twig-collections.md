@@ -5,7 +5,7 @@
 
 ## Documentation
 
-- Laravel Collections: https://laravel.com/docs/11.x/collections
+- Laravel Collections: https://laravel.com/docs/10.x/collections (Craft 5 ships `illuminate/collections` ^10)
 - Craft element queries: https://craftcms.com/docs/5.x/development/element-queries.html
 - Twig arrow functions: https://twig.symfony.com/doc/3.x/templates.html#arrow-functions
 
@@ -189,6 +189,25 @@ class="{{ classes.filter(v => v).implode(' ') }}"
 {%- set rest = articles.reject(a => a.featured).take(6) -%}
 {%- set tags = articles.pluck('tags').flatten.unique -%}
 ```
+
+### One Result Per Author (Greatest-N-Per-Group)
+
+To limit a query to one entry per author (e.g. each author's latest), dedupe in a Collection — don't reach for a SQL `GROUP BY`. In Craft 5 authors moved to the `entries_authors` junction, and `.author()`/`.authorId()` resolve via an EXISTS subquery rather than a JOIN, so there's no `authorId` column to group on. (`GROUP BY` also returns an arbitrary row per group, so it can't reliably hand you the *latest* per author anyway.)
+
+Order the query first, then `unique` keeps the first occurrence per key:
+
+```twig
+{%- set latestPerAuthor = craft.entries
+    .section('blog')
+    .with(['author'])          {# native attribute — eager-load with .with(), never .eagerly() #}
+    .orderBy('postDate DESC')
+    .collect
+    .unique('authorId')        {# keeps the first (newest) entry per author #}
+    .take(6)
+-%}
+```
+
+`unique('authorId')` keys on the **primary** author (`entry.authorId` = the first author). If sections allow multiple authors (`maxAuthors > 1`) and you need every co-author represented, iterate `entry.authors` and dedupe differently. This fetches more rows than the final count — fine for bounded front-end lists; for genuinely large sets the only DB-level option is a raw greatest-n-per-group query via `craft.db`.
 
 ### Building Data Structures
 
