@@ -87,7 +87,7 @@ Access via the `craft.timeloop` variable on any element's Timeloop field value:
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `getUpcoming(data)` | `DateTime\|null` | Next single upcoming occurrence |
-| `getDates(data, limit?, futureDates?)` | `DateTime[]` | Up to `limit` dates (default 100). `futureDates` default `true`. |
+| `getDates(data, limit?, futureDates?)` | `DateTime[]` | Up to `limit` dates (default `0` = no limit). `futureDates` default `true`. (The 100 default applies only to the GraphQL `dates(limit:)` arg.) |
 | `getReminder(data)` | `DateTime\|null` | Reminder date based on configured offset before next occurrence |
 | `period(data)` | `PeriodModel\|null` | Raw period configuration model |
 
@@ -110,7 +110,7 @@ The `TimeloopModel` also exposes methods directly:
 |--------|---------|-------------|
 | `getUpcoming()` | `DateTime\|null` | First upcoming date |
 | `getNextUpcoming()` | `DateTime\|null` | Second upcoming date |
-| `getDates(limit?, futureDates?)` | `DateTime[]\|null` | Computed occurrence list |
+| `getDates(limit?, futureDates?)` | `DateTime[]\|null` | Computed occurrence list (`limit` default `0` = no limit) |
 | `getReminder()` | `DateTime\|null` | Next reminder date |
 | `getPeriod()` | `PeriodModel\|null` | Period configuration |
 | `getLoopStartTime()` | `string\|null` | Formatted `H:i` |

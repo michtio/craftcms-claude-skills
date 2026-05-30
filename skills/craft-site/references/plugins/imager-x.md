@@ -1,8 +1,8 @@
 # Imager-X
 
-Advanced image transformation plugin by Spacecraft Technologies. Extends Craft's native transforms with batch generation, named presets, effects/filters, post-transform optimization, external storage (S3, GCS), and alternative transform drivers (Imgix, Cloudflare). The go-to solution for responsive image workflows.
+Advanced image transformation plugin by SpaceCat Ninja (André Elvan). Extends Craft's native transforms with batch generation, named presets, effects/filters, post-transform optimization, external storage (S3, GCS), and alternative transform drivers (Imgix, Cloudflare). The go-to solution for responsive image workflows.
 
-`spacecrafttechnologies/imager-x` -- $99
+`spacecatninja/imager-x` -- $99
 
 ## Documentation
 
@@ -11,7 +11,7 @@ Advanced image transformation plugin by Spacecraft Technologies. Extends Craft's
 - Transforms: https://imager-x.spacecat.ninja/usage/transforms.html
 - Named transforms: https://imager-x.spacecat.ninja/usage/named-transforms.html
 - Template helpers: https://imager-x.spacecat.ninja/usage/template-helpers.html
-- GitHub: https://github.com/spacecrafttechnologies/craft-imager-x
+- GitHub: https://github.com/spacecatninja/craft-imager-x
 
 When unsure about an Imager-X feature, `WebFetch` the docs site.
 

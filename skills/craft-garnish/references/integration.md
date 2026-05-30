@@ -127,7 +127,6 @@ Craft's shared webpack config (`@craftcms/webpack`) configures externals:
 externals: {
   'garnishjs': 'Garnish',
   'jquery': 'jQuery',
-  'craft': 'Craft',
   'axios': 'axios',
 }
 ```
@@ -138,9 +137,15 @@ This means in any Craft asset bundle built with `@craftcms/webpack`:
 // This import resolves to window.Garnish (no bundling)
 import Garnish from 'garnishjs';
 
-// These imports also resolve to globals
+// This import also resolves to a global
 import $ from 'jquery';
-import Craft from 'craft';
+```
+
+There is no `craft` external. `Craft` is an ambient global — available on `window` once the `CpAsset`/CP runtime has loaded — so you do not import it. Craft core code references it directly and marks it for the linter with a `/** global: Craft */` comment rather than importing it:
+
+```javascript
+/** global: Craft */
+Craft.postActionRequest('my-plugin/do-thing', data);
 ```
 
 ### Plugin Webpack Setup
@@ -504,30 +509,32 @@ Uses `role="status"` live region for screen reader announcements.
 
 ### MixedInput
 
-Text input that supports inline tag elements mixed with text. Used in Craft's condition builder, search inputs, and anywhere users type text interspersed with tag-like chips.
+Text input that supports inline tag elements mixed with text. Used in Craft's condition builder, search inputs, and anywhere users type text interspersed with tag-like chips. This is a low-level internal class — most code interacts with the higher-level widgets built on top of it rather than instantiating it directly.
 
 ```javascript
 var input = new Garnish.MixedInput($container);
 
-// Add a removable tag/chip element
+// Add a removable tag/chip element inline at the caret
 var $tag = $('<span class="token">Category</span>');
 input.addElement($tag);
 
-// Get the full combined value (text + element values)
-var value = input.getVal();
+// Add a new text segment at the current caret position
+input.addTextElement();
 ```
 
-Manages caret positioning, keyboard navigation between text and elements, and element insertion/removal within the mixed content.
+Manages caret positioning, keyboard navigation between text and elements, and element insertion/removal within the mixed content. (Each text segment is a private nested `TextElement` instance — `getVal()` lives on that inner class, not on `MixedInput`.)
 
 ### Key Methods:
-- `addTextElement()` — Add a new text segment at the current caret position
-- `addElement($element)` — Add a tag/chip element inline at caret
+- `getElementIndex($elem)` — Get the index of an element within the input
+- `isText($elem)` — Whether the given element is a text segment
+- `addTextElement(index, focus)` — Add a new text segment at the current caret position
+- `addElement($element, index, focus)` — Add a tag/chip element inline at caret
 - `removeElement($element)` — Remove an inline element and merge adjacent text nodes
-- `getVal()` — Get the combined value of all text and element nodes
-- `focus()` — Focus the input, placing caret at the end
-- `blur()` — Blur the input
-- `onPaste(ev)` — Handles paste events, strips formatting and inserts plain text
-- `reset()` — Clear all content (text and elements)
+- `setFocus($elem)` — Focus a specific element
+- `blurFocussedElement()` — Blur the currently focused element
+- `focusPreviousElement($from)` / `focusNextElement($from)` — Move focus to the adjacent element
+- `focusStart()` / `focusEnd()` — Move focus to the first/last element
+- `setCaretPos($elem, pos)` — Set the caret position within a text element
 
 ---
 

@@ -1,7 +1,7 @@
 # Testing
 
 - Write tests alongside each layer, not after. Service tests with the service, controller tests with the controller.
-- Pest over PHPUnit. Use `ddev exec vendor/bin/pest` to run, never `vendor/bin/pest` on the host.
+- Pest over PHPUnit. Use `ddev craft pest/test` to run (or `ddev exec "cd /var/www/html && vendor/bin/pest"` for explicit-path runs), never `vendor/bin/pest` on the host.
 - `--filter=ClassName` for targeted runs during development. Full suite before committing.
 - `->site('*')` and `->status(null)` in test queries to avoid false negatives from site/status scoping.
 - `actingAs($user)->post()` for controller tests. Assert both HTTP status and DB state.

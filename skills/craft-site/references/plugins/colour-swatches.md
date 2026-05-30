@@ -11,11 +11,11 @@ Visual colour picker field type by CraftPulse. Lets editors choose from predefin
 
 ## Common Pitfalls
 
-- Accessing `.color` directly as a string when it's an array — each swatch can have multiple colours (for gradient or multi-colour swatches). Always iterate or access by index.
+- Treating a multi-colour swatch like a single one — for a single-colour swatch you read custom keys directly off the swatch (`swatch.background`), but a multi-colour swatch's `swatch.color` is an array you must iterate (`{% for c in swatch.color %}{{ c.background }}{% endfor %}`).
 - Not defining a `default` swatch — if no swatch is pre-selected and the field is optional, template code must handle null values.
 - Defining palettes in field settings instead of the config file — config-file palettes are reusable across fields and environments. Prefer `config/colour-swatches.php`.
 - Missing the `color` key (required) in the colour definition — the `color` hex value is what renders the swatch preview. All other keys (like Tailwind classes) are custom options.
-- Forgetting that `{{ swatch }}` returns the label, not the colour — string casting calls `__toString()` which returns `label`. Use `.colors()` or `.color` for colour values.
+- Forgetting that `{{ swatch }}` returns the label, not the colour — string casting calls `__toString()` which returns `label`. Use the `.color` property (and custom keys like `.background`) for colour values.
 
 ## Config File
 
@@ -96,53 +96,55 @@ Custom keys are whatever your project needs — `background`, `backgroundHover`,
 
 ## Twig API
 
+The v5 swatch model uses **property access**, not method calls. The only callable is `collection()` (added in v5.1.0).
+
 ### Model Properties
 
 ```twig
 {% set swatch = entry.colourField %}
 
-{{ swatch }}                    {# Returns label (string cast) #}
+{{ swatch }}                    {# Returns label (string cast via __toString()) #}
 {{ swatch.label }}              {# "Primary" #}
-{{ swatch.colors() }}           {# Array of colour definitions #}
-{{ swatch.labels() }}           {# Label string #}
-{{ swatch.default() }}          {# Boolean — is this the default? #}
-{{ swatch.class() }}            {# Extra class string or null #}
+{{ swatch.color }}              {# Single swatch: hex string. Multi-colour: array of colour objects #}
+{{ swatch.background }}         {# Custom key, read directly off the swatch (single-colour) #}
+{{ swatch.text }}               {# Any custom key you defined in the palette #}
 ```
+
+For a single-colour swatch, the custom keys (`background`, `text`, etc.) are exposed directly on the swatch. For a multi-colour swatch, iterate `swatch.color` and read the keys off each colour object.
 
 ### Accessing Colour Values
 
-Single-colour swatch:
+Single-colour swatch — read custom keys directly:
 
 ```twig
 {% set swatch = entry.colourField %}
-{% if swatch and swatch.colors() %}
-    {% set colorData = swatch.colors()|first %}
-    <div class="{{ colorData.background ?? '' }} {{ colorData.text ?? '' }}">
+{% if swatch %}
+    <div class="{{ swatch.background ?? '' }} {{ swatch.text ?? '' }}">
         {{ entry.title }}
     </div>
 {% endif %}
 ```
 
-Multi-colour swatch (gradient):
+Multi-colour swatch (gradient) — iterate `swatch.color`:
 
 ```twig
 {% set swatch = entry.colourField %}
-{% if swatch and swatch.class() %}
-    <div class="{{ swatch.class() }}">
-        Gradient background
-    </div>
+{% if swatch %}
+    {% for c in swatch.color %}
+        <span class="{{ c.background ?? '' }} {{ c.text ?? '' }}">{{ c.color }}</span>
+    {% endfor %}
 {% endif %}
 ```
 
 ### Using with Tailwind Named-Key Collections
 
-Colour Swatches pairs naturally with the named-key collection pattern:
+Colour Swatches pairs naturally with the named-key collection pattern (single-colour swatch):
 
 ```twig
 {# _atoms/badge.twig #}
 {% set defaults = collect({
-    wrapper: swatch.colors()|first.background ?? 'bg-gray-100',
-    text: swatch.colors()|first.text ?? 'text-gray-900',
+    wrapper: swatch.background ?? 'bg-gray-100',
+    text: swatch.text ?? 'text-gray-900',
 }) %}
 
 <span class="{{ defaults.get('wrapper') }} {{ defaults.get('text') }} rounded-full px-3 py-1 text-sm font-medium">
@@ -154,14 +156,26 @@ Colour Swatches pairs naturally with the named-key collection pattern:
 
 ```twig
 {% set swatch = entry.colourField ?? null %}
-{% set bgClass = swatch ? (swatch.colors()|first.background ?? 'bg-gray-100') : 'bg-gray-100' %}
+{% set bgClass = swatch.background ?? 'bg-gray-100' %}
 ```
 
 ### Collection API
 
+`collection()` (v5.1.0+) returns a recursive Laravel collection of the swatch's colour data — handy for `.pluck()`, `.filter()`, `.map()`, etc.
+
 ```twig
-{% set collection = entry.colourField.collection() %}
-{# Returns an Illuminate Collection of colour data #}
+{# Pull every hex value #}
+{% set hexValues = entry.colourField.collection().pluck('color').all() %}
+
+{# Build a CSS gradient from all colours #}
+{% set gradient = 'linear-gradient(' ~ entry.colourField.collection().pluck('color').implode(', ') ~ ')' %}
+
+{# Filter on a custom key #}
+{% set backgrounds = entry.colourField.collection()
+    .pluck('background')
+    .filter()
+    .unique()
+    .all() %}
 ```
 
 ## Element Queries

@@ -167,7 +167,7 @@ return [
                 'accessKeyId' => craft\helpers\App::env('AWS_ACCESS_KEY_ID'),
                 'secretAccessKey' => craft\helpers\App::env('AWS_SECRET_ACCESS_KEY'),
             ];
-            return Craft::createObject($settings->mailerSettings());
+            return Craft::createObject(craft\helpers\App::mailerConfig($settings));
         },
     ],
 ];
