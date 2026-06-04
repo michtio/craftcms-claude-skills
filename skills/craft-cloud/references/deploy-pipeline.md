@@ -100,6 +100,24 @@ Available at runtime (PHP request handling). Set in the Craft Console UI per env
 
 Read them with `App::env('MY_VAR')` as you would on any Craft project. The `.env` file is not the source of truth on Cloud — the Console UI is.
 
+### Reserved runtime variables — do NOT set these in the Console
+
+Cloud injects (or derives) the following itself. Setting them in the Console is at best ignored and at worst conflicting — leave them out of any `.env` you migrate from a self-hosted setup. Verified against `craftcms/cloud` 2.x (`src/AppConfig.php`, `src/Config.php`, `src/Helper.php`):
+
+| Variable(s) | Why it's reserved |
+|---|---|
+| `CRAFT_SECURITY_KEY` | Cloud generates and injects the security key |
+| `CRAFT_APP_ID` | Derived from `CRAFT_CLOUD_PROJECT_ID` — `AppConfig::getId()` sets `id` to `CraftCMS--<projectId>` when it's missing or the default |
+| `CRAFT_OMIT_SCRIPT_NAME_IN_URLS` | Cloud's web layer controls URL rewriting / pretty URLs |
+| `CRAFT_CLOUD`, `CRAFT_CLOUD_*` | The platform flag + `PROJECT_ID`, `ENVIRONMENT_ID`, `REGION`, `REDIS_URL`, `ARTIFACT_BASE_URL`, `CDN_BASE_URL`, `SIGNING_KEY`, `DEV_MODE`, … |
+| `CRAFT_DB_*` | DB connection auto-wired (`SERVER`, `PORT`, `DATABASE`, `USER`, `PASSWORD`, `DRIVER`, `SCHEMA`, `TABLE_PREFIX`) |
+| `CRAFT_EDITION` | Set by Cloud |
+| `REDIS_*` | Cache, queue, session, and mutex are wired by the extension via `CRAFT_CLOUD_REDIS_URL` (`AppConfig::getCache()`/`getQueue()`/`getSession()`) — your own Redis vars are unused |
+| `CRAFT_WEB_ROOT` | Cloud-managed path. If `config/general.php` aliases `@webroot`/`@uploads` from this var, guard it so it only applies when the var is set, e.g. `App::env('CRAFT_WEB_ROOT') ? [...] : []` — otherwise `@webroot` is nulled on Cloud |
+| `CRAFT_RESOURCE_BASE_PATH`, `CRAFT_RESOURCE_BASE_URL` | cpresources are published to and served from the Cloud CDN |
+
+`Helper::isCraftCloud()` returns true when `CRAFT_CLOUD` (or `AWS_LAMBDA_RUNTIME_API`) is present — that's the flag the extension keys all of the above off. App-level settings you *do* choose (e.g. `CRAFT_ENVIRONMENT`, `CRAFT_CP_TRIGGER`, `CRAFT_DEV_MODE`, `CRAFT_ALLOW_ADMIN_CHANGES`) are normal runtime vars and safe to set.
+
 ### When to use which
 
 - Build-time vars are mostly read-only and auto-set. The only reason to know them is if your build script needs to know the build ID, CDN URL, or commit SHA.
