@@ -188,7 +188,7 @@ The table below reflects the community's current understanding of how popular th
 | **ImageOptimize** (nystudio107) | **Don't use** | Cloud handles transforms at the edge via Cloudflare Images. ImageOptimize duplicates the work and can produce stale references. Remove during migration. |
 | **Imager-X** (spacecatninja) | **Don't use for transforms** | Same reason as ImageOptimize — Cloud's edge transforms supersede. If you only used Imager-X for advanced features (focus points, color extraction), evaluate per-feature. |
 | **Blitz** (putyourlightson) | **Largely redundant** | Cloud's edge static caching covers the same job. Running both produces conflicting cache layers. Remove Blitz or use one or the other, not both. |
-| **SEOmatic** (nystudio107) | **Works** | No filesystem writes that conflict; meta-tag generation is standard Craft. |
+| **SEOmatic** (nystudio107) | **Works** | Meta-tag generation is standard Craft. One operational note (a general SEOMatic trait, *not* Cloud-specific): its Site Settings, robots.txt template, and Content SEO are DB-backed, not project config. Since Cloud gives you no prod CP access, manage them via a content migration — the same `JSON_SET` + `clearAllCaches()` approach you'd use on any host. See `craft-site` skill → `plugins/seomatic.md` ("Managing DB-Backed Settings via Content Migrations"). |
 | **Sprig** (putyourlightson) | **Works** | HTMX-based, no Cloud-specific concerns. |
 | **Formie** (verbb) | **Works** | Watch the file-upload field — uploads go through the asset volume system, which uses Cloud's filesystem correctly. |
 | **CKEditor** (craftcms) | **Works** | First-party, Cloud-tested. |

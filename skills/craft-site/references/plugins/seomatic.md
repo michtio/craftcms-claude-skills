@@ -23,7 +23,10 @@ When unsure about an SEOMatic feature, `WebFetch` the relevant docs page.
 - Forgetting that `seomatic-config` files only apply on initial bundle creation — changes after the bundle exists have no effect unless you bump `bundleVersion` in `Bundle.php`.
 - Not configuring Content SEO per-section — SEOMatic's power is in automatic field mapping. If you rely only on the SEO Settings field, you're doing extra work.
 - Missing `{% hook 'seomaticRender' %}` when headless — auto-rendering works for traditional templates. Headless/hybrid setups need explicit rendering or the GraphQL API.
-- Hardcoding JSON-LD in templates instead of using SEOMatic's container system — breaks the cascade and loses CP configurability.
+- Hardcoding JSON-LD in templates instead of using SEOMatic's container system — breaks the cascade and loses CP configurability. (Exception: complex per-entry structured data with real field values is often cleaner as a Twig partial — see "Managing DB-Backed Settings via Content Migrations".)
+- Assuming Site Settings, the robots.txt template, and Content SEO sync via project config — they're **DB-backed** (the `seomatic_metabundles` table), not project config. Change them reproducibly with a content migration (`JSON_SET` + `clearAllCaches()`) on any host. See "Managing DB-Backed Settings via Content Migrations".
+- `fromField` Content SEO source pointed at a field that's empty on some entries — SEOMatic falls back to the global/homepage meta, giving every such entry the **same** description (sitewide duplicate meta). Use `fromCustom` with an object-template fallback chain instead.
+- Confusing `mainEntityOfPage` (per-page schema type, e.g. `Article`) with `siteType`/`siteSubType`/`siteSpecificType` (the global `Organization`/`LocalBusiness` identity) — they live in different columns and do different jobs.
 
 ## Meta Cascade
 
@@ -219,6 +222,181 @@ return [
 ```
 
 These files are only read when initially creating a meta bundle (plugin install or new section created). Bump `bundleVersion` in `Bundle.php` to force a re-read.
+
+## Managing DB-Backed Settings via Content Migrations
+
+Many SEOMatic settings are **DB-backed, not project config** — they live in the `seomatic_metabundles` table and **do not sync via project config**:
+
+- **Site Settings** — Identity (`genericUrl`, organization/person name, social profiles)
+- **The robots.txt template** (and humans.txt)
+- **Per-section Content SEO** — field mappings, sources, per-section meta templates
+
+Because they're not in project config, the reproducible way to change them — version-controlled, repeatable across every environment, no manual CP clicking — is a **content migration** that edits the JSON columns with MySQL `JSON_SET`, then clears SEOMatic's caches with `Seomatic::$plugin->clearAllCaches()`.
+
+This is **host-independent**: the migration is identical on self-hosted, shared hosting, Servd, Craft Cloud, and locally — SEOMatic stores these settings in the database the same way everywhere. It's simply the *only* option on a host that gives you no production CP access (e.g. Craft Cloud), and the right approach everywhere else for the same reasons you'd migrate any other configuration rather than hand-editing prod.
+
+> Project-config-backed settings (`config/seomatic.php` and the `seomatic-config/` bundle files above) deploy normally. This section is only about the settings that *aren't* in project config.
+
+### `seomatic_metabundles` Table Shape
+
+| `sourceBundleType` | Keyed by | Rows | Holds |
+|---|---|---|---|
+| `__GLOBAL_BUNDLE__` | `sourceSiteId` | one per site | `metaSiteVars` (identity, `genericUrl`, social), `frontendTemplatesContainer` (robots.txt, humans.txt) |
+| `section` | `sourceHandle` | **two per section** — section-level (`typeId` NULL) **and** entry-type-level (`typeId` set) | `metaGlobalVars`, `metaBundleSettings` (Content SEO) |
+
+The columns `metaGlobalVars`, `metaSiteVars`, `metaBundleSettings`, and `frontendTemplatesContainer` are JSON stored in **text columns**, but MySQL's `JSON_SET` / `JSON_EXTRACT` operate on them fine.
+
+Two things that bite:
+
+- **Per-section bundles exist at two levels.** A section usually has a section-level row (`typeId IS NULL`) *and* an entry-type-level row per entry type (`typeId` set), sharing the same `sourceHandle`. **Both normally need the same edit** — filtering on `sourceHandle` alone (no `typeId` predicate) hits all of them, which is usually what you want.
+- **`frontendTemplatesContainer` holds the robots.txt template as a JSON-escaped string**, and its line endings vary per site. `JSON_EXTRACT` it first to confirm the exact path and current value before you `JSON_SET` a replacement.
+- **Confirm every JSON path first.** SEOMatic's internal nesting shifts between versions (e.g. exactly where `genericUrl` and the social profiles sit under `metaSiteVars`). `SELECT JSON_EXTRACT([[<column>]], '$') FROM {{%seomatic_metabundles}} WHERE …` and eyeball the structure before composing `JSON_SET` paths — don't trust a path from memory.
+
+### Worked Migration
+
+```php
+<?php
+
+namespace craft\contentmigrations;
+
+use Craft;
+use craft\db\Migration;
+use nystudio107\seomatic\Seomatic;
+
+/**
+ * Updates DB-backed SEOMatic settings (the seomatic_metabundles table) via a
+ * migration, then clears caches so the change is reproducible across every
+ * environment. Host-independent — same on self-hosted, Servd, Cloud, and local.
+ *
+ * @author Acme
+ */
+class m260610_090000_seomatic_settings extends Migration
+{
+    // Public Methods
+    // =========================================================================
+
+    /**
+     * @inheritdoc
+     */
+    public function safeUp(): bool
+    {
+        $db = Craft::$app->getDb();
+
+        // --- Global bundle (per site): Identity genericUrl ---
+        // metaSiteVars is JSON; JSON_SET edits keys in place. One row per site,
+        // so scope by sourceSiteId (genericUrl usually differs per site).
+        $db->createCommand(
+            <<<SQL
+            UPDATE {{%seomatic_metabundles}}
+            SET [[metaSiteVars]] = JSON_SET([[metaSiteVars]], '$.identity.genericUrl', :url)
+            WHERE [[sourceBundleType]] = '__GLOBAL_BUNDLE__' AND [[sourceSiteId]] = :siteId
+            SQL,
+            [':url' => 'https://example.com', ':siteId' => 1]
+        )->execute();
+
+        // --- Per-section Content SEO: fix the empty-field fallback (see gotcha) ---
+        // No typeId predicate → updates BOTH the section-level row (typeId NULL)
+        // and the entry-type-level row(s), matched by handle.
+        $db->createCommand(
+            <<<SQL
+            UPDATE {{%seomatic_metabundles}}
+            SET [[metaBundleSettings]] = JSON_SET([[metaBundleSettings]], '$.seoDescriptionSource', 'fromCustom'),
+                [[metaGlobalVars]]     = JSON_SET([[metaGlobalVars]], '$.seoDescription', :tmpl)
+            WHERE [[sourceBundleType]] = 'section' AND [[sourceHandle]] = :handle
+            SQL,
+            [
+                ':handle' => 'blog',
+                // Object-template with its own fallback chain (see gotcha below).
+                ':tmpl' => '{{ entry.seoSummary ?: entry.summary ?: entry.title }}',
+            ]
+        )->execute();
+
+        // robots.txt lives in frontendTemplatesContainer as a JSON-escaped string.
+        // Inspect the exact path + current value first (line endings vary per site):
+        //   SELECT JSON_EXTRACT([[frontendTemplatesContainer]], '$') FROM {{%seomatic_metabundles}}
+        //   WHERE [[sourceBundleType]] = '__GLOBAL_BUNDLE__' AND [[sourceSiteId]] = 1;
+        // then JSON_SET the template key you find with the full replacement string.
+
+        // Reset SEOMatic's caches so the edited bundles take effect.
+        Seomatic::$plugin->clearAllCaches();
+
+        return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function safeDown(): bool
+    {
+        echo "m260610_090000_seomatic_settings cannot be reverted.\n";
+        return false;
+    }
+}
+```
+
+Scaffold the stub with `ddev craft migrate/create seomatic_settings` (a content migration in `migrations/`), commit it, and it runs on every environment's next migrate — `ddev craft up` locally, the migrate step of your deploy in prod, on whatever host. `clearAllCaches()` invalidates the in-DB meta containers. If a host runs an edge or static cache in front (Cloud's Cloudflare layer, Servd's static cache, any CDN), its post-deploy purge clears the rendered meta; locally there's nothing to purge. For multi-site, loop sites (or drop the `sourceSiteId` predicate when the value is genuinely site-agnostic — `genericUrl` rarely is).
+
+### Gotcha — Empty-Field Fallback (Sitewide Duplicate Descriptions)
+
+`metaBundleSettings.seoTitleSource` / `seoDescriptionSource` / `seoImageSource` are each one of `sameAsSeo` | `fromField` | `fromCustom`. With **`fromField` pointed at a field that's empty on an entry**, SEOMatic falls back to the global/homepage meta — so every entry with an empty SEO field gets the **same** description. Classic sitewide-duplicate-meta bug, and a real ranking problem.
+
+Fix: set the source to **`fromCustom`** and put an object-template in `metaGlobalVars.seoTitle` / `seoDescription` with its **own fallback chain**, so an empty primary field cascades to a sensible per-entry value instead of the global:
+
+```twig
+{{ entry.seoDescription ?: entry.summary ?: entry.title }}
+```
+
+> The object-template variable is commonly `entry`, but **verify per install** — custom element types use their own `refHandle()` (e.g. `job`), not `entry`. Check before relying on it.
+
+### Gotcha — Per-Page Schema Type vs Global Identity
+
+Two different settings, easily confused:
+
+- **`metaGlobalVars.mainEntityOfPage`** — a string (`WebPage`, `Article`, `NewsArticle`, …). The **per-page** schema type, consumed by `MetaContainers` to build the page's `mainEntityOfPage` JSON-LD. This is what you set to make a blog entry an `Article`.
+- **`metaBundleSettings.siteType` / `siteSubType` / `siteSpecificType`** — the **global identity** schema (the `LocalBusiness` / `Organization` cascade for Site Settings → Identity). Not per-page.
+
+Setting `siteType` when you meant `mainEntityOfPage` (or vice versa) is a common reason the rendered structured data isn't what you expect.
+
+### Complex Per-Entry Structured Data — Prefer a Twig Partial
+
+For rich, field-driven structured data — a real-estate `Product`/`Offer`/`Place`, an event, a recipe — don't fight SEOMatic's JSON-LD container. Build a Twig `<script type="application/ld+json">` partial: assemble a hash from real field values and `json_encode` it. It's more testable, version-controlled, and far easier to reason about than templating JSON through container settings:
+
+```twig
+{# _partials/schema/listing.twig #}
+{% set schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: entry.title,
+    description: entry.summary ?: entry.title,
+    offers: {
+        '@type': 'Offer',
+        price: entry.price,
+        priceCurrency: 'EUR',
+        availability: 'https://schema.org/' ~ (entry.isAvailable ? 'InStock' : 'SoldOut'),
+    },
+} %}
+<script type="application/ld+json">{{ schema|json_encode|raw }}</script>
+```
+
+Use SEOMatic for the meta-tag cascade (title/description/OG/Twitter) and the global identity JSON-LD; reach for a partial when per-entry structured data needs real field values.
+
+### MetaBundles Service Methods
+
+`Seomatic::$plugin->metaBundles` exposes the bundle plumbing if you'd rather go through the service than raw SQL:
+
+| Method | Use |
+|---|---|
+| `updateMetaBundle($metaBundle, $siteId)` | Persist an in-memory bundle back to its row |
+| `syncBundleWithConfig(...)` | Reconcile a bundle against its `seomatic-config` files |
+| `invalidateMetaBundleById($sourceBundleType, $sourceId, $siteId)` | Invalidate one bundle's cache |
+| `createContentMetaBundles()` | (Re)build per-section/content bundles |
+| `createGlobalMetaBundles()` | (Re)build the global per-site bundles |
+
+Cache reset after any bundle edit: `Seomatic::$plugin->clearAllCaches();`.
+
+> Raw `JSON_SET` migrations are usually simpler and more predictable than reconstructing full bundle objects through the service — but the service methods are there when you need a full rebuild from config.
+
+Verified against `nystudio107/craft-seomatic ^5.1.16`.
 
 ## Sitemaps
 
