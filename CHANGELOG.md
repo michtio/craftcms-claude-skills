@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.2 -- 2026-06-10
+
+Patch re-release of 1.6.1. The 1.6.1 artifact was published before its SEOMatic documentation correction landed, and published stable versions are immutable — so the corrected docs ship here as 1.6.2 rather than as a re-tag of 1.6.1. **Use 1.6.2.** The content is the host-independent guidance for managing SEOMatic's DB-backed settings via content migrations described in the 1.6.1 entry below; there are no other changes.
+
 ## 1.6.1 -- 2026-06-10
 
 Documents how to manage SEOMatic's **DB-backed** settings via content migrations. SEOMatic's Site Settings (Identity `genericUrl`, social), the robots.txt template, and per-section Content SEO live in the `seomatic_metabundles` table, **not** project config, so they don't sync via project config. The reproducible way to change them is a content migration that edits the JSON columns with MySQL `JSON_SET` and then calls `Seomatic::$plugin->clearAllCaches()`. This is **host-independent** — identical on self-hosted, shared hosting, Servd, Craft Cloud, and locally; it's simply the only option when a host gives you no production CP access.
