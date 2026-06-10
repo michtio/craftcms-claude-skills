@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.1 -- 2026-06-10
+
+Documents how to manage SEOMatic's **DB-backed** settings via content migrations. SEOMatic's Site Settings (Identity `genericUrl`, social), the robots.txt template, and per-section Content SEO live in the `seomatic_metabundles` table, **not** project config, so they don't sync via project config. The reproducible way to change them is a content migration that edits the JSON columns with MySQL `JSON_SET` and then calls `Seomatic::$plugin->clearAllCaches()`. This is **host-independent** — identical on self-hosted, shared hosting, Servd, Craft Cloud, and locally; it's simply the only option when a host gives you no production CP access.
+
+### Changed
+
+- **`skills/craft-site/references/plugins/seomatic.md`** — new "Managing DB-Backed Settings via Content Migrations" section: the `seomatic_metabundles` table shape (`__GLOBAL_BUNDLE__` per `sourceSiteId` vs two-level `section` bundles — section-level `typeId` NULL and entry-type-level, both matched by `sourceHandle`), a worked content migration, and the `MetaBundles` service methods. Plus two gotchas: the empty-field fallback (`fromField` on an empty field → sitewide duplicate descriptions; fix with `fromCustom` + an object-template fallback chain) and `mainEntityOfPage` (per-page schema type) vs `siteType`/`siteSpecificType` (global identity). Recommends a Twig `<script type="application/ld+json">` partial for complex per-entry structured data. Verified against `nystudio107/craft-seomatic ^5.1.16`. New Common Pitfalls entries surface the same traps.
+- **`skills/craft-cloud/references/limitations.md`** — the SEOMatic plugin-compatibility row notes that its DB-backed settings (a general SEOMatic trait, not Cloud-specific) are managed via the same content migration on Cloud, where there's no prod CP access.
+
 ## 1.6.0 -- 2026-05-30
 
 Tenth skill — **`servd`** — plus the sixth agent (**`craft-code-reviewer-deep`**), a broad accuracy pass verified against Craft 5.10 source, a cross-skill redundancy cleanup, and a fix for the previously-orphaned `craft-cloud` skill (shipped in the docs but never listed in `plugin.json`, so it never actually loaded). Versioning is now decoupled from Craft minor releases — semver tracks the pack itself, not the Craft version, with the 1.4.x line frozen at Craft 5.9. The reference layer also gained the custom-field-input JS lifecycle (the single most common place CP JavaScript silently breaks), the full hand-built CP edit-screen surface (`asCpScreen()` + `_layouts/cp.twig` regions), condition-builder rendering, and `collect()`-first Twig guidance.
