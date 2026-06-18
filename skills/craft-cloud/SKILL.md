@@ -85,6 +85,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply.
 - "Add redirects in `craft-cloud.yaml`" → `config-file.md` (Redirects and Rewrites)
 - "What happens during deploy?" → `deploy-pipeline.md`
 - "Set build-time env vars" → `deploy-pipeline.md` (Build-time vs runtime variables)
+- "Which env vars are reserved / shouldn't I set on Cloud?" → `deploy-pipeline.md` (Reserved runtime variables)
 - "What does `php craft cloud/up` do?" → `extension.md` (cloud/up internals)
 - "Add an ESI island inside a cached page" → `caching-and-edge.md`
 - "Edge static caching rules" → `caching-and-edge.md`
@@ -104,7 +105,7 @@ Load only the reference files your task needs.
 | Reference | Scope | ~Lines |
 |---|---|---:|
 | `references/config-file.md` | Full `craft-cloud.yaml` key reference: `php-version`, `node-version`, `node-path`, `npm-script`, `artifact-path`, `app-path`, `webroot`, `cache.rules`, `redirects`, `rewrites` | 154 |
-| `references/deploy-pipeline.md` | Build → Migrate → Release flow, On Push vs Manual triggers, 15-min build cap, build-time system vars (`CRAFT_CLOUD_*`, `GIT_SHA`), runtime env vars in Console, failed-migration rollback semantics | 130 |
+| `references/deploy-pipeline.md` | Build → Migrate → Release flow, On Push vs Manual triggers, 15-min build cap, build-time system vars (`CRAFT_CLOUD_*`, `GIT_SHA`), runtime env vars in Console, **reserved/injected vars you must NOT set** (`CRAFT_SECURITY_KEY`, `CRAFT_APP_ID`, `CRAFT_OMIT_SCRIPT_NAME_IN_URLS`, `CRAFT_DB_*`, `REDIS_*`, …), failed-migration rollback semantics | 130 |
 | `references/extension.md` | `craftcms/cloud` package: Yii2 module bootstrap, `App::isEphemeral()`, Path service usage, `cloud.esi()` Twig helper, `cloud/up` internals (verified from source), asset-bundle CDN publisher, binary response auto-upload, log target | 201 |
 | `references/assets-and-transforms.md` | Cloud filesystem type (mandatory `assets/` subpath), `aws s3 sync` migration, edge image transforms (70MB / 100MP / 12,000px limits, AVIF 1,600px cap, stretch-mode constraint), no template-side changes required | 87 |
 | `references/database.md` | MySQL 8.0 / Postgres 15 only (no MariaDB), `tablePrefix` ban, `php craft db/drop-table-prefix`, auto-wired connection, nightly + on-demand backups, restore commands | 105 |
