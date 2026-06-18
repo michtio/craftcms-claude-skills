@@ -27,7 +27,7 @@ jobs:
     name: Manifest versions match tag
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Compare versions
         shell: bash
@@ -75,7 +75,7 @@ jobs:
     needs: validate-manifest-versions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # Need history (and origin/main) to determine whether this tag
           # belongs to the main line or a maintenance branch.
