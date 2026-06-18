@@ -16,6 +16,7 @@ How a Git push (or manual trigger) becomes a live deploy. The three-phase pipeli
 - Setting custom env vars in `craft-cloud.yaml`. Custom env vars only exist in the Craft Console UI per environment — they are **not injected into the build container**. If your build needs a secret (e.g. a private NPM token), you'll need to handle it via build args from the Console UI's build-environment-variables section, not `craft-cloud.yaml`.
 - Letting build time approach the 15-minute cap. Cloud kills the build at 15 minutes. If you're close, split out the heavy work (image optimization, content sync) into queue jobs that run post-deploy.
 - Assuming a failed migration rolls back the deploy. It doesn't — Cloud keeps the previous version serving traffic while the failed deploy stays in a failure state. You fix the migration, push again.
+- Calling `Craft::$app->getCache()->flush()` (or any broad cache wipe) from a migration. During the Migrate phase the old version is still serving live traffic against the same cache; a global flush can deadlock the DB cache table and blow the CLI cap. See [Never flush the whole cache from a migration](#never-flush-the-whole-cache-from-a-migration) below.
 - Pushing from a forked repository. Cloud can't deploy forks — the connected repository must be the upstream.
 
 ## The three phases
@@ -51,11 +52,26 @@ Runs the Cloud extension's `cloud/up` command against the freshly-built artifact
 1. Triggers the `beforeUp` event (cancelable — plugins can abort the deploy here).
 2. Runs `setup/php-session-table` — ensures the PHP session table exists in the DB.
 3. Runs `setup/db-cache-table` — ensures the DB cache table exists.
-4. If Craft is installed, runs `up` — Craft's standard `craft up` command, which applies pending migrations and pending project-config changes.
+4. If Craft is installed, runs `up` — Craft's standard `craft up` command. Internally that is `migrate/all --no-content` (Craft + plugin migrations) → project-config apply → `migrate/up --track=content` (content migrations) → `clear-caches/compiled-templates`. So content migrations run **after** project config is applied; plugin/Craft migrations run before. The full order is in the `craftcms` skill's `migrations.md`.
 5. Purges the static cache gateway via `StaticCache::purgeGateway()` so the next request hits the freshly-deployed code.
 6. Triggers the `afterUp` event (cancelable).
 
 If any step exits non-zero, the deploy fails and the prior version keeps serving traffic.
+
+#### Never flush the whole cache from a migration
+
+This is the single most damaging thing a migration can do on Cloud, and it isn't obvious because it's harmless self-hosted.
+
+The Migrate phase runs `craft up` against the new build **while the previously-released version is still serving live traffic** (see [Failed deploys](#failed-deploys) — nothing is rolled forward until Release). Both versions share one cache. Now consider what the data cache actually is: if Redis/Valkey isn't provisioned for the environment, Craft falls back to `craft\cache\DbCache` — a single MySQL cache table (see `extension.md` → "Cache, queue, and session wiring").
+
+A migration that calls `Craft::$app->getCache()->flush()` — or any broad cache wipe — issues a `DELETE` across that whole table. The very next requests (served by both code versions, under live traffic) immediately repopulate it, re-caching DB table schemas and other data. The concurrent `DELETE` + `INSERT` contention on one MySQL table can deadlock — MySQL error **1205, "Lock wait timeout exceeded"** — and on a large schema can run long enough to approach the CLI cap (≈890s) and fail the whole deploy.
+
+**Rules:**
+
+- **Never** call `Craft::$app->getCache()->flush()`, `clear-caches/all`, or any global cache wipe from a migration.
+- Invalidate **only what changed** — `Craft::$app->getElements()->invalidateCachesForElement($element)`, tag-based invalidation, or `TemplateCaches::invalidateCachesByElementId()`.
+- If a deploy genuinely needs a full cache clear, do it as a separate post-deploy step via the Console command runner (`clear-caches/all`), not inside the migration that runs during the Migrate phase.
+- Recovering from a *failed* migration is the one time you touch the table directly: `TRUNCATE cache` clears stale mutex locks that block retries (run it via the Console command runner). That's a manual recovery action, not something a migration should ever do to itself.
 
 ### 3. Release
 
@@ -127,4 +143,4 @@ There is no one-click rollback to a prior build in the documented surface. The s
 - **No build caching across deploys** — not documented. `vendor/` and `node_modules` are rebuilt every deploy. If your builds are slow because of dependency installs, the lever is `composer install --prefer-dist` (default) and a slim `package.json`, not a cache layer you can configure.
 - **No skipping phases.** Every deploy runs all three; you can't push a "config only" deploy that skips the Build phase.
 
-Last verified against https://craftcms.com/docs/cloud/deployment, https://craftcms.com/docs/cloud/builds, and `craftcms/cloud-extension-yii2@main` on 2026-05-28.
+Last verified against https://craftcms.com/docs/cloud/deployment, https://craftcms.com/docs/cloud/builds, and `craftcms/cloud-extension-yii2` on 2026-05-28. The internal `craft up` order and the cache-during-Migrate hazard were verified against `craftcms/cms` `5.x` `UpController` and `craftcms/cloud-extension-yii2` `3.x` `AppConfig.php` on 2026-06-18.

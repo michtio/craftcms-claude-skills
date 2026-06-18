@@ -17,6 +17,7 @@
 - Creating project config entries in migrations AND in YAML -- double-apply causes UID collisions or duplicate structures.
 - Not wrapping data transformations in transactions -- partial updates corrupt data if the migration fails halfway through.
 - Using Craft element APIs (`Entry::find()`, `Craft::$app->getElements()->saveElement()`) in migrations -- the schema may not be ready yet, and element types may depend on columns/tables that don't exist until later in the migration sequence.
+- Flushing the whole cache from a migration (`Craft::$app->getCache()->flush()`, `clear-caches/all`) -- invalidate only what changed instead. On atomic-deploy hosts the old release is still serving live traffic against the same cache while the migration runs; a global wipe contends with it, and on Craft Cloud (where the cache falls back to a single MySQL table when Redis isn't provisioned) it can deadlock (MySQL 1205) and fail the deploy. See the `craft-cloud` skill's `deploy-pipeline.md`.
 - Forgetting to handle both MySQL and PostgreSQL syntax differences -- `renameColumn()` is safe, but raw SQL (e.g. `ALTER TABLE ... MODIFY COLUMN`) is MySQL-only.
 
 ## Contents
@@ -292,9 +293,10 @@ Craft::$app->getEntries()->saveSection($section);
 
 Content migrations that create sections, fields, or entry types write to project config. If your project also has YAML files in `config/project/` that define the same structures, you get a conflict. The rule:
 
-- **In dev**: Create structures via the CP, then export as YAML. Migrations are for data transformations only.
+- **In dev**: Create structures via the CP (with `allowAdminChanges` on), then export as YAML. Migrations are for data transformations only.
 - **In CI/automated setups**: If you create structures programmatically, do NOT also ship YAML for those same structures. One source of truth.
-- **`craft up`** applies migrations first, then project config YAML. If both create the same section, the second apply fails or creates duplicates.
+- **On environments where `allowAdminChanges` is off (production, Craft Cloud)**: don't build project-config-managed schema (sections, fields, entry types, field layouts) imperatively in a migration at all. Build it locally with admin changes on, let project config capture it to YAML, and let `project-config/apply` create it deterministically with matching UIDs. Imperative schema in a migration risks UID divergence against the committed YAML and double-applies. Reserve migrations for what project config can't hold — data transformations, and content (Formie forms, entries) seeded in a *content* migration after YAML is applied.
+- **`craft up`** runs plugin/Craft migrations, then applies project config YAML, then content migrations (see [Execution order in `craft up`](#execution-order-in-craft-up)). If a migration and the YAML both create the same section, the apply step fails or creates duplicates.
 
 ## Multi-Site Migrations
 
@@ -349,10 +351,21 @@ When writing to project config inside a migration, always mute events. Without t
 
 ### Execution order in `craft up`
 
-1. Pending migrations run (all tracks)
-2. Project config YAML is applied (diffed against the database)
+`craft up` is not "migrations, then project config" — the content track runs *last*, after project config has been applied. The precise sequence, from `craftcms/cms` `UpController::actionIndex()`:
 
-If your migration creates a section and the YAML also defines that section, the YAML apply step conflicts. Rule of thumb: **let one system own each piece of config**. Migrations own data transformations. YAML owns structural config.
+1. **`migrate/all --no-content`** — Craft + plugin migrations. The content track is deliberately excluded here.
+2. **Save / reset modified project config data** (`saveModifiedConfigData()` + `reset()`).
+3. **`project-config/apply`** — applies pending YAML changes (diffed against the database), if any.
+4. **`migrate/up --track=content`** — content migrations (project root `migrations/`).
+5. **`clear-caches/compiled-templates`**.
+6. **Write YAML files** — conditional, only if automatic YAML writing is enabled and config isn't read-only.
+
+The ordering has a practical consequence:
+
+- **Content migrations (step 4) can rely on YAML-defined schema already existing** — sections, fields, and entry types from `config/project/` have been applied in step 3. This is the right place to seed entries, Formie forms, or other content that depends on the schema.
+- **Plugin and Craft migrations (step 1) cannot** — they run before project config is applied. Don't reference YAML-defined sections/fields from a plugin migration.
+
+If your migration creates a section and the YAML also defines that section, the apply step conflicts. Rule of thumb: **let one system own each piece of config**. Migrations own data transformations. YAML owns structural config.
 
 ## safeDown() and Rollback Patterns
 
@@ -415,7 +428,7 @@ Each plugin has its own migration track, triggered when the plugin's `schemaVers
 | `craft migrate/up` | Yes (content track only) | No | Running only content migrations |
 | `craft migrate/down` | Rolls back last migration (content track) | No | Undoing a content migration in development |
 
-`craft up` is the correct command for deployments. It runs migrations first, then applies project config YAML. Running `craft migrate/all` alone in a deploy script means project config changes from other developers never get applied.
+`craft up` is the correct command for deployments. It runs Craft + plugin migrations, applies project config YAML, then runs content migrations last (see [Execution order in `craft up`](#execution-order-in-craft-up) for the exact sequence). Running `craft migrate/all` alone in a deploy script means project config changes from other developers never get applied.
 
 ## Deployment
 

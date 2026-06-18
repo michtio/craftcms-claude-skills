@@ -20,6 +20,7 @@ Every constraint, recommendation, and pattern for shipping a Craft plugin that w
   - [Pattern for Cloud-first plugins](#pattern-for-cloud-first-plugins)
 - [Logging](#logging)
 - [Queue jobs](#queue-jobs)
+- [Don't do synchronous external I/O in save hooks](#dont-do-synchronous-external-io-in-save-hooks)
 - [CSRF and cookies](#csrf-and-cookies)
   - [Use `csrfInput()`, never raw token output](#use-csrfinput-never-raw-token-output)
   - [Avoid cookies on cacheable site requests](#avoid-cookies-on-cacheable-site-requests)
@@ -36,6 +37,7 @@ Every constraint, recommendation, and pattern for shipping a Craft plugin that w
 - An asset bundle class that hits the database in its constructor or `init()`. Cloud builds run without DB access; the asset publisher needs to instantiate every bundle to publish it to the CDN. The docs: "Bundle classes must be instantiable _even if Craft is not installed, or cannot connect to a database_."
 - Writing logs to a file via `file_put_contents()`, `error_log()`, or a custom Monolog file handler. Lambda's filesystem is ephemeral; the file vanishes before anyone reads it.
 - A queue job that processes a large dataset linearly. The 15-minute cap hits, Lambda kills the process, Craft retries from scratch, same death. Use `BaseBatchedJob` and split into chunks.
+- Making a synchronous external HTTP call inside `EVENT_AFTER_SAVE_ELEMENT` (or any save hook). A blocking, un-timeout-guarded call stalls every save — and during a resave or migration it stalls `cloud/up`, eating into the deploy's CLI cap. Queue it. See [Don't do synchronous external I/O in save hooks](#dont-do-synchronous-external-io-in-save-hooks).
 - A controller that sets a cookie on a cacheable site request. Once the cookie is set, the response carries `Set-Cookie` and bypasses the edge cache for that user. If you really do need a cookie, accept the cache bypass — but check whether you can avoid the cookie via JS-driven personalization instead.
 
 ## Minimum Craft version
@@ -159,6 +161,50 @@ Cloud auto-processes queue jobs (no scheduled runner needed). Constraints:
 - **Don't assume a job will run to completion.** Design for resumption — record progress to the DB so a killed job's retry picks up where it stopped, not from scratch.
 
 For the full queue-job authoring pattern (TTR, retries, progress reporting, batched jobs), see the `craftcms` skill's `queue-jobs.md`.
+
+## Don't do synchronous external I/O in save hooks
+
+A blocking external call in an element save hook is a latent stall everywhere, but on Cloud it's specifically a deploy hazard. This applies equally to the element-level event (`Element::EVENT_AFTER_SAVE`) and the service-level event (`Elements::EVENT_AFTER_SAVE_ELEMENT`) — the example below uses the element event, but the hazard is the same for both. The pattern to avoid:
+
+```php
+// Wrong — synchronous, un-timeout-guarded HTTP on every element save.
+Event::on(
+    Entry::class,
+    Element::EVENT_AFTER_SAVE,
+    function (ModelEvent $event) {
+        // Blocks the request until the remote responds (or hangs).
+        $this->_searchClient->upsert($event->sender);
+    }
+);
+```
+
+Why it bites harder on Cloud:
+
+- **It stalls the request.** Web requests have a 60s cap; a slow or hanging upstream burns it on every save.
+- **It stalls deploys.** A bulk `resave/entries`, or a content migration that saves elements, fires the same hook once per element — each one now waits on the network. Run during `cloud/up`, that serialized latency eats the deploy's CLI cap (≈890s) and can fail the Migrate phase outright.
+- **It can't be retried cleanly.** A save half-succeeds (element written, remote call failed) with no built-in recovery.
+
+Queue the work instead — the save hook should enqueue, not perform, the external call:
+
+```php
+Event::on(
+    Entry::class,
+    Element::EVENT_AFTER_SAVE,
+    function (ModelEvent $event) {
+        // Don't enqueue for drafts/revisions/propagating saves.
+        if ($event->sender->getIsDraft() || $event->sender->getIsRevision() || $event->sender->propagating) {
+            return;
+        }
+
+        Craft::$app->getQueue()->push(new SyncToSearchJob([
+            'elementId' => $event->sender->id,
+            'siteId' => $event->sender->siteId,
+        ]));
+    }
+);
+```
+
+The job runs asynchronously (Cloud auto-processes the queue), carries its own TTR and retry semantics, and keeps both request handling and `cloud/up` off the network's critical path. If the call must be guarded inline for some reason, set an explicit short timeout on the HTTP client and swallow/log failures — never let a save block indefinitely on a third party.
 
 ## CSRF and cookies
 

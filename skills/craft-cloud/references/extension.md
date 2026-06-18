@@ -16,6 +16,8 @@ This reference is verified against `craftcms/cloud-extension-yii2@main` on 2026-
 - [Common Pitfalls](#common-pitfalls)
 - [What the extension provides](#what-the-extension-provides)
   - [Auto-bootstrap behavior](#auto-bootstrap-behavior)
+- [Cache, queue, and session wiring](#cache-queue-and-session-wiring)
+  - [The cache: Redis/Valkey → DbCache fallback](#the-cache-redisvalkey--dbcache-fallback)
 - [Ephemeral filesystem](#ephemeral-filesystem)
   - [How to check](#how-to-check)
   - [Path service for transient writes](#path-service-for-transient-writes)
@@ -44,6 +46,7 @@ The `craft\cloud\Module` class is a `\yii\base\Module` with `BootstrapInterface`
 
 - Registers a Twig extension exposing `cloud.*` template helpers (most notably `cloud.esi(...)`).
 - Registers Craft components: `staticCache` (edge cache invalidation), `urlSigner` (presigned-URL generation for assets).
+- Reconfigures the `cache`, `queue`, and `session` components for the serverless environment (see [Cache, queue, and session wiring](#cache-queue-and-session-wiring) below).
 - Hooks element events to enable Cloud-native image transforms via the `ImageTransformer` and `ImageTransformBehavior` classes.
 - Caps execution: 60 seconds for web requests, 890 seconds (15 minutes minus a 10s buffer) for CLI commands. These match the documented Cloud limits and ensure PHP times out before Lambda kills the process.
 - Auto-wires filesystem types (`AssetsFs`, `BuildsFs`, `CpResourcesFs`, `StorageFs`, `TmpFs`, etc.) so user assets, build artifacts, CP resources, and Craft's storage path all point to the right S3-backed locations.
@@ -52,6 +55,24 @@ The `craft\cloud\Module` class is a `\yii\base\Module` with `BootstrapInterface`
 ### Auto-bootstrap behavior
 
 The module bootstraps differently for web vs console requests — `controllerNamespace` is set to `craft\cloud\controllers` (web) or `craft\cloud\cli\controllers` (console). Local development is detected automatically and the bootstrap is largely a no-op locally; you can leave the extension installed in your dev environment without it hijacking your local DDEV setup.
+
+## Cache, queue, and session wiring
+
+The extension (via `craft\cloud\AppConfig`) reconfigures three core components for the serverless environment. The detail matters because it determines what your code is actually hitting — most importantly, **the data cache is not always Redis**.
+
+| Component | On Cloud | Backing |
+|---|---|---|
+| **`cache`** | `RedisCache` **when Redis/Valkey is provisioned**, otherwise `DbCache` | Redis/Valkey, else a MySQL cache table. Wrapped in a `CascadeCache` with an in-request `ArrayCache` tier. |
+| **`queue`** | `CraftQueue` with an `SqsQueue` proxy (when `useQueue` is on) | AWS SQS — **not** Redis. |
+| **`session`** | `DbSession` when the PHP-session table exists, else Craft's default | MySQL (`setup/php-session-table` creates the table during `cloud/up`). |
+
+### The cache: Redis/Valkey → DbCache fallback
+
+The cache resolver checks `CRAFT_CLOUD_CACHE_SRV` (a DNS SRV record for the Valkey cluster) first, then the deprecated `CRAFT_CLOUD_REDIS_URL`. If either resolves, the primary cache is `RedisCache`. **If neither is present — i.e. Redis/Valkey isn't provisioned for that environment — the primary cache falls back to `craft\cache\DbCache`, backed by a MySQL cache table.** Lambda's ephemeral filesystem rules out `FileCache` entirely, so DB is the only fallback. This is why `cloud/up` runs `setup/db-cache-table` on every deploy — it guarantees the cache table exists before anything tries to use it.
+
+The consequence to keep in mind: on a no-Redis environment, the cache is a **shared MySQL table**, and it becomes a contention surface under concurrency — especially during the Migrate phase of a deploy, when the old and new code versions are both live and both reading/writing it. See `deploy-pipeline.md` → "Never flush the whole cache from a migration" for the failure mode this creates.
+
+> **Common misconception:** "Cache, queue, and session are all on Redis on Cloud." Only the cache uses Redis/Valkey, and only when it's provisioned. The queue is SQS; sessions are DB-backed. Don't assume a Redis-backed mutex or queue exists.
 
 ## Ephemeral filesystem
 
@@ -148,10 +169,20 @@ For the full ESI surface (when to use vs avoid, behavior at the gateway, cookie-
 2. run craft setup/php-session-table   (ensures PHP session table exists)
 3. run craft setup/db-cache-table      (ensures DB cache table exists)
 4. if Craft is installed:
-     run craft up                       (migrations + project config)
+     run craft up                       (see internal order below)
      purge edge static cache
 5. trigger EVENT_AFTER_UP (cancelable)
 ```
+
+Step 4's `craft up` is itself a sequence — and the order matters for what your migrations can rely on. From `craftcms/cms` `UpController::actionIndex()`:
+
+1. `migrate/all --no-content` — Craft + plugin migrations (the content track is deliberately skipped here).
+2. Save/reset modified project config data.
+3. `project-config/apply` — if there are pending YAML changes.
+4. `migrate/up --track=content` — content migrations, which therefore run **after** project config has been applied.
+5. `clear-caches/compiled-templates`.
+
+So content migrations can assume YAML-defined schema (sections, fields, entry types) already exists, but plugin/Craft migrations (step 1) cannot. The full breakdown lives in the `craftcms` skill's `migrations.md` → "Execution order in `craft up`".
 
 You don't run this command yourself in normal operation — it runs server-side during every deploy. The events are useful for plugins that need to hook deploys (e.g. invalidate a custom cache, post a deploy notification to Slack, recompute a derived index).
 
@@ -218,4 +249,4 @@ You don't need to write Cloud-specific code for this — `sendContentAsFile()` w
 - **A log-tailing UI.** Logs are routed to a Cloud-managed target, but the surfacing UI is the Console command runner's output history — there's no live tail view documented. See `limitations.md` (Logs).
 - **A `craft-cloud` standalone CLI binary.** All Cloud-specific commands run through `php craft cloud/*` from inside the Craft application. There's no separate binary in `vendor/bin/` or PATH.
 
-Last verified against `craftcms/cloud-extension-yii2@main` (composer.json, `src/Module.php`, `src/cli/controllers/UpController.php`, `src/fs/`, `src/twig/`) on 2026-05-28.
+Last verified against `craftcms/cloud-extension-yii2` (composer.json, `src/Module.php`, `src/cli/controllers/UpController.php`, `src/fs/`, `src/twig/`) on 2026-05-28. The cache/queue/session wiring section was re-verified against `src/AppConfig.php` on the `3.x` branch (the repo's current default branch) on 2026-06-18; the internal `craft up` order against `craftcms/cms` `5.x` `src/console/controllers/UpController.php` on 2026-06-18.
