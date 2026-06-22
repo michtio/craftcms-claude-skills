@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.5 -- 2026-06-22
+
+Ships a pending expansion of the Formie reference (`craft-site` skill): multi-page forms, the Formie 3 JavaScript event surface, and calculations/scoring/conditional-outcome patterns.
+
+### Changed
+
+- **`skills/craft-site/references/plugins/formie.md`** — new sections: **Multi-Page Forms** (page tabs/progress, `submitMethod: page-reload | ajax`, ajax incomplete-submission behavior for drop-off analysis, page/next-button conditions, no built-in slide transitions); **JavaScript Events (Formie 3)** (the documented event surface — incl. `onAfterFormieSubmit` firing per-page and on final completion via `detail.nextPageId` — plus the source-verified-but-undocumented `onFormiePageToggle` for per-step dataLayer/GA4 tracking, and GTM notes); and **Calculations, Scoring & Conditional Outcomes** (Symfony Expression Language formulas, the Number-formatting requirement, the client-side/tamperable caveat with server-side recompute via `Submission::EVENT_BEFORE_SAVE`, the no-native-conditional-redirect workaround, and the option-value-vs-label notification gotcha). Plus a Common Pitfalls entry: `onFormieSubmitSuccess` does not exist in Formie 3 — use `onAfterFormieSubmit`.
+
 ## 1.6.4 -- 2026-06-22
 
 Field- and cache-correctness pass driven by production debugging sessions on Craft 5 / Craft Cloud, verified against `craftcms/cms` 5.10.5, `nystudio107/craft-seomatic` 5.1.21, and `craftcms/cloud` 3.2.1. Headline items: how Craft 5 actually stores custom field values (`elements_sites.content` JSON keyed by layout-element UID) and why relation fields must be set through the element API rather than the `relations` table; Craft Cloud's two independent cache layers (Craft data cache vs Cloudflare edge) and which command busts each; and a set of drafts/revisions accuracy corrections. Plus content-modeling guidance on the limits of field reuse, an SSR-hydration anti-pattern, integration-test DB-portability guidance, and documentation-hygiene fixes.
