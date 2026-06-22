@@ -16,7 +16,7 @@
 - Running raw SQL without checking column/table existence first -- `addColumn` on an existing column throws, `dropColumn` on a missing one throws.
 - Creating project config entries in migrations AND in YAML -- double-apply causes UID collisions or duplicate structures.
 - Not wrapping data transformations in transactions -- partial updates corrupt data if the migration fails halfway through.
-- Using Craft element APIs (`Entry::find()`, `Craft::$app->getElements()->saveElement()`) in migrations -- the schema may not be ready yet, and element types may depend on columns/tables that don't exist until later in the migration sequence.
+- Using Craft element APIs (`Entry::find()`, `Craft::$app->getElements()->saveElement()`) in *schema-phase* migrations (plugin `Install.php`/update migrations) -- the schema may not be ready yet, and element types may depend on columns/tables that don't exist until later in the migration sequence. (In a **content** migration, which runs after project config is applied, the element API is the *correct* way to set field values -- e.g. relation fields must go through `setFieldValue()` + `saveElement()`, never raw `relations` SQL. See `elements.md` → "Field value storage".)
 - Flushing the whole cache from a migration (`Craft::$app->getCache()->flush()`, `clear-caches/all`) -- invalidate only what changed instead. On atomic-deploy hosts the old release is still serving live traffic against the same cache while the migration runs; a global wipe contends with it, and on Craft Cloud (where the cache falls back to a single MySQL table when Redis isn't provisioned) it can deadlock (MySQL 1205) and fail the deploy. See the `craft-cloud` skill's `deploy-pipeline.md`.
 - Forgetting to handle both MySQL and PostgreSQL syntax differences -- `renameColumn()` is safe, but raw SQL (e.g. `ALTER TABLE ... MODIFY COLUMN`) is MySQL-only.
 
@@ -343,6 +343,7 @@ Always null-check the site -- it may not exist in every environment (e.g., a sta
 | Creating sections, fields, entry types | Project config (via service APIs) | These are config-managed -- direct DB writes get overwritten by `craft up` |
 | Adding custom plugin tables/columns | Direct DB writes (`addColumn`, `createTable`) | Custom tables are not project config managed |
 | Data transformations (UPDATE rows) | Direct DB writes | Data is not config -- project config only tracks structure |
+| Setting relation/custom **field values** | Element API (`setFieldValue` + `saveElement`) in a *content* migration | Field values live in `elements_sites.content` (JSON, keyed by layout-element UID); raw `relations`/`content` SQL does **not** update the rendered value. See the `craftcms` skill's `elements.md` → "Field value storage". |
 | Seeding plugin settings | Project config with `muteEvents` | Settings sync across environments via YAML |
 
 ### The muteEvents pattern

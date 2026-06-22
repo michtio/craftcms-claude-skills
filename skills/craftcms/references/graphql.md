@@ -25,7 +25,7 @@
 ## Table of Contents
 
 - [Scaffold](#scaffold)
-- [Architecture: Interface -> Type -> Generator](#architecture-interface--type--generator)
+- [Architecture: Interface -> Type -> Generator](#architecture-interface---type---generator)
 - [Interface Definition](#interface-definition)
 - [Arguments Class](#arguments-class)
 - [Query Registration](#query-registration)

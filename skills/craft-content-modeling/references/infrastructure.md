@@ -91,7 +91,7 @@ Custom field values are stored in `elements_sites.content` as JSON, keyed by the
 
 This matters when:
 - Debugging content in the database — look up the field layout element UID, not the handle
-- Writing migrations that move field data — reference UIDs
+- Writing migrations that move field data — set values through the **element API** (`setFieldValue()` + `saveElement()`), which resolves the handle to the right instance UID and writes content *and* relations; don't hand-edit the JSON or `relations` table by UID (see the `craftcms` skill's `elements.md` → "Field value storage")
 - Understanding why renaming a field handle doesn't require a migration
 
 ### Relations: Two Storage Layers

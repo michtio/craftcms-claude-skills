@@ -24,7 +24,7 @@ Complete reference for all caching strategies in Craft CMS 5 -- template caching
 ## Contents
 
 - [Caching Decision Guide](#caching-decision-guide)
-- [Template Caching (`{% cache %}`)](#template-caching-cache)
+- [Template Caching (`{% cache %}`)](#template-caching--cache-)
 - [Data Caching (PHP)](#data-caching-php)
 - [Static Caching (Blitz)](#static-caching-blitz)
 - [Edge Caching / CDN](#edge-caching--cdn)

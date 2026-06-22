@@ -418,7 +418,7 @@ block types to components.
 - Use `.collect.first` for single-value Hyper link fields.
 - Keep builder logic to **data extraction only**. No calculations, no theme logic.
 - **Always include a `default` case** with a `devMode` warning for unknown block types.
-- The switch statement is fine in vanilla Twig. The DS module replaces it with block transformers (see `craft-ds-vision.md`).
+- The switch statement is fine in vanilla Twig — keep the dispatch logic here.
 - If a builder exceeds ~25 cases, split into specialized builders per section.
 
 ## Template Directory Structure

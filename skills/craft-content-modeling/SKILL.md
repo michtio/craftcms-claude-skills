@@ -188,6 +188,11 @@ This means a single `heroImage` Assets field can be placed in a Blog Post, a Ser
 
 **The rule: reuse field definitions via instances. Only create a new field when the type or settings differ** (e.g., different allowed volumes, different source restrictions, different character limits). Don't create `blogHeroImage`, `serviceHeroImage`, `projectHeroImage` — create one `heroImage` and instance it.
 
+**But don't reuse just because two fields look alike today.** Apply the single-responsibility test ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)): is there a *reasonable* scenario where one instance would need different settings — a different character limit, translation method, or allowed volumes? If yes, the similarity is incidental, not essential — make them separate fields. Over-reuse has costs that are hard to reverse later:
+
+- **Search can't tell instances apart.** The index records keywords against the field, not the instance, so `summary::daisy` may match a `byline` instance of the same field ([documented](https://craftcms.com/docs/5.x/system/searching.html#multi-instance-fields)). If you rely on distinct field-scoped search, the fields must be separate. (Element-query *filtering* by the overridden handle — `.summary(x).byline(y)` — does work; only the **search index** is instance-blind.)
+- **A few relational/`relatedTo` cases** are community-reported to need the *original* handle — verify per case if reused-field results look wrong.
+
 ### Multi-Instance vs Single-Instance Fields
 
 A field's `isMultiInstance()` method controls whether it can appear **multiple times in the same layout** with different handles. This is determined by `dbType()` — fields that return `null` are single-instance.
@@ -260,6 +265,7 @@ For the full decision table, nested entry type patterns, and the CKEditor chunks
 
 - **Over-using Matrix** — if content needs its own URL, independent querying, or permissions, it should be a separate section with an Entries relation field, not a Matrix block.
 - **Creating new fields without checking the global pool** — before adding any field, run the Reuse-First Workflow above. Enumerate existing fields via `config/project/fields/` and default to reusing via instance. The only justification for a new field is a different type or genuinely incompatible settings.
+- **Over-reusing one field across instances with distinct needs** — the opposite mistake. The search index can't distinguish instances of a reused field (`summary::daisy` may match a `byline` instance — [docs](https://craftcms.com/docs/5.x/system/searching.html#multi-instance-fields)), and a few `relatedTo` cases need the original handle. Reuse only when the instances are genuinely the same field; if one could reasonably need different settings ([single-responsibility](https://en.wikipedia.org/wiki/Single-responsibility_principle)), split it. Reuse-first, not reuse-always.
 - **Vague or reserved field handles** — `image`, `text`, `link` are too generic (and `link` is actually reserved). For every field handle in a content model, follow this check: (1) is the handle in the reserved list? If yes, use a synonym from the table. (2) Is the handle too generic for the global field pool? If yes, add domain context: `featuredImage`, `bodyContent`, `primaryLink`. (3) Don't over-specify — `blogFeaturedImage` creates a new field when you could instance `featuredImage` with a label override.
 - **Not planning multi-site from the start** — propagation method, field translation methods, and site settings must be configured before content exists. Changing propagation later resaves all entries.
 - **Using categories/tags/globals in new projects** — they're deprecated and discouraged in Craft 5 (still creatable in the CP) and will be removed in Craft 6. Use entries instead.

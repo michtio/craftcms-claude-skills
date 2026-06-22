@@ -12,6 +12,7 @@ How Craft CMS 5's search system works for site builders: search syntax, Twig sea
 - Enabling `subLeft` in `defaultSearchTermOptions` — forces `LIKE '%term%'` on every search, destroying performance on large datasets. Use only when absolutely needed for specific queries.
 - Expecting search to find 1-2 character words — MySQL's default `innodb_ft_min_token_size` is 3. Words shorter than this are not indexed. Configure in MySQL, not Craft.
 - Not rebuilding the search index after content modeling changes — new fields marked as searchable need `resave` with `--update-search-index` to populate the index.
+- Relying on field-scoped search (`fieldHandle::term`) against a **reused** field — the index can't tell instances apart, so `summary::daisy` may match a `byline` instance of the same field. See [Reused fields are invisible to instance-scoped search](#reused-fields-are-invisible-to-instance-scoped-search).
 - Passing raw user input to `.search()` without understanding enumeration risk — search syntax allows field-targeted queries (`body:secret`) that may reveal content structure.
 
 ## Contents
@@ -210,6 +211,10 @@ Custom fields are indexed when "Use this field's values as search keywords" is e
 In the field layout designer (CP), click a field's gear icon and enable "Use this field's values as search keywords." This setting is per-field-layout-element, not per-field — the same field can be searchable in one layout and not in another.
 
 After enabling, resave affected elements to populate the index.
+
+### Reused fields are invisible to instance-scoped search
+
+The search index **does not distinguish between instances of a reused field**. If one field definition is instanced under different handles (e.g. `summary` and `byline`), a field-scoped search can't tell them apart: `summary::daisy` may also match entries that mention "daisy" in their `byline`, and vice versa. This is a [documented limitation](https://craftcms.com/docs/5.x/system/searching.html#multi-instance-fields) — the index records keywords against the field, not the instance. **If you rely on distinct field-scoped keywords, give those fields separate definitions** rather than reusing one (see the `craft-content-modeling` skill → Field Instances). Note this is specific to *search*; element-query filtering by the overridden handle (`.summary(x).byline(y)`) works fine.
 
 ## Rebuilding the Search Index
 

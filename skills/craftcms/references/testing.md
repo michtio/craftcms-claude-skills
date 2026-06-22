@@ -33,6 +33,7 @@
 - PHPUnit 12's `<env name="X" value="Y" force="true"/>` doesn't overwrite `$_SERVER` — DDEV exports `CRAFT_DB_SERVER`, `CRAFT_DB_USER`, etc. into `$_SERVER`, and `App::env()` reads `$_SERVER` first. Tests silently connect to the DDEV database instead of the test database. Fix: set `$_SERVER[]`, `$_ENV[]`, and `putenv()` in your bootstrap file before Craft boots.
 - `Class "Craft" not found` in unit tests — `\Craft` and `\Yii` are global classes not covered by PSR-4 autoload. Unit tests that don't boot the full app must `require_once` both in the test bootstrap. See "Loading \Craft and \Yii" below.
 - Solo edition silently caps user creation at 1 — `User::beforeSave()` vetoes saves beyond the admin user without throwing. Test factories that create additional users fail silently. Fix: set `Craft::$app->edition = CmsEdition::Pro` directly in the test (not via project config — that re-fires events and causes side effects).
+- Relying on rows that already exist in the local dev DB — integration tests must self-seed every row they touch (including FK-referenced parents), or they pass locally and fail on CI's fresh `db_test` with an integrity-constraint violation. See "Integration tests must self-seed their data" below.
 - `Install.php` edits silently fail to land in `db_test` after the first install. Custom test bootstraps that short-circuit on "plugin already installed" (the standard speed/setup trade-off) only run `Install.php::safeUp()` once per `db_test` lifetime. Later edits to Install.php — new tables, renamed columns, primary-key rewrites — never re-apply against the existing test DB. Migrations *do* run against `db_test` because their state lives in the `migrations` table, so changes shipped through a numbered migration land correctly. Changes that *only* update `Install.php` (typical for "I'll just edit fresh-install shape since this is a new plugin") don't. See "Schema migrations and db_test drift" below for the durable fix.
 
 ## Two Testing Approaches
@@ -146,6 +147,21 @@ Migrations under `src/migrations/m*.php` do propagate because their applied stat
 **Verification after a schema change:** drop `db_test`, recreate it (or `ddev mysql -e 'DROP DATABASE db_test; CREATE DATABASE db_test;'`), run Pest. The full bootstrap path now exercises `Install.php`. If a test passes against an already-installed `db_test` but fails against a fresh one, the migration is the regression — `Install.php` and the migration have drifted. Either the migration is missing an idempotent `createTable` it should have, or `Install.php` is missing a change that only the migration carries.
 
 **Anti-pattern:** dropping `db_test` on every test run. Slow (each run pays the full Craft + plugin install cost), breaks parallel test workers if you ever add them, and masks the actual problem (drift between Install.php and migrations) by paving over the disagreement on every run.
+
+### Integration tests must self-seed their data (local DB ≠ CI)
+
+A test that depends on rows which merely *happen to exist* in your local dev DB passes locally and fails on CI, where `db_test` starts empty — typically an integrity-constraint violation when an FK points at a parent row that isn't there. **Seed every row a test depends on inside the test, including FK-referenced parents** — don't lean on ambient dev data.
+
+With craft-pest's `RefreshesDatabase` trait, each test runs inside a transaction that's rolled back on teardown (`beginTransaction()` in `setUpRefreshesDatabase()`, `rollBackTransaction()` after — `markhuot/craft-pest-core` `src/test/RefreshesDatabase.php`), so in-test seeding is undone automatically and is safe to repeat.
+
+For a row under a unique constraint that exists in your dev DB but not in CI's fresh one, **delete-then-insert inside the test** stays portable — the delete is a no-op on the empty CI DB and clears the colliding row locally:
+
+```php
+Db::delete(Table::FOO, ['handle' => 'bar']);   // no-op on empty CI db
+Db::insert(Table::FOO, ['handle' => 'bar', /* ... */]);
+```
+
+**Operational rule:** a green local run is **not** authoritative for a plugin whose local DB carries seed data — confirm on CI (or against a freshly recreated `db_test`, per the verification step above).
 
 ## Element Factories
 

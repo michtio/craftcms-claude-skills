@@ -18,6 +18,7 @@ When unsure about an SEOMatic feature, `WebFetch` the relevant docs page.
 ## Common Pitfalls
 
 - Putting SEOMatic Twig variables inside `{% cache %}` tags — SEOMatic dynamically generates meta on each request using its own cache. Wrapping in `{% cache %}` freezes the output after the first render.
+- Mutating a meta tag at runtime (e.g. `seomatic.tag.get('twitter:creator').include(false)` from a `View::EVENT_END_PAGE` handler) and expecting it to stick on prod — SEOMatic caches each container's **rendered tag-data** and only re-reads a tag's `include`/`content` on a cache **miss**. Behind a warm cache it's a silent no-op; it "works" locally only because devMode shortens the cache to 30s. See [Rendered Tag-Data Cache](#rendered-tag-data-cache-runtime-mutation-gotcha).
 - Using `entry` as the variable name in custom element config files — custom element types use their own `refHandle()` (e.g., `job` for a Job element, not `entry`). Check the element class's `refHandle()` method.
 - Setting SEO values in Twig that are already mapped in Content SEO — Content SEO mappings (`{seoField}` → entry fields) take precedence unless you override in Twig with `{% do seomatic.meta.seoTitle("...") %}`.
 - Forgetting that `seomatic-config` files only apply on initial bundle creation — changes after the bundle exists have no effect unless you bump `bundleVersion` in `Bundle.php`.
@@ -133,6 +134,30 @@ Then render manually via the hook or GraphQL.
 {# Extract text from a CKEditor/rich text field #}
 {% set plainText = seomatic.helper.extractTextFromField(entry.body) %}
 ```
+
+## Rendered Tag-Data Cache (Runtime Mutation Gotcha)
+
+SEOMatic caches each container's **rendered tag-data array**, not just its inputs — so flipping a tag off at runtime can be a silent no-op on production.
+
+`MetaTagContainer::includeMetaData()` (`models/MetaTagContainer.php`) wraps the render in `Craft::$app->getCache()->getOrSet(…, Seomatic::$cacheDuration, $dependency)`, and each tag's `->include` flag is evaluated **only inside the miss closure**. On a warm cache the closure never runs, so a tag you disabled at runtime is still emitted.
+
+Cache lifetime (`Seomatic::$cacheDuration`, set in `Seomatic.php`):
+
+- **devMode OFF** — the `metaCacheDuration` setting, which **defaults to `0`; Yii treats duration `0` as "no expiry," so it's cached until explicitly invalidated** (SEOMatic's `config.php` comment: "Null means always cached until explicitly broken"). On Cloud the data cache is Redis, so it **survives deploys**.
+- **devMode ON** — `DEVMODE_CACHE_DURATION` = **30 seconds**.
+
+That gap is the classic "works on my machine, no-op on prod": locally, devMode keeps the cache ~always-miss so a runtime mutation re-renders within 30s; on prod the warm cache persists across requests *and deploys*. Handler ordering is a red herring — a handler prepended to `craft\web\View::EVENT_END_PAGE` (`append: false`) runs before SEOMatic's container include and still no-ops against a warm cache. The cache is the only blocker.
+
+### Two-step fix (e.g. via the Cloud Console command runner)
+
+1. **`clear-caches/seomatic-metabundle-caches`** — its label reads "SEOmatic metadata caches", but it maps to `metaContainers->invalidateCaches()` (`services/MetaContainers.php`), which invalidates the `GLOBAL_METACONTAINER_CACHE_TAG` (`'seomatic_metacontainer'`) tag → the origin re-renders the containers clean. The other SEOMatic options (`-frontendtemplate-`, `-schema-`, `-sitemap-`) don't touch rendered tags, and this one leaves the sitemap cache alone.
+2. **`clear-caches/craft-cloud-caches`** — purges the Cloudflare edge so the re-rendered HTML is actually served. Data-cache clears never reach the edge — see the `craft-cloud` skill's `caching-and-edge.md` ("Two cache layers"). *(Cloud-specific; on other hosts, purge whatever static/CDN layer fronts the origin.)*
+
+### Suppress the tag — don't blank the field
+
+SEOMatic's vendor tag template hard-codes the `@`: `'content' => '@{{ seomatic.meta.twitterCreator }}'` (`seomatic-config/globalmeta/TagContainer.php`). Clearing the Twitter Creator field value therefore still emits a bare `@`. Stop the tag from rendering (`include(false)`, then bust the caches above) — don't just empty the handle.
+
+Verified against `nystudio107/craft-seomatic 5.1.21`.
 
 ## Config File
 

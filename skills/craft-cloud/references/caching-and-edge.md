@@ -12,6 +12,8 @@ Cloud's edge layer (Cloudflare) caches HTML responses based on `cache.rules` in 
 ## Table of contents
 
 - [Common Pitfalls](#common-pitfalls)
+- [Two cache layers: data cache vs edge](#two-cache-layers-data-cache-vs-edge)
+  - [Diagnosing which layer is stale](#diagnosing-which-layer-is-stale)
 - [Static cache rules](#static-cache-rules)
   - [Required keys per rule](#required-keys-per-rule)
   - [`query-string` syntax](#query-string-syntax)
@@ -40,6 +42,37 @@ Cloud's edge layer (Cloudflare) caches HTML responses based on `cache.rules` in 
 - Nesting `cloud.esi(...)` inside another ESI fragment. The docs "strongly discourage using edge-side includes inside one another."
 - Writing manual `{{ csrfInput() }}` in cacheable templates expecting it to be a synchronous input. Cloud force-enables `asyncCsrfInputs`, so `csrfInput()` renders an async JS-fetched input. Building the input yourself by reading `craft\web\Request::getCsrfToken()` leaks tokens across users — the docs warn this explicitly.
 - Using `{{ cloud.esi(...) }}` in a non-HTML response. Only `text/html` and `text/plain` responses are parsed for ESI tags.
+- Assuming `clear-caches/*` clears the edge. It does **not** — every `clear-caches` option except `craft-cloud-caches` only clears Craft's *data* cache. "I cleared caches" can leave stale HTML live at the edge. See [Two cache layers](#two-cache-layers-data-cache-vs-edge).
+
+## Two cache layers: data cache vs edge
+
+Cloud has **two independent caches**, and the command that clears one usually doesn't touch the other. Conflating them is why "I deployed the fix" *or* "I cleared caches" can both still leave stale HTML live.
+
+| Layer | Holds | Survives a deploy? | Busted by |
+|---|---|---|---|
+| **Craft data cache** | Craft's `cache` component — element/template caches, plugin caches (SEOmatic's rendered tags, etc.) | **Yes.** On Cloud this is Redis/Valkey when provisioned (else the DB cache table); Redis is managed separately from the build, so a deploy doesn't flush it. | any `clear-caches/*` option; element-save tag invalidation; `Craft::$app->getCache()` |
+| **Edge HTML cache** | The whole rendered HTML response, cached at the Cloudflare edge per `cache.rules` | Purged on every deploy's **Release** step | the deploy (Release), **or** `clear-caches/craft-cloud-caches` — nothing else |
+
+The asymmetry to internalize: **`clear-caches/<anything>` only clears Craft data caches — it never touches the edge.** The one exception is `clear-caches/craft-cloud-caches`, which the Cloud extension registers (`craft\cloud\StaticCache::handleRegisterCacheOptions()`) with an action of `purgeAll()` → `purgeGateway()` + `purgeCdn()` (`StaticCache.php`), purging the edge HTML cache and the CDN for the environment.
+
+So a *code* fix shipped via a normal deploy is covered (Release purges the edge), but a **data-only change applied through the Console command runner** — a migration, a `resave`, a plugin cache clear — clears only the data cache and leaves the edge serving the old HTML until you also run `clear-caches/craft-cloud-caches`.
+
+### Diagnosing which layer is stale
+
+`cf-cache-status` on the response tells you whether the edge served it (`HIT`) or it reached the origin (`MISS`/`DYNAMIC`). To force an origin render and compare, append a unique query string:
+
+```
+https://example.com/page?cb=12345
+```
+
+A novel query string is a new edge cache key → `MISS` → the request renders at the origin, letting you see fresh HTML independent of the edge. Then:
+
+- `?cb=` shows the fix but the bare URL doesn't → stale value is at the **edge**. Run `clear-caches/craft-cloud-caches`.
+- `?cb=` *also* shows the stale value → it's at the **origin**: a Craft data cache (or a plugin's, e.g. SEOmatic) or the underlying data — not the edge.
+
+> Caveat: `?cb=` only forces a MISS while your `cache.rules` let query strings vary the cache key. If a rule sets `query-string: { mode: exclude, keys: all }` for that path, the param is stripped from the key and won't miss — bust the edge with `clear-caches/craft-cloud-caches` instead.
+
+Verified against `craftcms/cloud` `3.2.1` (`src/StaticCache.php`).
 
 ## Static cache rules
 
@@ -170,7 +203,7 @@ Both ultimately set `Expires`, `Pragma`, and `Cache-Control` headers that tell t
 
 Cloud uses Craft's cache tag system. When you save an entry, asset, or any element, Craft emits the standard invalidation tags; Cloud's edge layer subscribes to those and purges matching cached responses automatically. You don't write invalidation code.
 
-Manual purge: available in the CP Utilities screen ("Cache Utility") — the standard Craft cache utility, which now reaches Cloud's edge layer in addition to Craft's data caches.
+Manual purge: the **Craft Cloud caches** option in the Clear Caches utility (CLI `clear-caches/craft-cloud-caches`) is the only one that reaches the edge — every other option clears data caches only (see [Two cache layers](#two-cache-layers-data-cache-vs-edge)). With no prod CP on Cloud, run it via the Console command runner.
 
 ### Relationship to `{% cache %}`
 

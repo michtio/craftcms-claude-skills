@@ -65,6 +65,8 @@ $success = Craft::$app->getDrafts()->saveElementAsDraft(
 );
 ```
 
+> `saveElementAsDraft()` calls `saveElement($element)` with `runValidation` defaulting to `true` (Drafts.php:269), yet incomplete **required field-layout** content still persists: the element isn't in `SCENARIO_LIVE`, which is the only scenario under which field-layout `required` rules fire (Element.php:3083). Drafts aren't "validation-free" — they validate under a non-LIVE scenario, so attribute rules apply but layout-`required` content does not. See [Applying Drafts](#applying-drafts). Verified against `craftcms/cms` 5.10.5.
+
 ### Authorization
 
 `canCreateDrafts(User $user)` gates who can create drafts. For entries, this returns `true` by default — anyone with view access can create drafts. Custom elements must override this method.
@@ -88,10 +90,22 @@ $canonicalElement = Craft::$app->getDrafts()->applyDraft($draft);
 The apply process:
 1. If `trackChanges()` is `true` and the draft is outdated, `mergeCanonicalChanges()` syncs canonical changes first
 2. Draft content is merged into the canonical element
-3. Validation runs (only if the element would be enabled)
+3. The canonical is updated via `Elements::updateCanonicalElement()` → `Elements::duplicateElement()`, which validates the clone under `Element::SCENARIO_ESSENTIALS` (Elements.php:1927) — **not** `SCENARIO_LIVE`
 4. The draft is deleted
 5. A new revision of the canonical element is created (if `hasRevisions()`)
 6. Returns the updated canonical element
+
+> **Applying a draft does NOT enforce required field-layout content.** The canonical is validated under `SCENARIO_ESSENTIALS`, and the field-layout `required` gate only fires under `SCENARIO_LIVE` (`$scenario === self::SCENARIO_LIVE && $layoutElement->required`, Element.php:3083). To gate promotion on content completeness, validate under `SCENARIO_LIVE` yourself first — don't assume `applyDraft()` rejects an incomplete draft:
+>
+> ```php
+> $draft->setScenario(Element::SCENARIO_LIVE);
+> if (!$draft->validate()) {
+>     // refuse to promote
+> }
+> Craft::$app->getDrafts()->applyDraft($draft);
+> ```
+>
+> Verified against `craftcms/cms` 5.10.5 (`Drafts::applyDraft` → `Elements::updateCanonicalElement` → `duplicateElement`).
 
 ### What happens to other drafts
 
@@ -168,11 +182,13 @@ Craft::$app->getRevisions()->revertToRevision($revision, $creatorId);
 |--------|-------------------|
 | `getIsDraft()` | Element has a `draftId` (is a draft of any type) |
 | `getIsRevision()` | Element has a `revisionId` |
-| `getIsCanonical()` | Not a draft and not a revision (the live version) |
-| `getIsDerivative()` | Is a draft OR a revision |
+| `getIsCanonical()` | `!isset($this->_canonicalId)` — the element isn't a derivative of another. **True for published elements AND unpublished drafts** (an unpublished draft is its own canonical), so this is *not* the opposite of `getIsDraft()`. |
+| `getIsDerivative()` | `!getIsCanonical()` (i.e. `isset($this->_canonicalId)`) — a draft *of* a published element, or a revision. **False for an unpublished draft** (it's its own canonical). |
 | `getIsProvisionalDraft()` | Auto-created provisional draft |
-| `getIsUnpublishedDraft()` | Draft that was never published as canonical |
+| `getIsUnpublishedDraft()` | `getIsDraft() && getIsCanonical()` — a draft never published as canonical; it is a draft *and* canonical simultaneously |
 | `getCanonical()` | Returns the canonical element this derives from |
+
+> Don't use `getIsCanonical()` alone to mean "not a draft" — an unpublished draft returns `true` for both. To detect a non-draft element use `!getIsDraft()`; to detect an unpublished draft specifically use `getIsUnpublishedDraft()`. Verified against `craftcms/cms` 5.10.5 (`Element::getIsCanonical()` line 3254, `getIsUnpublishedDraft()` line 3390).
 
 ### Usage in element code
 
@@ -241,6 +257,21 @@ $revisions = Entry::find()
     ->orderBy('dateCreated DESC')
     ->all();
 ```
+
+### Finding canonicals + unpublished drafts
+
+`ElementQuery::$drafts` defaults to `false` (ElementQuery.php:189), and when `false` the query adds `WHERE elements.draftId IS NULL` (ElementQuery.php:3346) — so **a normal `Entry::find()` excludes all drafts, including unpublished ones**. A draft you created programmatically with `saveElementAsDraft()` won't show up until you opt drafts back in.
+
+To fetch canonical elements **and** their unpublished drafts together:
+
+```php
+$results = Entry::find()
+    ->drafts(null)      // include drafts AND non-drafts
+    ->draftOf(false)    // drop derivative drafts (drafts OF a published element)
+    ->all();
+```
+
+This is the combination Craft documents on `canonicalsOnly()` (5.7.0+): *"Unpublished drafts can be included as well if `drafts(null)` and `draftOf(false)` are also passed"* (`ElementQueryInterface::canonicalsOnly`, line 257). Bare `->drafts(null)` alone over-includes derivative and provisional drafts — add `->draftOf(false)`. Verified against `craftcms/cms` 5.10.5.
 
 ## Plugin Considerations
 

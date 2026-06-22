@@ -7,7 +7,7 @@
 - Architecture: One Element Class with Native Structure — default to Structure for hierarchies, code-only field layouts, native fields for plugin attributes
 - Static Configuration Methods — displayName, hasTitles, hasUris, hasDrafts, etc.
 - Element Save Lifecycle (15 steps) — beforeSave, afterSave, afterPropagate
-- Attributes, Field Values, and Mass Assignment — native vs custom, safe rules, CP save chain, silent drop trap
+- Attributes, Field Values, and Mass Assignment — native vs custom, safe rules, CP save chain, silent drop trap, field value storage (`elements_sites.content` JSON), setting relation fields via the element API
 - Element Query — beforePrepare()
 - Status from Dates
 - Authorization — canView, canSave, canDelete + 5 more
@@ -53,6 +53,7 @@
 - **`PopulateElementEvent::$row` shape change (5.10)** — `$row` no longer carries `fieldValues` / `generatedFieldValues` keys. Those moved to the new `PopulateElementEvent::$content` property. Any plugin reading `$event->row['fieldValues']` from an `EVENT_AFTER_POPULATE_ELEMENT` handler now silently receives the wrong shape. Migrate to `$event->content`.
 - **Entry `postDate` is `null` on creation (5.10)** — previously auto-set to `dateCreated`. Now stays null until the entry is saved as enabled. Sites and queries that filter on `postDate :notempty:` or use `postDate` for sort order will see different behavior for newly-created entries. If you need the legacy "always populated" behavior, set `postDate` explicitly in `beforeSave()`.
 - **Relation-field element queries respect target sites (5.10)** — `$query->relatedTo()` now honors the parent query's `siteId` constraints. Previously a globally-scoped relation query could return elements from any site. Queries that intentionally crossed sites need an explicit `->site('*')` now.
+- **Setting a relation field by writing the `relations` table directly** — has **zero effect** on the rendered value. Craft 5 reads the field value from `elements_sites.content` (JSON, keyed by layout-element UID); `relations` is only a secondary `relatedTo`/eager-load index. The field renders empty and `clear-caches/all` won't fix it. Always `setFieldValue('handle', [$id])` + `saveElement()` (a content migration on Cloud). See "Field value storage — and setting relation fields the right way" above.
 
 ## 5.10 Element Query and Save Utilities
 
@@ -351,6 +352,32 @@ Form POST → normalizeValueFromRequest() → stored on behavior → [lazy] norm
 - **`normalizeValue()`** — transforms stored/raw values into the field's working type. Called lazily on first `getFieldValue()`. Skipped if already normalized from request.
 - **`serializeValueForDb()`** — converts the working value back to a DB-storable format. Called during the element save pipeline for fields with a `dbType()`.
 - **`afterElementSave()`** — persists complex data (relations, nested elements). Called from `Element::afterSave()`.
+
+### Field value storage — and setting relation fields the right way
+
+Craft 5 stores custom field values in `elements_sites.content`, a **JSON column keyed by the field's layout-element UID** — the per-layout *instance* UID, **not** the field handle, field UID, or field ID. The same field in two entry types is stored under two different keys:
+
+```json
+{"5579e14a-…": [68391], "acafd21e-…": [16815]}  // hero & teaser layout-element UIDs → [assetId]
+```
+
+For relation fields (Assets/Entries/Categories/Users), `dbType()` is `JSON` (`BaseRelationField::dbType()`) and `serializeValue()` writes the target **element IDs** into that content key. **The `relations` table (`fieldId, sourceId, sourceSiteId, targetId, sortOrder`) is a *secondary* index** — it powers `relatedTo()` reverse lookups and eager-load JOINs, but it is **not** the source of the field's own value. `BaseRelationField::normalizeValue()` builds `entry.myField` from the content ID array; it only falls back to the `relations` table for a `null` value on the *first* instance of a field (a documented Craft 5.3+ back-compat path).
+
+**Consequence — never set a relation field by writing the `relations` table directly.** An `INSERT`/`UPDATE` on `relations` alone does **not** change what `entry.myField` returns (it renders empty) and desyncs content vs. relations — `relatedTo()` may find the row while the field value stays blank, and `clear-caches/all` won't surface it. Especially tempting on Craft Cloud (no SSH/console), and especially wrong there.
+
+**Correct way — go through the element API** so Craft writes both the content value (per site, per layout-element UID) *and* the relations index, and invalidates caches:
+
+```php
+$entry = Entry::find()->id($id)->status(null)->one();
+$entry->setFieldValue('heroImage', [$assetId]); // handle resolves the instance in THIS entry's layout
+Craft::$app->getElements()->saveElement($entry);
+```
+
+`setFieldValue()` takes the **handle** and resolves it to the correct layout-element instance — you never compute the UID yourself. On Craft Cloud, run this in a **content migration** (the deploy's Migrate step runs it; the Release step purges the edge — see the `craft-cloud` skill). Don't replicate it with raw SQL.
+
+**Multi-site:** when the `relations` rows have `sourceSiteId = NULL` the field is non-translatable — one `saveElement()` on the canonical entry propagates the value (content + relations) to all sites. A per-row `sourceSiteId` means a site-specific value (the field localizes relations).
+
+**Verify:** after the save/migration, `entry.myField` renders on a cache-busted request with no manual `clear-caches` — `saveElement()` plus the deploy's edge purge handle invalidation. Verified against `craftcms/cms` 5.10.5.
 
 ### Native fields in the field layout
 

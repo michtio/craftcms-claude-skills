@@ -17,6 +17,7 @@
 - Inline `<script>` data passing — global variables and inline scripts create implicit dependencies. Use `data-*` attributes.
 - Mixing template engines — never put Twig syntax inside `.vue` files or Vue template syntax inside `.twig` files.
 - Empty mount points — Craft serves server-rendered HTML. Vue mounts after load. Always render a skeleton in the mount element for SEO and perceived performance.
+- Gating SSR-seed rehydration on "no query string / default filters only" — if you server-render a content *seed* for a JS app, a filtered or deep-linked URL then discards it, flashes skeletons, and re-fetches. Always paint the seed first, reconcile in the background. See [SSR-Seed Hydration](#ssr-seed-hydration).
 - Nesting Alpine inside Vue or vice versa — they can coexist on the same page but never nested within each other.
 
 ## Table of Contents
@@ -284,6 +285,16 @@ and brand tokens. They're the client-rendered equivalent of their Twig counterpa
 - **Never** embed Twig variables inside Vue template syntax.
 - **Never** use inline `<script>` blocks to pass data.
 - **Never** let Vue reach outside its mount element to read DOM content.
+
+### SSR-Seed Hydration
+
+When you server-render a *seed* of real content for the app to rehydrate from — to avoid a skeleton flash and the initial API round-trip — the rehydration logic is where it goes wrong:
+
+- **Always paint the seed on the first frame, then reconcile the real state in the background** (stale-while-revalidate). Do **not** gate "use the seed" on "no query string / default filters only" — that makes every filtered or deep-linked URL throw away the server-rendered content, drop back to skeletons, and re-fetch: a visible wipe even on warm-cache loads. Reconcile the filtered state *without* flipping the loading flag back to skeletons.
+- Add a `showLoading`-style parameter so **user-initiated** actions (clicking a filter) still get feedback, while the **initial** background reconcile stays silent.
+- Watch for artificial delays on loading flags — a hard-coded `setTimeout(() => loading = false, 1000)` adds a full second to every fetch.
+
+**Testing gotcha:** if the store persists filter state to `localStorage` and rewrites the URL on load (`history.pushState`), a "bare URL" test gets hijacked by a returning visitor's persisted filters. Test the clean first-load path in an **isolated browser context** (incognito / fresh profile), not your normal session.
 
 ## Coexistence Rules
 
