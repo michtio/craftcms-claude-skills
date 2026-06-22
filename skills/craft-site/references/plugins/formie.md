@@ -19,6 +19,7 @@ When unsure about a Formie feature, `WebFetch` the relevant docs page.
 
 ## Common Pitfalls
 
+- Listening for `onFormieSubmitSuccess` — **that event does not exist in Formie 3**. Use `onAfterFormieSubmit` (fires on the `<form>` after every successful ajax submit, including per-page in multi-page forms; `event.detail.nextPageId` is set on intermediate pages and empty on final completion; the form element is `event.target`, not in `detail`).
 - Forgetting `data-fui-form="{{ form.configJson }}"` on custom `<form>` elements — without it, Formie's JavaScript won't initialise (no validation, no captchas, no AJAX submission).
 - Not calling `craft.formie.registerAssets(form)` when rendering pages/fields individually — `renderForm()` does this automatically, but `renderPage()` and `renderField()` do not.
 - Placing `registerAssets()` after the `<form>` tag — it must be called before the form renders so CSS/JS is injected in the correct location.
@@ -205,6 +206,28 @@ Craft::$app->getView()->hook('formie.form.start', function(array &$context) {
 ```
 
 Available hooks: `formie.form.start`, `formie.form.end`, `formie.page.start`, `formie.page.end`, `formie.field.field-before`, `formie.field.field-after`.
+
+## Multi-Page Forms
+
+- Unlimited pages; settings: `displayPageTabs`, `displayPageProgress` (progress bar, `progressPosition`), `submitMethod: page-reload | ajax`.
+- Ajax mode keeps all pages in the DOM (hidden via `data-fui-page-hidden`, inputs disabled) and saves an **incomplete submission** per page (`isIncomplete`, hidden in CP by default) — useful for drop-off analysis.
+- Page-level conditions (skip logic) and next-button conditions are supported.
+- No built-in slide/animation transitions — Typeform-style UX is custom CSS/JS on top of `onFormiePageToggle` / `data-fui-page-hidden`.
+
+## JavaScript Events (Formie 3)
+
+Documented: `onFormieLoaded`, `onFormieInit` (document, `detail.formId`), `onFormieThemeReady`, `onBeforeFormieSubmit`, `onFormieValidate`/`onAfterFormieValidate` (cancelable, `detail.submitHandler`), `onAfterFormieSubmit` (per-page + final; check `detail.nextPageId`), `onFormieSubmitError`, `onFormieEvaluateConditions`, `beforeEvaluate`/`afterEvaluate` (Calculations field).
+
+Source-verified but **undocumented**: `onFormiePageToggle` — fires on the `<form>` on every page change with `detail.data.nextPageId`, `nextPageIndex`, `totalPages`. Ideal for per-step dataLayer/GA4 tracking; re-verify on upgrades.
+
+GTM: no GTM integration in the integrations list, but each page's submit button has "Enable JavaScript Events" with a static key/value GTM table (pushes e.g. `formPageSubmission` with `formId`/`pageId`/`pageIndex`). Dynamic payloads need manual `dataLayer.push` from the events above. Docs: https://verbb.io/craft-plugins/formie/docs/v3/template-guides/google-tag-manager
+
+## Calculations, Scoring & Conditional Outcomes
+
+- **Calculations field**: Symfony Expression Language formula (not Twig) referencing `{fieldHandle}`. Radio/dropdown resolve to the selected option's *value* (label/value are separate per option, so numeric scoring works). Set **Formatting: Number** — values arrive as strings otherwise. Checkboxes resolve to an *array*; a Number-formatted calc field referencing only the checkbox field sums the array, and calc fields can chain off other calc fields.
+- **Client-side only** — the result is submitted from a read-only input and is tamperable. For trusted scores, recompute server-side via `Submission::EVENT_BEFORE_SAVE` in a module.
+- **No native conditional redirect/success message** (per verbb's own guide). Workaround: redirect URL is rendered as an object template against the submission — use `/result?submission={uid}`, then query `craft.formie.submissions` on the result page and branch there.
+- Notifications render option **values**, not labels (verbb/formie#756) — mind numeric scoring values in user-facing emails.
 
 ## Integrations
 
