@@ -4,7 +4,7 @@ Contributions are welcome. This page covers how to add plugin references, improv
 
 ## Adding a New Plugin Reference
 
-Plugin references live in `skills/craft-site/references/plugins/`. Each file documents one Craft plugin with enough detail for Claude to use it correctly in templates and configuration.
+Plugin references live in `skills/craft-plugins/references/`. Each file documents one Craft plugin with enough detail for Claude to use it correctly across templates, configuration, PHP/migrations, and deployment. Register the new reference in the `craft-plugins` skill's routing table (`skills/craft-plugins/SKILL.md`) and add its trigger name to that skill's `description`.
 
 ### Required sections
 

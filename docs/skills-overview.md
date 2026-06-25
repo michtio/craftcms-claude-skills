@@ -1,6 +1,6 @@
 # Skills Overview
 
-10 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), and managed hosting (Craft Cloud and Servd). Reference files spread across each skill's `references/` directory.
+11 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), and managed hosting (Craft Cloud and Servd). Reference files spread across each skill's `references/` directory.
 
 ## How Skills Load
 
@@ -61,18 +61,36 @@ Content architecture for Craft CMS 5. Covers section types (Single, Channel, Str
 ## craft-site
 
 **Track:** Site Development
-**Reference files:** 41 (approximately 9,235 lines) -- 18 core references + 23 plugin references
+**Reference files:** 18 core references (plugin references moved to the `craft-plugins` skill)
 **SKILL.md:** 186 lines
 
 Front-end Twig development with atomic design patterns. Covers the full site template surface: atoms, molecules, organisms, the props/extends/block pattern, layout chains, view routing, content builders, image presets, Tailwind CSS conventions (named-key collections, brand tokens, utilities prop), JavaScript boundaries (Alpine/DataStar/Vue decision tree), Vite build chain, multi-site patterns (language switchers, hreflang), front-end authentication (login, registration, password reset, profile editing), search, feeds (RSS, Atom, JSON Feed, XML sitemap), headless/hybrid patterns (GraphQL API, preview tokens, Next.js/Nuxt/Astro), and third-party integration (GTM, analytics, CMP).
 
-The plugin reference library covers 23 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls: SEOMatic, Blitz, Formie, ImageOptimize, CKEditor, Sprig, Element API, Retour, Navigation, Hyper, Colour Swatches, Password Policy, Typogrify, Cache Igniter, Knock Knock, Elements Panel, Sherlock, Embedded Assets, Amazon SES, Timeloop, Feed Me, Imager-X, and Vite.
+The plugin reference library now lives in the dedicated `craft-plugins` skill (see below). When a front-end task involves a specific plugin, that skill loads and routes to the right reference.
 
-**When it triggers:** Any prompt involving Craft CMS front-end templates, components, layouts, Vite setup, responsive images, search pages, feeds, authentication flows, or plugin integration (Blitz caching, SEOMatic, Sprig, Formie).
+**When it triggers:** Any prompt involving Craft CMS front-end templates, components, layouts, Vite setup, responsive images, search pages, feeds, authentication flows, or plugin integration (Blitz caching, SEOmatic, Sprig, Formie).
 
 **Companion skills:** `craft-twig-guidelines` (always), `craft-content-modeling` (always), `ddev` (always).
 
 **Boundary:** Does NOT trigger for PHP plugin/module development or content modeling decisions without a template context.
+
+---
+
+## craft-plugins
+
+**Track:** Plugin References
+**Reference files:** 23 plugin references
+**SKILL.md:** routing index
+
+A name-routed index of third-party plugin guidance. Covers 23 Craft plugins with detailed configuration, Twig API, PHP/programmatic API, migrations, deployment, and common pitfalls: SEOmatic, Blitz, Formie, ImageOptimize, CKEditor, Sprig, Element API, Retour, Navigation, Hyper, Colour Swatches, Password Policy, Typogrify, Cache Igniter, Knock Knock, Elements Panel, Sherlock, Embedded Assets, Amazon SES, Timeloop, Feed Me, Imager-X, and Vite.
+
+This skill exists so plugin guidance is discoverable from **any** altitude. The references previously lived under `craft-site`, which meant a back-end task (a Formie form built in a content migration, a Feed Me import job, an Amazon SES transport swap) never surfaced them. The `craft-plugins` description triggers on plugin names in any context — front-end, PHP, migration, or deployment — and routes to the matching reference.
+
+**When it triggers:** Any prompt that names a covered plugin, regardless of whether the work is Twig, PHP, content modeling, or deployment.
+
+**Companion skills:** `craftcms` (for plugin PHP/migration work), `craft-site` (for plugin rendering/styling), `craft-content-modeling` (for fields/volumes/multi-site), `craft-cloud` / `servd` (for deployment and edge caching).
+
+**Boundary:** Does NOT trigger for Craft core APIs with no plugin named (`craftcms`), front-end template architecture in general (`craft-site`), or content modeling in general (`craft-content-modeling`).
 
 ---
 

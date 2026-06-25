@@ -114,7 +114,8 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, settings, navigation), CP components (widgets, utilities, slideouts), CP UI patterns (tri-state, condition builders, asset bundles), console commands (80+ commands), debugging. 30 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 6 reference files. |
-| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files + 23 plugin references. |
+| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files. |
+| `craft-plugins` | Plugin References | Name-routed index of third-party plugin guidance (config, Twig/PHP API, migrations, deployment, pitfalls), discoverable from any task altitude. 23 plugin references. |
 | `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, site sharing, troubleshooting. |
@@ -122,7 +123,7 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, self-hosted → Cloud migration. 12 reference files. |
 | `servd` | Shared | Servd managed hosting: git push-to-deploy + `servd.yaml`, local → staging → production sync, the `servd/craft-asset-storage` plugin (svdcdn CDN, off-server transforms), Servd static caching + Blitz reverse-proxy mode, MariaDB/MySQL over SSH, backups, Dedicated Queue Runner, ephemeral filesystem. 6 reference files. |
 
-10 skills, 105 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+11 skills, 105 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 
@@ -139,14 +140,14 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 
 ### Plugin Reference Library
 
-23 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls:
+23 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls — indexed and name-routed by the `craft-plugins` skill, so they surface from front-end, PHP, migration, and deployment tasks alike:
 
 <details>
 <summary>View all 23 plugin references</summary>
 
 | Plugin | Author | Key Surface |
 |--------|--------|-------------|
-| SEOMatic | nystudio107 | Meta cascade, JSON-LD, sitemaps, GraphQL |
+| SEOmatic | nystudio107 | Meta cascade, JSON-LD, sitemaps, GraphQL |
 | Blitz | putyourlightson | Static caching, Cloudflare, dynamic content, purgers |
 | Formie | verbb | Form rendering, Tailwind theming, submissions, hooks |
 | ImageOptimize | nystudio107 | Responsive images, transforms, loading strategies |
@@ -177,7 +178,7 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | Guide | What it covers |
 |-------|----------------|
 | [Getting Started](docs/getting-started.md) | Installation, project setup, how skills auto-trigger, first steps |
-| [Skills Overview](docs/skills-overview.md) | All 10 skills with triggers, companion skills, reference counts, boundaries |
+| [Skills Overview](docs/skills-overview.md) | All 11 skills with triggers, companion skills, reference counts, boundaries |
 | [Prompt Guide](docs/prompt-guide.md) | 40+ real-world prompts organized by task type |
 | [Agents](docs/agents.md) | 6 agents with tools, gate patterns, composition examples |
 | [Contributing](docs/contributing.md) | Adding plugin references, improving skills, reporting issues |

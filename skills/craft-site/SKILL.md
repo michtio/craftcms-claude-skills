@@ -122,33 +122,9 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 
 ### Plugin References
 
-Detailed configuration, Twig API, and pitfalls for Craft plugins. Located in `references/plugins/`.
+Per-plugin configuration, Twig API, and pitfalls live in the **`craft-plugins`** skill (`skills/craft-plugins/references/<plugin>.md`) — kept there so they're discoverable from back-end, migration, and deployment tasks too, not just front-end ones.
 
-| Reference | Plugin | Key Surface |
-|-----------|--------|-------------|
-| `references/plugins/vite.md` | Vite (nystudio107) | `craft.vite.*` Twig API (`script`, `register`, `entry`, `asset`, `integrity`, `inline`, `includeCriticalCssTags`, `devServerRunning`), `vite.php` config keys. Buildchain/`vite.config.ts` detail in `references/vite-buildchain.md` |
-| `references/plugins/seomatic.md` | SEOMatic (nystudio107) | Meta cascade, Twig get/set API, JSON-LD, custom element SEO bundles, sitemaps, GraphQL |
-| `references/plugins/blitz.md` | Blitz (putyourlightson) | Refresh modes, Twig dynamic content, driver architecture (storage/purger/deployer), Nginx rewrite, Cloudflare integration |
-| `references/plugins/formie.md` | Formie (verbb) | Form rendering (one-line/granular), theme config for Tailwind, submission querying, hooks, integrations |
-| `references/plugins/image-optimize.md` | ImageOptimize (nystudio107) | OptimizedImages field, `imgTag()`/`pictureTag()` builders, loading strategies, transform methods, console commands |
-| `references/plugins/ckeditor.md` | CKEditor (craftcms) | Field settings (toolbar, headings, image mode), nested entries with chunk rendering and value helpers, image mode (img vs entries), link configuration, GraphQL Mode, ES-module custom plugins, HTML Purifier, Redactor migration |
-| `references/plugins/sprig.md` | Sprig (putyourlightson) | Reactive Twig components (htmx), live search, load more, pagination, filtering, form submissions without JS |
-| `references/plugins/colour-swatches.md` | Colour Swatches (craftpulse) | Palette config, multi-colour swatches, Tailwind class mapping, Twig model API |
-| `references/plugins/password-policy.md` | Password Policy (craftpulse) | Validation rules, HIBP check, retention/expiry, console commands, recommended settings |
-| `references/plugins/hyper.md` | Hyper (verbb) | Link types, `getLinkAttributes()`, `getText()`, single/multi-link, element access, button atom integration |
-| `references/plugins/retour.md` | Retour (nystudio107) | Redirect types (exact/regex), 404 tracking, CSV import, auto slug-change redirects, config |
-| `references/plugins/navigation.md` | Navigation (verbb) | Node querying, custom rendering, active states, custom fields on nodes, GraphQL |
-| `references/plugins/typogrify.md` | Typogrify (nystudio107) | `\|typogrify`, `\|widont`, `\|truncateOnWord`, smart quotes, widow prevention |
-| `references/plugins/cache-igniter.md` | Cache Igniter (putyourlightson) | GlobalPing warmer, geographic locations, refresh delay, Blitz companion |
-| `references/plugins/knock-knock.md` | Knock Knock (verbb) | Staging password protection, environment-aware config, URL exclusions |
-| `references/plugins/timeloop.md` | Timeloop (craftpulse) | Repeating date field, `craft.timeloop` variable API, `recurringDates()` function, GraphQL, period frequencies |
-| `references/plugins/element-api.md` | Element API (craftcms) | JSON API via config file, Fractal transformers, endpoint routing, pagination, caching |
-| `references/plugins/elements-panel.md` | Elements Panel (putyourlightson) | Debug toolbar panels for element population counts, duplicate detection, eager-loading opportunities |
-| `references/plugins/sherlock.md` | Sherlock (putyourlightson) | Security scanning, HTTP headers, CMS config checks, scheduled scans, IP restriction, monitoring |
-| `references/plugins/embedded-assets.md` | Embedded Assets (spicyweb) | oEmbed as first-class assets, `craft.embeddedAssets.get()`, iframe customization, GraphQL |
-| `references/plugins/amazon-ses.md` | Amazon SES (putyourlightson) | SES mail transport adapter, AWS credential config, SNS bounce tracking |
-| `references/plugins/feed-me.md` | Feed Me (craftcms) | Data import from XML/JSON/CSV, field mapping, duplicate handling, CLI automation |
-| `references/plugins/imager-x.md` | Imager-X (spacecatninja) | Advanced image transforms, batch generation, named presets, effects, optimizers, external storage |
+When a front-end task involves a specific plugin — Formie form styling, SEOmatic meta, Blitz caching, Imager-X / ImageOptimize transforms, Sprig components, CKEditor, Hyper links, Navigation, Embedded Assets, Vite, Typogrify, Colour Swatches — load the `craft-plugins` skill and open the matching reference.
 
 
 ## Component System Conventions

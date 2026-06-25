@@ -54,7 +54,7 @@ Then reference `$AWS_REGION` etc. in the CP email settings.
 
 This plugin has no Twig API, no console commands, and no config file. It registers a mail transport adapter — that's it. All email sending goes through Craft's standard `Craft::$app->mailer->compose()` API.
 
-For the full AWS SES setup pattern including DKIM, SPF, and DMARC configuration, see `references/third-party-integration.md` in this skill.
+For the full AWS SES setup pattern including DKIM, SPF, and DMARC configuration, see the `craft-site` skill's `references/third-party-integration.md`.
 
 ## Pair With
 
