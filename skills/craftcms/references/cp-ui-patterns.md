@@ -8,6 +8,7 @@ Battle-tested CP patterns from Craft core and first-party plugins, plus conditio
 - Condition Builders — BaseCondition, custom condition rules, rule input HTML, rendering in templates, registration
 - Asset Bundles — CP asset bundle, JS configuration injection, registration
 - CP Markup Patterns — sidebar badges, notice/warning blocks, tip/warning on form fields
+- Element Edit Screen — sidebar panels (`.meta` vs `.meta read-only`), `metaFieldsHtml()` override, top-toolbar split button (`EVENT_DEFINE_SIDEBAR_HTML` / `EVENT_DEFINE_ADDITIONAL_BUTTONS`)
 
 ## CP UI Patterns
 
@@ -272,3 +273,182 @@ Form field macros also accept `tip` (green) and `warning` (orange) parameters, r
     tip: 'Use an environment variable ($MY_API_KEY) for production.'|t('my-plugin'),
 }) }}
 ```
+
+## Element Edit Screen — Sidebar Panels & Toolbar Buttons
+
+Render custom UI into an element's **edit screen sidebar** (`EVENT_DEFINE_SIDEBAR_HTML`) or its **top toolbar** (`EVENT_DEFINE_ADDITIONAL_BUTTONS`). Both fire `craft\events\DefineHtmlEvent`; `$event->html` is the assembled markup (append to it), and `$event->sender` is the element. See `elements.md` (Element Events Reference) for where these sit among the ~40 element events.
+
+The one mistake that makes a sidebar panel "look wrong" is picking the wrong `.meta` treatment. There are two, and they are visually opposite.
+
+### Two `.meta` treatments — pick the right one
+
+`Element::getSidebarHtml(bool $static)` (`src/base/Element.php`) assembles the sidebar in order:
+
+1. The element's own `metaFieldsHtml()`, wrapped by Craft in `<div class="meta">` (plus a visually-hidden `<h2>Metadata</h2>`).
+2. `statusFieldHtml()` — the **Status** panel.
+3. `notesFieldHtml()` — the draft **Notes** field (only when the element has revisions).
+
+…then fires `EVENT_DEFINE_SIDEBAR_HTML` with that assembled string in `$event->html`.
+
+**A. Titled field panel** (Status / Notes / a custom card) — interactive form rows inside a filled card:
+
+```html
+<fieldset>
+  <legend class="h6">Status</legend>
+  <div class="meta">
+    <!-- one or more native .field rows -->
+    <div class="field">
+      <div class="heading"><label for="enabled">Enabled</label></div>
+      <div class="input ltr"><!-- control --></div>
+    </div>
+  </div>
+</fieldset>
+```
+
+In the edit-screen sidebar, a plain `.meta` (i.e. `:not(.read-only)`) renders as a **subtly filled, rounded card** — `.details .meta:not(.read-only){background-color:var(--gray-050)}` plus `border-radius:var(--radius-lg)` (it is `--gray-050`, *not* white). `.field .input` is the value area and carries an orientation class (`ltr`/`rtl`).
+
+**B. Key→value readout** (the bottom ID / Status / Created block) — produced by `Cp::metadataHtml($element->getMetadata())`, which the controller appends below the form:
+
+```html
+<dl class="meta read-only">
+  <div class="data">
+    <dt class="heading">Created at</dt>
+    <dd class="value">…</dd>
+  </div>
+</dl>
+```
+
+`.meta.read-only` is a `<dl>` (rows are `<div class="data">` with `<dt class="heading">` / `<dd class="value">`), rendered **naked and muted** — `background-color:transparent` and `color:var(--fg-subtle)`. It is a *readout*, not a card. Using it for an interactive panel looks broken; using `.field`/`.input` rows for a static readout misses the muted readout styling.
+
+**Rule:**
+
+| You want | Use |
+|----------|-----|
+| Titled, interactive panel | `<fieldset>` + `<legend class="h6">` + plain `<div class="meta">` + `.field`/`.input` rows |
+| Static key→value readout | `Cp::metadataHtml([...])` → `.meta read-only` + `.data`/`.value` |
+
+Prefer the `Cp::*FieldHtml()` helpers (`textFieldHtml`, `dateTimeFieldHtml`, `selectFieldHtml`, `lightswitchFieldHtml`, …) over hand-rolling `.field` markup — they emit the correct `.field` > `.heading`/`label` + `.input` structure, handle status/errors/translation, and stay correct across Craft versions.
+
+### (a) Append a titled panel to another element's sidebar (from a plugin)
+
+Craft only wraps the element's *own* `metaFieldsHtml()` in `.meta` — markup you append to `$event->html` is **not** wrapped. So emit your own `fieldset` + `legend.h6` + `.meta` wrapper, or it renders unstyled:
+
+```php
+use Craft;
+use craft\base\Element;
+use craft\elements\Entry;
+use craft\events\DefineHtmlEvent;
+use craft\helpers\Cp;
+use craft\helpers\Html;
+use yii\base\Event;
+
+Event::on(
+    Entry::class,
+    Element::EVENT_DEFINE_SIDEBAR_HTML,
+    function(DefineHtmlEvent $event) {
+        /** @var Entry $entry */
+        $entry = $event->sender;
+
+        $event->html .= Html::tag('fieldset',
+            Html::tag('legend', Craft::t('my-plugin', 'Review'), ['class' => 'h6']) .
+            Html::tag('div',
+                Cp::lightswitchFieldHtml([
+                    'label' => Craft::t('my-plugin', 'Approved'),
+                    'name' => 'fields[approved]',
+                    'on' => (bool)$entry->getFieldValue('approved'),
+                ]),
+                ['class' => 'meta'],
+            ),
+        );
+    },
+);
+```
+
+For a static readout instead, append `Cp::metadataHtml(['Word count' => $count, ...])` (no wrapper needed — it carries its own `.meta read-only`).
+
+### (b) `metaFieldsHtml()` override on your own element
+
+When you define the element, override `protected function metaFieldsHtml(bool $static): string` and return the field rows concatenated. `getSidebarHtml()` wraps the whole return value in a single `.meta` card, so return field HTML directly — do **not** add your own `.meta`/`fieldset` per field. Append `parent::metaFieldsHtml($static)` last so the base element's meta fields (and the `EVENT_DEFINE_META_FIELDS_HTML` event) still fire:
+
+```php
+protected function metaFieldsHtml(bool $static): string
+{
+    return implode("\n", [
+        Cp::dateTimeFieldHtml([
+            'status' => $this->getAttributeStatus('dueDate'),
+            'label' => Craft::t('my-plugin', 'Due Date'),
+            'id' => 'dueDate',
+            'name' => 'dueDate',
+            'value' => $this->dueDate,
+            'errors' => $this->getErrors('dueDate'),
+            'disabled' => $static,
+        ]),
+        parent::metaFieldsHtml($static),
+    ]);
+}
+```
+
+### (c) Top-toolbar split button via `EVENT_DEFINE_ADDITIONAL_BUTTONS`
+
+`Element::getAdditionalButtons()` fires `EVENT_DEFINE_ADDITIONAL_BUTTONS`; the controller (`_additionalButtons()` in `src/controllers/ElementsController.php`) appends the result to the toolbar **after** the native Preview / Create a draft / Apply draft buttons.
+
+The native Save split button (`_layouts/cp.twig` + `_layouts/components/form-action-menu.twig`) is the markup to match: a `.btngroup` holding a primary `.btn`, a disclosure-trigger `.btn.menubtn`, and the menu:
+
+```twig
+{# my-plugin/_components/toolbar-button.twig #}
+<div class="btngroup">
+  <a class="btn" href="{{ exportUrl }}">{{ 'Export'|t('my-plugin') }}</a>
+  <button
+    type="button"
+    class="btn menubtn"
+    aria-label="{{ 'More export options'|t('my-plugin') }}"
+    aria-controls="export-menu-{{ elementId }}"
+    data-disclosure-trigger
+  ></button>
+  <div id="export-menu-{{ elementId }}" class="menu menu--disclosure" data-align="right">
+    <ul>
+      <li>
+        <button type="button" class="menu-item" data-action="my-plugin/export/csv">
+          <span class="menu-item-label inline-flex flex-col items-start gap-2xs">{{ 'Export as CSV'|t('my-plugin') }}</span>
+        </button>
+      </li>
+      <li>
+        <button type="button" class="menu-item" data-action="my-plugin/export/json">
+          <span class="menu-item-label inline-flex flex-col items-start gap-2xs">{{ 'Export as JSON'|t('my-plugin') }}</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+</div>
+```
+
+Register it (use a unique menu `id` per element so multiple instances don't collide):
+
+```php
+use craft\web\View;
+
+Event::on(
+    Entry::class,
+    Element::EVENT_DEFINE_ADDITIONAL_BUTTONS,
+    function(DefineHtmlEvent $event) {
+        $entry = $event->sender;
+        $event->html .= Craft::$app->getView()->renderTemplate(
+            'my-plugin/_components/toolbar-button',
+            [
+                'elementId' => $entry->id,
+                'exportUrl' => "my-plugin/export?elementId=$entry->id",
+            ],
+            View::TEMPLATE_MODE_CP,
+        );
+    },
+);
+```
+
+Markup details that matter:
+
+- **Menu items must be `<li>` inside `<ul>`.** A bare `.menu-item` outside a list misses the menu's layout.
+- **The `.menu-item-label` span is required.** `_includes/disclosuremenu.twig` wraps every item label in `<span class="menu-item-label inline-flex flex-col items-start gap-2xs">` — the item's padding/layout CSS targets that span. Bare text directly in `.menu-item` renders cramped.
+- **`data-align="right"`** aligns the menu's end edge to the trigger so it opens toward the start edge — matches the native Save menu.
+- **No JS needed.** `Craft.initUiElements` runs `$('[data-disclosure-trigger]').disclosureMenu()`, so Garnish wires up any element carrying `data-disclosure-trigger` automatically (the `.menubtn` class is initialized separately only when it lacks that attribute).
+
+Or skip the hand-rolled menu: `Cp::disclosureMenu($items, ['withButton' => true, 'hiddenLabel' => '…'])` emits the correct `<ul><li>` items and registers the JS. Wrap a primary `Html::a('…', ['class' => 'btn'])` and that call together in `Html::tag('div', …, ['class' => 'btngroup'])` for the split-button shape.

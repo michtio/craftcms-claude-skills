@@ -10,7 +10,8 @@
 
 - Using `Garnish.$bod` before `<body>` exists — Garnish caches `$(document.body)` at import time; if loaded in `<head>` before body, it's empty.
 - Binding `resize` event on `window` instead of using `Garnish.$win.on('resize')` — the custom `resize` event only works on non-window elements (it uses ResizeObserver).
-- Calling `Garnish.trapFocusWithin()` without later calling `releaseFocusWithin()` — focus stays trapped even after the modal/overlay is gone.
+- Calling `Garnish.trapFocusWithin()` without later calling `releaseFocusWithin()` — focus stays trapped even after the modal/overlay is gone (it is never auto-released; `trapFocusWithin` only binds `keydown.focus-trap` and only intercepts Tab — not programmatic focus or `focusin`).
+- Setting `aria-hidden="true"` (or `Garnish.ariaHide()`) on a custom overlay while it still contains the focused element — browsers block it ("Blocked aria-hidden ... descendant retained focus"). Move focus to the trigger BEFORE hiding (see [ARIA & Focus Management](#aria--focus-management)).
 - Using `ev.keyCode` with magic numbers instead of `Garnish.RETURN_KEY` etc. — reduces readability and risks cross-browser issues.
 - Calling `Garnish.scrollContainerToElement()` on a hidden element — offset calculations return 0.
 
@@ -191,7 +192,12 @@ Garnish.releaseFocusWithin($container);
 Garnish.setFocusWithin($container);
 ```
 
-`setFocusWithin` is smart: it skips `.checkbox` and `.prevent-autofocus` elements, and checks that the first focusable element belongs to the first visible `.field` container (avoids jumping to a CKEditor or other complex field unexpectedly).
+**What `trapFocusWithin` actually does** (and doesn't):
+- Binds **only** `keydown.focus-trap` on the container (after calling `releaseFocusWithin` first to avoid double-binding). On `TAB_KEY` it finds `:focusable` descendants and wraps: Shift+Tab on the first jumps to the last, Tab on the last jumps to the first. If there are no focusable elements, it does nothing.
+- It does **not** redirect programmatic `.focus()` calls, and it does **not** listen for `focusin` — so focus can still escape if code (or the browser) moves it outside the container by means other than Tab. It only intercepts the Tab key.
+- It is **not** auto-released. `releaseFocusWithin($el)` just runs `$el.off('.focus-trap')` — you must call it yourself on close/destroy, or the keydown handler keeps firing on a hidden container. (Garnish's `Modal` gets away without an explicit release only because `destroy()` removes the container element entirely, which takes its handlers with it.)
+
+`setFocusWithin($container)` focuses the first `:focusable:not(.checkbox):not(.prevent-autofocus)` — so honor `.prevent-autofocus` on anything that shouldn't grab initial focus. It's a no-op if focus is already inside the container, it checks that the first focusable belongs to the first visible `.field` (avoids jumping to a CKEditor or other complex field unexpectedly), and as a last resort it sets `tabindex="-1"` on the container and focuses that.
 
 ### Focus Queries
 
@@ -234,6 +240,28 @@ Garnish.hasJsAriaClass(element);
 The ARIA hiding system preserves the original `aria-hidden` state using CSS class markers, so it can be restored correctly even for elements that had `aria-hidden="false"` or `aria-hidden="true"` before the modal opened.
 
 `hideModalBackgroundLayers()` walks body children and applies `aria-hidden` to each *except* the topmost modal layer and `#notifications` (the toast container, which must stay announceable above modals). This is one reason `#notifications` is a reserved CP DOM ID — a body-level plugin element with `id="notifications"` is also skipped by the mask, so it stays announceable when a modal opens and breaks the modal's screen-reader isolation. See `craftcms` skill `references/cp.md` (Reserved DOM IDs) for the full reserved-ID list.
+
+### Closing an overlay: move focus OUT before hiding
+
+When you build a custom modal/slideout/menu and hide it by setting `aria-hidden="true"` (e.g. via `Garnish.ariaHide()`) on the overlay or an ancestor, the order matters. Browsers **refuse** to apply `aria-hidden` to an element that still contains the focused element, logging:
+
+> Blocked aria-hidden on an element because its descendant retained focus. The focus must not be hidden from assistive technology users.
+
+So on close, **move focus out first, then hide** — not after a close transition:
+
+```javascript
+close: function () {
+  // 1. Move focus back to the trigger BEFORE hiding
+  this.$triggerElement.focus();
+  // 2. Now it's safe to hide from AT
+  Garnish.ariaHide(this.$overlay); // or this.$overlay.attr('aria-hidden', 'true')
+  Garnish.releaseFocusWithin(this.$overlay); // drop the Tab trap (see Focus Trapping)
+},
+```
+
+`Garnish.Modal` is a useful model for the focus half of this: on close it always returns focus to a resolved, *visible* trigger — it focuses `triggerElement`, and if that trigger is itself hidden (e.g. it lives inside a closed DisclosureMenu) it falls back to the menu's `[aria-controls]` button. Apply the same discipline in custom UI: never restore focus to an element that's about to be (or already) hidden. (Modal itself aria-hides the *background* layers rather than its own container, so it relies on focus restoration plus `display`/fade rather than aria-hiding the focused subtree — but the move-focus-to-a-visible-target rule is identical.)
+
+The browser-recommended alternative is the **`inert`** attribute (`element.inert = true`): it both removes the subtree from the tab order / a11y tree *and* blocks focus, so there's no "retained focus" conflict to sequence around. Garnish itself uses `aria-hidden` (not `inert`), so if you adopt `inert` in custom UI, manage it yourself.
 
 ---
 

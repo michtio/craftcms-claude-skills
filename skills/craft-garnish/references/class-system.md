@@ -12,6 +12,7 @@
 - Forgetting that `init()` is called automatically by the constructor — don't call `init()` manually from `extend()`.
 - Overriding `constructor` — override `init()` instead; constructor is internal to the class system.
 - Not calling `this.base()` in overridden lifecycle methods (especially `destroy`) — skips parent cleanup.
+- Calling `this.disable()` to "pause" an overlay on a class that *also* owns its trigger listener — `disable()` silences every one of the instance's `addListener` handlers, so the trigger fires once and then dies. Use state flags or a separate instance (see [Enable / Disable](#enable--disable)).
 
 ## Table of Contents
 
@@ -231,7 +232,71 @@ widget.disable(); // All addListener handlers stop firing
 widget.enable();  // Handlers resume
 ```
 
-This is used by Modal (disabled while hiding), HUD, and other widgets during transitions.
+`disable()` / `enable()` flip a single `this._disabled` flag. Every handler bound via `addListener` is wrapped so it checks that flag before running:
+
+```javascript
+// Garnish.Base.addListener (paraphrased from src/Base.js)
+$elem.on(events, data, $.proxy(function () {
+  if (!this._disabled) {
+    return func.apply(this, arguments);
+  }
+}, this));
+```
+
+So `disable()` silences **every** `addListener` handler on that instance at once — there is no per-listener granularity. It is used by Modal (`disable()` on hide, `enable()` on show), HUD, and other widgets during transitions.
+
+### Pitfall: `disable()` kills your own trigger listeners
+
+This bites when **one** `Garnish.Base` subclass owns *both* a persistent trigger (a launcher button/menu bound with `addListener`) *and* a transient overlay it opens. Calling `this.disable()` to "pause" the overlay on close also silences the trigger handler — so the launcher works **once**, then goes dead:
+
+```javascript
+// BROKEN — one instance owns trigger + overlay
+Craft.Launcher = Garnish.Base.extend({
+  init: function () {
+    this.addListener(this.$button, 'activate', 'open'); // persistent trigger
+  },
+  open: function () {
+    this.enable();
+    this.$overlay.addClass('visible');
+    this.addListener(this.$overlay, 'keydown', 'handleKeydown');
+  },
+  close: function () {
+    this.$overlay.removeClass('visible');
+    this.disable(); // ❌ also silences the 'activate' trigger — button now dead
+  },
+});
+```
+
+Two correct options:
+
+```javascript
+// FIX 1 — guard re-entry with state flags, never disable() the instance
+close: function () {
+  if (!this.isOpen) return;
+  this.isOpen = false;
+  this.$overlay.removeClass('visible');
+  this.removeListener(this.$overlay, 'keydown'); // drop only the overlay's listeners
+},
+open: function () {
+  if (this.isOpen) return; // guard instead of relying on enable/disable
+  this.isOpen = true;
+  this.$overlay.addClass('visible');
+  this.addListener(this.$overlay, 'keydown', 'handleKeydown');
+},
+```
+
+```javascript
+// FIX 2 — separate instances: the overlay gets its own Garnish.Base,
+// so disabling it never touches the launcher's trigger listener
+Craft.Launcher = Garnish.Base.extend({
+  init: function () {
+    this.addListener(this.$button, 'activate', () => this.overlay.show());
+  },
+});
+Craft.Overlay = Garnish.Base.extend({ /* owns only the overlay; safe to disable() */ });
+```
+
+This is exactly why Garnish's own `Modal` can safely `disable()` on hide: its trigger lives on a **separate** element (`settings.triggerElement`), not bound on the Modal instance — so disabling the Modal never deafens whatever opens it.
 
 ## Destroy Lifecycle
 

@@ -1074,6 +1074,8 @@ Element.php fires ~40 events. Key categories:
 **Customization**:
 `EVENT_DEFINE_SIDEBAR_HTML`, `EVENT_DEFINE_METADATA`, `EVENT_DEFINE_ADDITIONAL_BUTTONS`, `EVENT_DEFINE_ATTRIBUTE_HTML`, `EVENT_DEFINE_EAGER_LOADING_MAP`, `EVENT_SET_ROUTE`, `EVENT_DEFINE_KEYWORDS`, `EVENT_DEFINE_CACHE_TAGS`, `EVENT_DEFINE_URL`
 
+`EVENT_DEFINE_SIDEBAR_HTML` and `EVENT_DEFINE_ADDITIONAL_BUTTONS` both pass `DefineHtmlEvent` — append to `$event->html` (`$event->sender` is the element). For `EVENT_DEFINE_SIDEBAR_HTML`, `getSidebarHtml()` hands you the *already-assembled* sidebar (the element's `metaFieldsHtml()` wrapped in `.meta`, then the Status and Notes panels); markup you append is **not** auto-wrapped, so emit your own `<fieldset><legend class="h6">…</legend><div class="meta">…</div></fieldset>`. For `EVENT_DEFINE_ADDITIONAL_BUTTONS`, the controller appends your HTML to the toolbar after the native Preview / Create a draft buttons. For the sidebar `.meta` vs `.meta read-only` markup rules, the `metaFieldsHtml()` override pattern, and the toolbar split-button template, see `cp-ui-patterns.md` (Element Edit Screen — Sidebar Panels & Toolbar Buttons).
+
 **Structures**: `EVENT_BEFORE_MOVE_IN_STRUCTURE`, `EVENT_AFTER_MOVE_IN_STRUCTURE`
 
 For the full list and event class signatures, `WebFetch` https://craftcms.com/docs/5.x/extend/events.html

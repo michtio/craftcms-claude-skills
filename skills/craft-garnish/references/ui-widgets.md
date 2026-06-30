@@ -118,6 +118,15 @@ modal.show();
 - Restores focus to `triggerElement` on close (with visibility check)
 - Live region (`role="status"`) appended to container for announcements
 
+### Building a custom overlay/slideout on Garnish.Base
+
+When you roll your own overlay instead of using `Modal`/`HUD`/`Slideout`, replicate the full lifecycle — the failure modes are easy to hit:
+
+1. **Don't disable the instance to "pause" it.** If the same `Garnish.Base` instance owns both the trigger and the overlay, `this.disable()` silences the trigger too (it works once, then dies). Guard re-entry with state flags or split the overlay into its own instance. See `class-system.md` (Enable / Disable section).
+2. **On open:** `Garnish.setFocusWithin($overlay)` (honors `.prevent-autofocus`), then `Garnish.trapFocusWithin($overlay)` for the Tab cycle.
+3. **On close:** move focus back to the trigger **before** setting `aria-hidden`/`inert`, then `Garnish.releaseFocusWithin($overlay)` (the trap is never auto-released). See `utilities.md` (ARIA & Focus Management section).
+4. **On destroy:** call `this.base()` so `addListener` handlers are removed.
+
 ---
 
 ## HUD (Heads-Up Display)
@@ -301,6 +310,12 @@ menu.addItem({
 - Escape: Close menu, return focus to trigger
 - Type-ahead: Typing characters focuses the first matching item (auto-clears after 1s)
 - Search input (when enabled): Filters items by text match
+
+### Accessibility & focus
+
+DisclosureMenu signals open/closed state with `aria-expanded` on the **trigger** (`'true'`/`'false'`) and shows/hides the menu by toggling the `.visible` class plus `display` — it does **not** set `aria-hidden` on the menu container. `hide()` checks `focusIsInMenu()` and, if focus is inside, returns it to `this.$trigger` first, so a closing menu never strands focus on a soon-to-be-`display:none` item.
+
+When you drive a menu imperatively (or build your own), keep that invariant: **return focus to a stable, visible trigger when the menu closes**, and move focus off a menu item *before* acting on it — never leave or restore focus on an item that's about to be hidden. (The same focus-before-hide rule for `aria-hidden`/`inert` overlays is in `utilities.md`.)
 
 ### Search Input
 
