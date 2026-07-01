@@ -38,6 +38,7 @@ When unsure about a convention, `WebFetch` the coding guidelines page for the au
 - Using magic property access (`$plugin->settings`, `$app->view`) instead of explicit getters (`$plugin->getSettings()`, `$app->getView()`) — PHPStan can't resolve `__get()` calls, so magic access passes at runtime but fails static analysis. Always use explicit getters for Yii2 components and Craft plugin properties.
 - Calling Craft-specific methods directly on `Craft::$app` (`Craft::$app->getConfig()`) — PHPStan can't resolve them because the static type is Yii's base union. Narrow with a typed local: `/** @var \craft\web\Application $app */ $app = Craft::$app;`. Don't use `@phpstan-ignore-line`.
 - Duplicating contract constants as `private const` across multiple classes with "keep in lockstep" comments — PHPStan can't detect drift. Declare `public const` on the owning service, reference as `OwnerService::CONSTANT_NAME` everywhere else.
+- Registering `EVENT_REGISTER_ELEMENT_TYPES` / `EVENT_REGISTER_FIELD_TYPES` inside a `getIsCpRequest()` (or other request-context) branch in `init()` — component-type registration must run in **every** context (CP, console, site) or the type disappears from `getAllElementTypes()` in console/queue requests, and `Gc::hardDeleteElements()` silently stops purging its trashed rows. Register unconditionally; only CP-*rendering*/routing (URL rules, asset bundles, nav) may be gated. See the `craftcms` skill's `events.md` → "Registration scope".
 
 ## Reference Files
 

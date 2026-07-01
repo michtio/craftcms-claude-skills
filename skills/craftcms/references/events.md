@@ -10,7 +10,7 @@
 - Other Registerable Component Types — Utilities, Filesystems, Image Transformers, Auth Methods, Mail Transports
 - Behaviors
 - Twig Extensions
-- Registration Pattern — full plugin init example
+- Registration Pattern — full plugin init example; registration scope (never gate element/field type registration by request context)
 - Custom Events in Your Plugin
 - Discovering Events
 
@@ -28,6 +28,7 @@
 - Using string event names instead of class constants — no IDE autocomplete, no deprecation warnings when Craft renames events, and typos fail silently.
 - Confusing `CancelableEvent->isValid` with model validation — `isValid = false` tells the sender to halt the operation (e.g., cancel a save), it doesn't add validation errors.
 - Listening for element events on `Element::class` when you only want entries — your handler fires for every element type (assets, users, categories). Use `Entry::class` to scope.
+- Gating `EVENT_REGISTER_ELEMENT_TYPES` (or `EVENT_REGISTER_FIELD_TYPES`) behind `getIsCpRequest()` — the type then vanishes from `getAllElementTypes()` in console/queue contexts, so `Gc::hardDeleteElements()` never purges its trashed rows (they pile up silently) and `resave/*` skips it. Register component types unconditionally in `init()`. See "Registration scope" under Registration Pattern.
 
 ## Event Anatomy
 
@@ -462,6 +463,47 @@ public function init(): void
     );
 }
 ```
+
+### Registration scope — never gate element/field type registration by request context
+
+`EVENT_REGISTER_ELEMENT_TYPES` (and `EVENT_REGISTER_FIELD_TYPES`, when the field is used outside the CP) must run in **every** request context — CP, console, *and* site. Register them **unconditionally in `init()`**. Never wrap them in a `getIsCpRequest()` / `getIsConsoleRequest()` / `getIsSiteRequest()` gate:
+
+```php
+// WRONG — types exist only for CP requests
+public function init(): void
+{
+    parent::init();
+
+    if (Craft::$app->getRequest()->getIsCpRequest()) {
+        Event::on(Elements::class, Elements::EVENT_REGISTER_ELEMENT_TYPES,
+            fn(RegisterComponentTypesEvent $e) => $e->types[] = MyElement::class);
+    }
+}
+```
+
+**Why it matters.** `Elements::getAllElementTypes()` returns Craft's 7 native types plus whatever the `EVENT_REGISTER_ELEMENT_TYPES` handlers add *in the current request* — so a context-gated registration makes your type invisible to that list everywhere else. Consumers that iterate `getAllElementTypes()` then silently skip the missing type (no error, no warning):
+
+- **`Gc::hardDeleteElements()`** — the headline symptom. Garbage collection hard-deletes trashed rows with `Db::delete(Table::ELEMENTS, ['and', <trashed condition>, ['type' => $normalElementTypes]])`, where `$normalElementTypes` comes from `getAllElementTypes()`. `php craft gc/run --delete-all-trashed` is a **console** request; if the type was CP-gated it isn't in the list, its trashed rows never match the `type` filter, and they accumulate in the `elements` table indefinitely (verified against `craftcms/cms` 5.x `Gc::hardDeleteElements()` / `Elements::getAllElementTypes()`). A real plugin leaked 5,170 orphaned trashed rows this way.
+- **`resave/*` and other console element commands** — operate over the registered element types; a missing type is simply never resaved.
+- **Element-index / search-index maintenance run from queue jobs** — the queue runs in a **console** context, so a CP-only registration is absent there too.
+
+**What legitimately *stays* gated behind `getIsCpRequest()`** (contrast — these are request-scoped by design, and gating them is correct):
+
+- CP URL rules (`EVENT_REGISTER_CP_URL_RULES`), CP asset bundles (see "Conditional asset bundle registration" above)
+- CP nav / sidebar panels and CP template hooks
+- CP-only user field layouts
+
+The line is: **anything that defines what an element/field *is*** must be registered in all contexts; **anything that renders or routes the CP** may be CP-scoped.
+
+**Detection tip.** In a console shell (`php craft shell`, or the `yii2-shell`), assert:
+
+```php
+in_array(MyElement::class, Craft::$app->getElements()->getAllElementTypes(), true); // expect true
+```
+
+If that returns `false` in console but `true` in the CP, the registration is context-gated — fix it.
+
+**A plugin's own GC hooks do not compensate.** A custom "delete expired elements" routine on `Gc::EVENT_RUN` that queries by element status won't help: soft-deleted (trashed) rows are excluded from element queries by default (`trashed(false)`), so your query never sees them. Only `Gc::hardDeleteElements()` purges trashed rows, and it depends on the type being in `getAllElementTypes()`.
 
 ## Custom Events in Your Plugin
 
