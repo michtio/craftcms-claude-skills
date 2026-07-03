@@ -328,14 +328,63 @@ public function safeDown(): bool
 >
 > The field/page/row config keys beyond `type`/`label`/`handle`/`required` are derived from source, not from an official "create a form in a migration" doc example (none exists). Check per-field-class settings before relying on a specific key.
 
+### Editing a field on an existing form (migration)
+
+To change a field's settings on a form that already exists (e.g. enable length limits), fetch the form, mutate the field **in place**, and re-save the form through the elements service:
+
+```php
+$form = Formie::$plugin->getForms()->getFormByHandle('contact');
+
+if ($form && ($field = $form->getFieldByHandle('message'))) {
+    $field->limit = true;
+    $field->min = 20;
+    $field->minType = 'characters';
+
+    Craft::$app->getElements()->saveElement($form);
+}
+```
+
+Why this works (verified against the `craft-5` source): `Form::getFormLayout()` is memoized (`$_formLayout`), and `getFieldByHandle()` returns the **live instance** from that layout — so mutating it is captured. `Form::beforeSave()` calls `Formie::$plugin->getFields()->saveLayout($this->getFormLayout())`, which persists the layout (including your mutated field) as part of `saveElement($form)`. Persist through the **elements service** — the Forms service has lookups only (`getFormByHandle`/`getFormById`/`getFormByUid`/`getAllForms`); there is **no `Forms::saveForm()`**.
+
 ### Multi-site & translations
 
 `Form::isLocalized()` returns `false` — **a form is a single, non-localized element** shared across all sites. There are no per-site form content rows; you translate the *strings*, not the form.
 
 - **Static translation under the `formie` category.** All custom form strings — field labels, instructions, option labels, the Agree-field description, the submit button, error messages — render through `Craft::t('formie', '…')`. Provide `translations/<locale>/formie.php` mapping the source string to its translation.
 - **This is the `formie` category, not `site`.** Formie consolidated the old `app`/`site`/`formie` mix into the single `formie` category in v2+. A common mistake is putting form-string translations in `site.php` — they won't resolve.
-- **Front-end JS strings** are translated via `Rendering::EVENT_MODIFY_FRONTEND_JS_TRANSLATIONS` (`ModifyFrontendJsTranslationsEvent`).
+- **A project `translations/<locale>/formie.php` overrides Formie's *bundled* `formie` strings, not just your own.** Craft registers a plugin's translation category with `allowOverrides => true`, and `PhpMessageSource::loadMessages()` does `array_merge(pluginMessages, projectOverrides)` (project wins) from `@translations`. So the same file that translates your custom strings also rewrites Formie's built-in messages (validation errors, buttons) for that locale — no plugin fork needed. This is the general Craft override mechanism; it works for any plugin category (see the `craftcms` skill's `architecture.md` and the `craft-site` skill's Static Translations).
+- **Front-end JS strings** are translated via `Rendering::EVENT_MODIFY_FRONTEND_JS_TRANSLATIONS` (`ModifyFrontendJsTranslationsEvent`) — but you rarely need the event just to translate. `Rendering::getFrontEndJsTranslations()` runs each front-end string through `Craft::t('formie', …)` and emits them as `window.FormieTranslations`; the front-end `t()` helper (`utils.js`) looks up `window.FormieTranslations[string] || string`. So a `translations/<locale>/formie.php` override reaches the **client** too — one file covers server- and client-side messages.
 - **Email notification render language — `UNVERIFIED`.** Which site's language a notification renders in is not stated in the docs examined. The submission carries a `siteId`, so the submission's site language is plausible, but confirm before relying on it.
+
+### Field length limits & their validation messages
+
+`SingleLineText` and `MultiLineText` have **native** min/max length — no custom validator or migration-side rule needed. Field settings (`verbb\formie\fields\MultiLineText`):
+
+| Setting | Type | Notes |
+|---------|------|-------|
+| `limit` | `bool` | **Must be `true`** to enable min/max at all (default `false`). |
+| `min` | `?int` | Minimum length. |
+| `minType` | `'characters'` \| `'words'` | Default `'characters'`. |
+| `max` | `?int` | Maximum length. |
+| `maxType` | `'characters'` \| `'words'` | Default `'characters'`. |
+
+Set them in a migration like any other field property (`$field->limit = true; $field->min = 5; $field->minType = 'characters';`).
+
+**Min/max use two *different* translatable message keys — override both to control the wording everywhere.** Overriding only one leaves the other in English:
+
+- **Server-side** (authoritative; `MultiLineText::validateMinCharacters()`, `Craft::t('formie', …)`):
+  `'You must enter at least {limit} characters.'` (max: `'Limited to {limit} characters.'`; words variants use `{limit} words`).
+- **Client-side** (frontend `text-limit.js`, via the `window.FormieTranslations` chain above):
+  `'{attribute} must be no less than {min} characters.'` (max: `'{attribute} must be no greater than {max} characters.'`).
+
+Both resolve through the `formie` category, so a single `translations/<locale>/formie.php` with **both** source strings covers server and client.
+
+**`required` + `min` don't double up.** With `required = true` and `min` set, Formie's `Submission` runs the `RequiredValidator` first (under `SCENARIO_LIVE`), then the field's own rules. The min rule is registered `skipOnEmpty => false` but keeps Yii's default `skipOnError => true`, so:
+
+- **Empty** submission → only the *required* error (min is skipped because required already errored the attribute).
+- **1 to (min−1)** chars → the *min* message (required passed, min fires).
+
+So you get exactly one message, and `required = true` still renders the asterisk.
 
 ### File Upload field (`verbb\formie\fields\FileUpload`)
 

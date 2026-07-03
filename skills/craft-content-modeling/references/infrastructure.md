@@ -68,7 +68,8 @@ plugins, permissions) are stored as YAML in `config/project/`.
 - Always set `allowAdminChanges => false` in production
 - Use UIDs (not IDs) — they're stable across environments
 - After resolving Git merge conflicts in YAML: `ddev craft project-config/touch` then `ddev craft project-config/apply`
-- Use `$ENV_VAR` syntax in YAML for environment-specific values
+- Use `$ENV_VAR` syntax in YAML for environment-specific values — including for genuinely per-environment plugin settings; don't move a setting to a DB-only column to get "per-environment tuning"
+- Plugin settings — including per-instance/per-entity *operational* settings (alert thresholds, notification routing, workflow mappings) — are configuration and belong in project config, the canonical source of truth, not a DB-only column. Set them locally and deploy; prod project config is read-only by design. The risk to manage is YAML↔DB divergence (a downstream DB edit silently reverts on the next `craft up`), fixed by keeping project config authoritative — not by bypassing it. For the full rationale and the code-review misconception it corrects, see the `craftcms` skill's `architecture.md` → "Settings belong in project config".
 - **After every project config change** (whether editing `project.yaml` or any subfile in `config/project/`): run `ddev craft project-config/touch` to update the `dateModified` timestamp, then `ddev craft up` to apply. The CP auto-updates `dateModified` when changes are saved through the UI, but any change made outside the CP (Git pull, manual edit, merge conflict resolution, script) requires `project-config/touch` to signal that config has changed. Without it, `craft up` on other environments won't detect the change. This is a hard rule — never skip it.
 
 ## How Craft Stores Content

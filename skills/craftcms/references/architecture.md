@@ -17,6 +17,7 @@
 - Not firing before/after events on save and delete — other plugins can't extend your code without them.
 - Deleting managed entities without cleaning up Craft elements first — CASCADE on the FK won't touch the `elements` table.
 - Skipping the rebuild handler — without `EVENT_REBUILD`, `project-config/rebuild` breaks your plugin's config.
+- Keeping plugin/operational settings (alert thresholds, notification routing, workflow mappings) in a DB-only column to allow "per-environment tuning" — project config is the canonical settings store; the real risk is YAML↔DB divergence, fixed by keeping project config authoritative, not by bypassing it. Use env vars / `config/{handle}.php` for genuinely per-environment values. See [Settings belong in project config](#settings-belong-in-project-config--including-operational-settings).
 - Assigning ActiveRecord datetime columns directly to typed Model properties — ActiveRecord returns raw SQL strings, not `DateTime` objects. Use `DateTimeHelper::toDateTime($record->dateCreated) ?: null`. See [Record-to-Model Hydration Boundary](#record-to-model-hydration-boundary).
 - Using `if ($cached !== false)` to check cache hits — Yii's `cache->get()` returns `false` for missing keys, which collides with a legitimately cached `false` value. If you cache booleans, use string sentinels (`'on'`/`'off'`) or check `cache->exists()` before `get()`.
 - Plugin controller directory case not matching namespace — `controllers/Front/` vs `controllers/front/` works on macOS (case-insensitive APFS) but breaks on Linux containers, CI, and production (case-sensitive ext4). The directory name must exactly match the namespace segment casing.
@@ -435,6 +436,21 @@ Project config syncs configuration across environments via YAML. Entities that s
 - Run `ddev craft project-config/touch` which updates `dateModified` for you
 
 This is the most common cause of "I changed the YAML but nothing happened."
+
+### Settings belong in project config — including "operational" settings
+
+Project config is Craft's **canonical settings store and the intended source of truth** for configuration. Plugin settings live there — and so do per-instance / per-entity *operational* settings that feel runtime-ish but are still configuration: alert thresholds, notification routing, workflow/status mappings, feature toggles, integration endpoints. These are author-defined values that should be identical across environments and version-controlled, so they go through project config (the `Save → Project Config → Handler → Database` flow above), **not** a DB-only column.
+
+**The anti-pattern to reject:** "these are *operational* settings that need per-environment tuning, so keep them in the database and bypass project config." That inverts Craft's model. The correct workflow is the same as for sections and fields:
+
+- **Set locally** (dev, `allowAdminChanges` on) → project config captures it to YAML → commit → deploy → `craft up` applies it.
+- **Prod/UAT project config is read-only by design** (`allowAdminChanges => false`; see `deployment.md`). One direction: dev CP → YAML → Git → deploy. That read-only posture is the point, not an obstacle to route around.
+
+If a value genuinely must differ per environment, that's what **environment variables** and `config/{handle}.php` overrides are for (the override is merged over the project-config row at plugin construction — see "Settings Lifecycle" above). Reach for that, not a DB-only escape hatch.
+
+**The real risk to guard against is YAML↔DB divergence, not project config itself.** The failure mode: someone edits the setting directly in the database (or via a CP form on an environment where they shouldn't), the YAML doesn't reflect it, and the next `craft up` / `project-config/apply` re-applies YAML over the DB and **silently reverts** the change. The fix is discipline about keeping project config authoritative — change the value locally and deploy it — **not** moving the setting out of project config to dodge the sync.
+
+**For code review:** flagging "thresholds/routing in project config cause cross-environment churn — make them DB-only" is a misconception to correct, not a valid finding. Project-config-managed settings don't churn when the workflow is followed (edit in dev, deploy); the churn only appears when someone edits config downstream of dev, which the read-only prod posture exists to prevent. Runtime *data* (element content, user preferences, logs, per-request state) still stays out of project config — the distinction is config vs. data, and operational settings are config.
 
 ### Register Paths
 

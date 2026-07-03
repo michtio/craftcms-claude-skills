@@ -299,6 +299,8 @@ return [
 | `app` | `app.php` | Craft core string overrides |
 | `{pluginHandle}` | `{pluginHandle}.php` | Plugin string overrides |
 
+A project `translations/<lang>/<category>.php` **overrides** a plugin's *bundled* category strings for that language, not just your own strings — Craft registers plugin categories with `allowOverrides` and merges the project file over the plugin's (project wins). So `translations/de/formie.php` rewrites Formie's built-in German messages with no plugin fork. For a plugin whose front-end JS strings are piped through `Craft::t(<category>, …)` (e.g. Formie's `window.FormieTranslations`), the same override reaches the client too — see the `craft-plugins` skill's `formie.md`.
+
 ## Site-Specific Templates
 
 Craft resolves templates with site-handle subdirectories taking priority over `templates/`.
