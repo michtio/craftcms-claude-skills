@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.4 -- 2026-07-09
+
+Two convention additions. **(1)** A copy-style rule: no em-dashes (—) or en-dashes (–) in user-facing copy (field labels/instructions, `Craft::t()`/`|t` strings, CP notices, README, docs) — use commas, colons, parentheses, or a plain hyphen, and write ranges as "4 to 10". Placed in both `craft-php-guidelines` (PHP/CP copy) and `craft-twig-guidelines` (front-end copy), each scoped to its surface. The rule governs the copy of the Craft project being built; it is not retroactive to this skill pack's own house prose. **(2)** A CP pattern (verified against Craft 5 source): keep a plugin's settings inside its own CP section rather than only the global `settings/plugins/<handle>` screen, which drops the user out of the section (wrong breadcrumb, collapsed nav).
+
+### Changed
+
+- **`skills/craft-php-guidelines/SKILL.md`** — new "Copy style" section (canonical) plus a Verification Checklist item: no em/en-dashes in user-facing copy; `Craft::t()` strings, labels, CP notices, README, and docs; code comments and PHPDoc exempt; grep for `—`/`–` before finishing. Cross-links the Twig copy.
+- **`skills/craft-twig-guidelines/SKILL.md`** — the front-end half of the same rule (template text, `|t` strings; Twig comments exempt) as a "Copy style" section, plus a Common Pitfalls entry. Cross-links the PHP copy.
+- **`skills/craftcms/references/cp.md`** — new "Keep settings inside the plugin's own CP section" subsection under Settings Pages: why (the global screen breaks the breadcrumb and collapses the section subnav); the in-section page (`selectedSubnavItem = 'settings'` + plugin-root crumb); the subnav `Settings` item must point at `<handle>/settings`, never `settings/plugins/<handle>`; `getSettingsResponse()` redirect for one canonical location; and a shared bare-named `_settings` fragment reused by both screens (Craft auto-namespaces the global screen via `namespaceInputs(…, 'settings')`, so the in-section page wraps the include in `{% namespace 'settings' %}` to post the same `settings[...]` shape). Verified against `Plugins::savePluginSettings()`, `Plugin::getSettingsResponse()`/`settingsResponse()`, and the `{% namespace %}` tag/`|namespace` filter (both delegate to `View::namespaceInputs()`). Contents descriptor updated.
+- **`skills/craftcms/SKILL.md`** — task-routing row for rendering plugin settings inside the plugin's own CP section.
+
 ## 1.7.3 -- 2026-07-03
 
 Two source-verified documentation additions. **(1)** A project-config convention correction: plugin settings — including per-instance/per-entity *operational* settings (alert thresholds, notification routing, workflow mappings) — belong in project config, the canonical settings store, not a DB-only column; the risk to manage is YAML↔DB divergence, not project config itself. **(2)** Formie (verbb/formie v3, Craft 5) i18n & validation coverage, verified against `verbb/formie` 3.1.30 and Craft 5 core: overriding a plugin's bundled translation strings, native min/max length validation and its two message keys, the `required`+`min` interaction, and editing an existing form's field in a content migration.

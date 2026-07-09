@@ -127,6 +127,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Add a screen to the User edit page" → read `elements.md` (Extending User Edit Screens)
 - "Make plugin settings read-only when allowAdminChanges is off" → read `cp.md` (Read-Only Mode)
 - "Add tabs to a plugin's settings page" → read `cp.md` (Settings Pages → With tabs or custom actions). `settingsHtml()` is single-pane only — tabs require a custom controller and a template extending `_layouts/cp` directly.
+- "Render plugin settings inside its own CP section (not the global settings/plugins screen)" → read `cp.md` (Settings Pages → Keep settings inside the plugin's own CP section)
 - "Make a plugin Cloud-compatible" → load `craft-cloud` skill → `plugin-development.md` (ephemeral filesystem, asset-bundle constraints, queue cap, CSRF function, cookie-free design)
 - "Deploy a Craft project to Cloud" → load `craft-cloud` skill → `config-file.md` + `deploy-pipeline.md` + `extension.md`
 - "Migrate a self-hosted Craft site to Cloud" → load `craft-cloud` skill → `migration.md`

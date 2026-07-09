@@ -348,6 +348,10 @@ collection, `get()`/`merge()`, entry-queries-as-Collections), see `craft-site`
 (`references/twig-collections.md`); for the named-key Tailwind class pattern, see
 `craft-site` (`references/tailwind-conventions.md`).
 
+## Copy style
+
+Never use em-dashes (—) or en-dashes (–) in user-facing copy: template text, `|t` strings, and any content authored into templates. Use commas, periods, colons, or parentheses instead; for ranges write "4 to 10" or a plain ASCII hyphen ("4-10"). Plain hyphens are fine. Twig comments (`{# … #}`) are exempt. Grep your templates for `—` and `–` before finishing. (This is the front-end half of the shared rule; the `craft-php-guidelines` skill carries the same rule for `Craft::t()` strings, field labels, CP notices, and docs.)
+
 ## Common Pitfalls
 
 1. **`???` operator without the plugin** — requires `nystudio107/craft-emptycoalesce` or `nystudio107/craft-seomatic`. Check `composer.json` before using. Default to `??`.
@@ -363,3 +367,4 @@ collection, `get()`/`merge()`, entry-queries-as-Collections), see `craft-site`
 11. **`options.x` pattern** — old macro convention. Use direct variable names.
 12. **Blocks inside conditionals** — `{% if %}{% block foo %}{% endblock %}{% endif %}` is invalid Twig. Blocks are compile-time structures and cannot be conditionally defined. Move the conditional inside the block: `{% block foo %}{% if condition %}...{% endif %}{% endblock %}`.
 13. **Hardcoded `/admin` CP URL** — `cpTrigger` is configurable via `CRAFT_CP_TRIGGER` env var or `cpTrigger` in general.php. Many projects use `cp` instead of `admin`. Use `cpUrl()` function or check `.env` — never hardcode `/admin/`.
+14. **Em/en-dashes in user-facing copy**: don't put `—` or `–` in template text or `|t` strings. Use commas, colons, parentheses, or a plain hyphen; write ranges as "4 to 10". See the Copy style section.

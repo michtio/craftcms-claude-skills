@@ -30,7 +30,7 @@ CP templates, form macros, navigation, settings pages, permissions, and read-onl
 
 - [CP Templates](#cp-templates) — form macros, editable tables, tabbed settings, reserved DOM IDs, VueAdminTable
 - [CP Navigation](#cp-navigation)
-- [Settings Pages](#settings-pages) — settings model, env var support, split settings pages (savePluginSettings footgun)
+- [Settings Pages](#settings-pages) — settings model, env var support, keeping settings inside the plugin's CP section, split settings pages (savePluginSettings footgun)
 - [Form Macros Reference](#form-macros-reference)
 - [Permissions](#permissions)
 - [Read-Only Mode (allowAdminChanges)](#read-only-mode-allowadminchanges) — controller setup, template patterns, disabled fields
@@ -709,6 +709,27 @@ Notes:
 - Initial state: every pane except the selected one gets `class="hidden"`. Craft's CP JS (auto-attached to the `.pane-tabs` strip emitted by `_includes/tabs.twig`, which cp.twig includes for you) toggles those on tab switch. You write no JS for this.
 - Field `name` attributes use the `settings[xxx]` bracket shape. The controller's `getBodyParam('settings', [])` collects them as one map, which lets `savePluginSettings($plugin, $settings->toArray())` persist the full settings model — sidestepping the per-tab-action footgun documented below.
 - `fullPageForm = true` makes cp.twig wrap your content in a `<form>` with the right CSRF token and POST target, and renders the save button in the page header automatically.
+
+### Keep settings inside the plugin's own CP section
+
+When a plugin registers its own CP nav section (`hasCpSection = true`), render its settings **inside that section**, not only via the global `settings/plugins/<handle>` screen. The global screen drops the user out of the section: wrong breadcrumb, and the section's subnav collapses. Give the plugin one canonical settings location in its own section instead.
+
+The pieces (most are already shown above — this ties them together):
+
+- **In-section page.** The settings template (`extends '_layouts/cp'`, `fullPageForm`) sets `selectedSubnavItem = 'settings'` so the section subnav stays highlighted, and a plugin-root crumb so the breadcrumb reads within the section:
+  ```twig
+  {% set selectedSubnavItem = 'settings' %}
+  {% set crumbs = [{ label: 'My Plugin'|t('my-plugin'), url: url('my-plugin') }] %}
+  ```
+- **Subnav points at your route.** The `Settings` item in `getCpNavItem()`'s subnav uses `'url' => 'my-plugin/settings'` — **never** `'settings/plugins/my-plugin'` (that jumps back to the global screen and out of the section).
+- **One canonical location.** Override `getSettingsResponse()` to redirect the global entry into the section (shown above), so `settings/plugins/<handle>` and your section land on the same page.
+- **Reuse one fields fragment for both screens.** Keep the actual fields in a shared `_settings` fragment with **bare** names (`name: 'apiUrl'`, not `'settings[apiUrl]'`). Craft's global screen wraps `settingsHtml()` in `namespaceInputs(fn() => …, 'settings')`, so bare names auto-post as `settings[...]` there. On your in-section page, wrap the include yourself so it posts the same shape:
+  ```twig
+  {% namespace 'settings' %}
+      {% include 'my-plugin/settings/_settings' with { settings } only %}
+  {% endnamespace %}
+  ```
+  Both screens then post `settings[...]`, which is exactly what `savePluginSettings($plugin, $settings->toArray())` expects. (Verified against Craft 5: `Plugin::settingsResponse()` namespaces settings HTML under `'settings'`; the `{% namespace %}` tag / `|namespace` filter both delegate to `View::namespaceInputs()`.)
 
 ### Split Settings Pages (savePluginSettings footgun)
 

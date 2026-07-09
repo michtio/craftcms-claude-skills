@@ -129,6 +129,10 @@ Only include sections that have content. Blank line after the separator, before 
 
 For the complete naming reference including file structure conventions, read `references/naming-conventions.md`.
 
+## Copy style
+
+Never use em-dashes (—) or en-dashes (–) in user-facing copy: field labels and instructions, `Craft::t()` strings, CP notices and flash messages, plugin/module README, and docs. Use commas, periods, colons, or parentheses instead; for ranges write "4 to 10" or a plain ASCII hyphen ("4-10"). Plain hyphens are fine. Code comments and PHPDoc are exempt. Grep for `—` and `–` in your `Craft::t()` strings, templates, and docs before finishing. (Front-end Twig copy: see the `craft-twig-guidelines` skill, which carries the same rule for `|t` strings and template text.)
+
 ## Verification Checklist
 
 Before every commit:
@@ -140,3 +144,4 @@ Before every commit:
 5. `@throws` chains verified
 6. Section headers present and correct
 7. Imports flat alphabetical (ECS-enforced, not "PHP globals first")
+8. No em-dashes (—) or en-dashes (–) in user-facing copy (`Craft::t()` strings, labels, CP notices, README, docs)
