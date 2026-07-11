@@ -16,6 +16,7 @@ Multi-site propagation, project config workflow, how Craft stores content intern
 - Forgetting `project-config/touch` after non-CP changes to YAML (Git pull, manual edit, merge conflict resolution).
 - Using database IDs in URI formats — IDs differ across environments. Use `{slug}` or `{canonicalUid}`.
 - Not setting `allowAdminChanges => false` in production.
+- Creating sections without tidying `elementSources` in `project.yaml` — new Entries index sources land at the bottom with generic columns; see `element-index-sources.md`.
 
 ---
 
@@ -71,6 +72,7 @@ plugins, permissions) are stored as YAML in `config/project/`.
 - Use `$ENV_VAR` syntax in YAML for environment-specific values — including for genuinely per-environment plugin settings; don't move a setting to a DB-only column to get "per-environment tuning"
 - Plugin settings — including per-instance/per-entity *operational* settings (alert thresholds, notification routing, workflow mappings) — are configuration and belong in project config, the canonical source of truth, not a DB-only column. Set them locally and deploy; prod project config is read-only by design. The risk to manage is YAML↔DB divergence (a downstream DB edit silently reverts on the next `craft up`), fixed by keeping project config authoritative — not by bypassing it. For the full rationale and the code-review misconception it corrects, see the `craftcms` skill's `architecture.md` → "Settings belong in project config".
 - **After every project config change** (whether editing `project.yaml` or any subfile in `config/project/`): run `ddev craft project-config/touch` to update the `dateModified` timestamp, then `ddev craft up` to apply. The CP auto-updates `dateModified` when changes are saved through the UI, but any change made outside the CP (Git pull, manual edit, merge conflict resolution, script) requires `project-config/touch` to signal that config has changed. Without it, `craft up` on other environments won't detect the change. This is a hard rule — never skip it.
+- **After creating sections or singles** that appear in Entries: tidy `elementSources.craft\elements\Entry` (placement under the right heading, `tableAttributes` / `defaultSort` matched to role peers). This is part of the content model, not optional CP cosmetics. Full checklist: `element-index-sources.md`.
 
 ## How Craft Stores Content
 

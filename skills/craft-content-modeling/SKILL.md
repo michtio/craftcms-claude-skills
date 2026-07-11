@@ -1,6 +1,6 @@
 ---
 name: craft-content-modeling
-description: "Craft CMS 5 content modeling — sections, entry types, fields, Matrix, relations, project config, and content architecture strategy. Covers everything editors and developers need to structure content in Craft: choosing section types, designing entry types and field layouts, selecting field types for specific needs, configuring Matrix and nested entries, setting up relations and eager loading, and planning multi-site propagation. Triggers on: section types (single, channel, structure), entry types, field types, field layout design, field type selection, Matrix configuration, nested entries, relatedTo, eager loading, .with(), .eagerly(), categories, tags, globals, global sets, preloadSingles, propagation, multi-site content, URI format, project config, YAML, content architecture, content strategy, taxonomy, asset volumes, filesystems, image transforms, user groups, content permissions, entries-as-taxonomy, entrify, entrification, CKEditor vs Matrix, CMS editions, site propagation, multi-language, language groups, localization, translation method, field translation, content migration, reserved handles, field instances, Formie forms as elements vs project config, cross-environment Formie deployment, multi-site Formie form translation. Always use when planning content architecture, creating sections/fields, configuring Matrix, setting up relations, choosing field types, designing field layouts, making content modeling decisions, or planning multi-site content propagation. Do NOT trigger for PHP plugin/module development, custom field type code, front-end Twig templates, or buildchain configuration."
+description: "Craft CMS 5 content modeling — sections, entry types, fields, Matrix, relations, project config, and content architecture strategy. Covers everything editors and developers need to structure content in Craft: choosing section types, designing entry types and field layouts, selecting field types for specific needs, configuring Matrix and nested entries, setting up relations and eager loading, and planning multi-site propagation. Triggers on: section types (single, channel, structure), entry types, field types, field layout design, field type selection, Matrix configuration, nested entries, relatedTo, eager loading, .with(), .eagerly(), categories, tags, globals, global sets, preloadSingles, propagation, multi-site content, URI format, project config, YAML, content architecture, content strategy, taxonomy, asset volumes, filesystems, image transforms, user groups, content permissions, entries-as-taxonomy, entrify, entrification, CKEditor vs Matrix, CMS editions, site propagation, multi-language, language groups, localization, translation method, field translation, content migration, reserved handles, field instances, Formie forms as elements vs project config, cross-environment Formie deployment, multi-site Formie form translation, element index sources, elementSources, Entries index sidebar, tableAttributes, defaultSort, tidy element index after creating sections, index columns, CP Entries sources. Always use when planning content architecture, creating sections/fields, configuring Matrix, setting up relations, choosing field types, designing field layouts, making content modeling decisions, planning multi-site content propagation, or tidying the Entries element index after adding sections. Do NOT trigger for PHP plugin/module development, custom field type code, front-end Twig templates, or buildchain configuration."
 ---
 
 # Craft CMS 5 — Content Modeling
@@ -261,8 +261,21 @@ Three tools for structured content within an entry — choose based on editing e
 
 For the full decision table, nested entry type patterns, and the CKEditor chunks rendering pattern, read `references/content-patterns.md`.
 
+## After creating sections — tidy the Entries element index
+
+Creating a section registers a source under `elementSources.craft\elements\Entry` in `config/project/project.yaml`. Craft often **appends** it at the bottom with **generic** columns. That is incomplete shipping of the content model.
+
+**Required follow-up** (same PR / same change set as the section):
+
+1. Place the source next to **role peers** under the correct sidebar heading (Indexes, Categories, Includes, etc.).
+2. Match **`tableAttributes`** and **`defaultSort`** to the closest similar section (e.g. FAQ Index ↔ News Index; FAQ Categories ↔ News Categories).
+3. Include `link` only when the section has public URLs; drop empty `heading: ''` leftovers.
+
+Full checklist, role tables, and column key rules (`field:` vs `fieldInstance:`): read `references/element-index-sources.md`.
+
 ## Common Pitfalls
 
+- **Leaving new section sources at the bottom of the Entries index** — after creating sections/singles, tidy `elementSources` placement and columns to match peers; see `element-index-sources.md`. An unfinished model is one that ships FAQs without FAQ Index sitting with other Indexes.
 - **Over-using Matrix** — if content needs its own URL, independent querying, or permissions, it should be a separate section with an Entries relation field, not a Matrix block.
 - **Creating new fields without checking the global pool** — before adding any field, run the Reuse-First Workflow above. Enumerate existing fields via `config/project/fields/` and default to reusing via instance. The only justification for a new field is a different type or genuinely incompatible settings.
 - **Over-reusing one field across instances with distinct needs** — the opposite mistake. The search index can't distinguish instances of a reused field (`summary::daisy` may match a `byline` instance — [docs](https://craftcms.com/docs/5.x/system/searching.html#multi-instance-fields)), and a few `relatedTo` cases need the original handle. Reuse only when the instances are genuinely the same field; if one could reasonably need different settings ([single-responsibility](https://en.wikipedia.org/wiki/Single-responsibility_principle)), split it. Reuse-first, not reuse-always.
@@ -298,6 +311,9 @@ Read the relevant reference file(s) for your task.
 - "Configure URI format for a structure section" → read `object-templates.md` (Structure URI Patterns)
 - "Set up dynamic asset upload subpath" → read `object-templates.md` (Asset Subpath Patterns)
 - "Asset subpath broken after moving field into Matrix" → read `object-templates.md` (The Matrix Gotcha)
+- "Tidy Entries index after creating FAQ sections" → read `element-index-sources.md`
+- "New section shows at bottom of Entries with wrong columns" → read `element-index-sources.md`
+- "Match FAQ Index / Categories to News Index / Categories sources" → read `element-index-sources.md`
 
 | Reference | Scope |
 |-----------|-------|
@@ -307,3 +323,4 @@ Read the relevant reference file(s) for your task.
 | `references/users-and-permissions.md` | Users, user groups, CMS editions, addresses, permissions architecture, field layout UI elements. |
 | `references/infrastructure.md` | Multi-site propagation methods, field translation methods, project config workflow, how Craft stores content (five-table model, JSON field values, relations, nested sets), asset volumes/filesystems/transforms. |
 | `references/object-templates.md` | Object template syntax: `{attribute}` vs `{{ twig }}`, URI formats, asset subpaths, preview targets, owner/rootOwner nesting, structure patterns, the Matrix gotcha. |
+| `references/element-index-sources.md` | Entries CP index sources in project config: placement under headings, tableAttributes/defaultSort matched to peer sections, post-create checklist after adding sections. |
