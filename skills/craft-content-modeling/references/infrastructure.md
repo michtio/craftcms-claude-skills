@@ -16,7 +16,6 @@ Multi-site propagation, project config workflow, how Craft stores content intern
 - Forgetting `project-config/touch` after non-CP changes to YAML (Git pull, manual edit, merge conflict resolution).
 - Using database IDs in URI formats — IDs differ across environments. Use `{slug}` or `{canonicalUid}`.
 - Not setting `allowAdminChanges => false` in production.
-- Creating sections without tidying `elementSources` in `project.yaml` — new Entries index sources land at the bottom with generic columns; see `element-index-sources.md`.
 
 ---
 

@@ -29,6 +29,8 @@ config/project/project.yaml
 
 Also reflected when you customize the Entries index in the CP (Customize sources / columns) with `allowAdminChanges` on. Prefer doing it once in local and committing YAML.
 
+**Precondition — the `elementSources` block only exists once sources have been customized at least once.** On a project that has never used *Customize sources*, there is no `elementSources.craft\elements\Entry` key in `project.yaml`: Craft renders default sources (every section, in section order, with generic columns), so a newly created section just appears in that default list and there is nothing in YAML to tidy. Once sources are customized, Craft persists the **full** source list to YAML and **appends** each subsequently created section to the bottom — which is when this cleanup applies. Practical rule: customize sources once (that captures the list), then maintain placement and columns as you add sections. Most multi-section sites customize early, which is why this is a routine follow-up rather than an edge case.
+
 Related: Craft 5.9+ **custom entry index pages** group sections into separate CP nav items. That is a different feature. This doc is about the **shared Entries index** source list and columns.
 
 ## Source shape

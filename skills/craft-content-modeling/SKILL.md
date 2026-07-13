@@ -263,12 +263,12 @@ For the full decision table, nested entry type patterns, and the CKEditor chunks
 
 ## After creating sections — tidy the Entries element index
 
-Creating a section registers a source under `elementSources.craft\elements\Entry` in `config/project/project.yaml`. Craft often **appends** it at the bottom with **generic** columns. That is incomplete shipping of the content model.
+Once Entries sources have been customized (Customize sources), Craft persists the full source list to `elementSources.craft\elements\Entry` in `config/project/project.yaml` and **appends** each newly created section to the bottom with **generic** columns. That is incomplete shipping of the content model. (If sources were never customized, sections show in default order and there's nothing to tidy — see `element-index-sources.md` for the precondition.)
 
 **Required follow-up** (same PR / same change set as the section):
 
 1. Place the source next to **role peers** under the correct sidebar heading (Indexes, Categories, Includes, etc.).
-2. Match **`tableAttributes`** and **`defaultSort`** to the closest similar section (e.g. FAQ Index ↔ News Index; FAQ Categories ↔ News Categories).
+2. Match **`tableAttributes`** and **`defaultSort`** to the closest similar section (e.g. FAQ Index to News Index; FAQ Categories to News Categories).
 3. Include `link` only when the section has public URLs; drop empty `heading: ''` leftovers.
 
 Full checklist, role tables, and column key rules (`field:` vs `fieldInstance:`): read `references/element-index-sources.md`.
