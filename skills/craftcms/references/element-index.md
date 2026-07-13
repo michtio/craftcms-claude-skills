@@ -1,5 +1,9 @@
 # Element Index — CP Presentation
 
+Custom **element types** (plugins/modules): sources, table attributes, sort options, chips/cards, actions. This is PHP on the element class.
+
+For **site content** Entries index sources after creating sections (project config `elementSources`, sidebar headings, matching peer columns), use the `craft-content-modeling` skill → `references/element-index-sources.md`. Do not implement site section placement via `defineSources()` on `craft\elements\Entry`.
+
 ## Contents
 
 - Common Pitfalls

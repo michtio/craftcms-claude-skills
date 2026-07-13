@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **`skills/craft-content-modeling/references/element-index-sources.md`** — required follow-up after creating sections: tidy Entries element index sources in `config/project/project.yaml` so placement (headings / peer order) and `tableAttributes` / `defaultSort` match similar sections (e.g. FAQ Index with News Index, FAQ Categories with News Categories). Includes role tables, `field:` vs `fieldInstance:` column keys, post-create checklist, and pitfalls (default append position, generic columns, empty headings).
+- **`skills/craft-content-modeling/SKILL.md`** — "After creating sections — tidy the Entries element index" section; Common Pitfalls bullet; task-routing rows and trigger keywords for elementSources / tableAttributes tidy-up; reference table row.
+- **`skills/craft-content-modeling/references/infrastructure.md`** — Project Config Essentials rule + Common Pitfalls cross-link to `element-index-sources.md`.
+- **`skills/craftcms/references/element-index.md`** — opening cross-link: site Entries sources belong in content-modeling, not custom `defineSources()` on Entry.
+
 ## 1.7.4 -- 2026-07-09
 
 Two convention additions. **(1)** A copy-style rule: no em-dashes (—) or en-dashes (–) in user-facing copy (field labels/instructions, `Craft::t()`/`|t` strings, CP notices, README, docs) — use commas, colons, parentheses, or a plain hyphen, and write ranges as "4 to 10". Placed in both `craft-php-guidelines` (PHP/CP copy) and `craft-twig-guidelines` (front-end copy), each scoped to its surface. The rule governs the copy of the Craft project being built; it is not retroactive to this skill pack's own house prose. **(2)** A CP pattern (verified against Craft 5 source): keep a plugin's settings inside its own CP section rather than only the global `settings/plugins/<handle>` screen, which drops the user out of the section (wrong breadcrumb, collapsed nav).
