@@ -12,7 +12,7 @@ How Craft CMS 5 loads configuration: environment variables, aliases, config file
 
 ## Common Pitfalls
 
-- `CRAFT_*` env vars always win over config files — this is a silent override. If `CRAFT_DEV_MODE=1` is set in `.env`, setting `->devMode(false)` in `config/general.php` has no effect. No warning is emitted.
+- `CRAFT_*` env vars always win over config files — this is a silent override. If `CRAFT_DEV_MODE=1` is set in `.env`, setting `->devMode(false)` in `config/general.php` has no effect. No warning is emitted. (Mechanism: `craft\services\Config` applies `App::envConfig(GeneralConfig::class, 'CRAFT_')` *after* loading `config/general.php`, calling the fluent setter for each matching env var.) **So when changing or verifying any general-config value — `allowAdminChanges` (`CRAFT_ALLOW_ADMIN_CHANGES`), `devMode`, etc. — check the environment first** (`.env`, and ddev-injected vars in `.ddev/.env.web`); a matching `CRAFT_<SETTING>` makes the PHP edit a no-op.
 - Putting secrets in `config/general.php` instead of `.env` — config files are committed to version control, secrets are not.
 - Using `config/db.php` — deprecated in Craft 5. DB config belongs in `.env` via `CRAFT_DB_*` variables. Remove `db.php` unless you need settings not covered by env vars (`charset`, `tablePrefix`, `attributes`).
 - Editing `config/app.php` without understanding merge order — `ArrayHelper::merge()` replaces array values by key, so a partial component definition can silently drop Craft's own settings. Define complete component configs or use closures.

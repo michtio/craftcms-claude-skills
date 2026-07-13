@@ -291,6 +291,19 @@ Event::on(
 
 Prefix all custom permission handles with your plugin handle and a colon: `my-plugin:action-name`. Use kebab-case for both the plugin prefix and the action name. This prevents collisions between plugins and matches the convention used by Craft core and first-party plugins.
 
+### Settings and screen access are permission-gated, not admin-gated
+
+A plugin's own CP screens — settings, dashboards, management pages in the plugin's own section — are gated by a **dedicated permission** (`<handle>:manageSettings`, `<handle>:viewOverview`, …), **not** by `requireAdmin()`. Two orthogonal questions are easy to conflate:
+
+- **Who may be on the screen?** → a permission (`requirePermission(...)` / `->can(...)`).
+- **Whether writes are possible?** → `allowAdminChanges` (see `cp.md` Read-Only Mode).
+
+Gating a settings screen with `requireAdmin()` answers the first question with the wrong tool: it locks the screen to admins even when a site wants a non-admin group (e.g. "SEO managers") to manage that plugin. Admins implicitly hold **every** permission (`doesUserHavePermission()` returns `true` for admins before any lookup), so permission-gating never loses admin access — it only *adds* the ability to delegate. This matches the mature ecosystem (SEOmatic, Formie gate their screens by permission).
+
+`allowAdminChanges` is a separate axis and governs writability only: when it is `false`, a permission-holder still reaches the screen (read-only), fields render disabled, and the save action re-checks the flag server-side and fails closed with a 403 — it never silently persists. (Craft core's own Settings section stays admin-only by design; this doctrine is for a plugin's *own* CP section, not for editing Craft's structural config.)
+
+**Placement rule for screen-access permission constants:** define the handle as a `public const` on the **controller that enforces it** — `SettingsController::PERMISSION_MANAGE_SETTINGS = '<handle>:manageSettings'`, `OverviewController::PERMISSION_VIEW_OVERVIEW`. Registration (`EVENT_REGISTER_PERMISSIONS`), the controller gate (`requirePermission()`), and the nav check (`->can()`) all reference that one const. A permission handle is a contract string used from 3+ places; a bare literal drifts silently and PHPStan can't catch a typo. (A shared consts holder — see below — is still fine for *dynamic per-entity* permission bases referenced from many classes; the owning-controller rule is for a screen whose access one controller owns.)
+
 ### Permission handle constants
 
 Define permission handles as class constants. This prevents phantom mismatches where a typo in one file creates a permission that silently behaves wrong (denies non-admins, passes for admins — hard to debug).
@@ -394,7 +407,32 @@ Permission entries support these properties:
 
 ### Gating CP nav items based on permission
 
-Cross-reference with `cp.md` for the full pattern. The short version:
+**No dead nav items.** `getCpNavItem()` (plugin) or the `EVENT_REGISTER_CP_NAV_ITEMS` handler (module) must not surface a top-level nav item that leads only to screens the current user can't reach — a user with `accessPlugin-<handle>` but no screen permission would click through to a 403. Build the subnav per-permission (each entry keyed off its own permission — overview → `viewOverview`, settings → `manageSettings`), then **return `null`** when the resulting subnav is empty. Gate each entry on its own permission, never on `getIsAdmin()`.
+
+```php
+public function getCpNavItem(): ?array
+{
+    $item = parent::getCpNavItem();
+    $user = Craft::$app->getUser()->getIdentity();
+    $subnav = [];
+
+    if ($user?->can(OverviewController::PERMISSION_VIEW_OVERVIEW)) {
+        $subnav['overview'] = ['label' => Craft::t('my-plugin', 'Overview'), 'url' => 'my-plugin'];
+    }
+    if ($user?->can(SettingsController::PERMISSION_MANAGE_SETTINGS)) {
+        $subnav['settings'] = ['label' => Craft::t('my-plugin', 'Settings'), 'url' => 'my-plugin/settings'];
+    }
+
+    if (!$subnav) {
+        return null; // no reachable screens → no nav item
+    }
+
+    $item['subnav'] = $subnav;
+    return $item;
+}
+```
+
+Cross-reference with `cp.md` for the full pattern. The short version for a module event handler:
 
 ```php
 use craft\events\RegisterCpNavItemsEvent;

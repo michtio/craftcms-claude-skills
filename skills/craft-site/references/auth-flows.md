@@ -26,6 +26,10 @@
 - [Registration Form](#registration-form)
 - [Password Reset Request](#password-reset-request)
 - [Set New Password](#set-new-password)
+- [Failure Redirect Landings](#failure-redirect-landings)
+- [WebAuthn / Passkey UX Copy](#webauthn--passkey-ux-copy)
+- [One-Shot returnUrl Semantics](#one-shot-returnurl-semantics)
+- [Session-Carried Form State](#session-carried-form-state)
 
 ## Login Form
 
@@ -440,3 +444,67 @@ The user arrives here by clicking the link in the password reset email. Craft ap
 | `invalidUserTokenPath` | Redirect destination when the token is expired or invalid (e.g., `'auth/invalid-token'`). If not set, Craft shows a generic error. |
 
 **Token expiration:** Password reset tokens expire after the duration set by the `verificationCodeDuration` config (default: `'P1D'` -- 1 day). After expiration, the user must request a new reset email.
+
+## Failure Redirect Landings
+
+When a public (anonymous) controller action fails and sets an error flash, it must redirect to a page that actually renders that flash and lets the user act on it. Redirecting to a bare site root or a page with no flash surface produces an "invisible flash" bug: the message is set correctly, but the destination never renders it, so the visitor sees an unexplained bounce and has no way to retry.
+
+The rule: a failure redirect target must both **render `flash`** and **let the user retry**. For a login flow, that means Craft's `loginPath` (where the login form and its error region live) -- not `UrlHelper::siteUrl()` or the homepage. The same holds for any custom anonymous action you build (a magic-link request, an invite acceptance, a re-auth step): send failures back to the form the visitor came from, not somewhere generic.
+
+This is the front-end counterpart to the server-side rule in the `craftcms` skill's `controllers.md` (Common Pitfalls -- failure redirect lands where no flash surface exists). If you own the controller action, fix the redirect target there; if you only own templates, make sure the path Craft lands on renders `flash` (see the flash-handling blocks in [Password Reset Request](#password-reset-request) and, in `auth-account.md`, `flashes()`).
+
+## WebAuthn / Passkey UX Copy
+
+When you wire a WebAuthn (passkey) sign-in or registration ceremony on the front end, the browser's `navigator.credentials.*` call rejects with a `DOMException` when the user cancels the prompt or lets it time out. Its `.message` is written for developers and is not something to show a visitor. Branch on the exception's `name` instead:
+
+- `NotAllowedError` -- the user dismissed or ignored the prompt, or it timed out. This is a normal user action, not an error to alarm them with.
+- `AbortError` -- the ceremony was aborted (e.g. a competing request or a navigation).
+
+For those two cases, show your own human-friendly copy. Only surface `error.message` for genuine server-reported failures (a failed assertion, an unknown credential), never for a cancelled or timed-out ceremony.
+
+```js
+try {
+  const credential = await navigator.credentials.get({ publicKey: options });
+  // ... post the assertion to your verify action
+} catch (error) {
+  if (error.name === 'NotAllowedError' || error.name === 'AbortError') {
+    // User cancelled or the prompt timed out — friendly, non-alarming copy.
+    showMessage('Passkey sign-in was cancelled. You can try again or use your password.');
+  } else {
+    // A real failure the server or platform reported — safe to show its detail.
+    showMessage(error.message);
+  }
+}
+```
+
+Keep the cancel/timeout copy reassuring and offer the fallback path (password, another passkey) so a dismissed prompt is never a dead end.
+
+## One-Shot returnUrl Semantics
+
+A re-auth interruption (an elevated-session or step-up prompt that sends the visitor to sign in, then back) carries a `returnUrl` so the visitor lands where they left off. That `returnUrl` should ride **exactly one** page view: read it into the sign-in form on load, then strip it from the visible URL with `history.replaceState(...)`. Otherwise the URL keeps the stale `returnUrl` query param, and a later sign-in the visitor starts from that same URL inherits a destination that no longer makes sense.
+
+```js
+const params = new URLSearchParams(window.location.search);
+const returnUrl = params.get('returnUrl');
+
+if (returnUrl) {
+  // Seed the form so this sign-in returns to where the interruption happened.
+  document.querySelector('input[name="returnUrl"]').value = returnUrl;
+
+  // Consume it: strip it from the address bar so a later sign-in from this
+  // same URL doesn't inherit a stale destination.
+  params.delete('returnUrl');
+  const clean = window.location.pathname + (params.toString() ? `?${params}` : '');
+  history.replaceState(null, '', clean);
+}
+```
+
+The client-side strip is a UX nicety, not a security control. **Always also validate the `returnUrl` server-side as same-site** before redirecting to it -- never trust a client-supplied redirect target, regardless of what the JS does. Craft's `redirectInput()` and the controllers' redirect helpers validate against the current site; if you accept a redirect target in your own action, enforce the same-site check yourself. See the `craftcms` skill's `controllers.md` for the server-side redirect-validation stance.
+
+## Session-Carried Form State
+
+Some flows must return an identical response whether or not the submitted account exists, so an attacker can't probe which emails are registered (account enumeration). The password-reset request is the canonical case (see [Password Reset Request](#password-reset-request) and `preventUserEnumeration`), but the same shape applies to any custom flow you build -- a magic-link request, a "resend activation" form -- that branches on account existence and redirects between pages.
+
+When such a flow redirects from one form page to another, carry the visitor's **own typed input** (typically their email) in the session so a legitimate member is never forced to re-type it after the redirect. The critical detail: set that session value **unconditionally, before** the exists / not-exists branch runs. If you set it only in the "account exists" branch, the two branches diverge -- a stored-vs-empty value, a different redirect, a timing difference -- and that difference is exactly the enumeration signal you were trying to remove. The unconditional set is what keeps both responses indistinguishable.
+
+This is the front-end view of the server-side rule in the `craftcms` skill's `controllers.md` (Common Pitfalls -- enumeration-safe redirect flow drops the visitor's typed input). On the template side, read the carried value back into the field's `value` on the destination page so the member sees their email already filled in.

@@ -21,6 +21,9 @@
 - Assigning ActiveRecord datetime columns directly to typed Model properties — ActiveRecord returns raw SQL strings, not `DateTime` objects. Use `DateTimeHelper::toDateTime($record->dateCreated) ?: null`. See [Record-to-Model Hydration Boundary](#record-to-model-hydration-boundary).
 - Using `if ($cached !== false)` to check cache hits — Yii's `cache->get()` returns `false` for missing keys, which collides with a legitimately cached `false` value. If you cache booleans, use string sentinels (`'on'`/`'off'`) or check `cache->exists()` before `get()`.
 - Plugin controller directory case not matching namespace — `controllers/Front/` vs `controllers/front/` works on macOS (case-insensitive APFS) but breaks on Linux containers, CI, and production (case-sensitive ext4). The directory name must exactly match the namespace segment casing.
+- Shipping front-end example templates as bare body fragments (no `<html>`/`<head>`/`<body>`) — they render as broken pages if hit directly and give integrators nothing working to start from. Ship a complete, copyable bundle with its own layout shell plus an install console command. See [Front-End Output From Plugins](#front-end-output-from-plugins) and the craft-site skill's `example-templates.md`.
+- A render-builder class whose config-array constructor silently ignores unknown keys — a typo (`{ digitz: 6 }`) then does nothing with no error. Make an unknown key throw so mistakes fail loudly. See [Front-End Output From Plugins](#front-end-output-from-plugins).
+- Storing IPs (or comparable personal data) with no privacy story — no data inventory, no retention statement, no anonymization option. Ship `docs/privacy.md` and offer an `anonymizeIp` lightswitch applied at the storage boundary. See [Storing Personal Data](#storing-personal-data).
 
 ## Table of Contents
 
@@ -33,6 +36,8 @@
 - [Yii2 Core Validators](#yii2-core-validators)
 - [Custom Validators](#custom-validators)
 - [Plugin Editions](#plugin-editions) — declaring, checking, feature gating, edition switching, helper methods, migrations
+- [Front-End Output From Plugins](#front-end-output-from-plugins) — example-templates command, fluent render builders
+- [Storing Personal Data](#storing-personal-data) — IP/PII data inventory, retention, lawful basis, `anonymizeIp`
 
 ## Scaffolding
 
@@ -892,3 +897,94 @@ Check edition in CP templates to show/hide features:
 ### Licensing
 
 Editions map to Plugin Store pricing tiers. Each edition can have its own price (or be free). Users purchase an edition and can upgrade — downgrades require contacting the developer. The Plugin Store handles license validation; `$this->edition` reflects the active licensed edition.
+
+## Front-End Output From Plugins
+
+When a plugin renders into a *site's* front end, two patterns keep the integration robust. Both are consumed in Twig; the full front-end guidance (bundle structure, the Twig usage, progressive enhancement) lives in the craft-site skill's `example-templates.md`. This section covers the plugin-side pieces.
+
+### Example templates: ship a copyable bundle, not fragments
+
+Following the Craft Commerce example-templates model, a plugin with a front end ships a **complete, self-contained bundle** the integrator copies into their `templates/` — never bare body fragments. The bundle owns a canonical folder name (e.g. `example-templates/members/` → `templates/members/`), ships its own `_private/layouts/` HTML shell (skip link, nav include, flash notices rendered once, an `extraHead` block hook), and every page `{% extends %}` that shell filling a `{% block main %}`.
+
+The plugin-side deliverable is an **install console command** (Commerce-style: `<handle>/example-templates`) that:
+
+- copies the bundle into `templates/`;
+- prompts for a destination folder name (default: the canonical name);
+- rewrites the bundle's internal root-relative `{% extends %}`/`{% include %}` references when the folder is renamed (a mechanical prefix find-and-replace — which is why the bundle uses fixed root-relative paths, not a prefix-variable convention);
+- refuses to overwrite an existing target folder unless `--overwrite` is passed.
+
+The command class goes in `src/console/controllers/`. For option parsing, prompts, `stdout()` output, and exit codes, see `console-commands.md`.
+
+### Render builders: fluent `BaseTag` with a config-array constructor
+
+For a widget the plugin renders into a page, expose a fluent builder — `craft.<handle>.<thing>({...}).render()` — rather than a raw plugin-template include. Modeled on Password Policy's fluent tag:
+
+- A `BaseTag` subclass with a **config-array constructor whose keys MUST map to chainable setters**. `new OtpInput(['digits' => 6])` and `->digits(6)` take the same path. **An unknown key throws** — a mistyped option (`digitz`) fails loudly at render instead of being silently dropped.
+- A public **`render(): \Twig\Markup`** wrapping a private `_renderHtml(): string`. Returning `\Twig\Markup` marks the HTML pre-escaped so Twig doesn't re-escape it.
+- Consumers must call `{{ tag.render() }}`, **never `{{ tag }}`** — a bare print goes through `__toString()`, which Twig auto-escapes, rendering the HTML as visible tags. `__toString()` is a debugging/logging fallback only. This is the double-escape trap documented in full in `events.md`.
+- **Lazy client-asset registration** — register the widget's vanilla-JS + neutral-CSS asset bundle the first time it renders on a page, not eagerly at bootstrap, so pages that don't use it pay nothing. For asset-bundle registration and the Vite bridge, see `plugin-vite.md`.
+
+The rendered control must be **progressively enhanced**: the server emits a fully functional plain control and JS upgrades it. The craft-site `example-templates.md` walks through the concrete discipline (the segmented-OTP carrier-input example) that front-end reviewers should apply.
+
+## Storing Personal Data
+
+When a plugin persists IP addresses — or comparable personal data (email, precise location, device identifiers) — it takes on a data-handling responsibility, and integrators inherit it. Ship a **privacy story** so the plugin is deployable in privacy-sensitive contexts without the integrator reverse-engineering what it stores.
+
+This is **data-handling discipline, not legal advice.** Frame everything region-neutrally: describe *what* is stored and *how* it can be minimized, and point integrators at the fact that a lawful-basis / justification requirement may apply in their jurisdiction — do not assert any single jurisdiction's rules as universal.
+
+### Ship a `docs/privacy.md`
+
+Include four things:
+
+1. **Data inventory** — what personal data the plugin stores, in which table/column, and why it needs it. Be specific: "the full client IP in `myplugin_events.ipAddress`, used to rate-limit submissions and derive city-level analytics."
+2. **Retention statement** — how long records are kept and what prunes them (a console command, a queue job, a `purgeAfterDays` setting). "Stored indefinitely" is a valid statement only if it's a deliberate, documented choice.
+3. **Lawful-basis / justification note** — stated generically. Explain that an integrator may need to record a lawful basis or justification for storing this data under whatever regime applies to them, and that specific regulations are *examples* they may need to consult — e.g. the EU GDPR's Recital 49 treats certain security-related processing as a legitimate interest — rather than a universal rule the plugin asserts on their behalf.
+4. **Suggested privacy-policy wording** — a short, copy-pasteable paragraph the integrator can adapt into their own site's privacy policy, describing what the plugin collects and why.
+
+### Offer an `anonymizeIp` lightswitch
+
+Provide an optional setting (a lightswitch in the settings model) that minimizes stored addresses at write time:
+
+- **IPv4:** zero the final octet — `203.0.113.47` → `203.0.113.0`.
+- **IPv6:** keep the `/48` prefix, zero the rest — retains routing-level locality without the host identity.
+- **Fail closed:** on unparseable input, store `null`, never the raw value. A malformed address must not slip through un-anonymized.
+- **Apply at the storage boundary, AFTER any geo lookup.** Do the city-level geo derivation on the full address first, then truncate before persisting. Truncating earlier throws away location precision the plugin legitimately needs; truncating at the storage boundary keeps the derived data while discarding the identifying address.
+
+```php
+/**
+ * Anonymizes an IP for storage: zeroes the final IPv4 octet or keeps the
+ * IPv6 /48. Returns null on unparseable input (fail closed).
+ *
+ * Call this AFTER any geo lookup — geo derivation needs the full address.
+ */
+public function anonymizeIp(?string $ip): ?string
+{
+    if ($ip === null || filter_var($ip, FILTER_VALIDATE_IP) === false) {
+        return null;
+    }
+
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+        // Zero the final octet: 203.0.113.47 -> 203.0.113.0
+        $packed = inet_pton($ip);
+        $packed[3] = "\0";
+        return inet_ntop($packed);
+    }
+
+    // IPv6: keep the /48, zero the remaining 80 bits.
+    $packed = inet_pton($ip);
+    for ($i = 6; $i < 16; $i++) {
+        $packed[$i] = "\0";
+    }
+    return inet_ntop($packed);
+}
+```
+
+Then apply it where the record is populated, gated on the setting:
+
+```php
+$record->ipAddress = $this->getSettings()->anonymizeIp
+    ? $this->anonymizeIp($clientIp)
+    : $clientIp;
+```
+
+If the data is also surfaced to the site's visitors (a public activity log, a "your recent sign-ins" panel), mirror this note into the craft-site front-end guidance so the template layer doesn't re-expose an address the storage layer took care to minimize.

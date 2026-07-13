@@ -13,6 +13,7 @@
 - Mocking Craft Services
 - Console Command Testing
 - Event Testing
+- Test State Hygiene on Shared Playgrounds — restore-what-you-found, project-config write safety, request-IP fixtures, console-created users
 
 ## Documentation
 
@@ -35,6 +36,11 @@
 - Solo edition silently caps user creation at 1 — `User::beforeSave()` vetoes saves beyond the admin user without throwing. Test factories that create additional users fail silently. Fix: set `Craft::$app->edition = CmsEdition::Pro` directly in the test (not via project config — that re-fires events and causes side effects).
 - Relying on rows that already exist in the local dev DB — integration tests must self-seed every row they touch (including FK-referenced parents), or they pass locally and fail on CI's fresh `db_test` with an integrity-constraint violation. See "Integration tests must self-seed their data" below.
 - `Install.php` edits silently fail to land in `db_test` after the first install. Custom test bootstraps that short-circuit on "plugin already installed" (the standard speed/setup trade-off) only run `Install.php::safeUp()` once per `db_test` lifetime. Later edits to Install.php — new tables, renamed columns, primary-key rewrites — never re-apply against the existing test DB. Migrations *do* run against `db_test` because their state lives in the `migrations` table, so changes shipped through a numbered migration land correctly. Changes that *only* update `Install.php` (typical for "I'll just edit fresh-install shape since this is a new plugin") don't. See "Schema migrations and db_test drift" below for the durable fix.
+- Hardcoding a project-config value back to Craft's default in `afterEach` on a shared playground — a suite that reset `users.allowPublicRegistration` to `false` on teardown silently flipped the setting off on every run, sabotaging manual QA. Restore what you found, don't assume the default. See "Test State Hygiene on Shared Playgrounds" below.
+- Calling `Craft::$app->getProjectConfig()->set(...)` freely inside craft-pest tests — each test runs in a rolled-back DB transaction, so the write can desync the memoized in-memory `configVersion` from the stored row, and every later write throws `BusyResourceException`/`StaleResourceException`. Guard project-config writes to only-when-different and minimize churn. See "Test State Hygiene on Shared Playgrounds" below.
+- Planting a test IP by only overwriting the request header — `craft\web\Request::getUserIP()` reads forwarded headers first (`X-Forwarded-For` is in `Request::$ipHeaders`) and memoizes the result in the private `$_ipAddress` property, so a header change after the first call has no effect. Reset the memo too. See "Test State Hygiene on Shared Playgrounds" below.
+- Grepping rendered HTML/JS for a translated multi-word string — Twig's `|e('js')` escaper converts every non-alphanumeric ASCII char (including the space `0x20`) to a `\uXXXX` sequence, so a space becomes ` ` and the multi-word phrase never appears verbatim. Grep for a single token or a raw JS identifier instead. See "Test State Hygiene on Shared Playgrounds" below; the Twig-helper side lives in the `craft-twig-guidelines` skill.
+- Assuming console-created users can log in immediately — users made with `craft users/create` may land with `passwordResetRequired` set, blocking a normal login in manual testing. Clear the flag on QA fixtures created via the console command. See "Test State Hygiene on Shared Playgrounds" below.
 
 ## Two Testing Approaches
 
@@ -443,6 +449,85 @@ it('passes correct data in sync event', function () {
 
     expect($firedEvent)->not->toBeNull()->categoryId->toBe(42);
 });
+```
+
+## Test State Hygiene on Shared Playgrounds
+
+When a plugin's tests run against a shared Craft install that people also use for manual QA, the test suite must leave global state exactly as it found it. State that leaks out of a test run corrupts the playground for everyone else, and the failures show up far from the cause.
+
+### Restore what you found — never hardcode the default
+
+A teardown that resets a project-config value to *Craft's* default is only correct if the default is what the playground actually had. It usually isn't. A real suite reset `users.allowPublicRegistration` to `false` in `afterEach` on every run, silently flipping the setting off and sabotaging manual QA that relied on it being on.
+
+Capture the original in `beforeEach`, restore that exact value afterward. Tests that need a specific state set it explicitly themselves rather than depending on ambient state.
+
+```php
+beforeEach(function () {
+    $this->originalAllowPublicRegistration =
+        Craft::$app->getProjectConfig()->get('users.allowPublicRegistration');
+});
+
+afterEach(function () {
+    // Restore what we found, not a hardcoded default.
+    setAllowPublicRegistration((bool) $this->originalAllowPublicRegistration);
+});
+```
+
+### Project-config writes are hazardous inside rolled-back transactions
+
+With craft-pest's `RefreshesDatabase`, each test runs inside a DB transaction that's rolled back on teardown. A live `Craft::$app->getProjectConfig()->set(...)` bumps the in-memory memoized `configVersion`, but the rollback discards the stored row that would have matched it. The memo and the persisted state desync, and every *later* project-config write in the run throws `craft\errors\BusyResourceException` / `craft\errors\StaleResourceException` — a cascade of failures whose root cause is several tests upstream.
+
+Guard project-config writes so they only fire when the value actually changes, and keep per-test churn to a minimum. A small shared helper in `Pest.php` centralizes the guard:
+
+```php
+// tests/Pest.php
+function setAllowPublicRegistration(bool $allow): void
+{
+    $projectConfig = Craft::$app->getProjectConfig();
+
+    // Only-when-different: skip the write (and the configVersion bump)
+    // if the stored value already matches.
+    if ((bool) $projectConfig->get('users.allowPublicRegistration') === $allow) {
+        return;
+    }
+
+    $projectConfig->set('users.allowPublicRegistration', $allow);
+}
+```
+
+### Request-IP fixtures: overwrite the header *and* reset the memo
+
+craft-pest's fake web request carries `X-Forwarded-For: 127.0.0.1`. `craft\web\Request::getUserIP()` checks forwarded headers first — `X-Forwarded-For` is in `Request::$ipHeaders` — then memoizes its answer in the private `$_ipAddress` property, returning that cached value on every subsequent call. (Verified against Craft 5 `craft\web\Request`: `getUserIP()` sets `$this->_ipAddress` on first call and returns it thereafter.)
+
+So planting a test IP requires *both* overwriting the `X-Forwarded-For` header *and* clearing the `_ipAddress` memo via reflection — a header change alone is ignored once the value has been read once. Restore both afterward so the next test starts clean.
+
+```php
+$request = Craft::$app->getRequest();
+
+// 1. Overwrite the forwarded header (checked before REMOTE_ADDR).
+$request->getHeaders()->set('X-Forwarded-For', '203.0.113.7');
+
+// 2. Reset the private memo so getUserIP() recomputes.
+$ref = new ReflectionProperty(\craft\web\Request::class, '_ipAddress');
+$ref->setAccessible(true);
+$ref->setValue($request, null);
+
+expect($request->getUserIP())->toBe('203.0.113.7');
+
+// Restore both after the test.
+```
+
+### `|e('js')` escaping breaks multi-word grep assertions
+
+When asserting that rendered output contains a translated string, remember that Twig's `|e('js')` escaper converts *every* non-alphanumeric ASCII char — including a space (`0x20`, which becomes ` `) — to a `\uXXXX` sequence. A translated multi-*word* phrase therefore never appears verbatim in the escaped JS, so a grep or `assertSee()` for the whole phrase silently misses. Assert on a single word/token or a raw JS identifier instead. This is both a QA grep gotcha and a Twig-helper behavior; the escaping detail lives in the `craft-twig-guidelines` skill.
+
+### Console-created users may require a password reset
+
+Users created with `craft users/create` may land with `passwordResetRequired` set, which blocks a normal login and confuses manual testing on the playground. Clear the flag on QA fixtures created via the console command so testers can log in normally. (Observed fixture gotcha — clear the flag regardless of the exact mechanism that set it.)
+
+```php
+$user->passwordResetRequired = false;
+Craft::$app->getElements()->saveElement($user);
 ```
 
 ### Testing Event Cancellation

@@ -8,6 +8,7 @@ Standalone CP component types: dashboard widgets, utility pages, slideout editor
 - Dashboard Widgets — Widget class, settings/body templates, registration
 - Slideout Editors — automatic behavior, customization, programmatic triggering
 - Ajax Endpoints for CP — controller actions, Craft.sendActionRequest()
+- VueAdminTable — paginated/searchable CP lists via a permission-gated JSON data action
 - CP Alerts and Notices — system-wide alerts, flash messages
 
 ## Utility Pages
@@ -256,6 +257,60 @@ Craft.sendActionRequest('POST', 'my-plugin/items/save-item', {
     Craft.cp.displayError(error.response.data.message);
 });
 ```
+
+## VueAdminTable (paginated CP lists)
+
+Any CP list that grows with usage — logs, sign-in history, temporary grants, submissions — must be paginated and searchable, not a plain Twig `<table>` that renders every row. Two native options:
+
+- **Element index** when the rows are elements (see `element-index.md`).
+- **`Craft.VueAdminTable`** when the rows are plain records/data. It fetches pages from a JSON action, so the DB does the paging.
+
+Wire it with a permission-gated JSON data action plus a small init in the CP template:
+
+```php
+// Controller — permission-gated JSON page source
+public function actionTableData(): Response
+{
+    $this->requirePermission(MyController::PERMISSION_VIEW_LOG);
+    $page = (int)$this->request->getParam('page', 1);
+    $limit = (int)$this->request->getParam('per_page', 100);
+    $search = $this->request->getParam('search');
+
+    $query = LogRecord::find()->orderBy(['dateCreated' => SORT_DESC]);
+    if ($search) {
+        $query->andWhere(['like', 'message', $search]);
+    }
+    $total = (int)$query->count();
+    $rows = $query->offset(($page - 1) * $limit)->limit($limit)->all();
+
+    return $this->asJson([
+        'data' => array_map(fn($r) => [
+            'id' => $r->id,
+            'title' => $r->message,
+            'when' => $r->dateCreated,
+        ], $rows),
+        'pagination' => ['total' => $total],
+    ]);
+}
+```
+
+```twig
+{% js %}
+  new Craft.VueAdminTable({
+    columns: [
+      { name: 'title', title: '{{ 'Message'|t('my-plugin') }}' },
+      { name: 'when', title: '{{ 'When'|t('my-plugin') }}' },
+    ],
+    container: '#log-table',
+    tableDataEndpoint: '{{ actionUrl('my-plugin/logs/table-data') }}',
+    search: true,
+    pagination: true,
+  });
+{% endjs %}
+<div id="log-table"></div>
+```
+
+A plain Twig `<table>` is acceptable only for a provably small, fixed list (e.g. a handful of statuses). See `cp-ui-patterns.md` (CP Screen Composition) for when to reach for this.
 
 ## CP Alerts and Notices
 

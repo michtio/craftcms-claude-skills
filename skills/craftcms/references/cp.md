@@ -731,6 +731,8 @@ The pieces (most are already shown above — this ties them together):
   ```
   Both screens then post `settings[...]`, which is exactly what `savePluginSettings($plugin, $settings->toArray())` expects. (Verified against Craft 5: `Plugin::settingsResponse()` namespaces settings HTML under `'settings'`; the `{% namespace %}` tag / `|namespace` filter both delegate to `View::namespaceInputs()`.)
 
+  **Caution — this `{% namespace %}` reuse is only safe on a *non-tabbed* fragment.** `View::namespaceInputs()` rewrites `id` attributes as well as `name`s, so on a tabbed screen it renames pane ids and breaks Craft's tab JS (every tab shows the first pane). For a tabbed settings screen, don't wrap in `{% namespace %}` — carry `name: 'settings[...]'` explicitly on each field and keep pane ids literal. See `cp-ui-patterns.md` (CP Screen Composition → the namespace/id tab trap).
+
 ### Split Settings Pages (savePluginSettings footgun)
 
 `Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)` only persists the keys present in `$settings`. Internally it calls `$pluginSettings->toArray(array_keys($settings))`, meaning any settings NOT submitted in the current request are silently dropped from project config.
@@ -949,10 +951,12 @@ Every CP plugin/module screen has three gates between the URL and the rendered p
 | Gate | Where | What blocks read-only access |
 |------|-------|------------------------------|
 | **1. CP nav** | `getCpNavItem()` | Subnav entry gated on `allowAdminChanges` hides the link (page still reachable by direct URL) |
-| **2. Controller beforeAction** | `beforeAction()` | `$this->requireAdmin()` with no args checks `allowAdminChanges` and throws 403 |
+| **2. Controller beforeAction** | `beforeAction()` | `$this->requireAdmin()` gates the whole controller on `allowAdminChanges`, blocking even view actions on production |
 | **3. Action body** | `actionEdit()` etc. | Explicit `allowAdminChanges` throw or `requireAdmin()` inside the action |
 
 When making a screen read-only-accessible, **walk all three gates** before shipping. Don't fix gate 3 and leave gates 1 and 2 blocking.
+
+**Gate the screen by permission, not by admin.** For a plugin's own CP section, who-may-be-on-the-screen is a dedicated permission (`<handle>:manageSettings`); `allowAdminChanges` is a separate axis that governs only whether writes succeed. Gating with `requireAdmin()` conflates the two and locks the screen to admins even when a site wants to delegate it to a non-admin group. See `permissions.md` → "Settings and screen access are permission-gated, not admin-gated" for the full rationale; the gates below show the read-only write-axis mechanics that apply on top of the permission gate.
 
 ### Gate 1: CP nav (getCpNavItem)
 
@@ -981,23 +985,22 @@ public function getCpNavItem(): ?array
 
 Craft does **not** auto-hide subnav entries when `allowAdminChanges` is false. If the settings link vanishes on production, the plugin's own `getCpNavItem()` is gating it. Check there first.
 
-### Gate 2: requireAdmin() per-action
+### Gate 2: permission in beforeAction, write-axis per action
 
-`requireAdmin()` with no args bundles two checks: (1) user is admin, (2) `allowAdminChanges` is true. The default `$requireAdminChanges = true` is the gotcha. Calling `$this->requireAdmin()` in `beforeAction()` blocks **all** actions on production, including view actions.
-
-Place `requireAdmin()` calls **per-action**, not in `beforeAction()`:
+Gate *access* with the screen's permission in `beforeAction()` — one call covers both the view (`actionEdit`) and the write (`actionSave`), so access can't drift between them. Then gate *writability* per write action with an explicit `allowAdminChanges` check that fails closed:
 
 ```php
-// View action: admin check only, no allowAdminChanges gate
+public function beforeAction($action): bool
+{
+    // Who may be on the screen — covers edit AND save.
+    $this->requirePermission(SettingsController::PERMISSION_MANAGE_SETTINGS);
+    return parent::beforeAction($action);
+}
+
+// View action: renders read-only when writes are disabled.
 public function actionEdit(?int $itemId = null): Response
 {
-    $this->requireAdmin(false);
-
     $readOnly = !Craft::$app->getConfig()->getGeneral()->allowAdminChanges;
-
-    if ($itemId === null && $readOnly) {
-        throw new ForbiddenHttpException('New items cannot be created when allowAdminChanges is disabled.');
-    }
 
     return $this->renderTemplate('my-plugin/_edit', [
         'item' => $this->_getItem($itemId),
@@ -1005,16 +1008,20 @@ public function actionEdit(?int $itemId = null): Response
     ]);
 }
 
-// Write action: admin + allowAdminChanges required
+// Write action: re-check the write axis server-side, fail closed.
 public function actionSave(): ?Response
 {
-    $this->requireAdmin();
     $this->requirePostRequest();
+    if (!Craft::$app->getConfig()->getGeneral()->allowAdminChanges) {
+        throw new ForbiddenHttpException('Settings are read-only on this environment.');
+    }
     // ... save logic
 }
 ```
 
-**Anti-pattern:** dispatch in `beforeAction()` using `in_array($action->id, ['index', 'edit'])` or `str_starts_with($action->id, 'save')`. This is brittle. A future write action with a non-`save*` name slips through silently. Per-action calls are explicit and self-documenting.
+Why permission-in-`beforeAction` (not `requireAdmin()`): `requireAdmin()` with no args bundles *is-admin* **and** *`allowAdminChanges` is true*, so putting it in `beforeAction()` blocks every action on production, including the view — and it locks the screen to admins even when the site wants to delegate it (see `permissions.md`). The permission answers "who," the per-action `allowAdminChanges` check answers "may this write happen." If you deliberately keep a screen admin-only (mirroring Craft core's Settings section), use `requireAdmin(false)` in `beforeAction()` for the view and `requireAdmin()` on writes — but for a plugin's own section, prefer the permission.
+
+**Anti-pattern:** dispatching in `beforeAction()` with `in_array($action->id, ['index', 'edit'])` or `str_starts_with($action->id, 'save')` to decide the write gate. It's brittle — a future write action with a non-`save*` name slips through. Keep the *access* gate in `beforeAction()` and the *write* gate explicit in each write action.
 
 ### Gate 3: Template patterns
 

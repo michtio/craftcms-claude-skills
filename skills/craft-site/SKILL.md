@@ -1,6 +1,6 @@
 ---
 name: craft-site
-description: "Craft CMS 5 front-end Twig development — atomic design, template architecture, components, Vite buildchain. Covers atoms/molecules/organisms, props/extends/block patterns, layout chains, view routing, content builders, image presets, Tailwind named-key collections, multi-brand CSS tokens, JavaScript boundaries (Alpine/DataStar/Vue, tabs, accordions), Vite asset loading, and front-end auth (login, registration, password reset, profiles). Triggers on: {% include ... only %}, {% embed %}, _atoms/, _molecules/, _organisms/, _views/, _builders/, component--variant.twig, _component--props.twig, collect({}), utilities prop, data-brand theming, hero/card components, Matrix block rendering, craft.vite.script, vite.php, vite.config.ts, nystudio107, buildchain, per-page scripts, Blitz static/page/dynamic caching, ImageOptimize, Imager-X, responsive images, srcset, image transforms, SEOmatic meta/OpenGraph/JSON-LD, Sprig, htmx, multi-language, hreflang, localization, Formie form styling, login/registration form, RSS/Atom/JSON feeds, XML sitemap, |rss, |atom, search page, .search(), headless GraphQL queries, preview tokens, Next.js/Nuxt/Astro integration. Always use when creating, editing, or reviewing Craft front-end Twig templates, components, layouts, views, builders, buildchain configuration, or front-end auth — including plugin template integration (Blitz, SEOmatic, Sprig, Formie, Imager-X). Do NOT trigger for PHP plugin/module development (craftcms) or content modeling (craft-content-modeling)."
+description: "Craft CMS 5 front-end Twig development — atomic design, template architecture, components, Vite buildchain. Covers atoms/molecules/organisms, props/extends/block patterns, layout chains, view routing, content builders, image presets, Tailwind named-key collections, multi-brand CSS tokens, JavaScript boundaries (Alpine/DataStar/Vue, tabs, accordions), Vite asset loading, and front-end auth (login, registration, password reset, profiles). Triggers on: {% include ... only %}, {% embed %}, _atoms/, _molecules/, _organisms/, _views/, _builders/, component--variant.twig, _component--props.twig, collect({}), utilities prop, data-brand theming, hero/card components, Matrix block rendering, craft.vite.script, vite.php, vite.config.ts, nystudio107, buildchain, per-page scripts, Blitz static/page/dynamic caching, ImageOptimize, Imager-X, responsive images, srcset, image transforms, SEOmatic meta/OpenGraph/JSON-LD, Sprig, htmx, multi-language, hreflang, localization, Formie form styling, login/registration form, RSS/Atom/JSON feeds, XML sitemap, |rss, |atom, search page, .search(), headless GraphQL queries, preview tokens, Next.js/Nuxt/Astro integration, login failure landing page, WebAuthn/passkey UX copy, NotAllowedError, AbortError, one-shot returnUrl, history.replaceState returnUrl, re-auth interruption, account enumeration form state, plugin example templates, example-templates command, plugin template bundle, layout shell, render builder, fluent tag, BaseTag, {{ tag.render() }}, progressive enhancement, segmented OTP input. Always use when creating, editing, or reviewing Craft front-end Twig templates, components, layouts, views, builders, buildchain configuration, or front-end auth — including plugin template integration (Blitz, SEOmatic, Sprig, Formie, Imager-X). Do NOT trigger for PHP plugin/module development (craftcms) or content modeling (craft-content-modeling)."
 ---
 
 # Craft CMS 5 — Front-End Twig (Atomic Design)
@@ -97,6 +97,8 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Use entry.render() for reusable card components" → read `element-partials.md`
 - "Set up _partials/ templates for entries" → read `element-partials.md`
 - "Render Matrix blocks with partials" → read `element-partials.md`
+- "Ship example templates with a plugin (bundle + install command)" → read `example-templates.md`
+- "Build a fluent front-end render/tag builder (craft.<handle>.thing().render())" → read `example-templates.md`
 
 
 | Reference | Scope |
@@ -119,6 +121,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 | `references/feeds.md` | Feeds: RSS 2.0, Atom, JSON Feed, XML sitemap, custom routes, date filters |
 | `references/headless.md` | Headless & hybrid: headlessMode, GraphQL API, CORS, preview tokens, Next.js/Nuxt/Astro integration |
 | `references/element-partials.md` | Element partials: entry.render(), _partials/ directory, template lookup, custom variables, eager loading in partials |
+| `references/example-templates.md` | Plugin front-end delivery: Craft Commerce-style example-template bundles (canonical folder, `_private/layouts/` shell, per-page `{% extends %}`/`{% block main %}`, `index.twig` redirect, install console command with rename/`--overwrite`), fluent `craft.<handle>.<thing>({...}).render()` BaseTag builders, progressive-enhancement discipline |
 
 ### Plugin References
 

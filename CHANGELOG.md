@@ -1,13 +1,50 @@
 # Changelog
 
-## Unreleased
+## 1.8.0 -- 2026-07-13
+
+A large doctrine release: two merged community/maintainer PRs plus a batch of incident-derived guidance folded across `craftcms`, `craft-php-guidelines`, `craft-site`, `craft-twig-guidelines`, `craft-content-modeling`, `craft-cloud`, and `ddev`. The headline is a **CP access-gating doctrine** — a plugin's own CP screens (settings, dashboards) are gated by a dedicated permission, not `requireAdmin()`; `allowAdminChanges` governs writability only — which a whole plugin estate had been getting wrong. All API/mechanism claims were verified against Craft 5.10 (`craftcms/cms`) and, for the Cloud item, `craftcms/cloud` source. Minor bump: new reference file plus significant multi-skill additions.
 
 ### Added
 
-- **`skills/craft-content-modeling/references/element-index-sources.md`** — required follow-up after creating sections: tidy Entries element index sources in `config/project/project.yaml` so placement (headings / peer order) and `tableAttributes` / `defaultSort` match similar sections (e.g. FAQ Index with News Index, FAQ Categories with News Categories). Includes role tables, `field:` vs `fieldInstance:` column keys, post-create checklist, and pitfalls (default append position, generic columns, empty headings).
-- **`skills/craft-content-modeling/SKILL.md`** — "After creating sections — tidy the Entries element index" section; Common Pitfalls bullet; task-routing rows and trigger keywords for elementSources / tableAttributes tidy-up; reference table row.
-- **`skills/craft-content-modeling/references/infrastructure.md`** — Project Config Essentials rule + Common Pitfalls cross-link to `element-index-sources.md`.
-- **`skills/craftcms/references/element-index.md`** — opening cross-link: site Entries sources belong in content-modeling, not custom `defineSources()` on Entry.
+- **`skills/craft-content-modeling/references/element-index-sources.md`** (PR #7, thanks **@willbocc** — William Bocchinelli) — required follow-up after creating sections: tidy Entries index sources in `project.yaml` so placement (headings / peer order) and `tableAttributes` / `defaultSort` match similar sections. Role tables, `field:` vs `fieldInstance:` column keys (verified against `ElementSources.php`), post-create checklist, pitfalls. Post-merge refinements: documented the precondition that the `elementSources` block only exists once sources are customized; deduped an intra-file bullet.
+- **`skills/craft-site/references/example-templates.md`** (new) — plugin front-end delivery: Craft Commerce-style example-template bundles (canonical folder, `_private/layouts/` shell, per-page `{% extends %}`/`{% block main %}`, `index.twig` redirect, install console command with rename/`--overwrite`), and fluent `craft.<handle>.<thing>({...}).render()` BaseTag builders with progressive-enhancement discipline.
+
+### Changed
+
+**CP access-gating doctrine (items 1-4):**
+
+- **`skills/craftcms/references/permissions.md`** — new "Settings and screen access are permission-gated, not admin-gated": a plugin's own CP screens use a dedicated permission (`<handle>:manageSettings`), never `requireAdmin()`; `allowAdminChanges` is a separate write axis; admins implicitly hold every permission; screen-access permission consts live as `public const` on the owning controller; and "no dead nav items" (`getCpNavItem()` returns `null` when the per-permission subnav is empty).
+- **`skills/craftcms/references/cp.md`** — reframed the Read-Only Mode "three-node access path" Gate 2 from `requireAdmin()` to permission-in-`beforeAction` + a per-write `allowAdminChanges` re-check that fails closed; kept the admin-only alternative for screens deliberately mirroring Craft core's Settings.
+- **`skills/craft-php-guidelines/SKILL.md`** — extended the contract-constant pitfall to permission handles (const on the owning controller; typo passes for admins, denies everyone else).
+
+**Config precedence (item 5):**
+
+- **`skills/craftcms/references/config-bootstrap.md`** — reinforced that `CRAFT_*` env vars beat `config/general.php` (mechanism: `Config` applies `App::envConfig(GeneralConfig::class, 'CRAFT_')` after the file), with the actionable "check the environment first" rule and the `CRAFT_ALLOW_ADMIN_CHANGES` example.
+- **`skills/ddev/SKILL.md`** — troubleshooting for a general-config edit that won't take: ddev injects `PRIMARY_SITE_URL` / `CRAFT_DB_*` via `.ddev/.env.web` and regenerates it on restart; a real container env var beats `cms/.env`.
+
+**CP screen composition (item 6):**
+
+- **`skills/craftcms/references/cp-ui-patterns.md`** — new "CP Screen Composition — Native UX Defaults": tabs by default and the namespace/id tab trap (`{% namespace %}` rewrites pane `id`s, so tabbed panes must carry explicit `name: 'settings[...]'` and literal ids); lightswitches vs checkboxes; two-layer field guidance (`instructions` + `<span class="info">`, not `tip:`); core's conditional cross-setting callout markup (with the trailing `<hr>` spacing); env-var numerics; and honest empty values. Reconciled with the 1.7.4 `{% namespace 'settings' %}` note (safe only on non-tabbed fragments).
+- **`skills/craftcms/references/cp-components.md`** — new VueAdminTable section: unbounded CP lists ship as a paginated/searchable VueAdminTable backed by a permission-gated JSON action, or an element index — not a plain Twig `<table>`.
+
+**Front-end auth & controllers (candidates):**
+
+- **`skills/craftcms/references/controllers.md`** + **`skills/craft-site/references/auth-flows.md`** / **`auth-account.md`** — anonymous-action failure redirects must land where the flash renders (never bare `siteUrl()`); enumeration-safe flows carry the visitor's typed input in the session (set unconditionally before any branch); one-shot `returnUrl` (strip via `history.replaceState`, always validate same-site server-side); WebAuthn/passkey UX copy (catch `DOMException` by `error.name`).
+
+**Testing & Twig (candidates):**
+
+- **`skills/craftcms/references/testing.md`** — new "Test State Hygiene on Shared Playgrounds": restore what you found (`beforeEach`/`afterEach`); project-config writes in craft-pest desync `configVersion` (`StaleResourceException`) — guard only-when-different; request-IP fixtures (`X-Forwarded-For` wins + `_ipAddress` memo reset via reflection, verified against `craft\web\Request`); `|e('js')` breaks multi-word grep; console-created users may need `passwordResetRequired` cleared.
+- **`skills/craft-twig-guidelines/SKILL.md`** — `|e('js')` aggressive escaping note.
+
+**Plugin front-end output & privacy (candidates):**
+
+- **`skills/craftcms/references/architecture.md`** — new "Front-End Output From Plugins" (example-templates install command + fluent BaseTag render builder plugin-side) and "Storing Personal Data" (region-neutral: `docs/privacy.md` data inventory/retention/lawful-basis, `anonymizeIp` at the storage boundary after geo lookup).
+
+**Cloud (PR #5):**
+
+- **`skills/craft-cloud/references/deploy-pipeline.md`** + **`SKILL.md`** — reserved Cloud-injected env vars you must not set (`CRAFT_SECURITY_KEY`, `CRAFT_APP_ID`, `CRAFT_DB_*`, `REDIS_*`, `CRAFT_WEB_ROOT`, …), verified against `craftcms/cloud`.
+
+**Trigger descriptions** updated across `craftcms`, `craft-php-guidelines`, `craft-site`, `craft-twig-guidelines`, and `ddev` for all of the above.
 
 ## 1.7.4 -- 2026-07-09
 

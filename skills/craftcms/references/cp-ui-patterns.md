@@ -9,6 +9,7 @@ Battle-tested CP patterns from Craft core and first-party plugins, plus conditio
 - Asset Bundles — CP asset bundle, JS configuration injection, registration
 - CP Markup Patterns — sidebar badges, notice/warning blocks, tip/warning on form fields
 - Element Edit Screen — sidebar panels (`.meta` vs `.meta read-only`), `metaFieldsHtml()` override, top-toolbar split button (`EVENT_DEFINE_SIDEBAR_HTML` / `EVENT_DEFINE_ADDITIONAL_BUTTONS`)
+- CP Screen Composition — native UX defaults: tabs + the namespace/id tab trap, lightswitches vs checkboxes, two-layer field guidance (`instructions` + `<span class="info">`), cross-setting callout markup, env-var numerics, VueAdminTable for unbounded lists, native stats, honest empty values
 
 ## CP UI Patterns
 
@@ -452,3 +453,59 @@ Markup details that matter:
 - **No JS needed.** `Craft.initUiElements` runs `$('[data-disclosure-trigger]').disclosureMenu()`, so Garnish wires up any element carrying `data-disclosure-trigger` automatically (the `.menubtn` class is initialized separately only when it lacks that attribute).
 
 Or skip the hand-rolled menu: `Cp::disclosureMenu($items, ['withButton' => true, 'hiddenLabel' => '…'])` emits the correct `<ul><li>` items and registers the JS. Wrap a primary `Html::a('…', ['class' => 'btn'])` and that call together in `Html::tag('div', …, ['class' => 'btngroup'])` for the split-button shape.
+
+## CP Screen Composition — Native UX Defaults
+
+A plugin's CP screens should look and behave like Craft's own — native Craft UX is the default, not a later polish pass. These are the conventions (and the traps) that make a screen read as part of Craft rather than "almost Craft." For the settings-page controller/template plumbing and the in-section pattern, see `cp.md` (Settings Pages).
+
+### Tabs by default — and the namespace/id tab trap
+
+A settings or management screen with more than ~2 sections uses CP tabs (`{% set tabs %}` + pane divs), not one long scroll. Craft's tab JS toggles panes by reading each tab's `href="#pane-id"` and matching it as a selector against the pane's literal `id` (showing that pane, adding `class="hidden"` to the rest). Two consequences:
+
+- **Give each pane a literal `id` matching its tab's `href`.** First pane visible; later panes start `class="hidden"`.
+- **Do not wrap tabbed settings fields in `{% namespace 'settings' %}`.** The namespace tag rewrites `id` attributes as well as `name`s (both go through `View::namespaceInputs()`), so a pane `id="general"` becomes `id="settings-general"`, the tab's `href="#general"` matches nothing, and **every tab silently shows the first pane**. Instead, carry the post envelope explicitly on each field — `name: 'settings[tokenTtl]'` — and leave pane ids literal. (The bare-fragment `{% namespace 'settings' %}` reuse in `cp.md` is safe only for a *non-tabbed* shared fragment where no pane ids exist.)
+
+### Lightswitches, not checkboxes, for booleans
+
+Use `forms.lightswitchField` for a boolean or a toggle-set setting. A checkbox group (`forms.checkboxSelectField`) is only for a genuine multi-select of peers. Lightswitches are Craft's native affordance for on/off; checkboxes read as "pick several."
+
+### Two-layer field guidance: `instructions` + `<span class="info">`, not `tip:`
+
+Field help is two layers, with distinct mechanisms — don't reach for `tip:` for this:
+
+- The one-line **`instructions`** param carries the short "what this is."
+- The deeper "why and when" goes **inside** the instructions as `<span class="info">…</span>`, which Craft renders as the hover ⓘ info bubble next to the label (the same `.info` span Craft's own field macros emit). Example: `instructions: 'Token lifetime.'|t ~ '<span class="info">' ~ 'How long an issued token stays valid before re-auth is required.'|t ~ '</span>'`.
+- `tip:` (blue lightbulb) and `warning:` (amber) are **standalone callout params** for genuine per-field callouts — they are *not* the info-bubble mechanism. Using `tip:` where an info bubble belongs produces the wrong affordance.
+
+### Cross-setting warnings: core's conditional-callout markup
+
+When one setting's value makes another moot ("X is on but Y is off, so the feature stays closed"), render the warning with Craft core's exact conditional-callout markup — copy it from `vendor/craftcms/cms/src/templates/settings/email/_index.twig`:
+
+```twig
+{% if someConditionThatMattersToTheUser %}
+    <div class="readable">
+        <blockquote class="note warning">
+            <p>{{ 'Sessions are enabled but no driver is configured, so login stays disabled. {link}.'|t('my-plugin', {
+                link: tag('a', { text: 'Configure a driver'|t('my-plugin'), href: url('my-plugin/settings') })
+            })|raw }}</p>
+        </blockquote>
+    </div>
+    <hr>
+{% endif %}
+```
+
+The trailing `<hr>` **inside** the conditional is the spacing mechanism between the callout and the first field — that's why it belongs to the `{% if %}`. Never hand-roll bare colored text, and never juggle a `first:` flag on the following field to fake the gap (that spacing bug recurs every time the callout is hand-rolled). Always carry the actionable link.
+
+### Operational numerics support env vars
+
+Anything an operator might need to change in production without a deploy — TTLs, limits, rate windows — gets env-var support end to end: `forms.autosuggestField` with `suggestEnvVars: true` in the template, a model property typed `int|string` (it may hold `'$MY_TTL'` before resolution), a typed getter that resolves via `App::parseEnv()`, and validation that runs on the **resolved** value. See `cp.md` (Settings Template with Env Var Support) for the field markup.
+
+### No unbounded static tables
+
+Any CP list that grows with usage — logs, sign-ins, grants, submissions — ships as a paginated, searchable **VueAdminTable** backed by a permission-gated JSON data action, or as an **element index** when the rows are elements. A plain Twig `<table>` is only for a provably small, fixed list. See `cp-components.md` (VueAdminTable) for the wiring.
+
+### Native stats and honest empty values
+
+- Posture / summary data (counts, health, "N of M configured") renders with Craft's native stat presentation, not paragraphs of prose.
+- Unknown or empty cells in an admin table render as a **muted badge with words** (`<span class="status-badge"> Location unknown </span>`-style), never a bare `-`.
+- An admin table shows **facts**, not user alerts. A signal meant for the end user (e.g. a "new sign-in location" security notice) ships through the user-facing channel (email/notification) — it does not get an admin-table column.

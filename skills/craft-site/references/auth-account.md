@@ -13,7 +13,7 @@
 - Not checking `currentUser` before showing edit profile -- use `{% requireLogin %}` to force authentication.
 - Forgetting `currentPassword` when changing email or password on profile update -- Craft requires it for identity verification.
 - Not handling the `user` variable for profile validation errors -- Craft passes it back on failed saves.
-- Missing `{{ flashes() }}` or manual flash message handling -- success states have no visible feedback.
+- Missing `{{ flashes() }}` or manual flash message handling -- success states have no visible feedback. The same gap causes an "invisible flash" when a failed action redirects to a page that has no flash region: the message is set but never rendered. See `auth-flows.md` (Failure Redirect Landings) for where public-action failures should land.
 
 ## Contents
 
