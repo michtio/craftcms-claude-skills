@@ -246,6 +246,13 @@ Skills::agentContent('craft-debugger');
 
 The helper is read-only and does no caching — wrap it in your own registry if you need that. PHP 8.2+.
 
+## Acknowledgements
+
+Thanks to the people whose contributions and work have improved this pack:
+
+- **[William Bocchinelli](https://github.com/willbocc)** ([@willbocc](https://github.com/willbocc)) — element-index sources guidance for content modeling (PR #7).
+- **[John Henry](https://github.com/john-henry)** ([@john-henry](https://github.com/john-henry)) — the [Craft CP UI & Brand style guide](https://john-henry.github.io/craft-cp-ui-guide/) that prompted the v1.9.0 control-panel UI reconciliation pass.
+
 ## License
 
 MIT -- see [LICENSE](LICENSE).
