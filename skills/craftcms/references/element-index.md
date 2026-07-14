@@ -12,6 +12,7 @@ For **site content** Entries index sources after creating sections (project conf
 - Sort Options (defineSortOptions)
 - Element Display Modes — chips, cards, table rows: when each renders, customization methods
 - Card Attributes (Craft 5.5+)
+- Relation Field Display/Props — viewMode, previewMode, maxRelations, sources, maintainHierarchy
 - Thumbnails — hasThumbs, thumbUrl, thumbSvg, checkered/rounded
 - Conditions (createCondition, custom condition rules)
 - Actions (defineActions, includeSetStatusAction, custom actions, per-element edit-screen action menu)
@@ -194,7 +195,9 @@ Chips appear in relation fields, breadcrumbs, inline references, and anywhere el
 
 ```php
 // Customize the chip label (default: uiLabel, which is usually the title)
-protected function chipLabelHtml(): string
+// Public override — NOT a Craft-4-era chipHtml(); the whole-chip markup is
+// assembled by Cp::elementChipHtml(), you only supply the label.
+public function getChipLabelHtml(): string
 {
     return Html::encode($this->getUiLabel());
 }
@@ -214,14 +217,16 @@ Cards appear in card view of element indexes, Matrix card mode, and relation fie
 
 ```php
 // Custom card body content (default: renders card body elements from field layout)
-protected function cardBodyHtml(): ?string
+// Public override — NOT a Craft-4-era cardHtml(); Cp::elementCardHtml() builds
+// the card shell, you only supply the body.
+public function getCardBodyHtml(): ?string
 {
     // Default iterates getFieldLayout()->getCardBodyElements($this)
-    return parent::cardBodyHtml();
+    return parent::getCardBodyHtml();
 }
 
-// Custom card title (since 5.7.0)
-protected function getCardTitle(): ?string
+// Custom card title (public, since 5.7.0)
+public function getCardTitle(): ?string
 {
     return $this->title;
 }
@@ -250,8 +255,8 @@ The base implementation handles `contentBlock:*` and `generatedField:*` prefixed
 
 | Mode | Where it appears | Customization method | Size control |
 |------|-----------------|---------------------|-------------|
-| **Chip** | Relation fields, breadcrumbs, inline refs | `chipLabelHtml()` | `CHIP_SIZE_SMALL`, `CHIP_SIZE_LARGE` |
-| **Card** | Card view, Matrix cards, relation card display | `cardBodyHtml()`, `defineCardAttributes()` | Field layout card view config |
+| **Chip** | Relation fields, breadcrumbs, inline refs | `getChipLabelHtml()` | `CHIP_SIZE_SMALL`, `CHIP_SIZE_LARGE` |
+| **Card** | Card view, Matrix cards, relation card display | `getCardBodyHtml()`, `defineCardAttributes()` | Field layout card view config |
 | **Table** | Table view of element indexes | `attributeHtml()`, `defineTableAttributes()` | Column selection |
 
 ## Card Attributes (Craft 5.5+)
@@ -283,6 +288,50 @@ protected static function defineDefaultCardAttributes(): array
 ```
 
 Placeholders show in the field layout designer as preview content. Default card attributes include `dateCreated`, `dateUpdated`, `id`, `uid`, plus `link`/`slug`/`uri` for elements with URIs.
+
+## Relation Field Display/Props
+
+All relation fields (Entries, Categories, Assets, Users, Tags, and custom `BaseRelationField` subclasses — see `fields.md`) share the same `elementSelect` input UI, so their display settings live on `BaseRelationField`. The rendered element uses the chip/card/thumbnail methods documented above, so nothing here duplicates those — this covers the field-level knobs that decide *how* those elements are laid out.
+
+### viewMode
+
+`viewMode` selects the layout of related elements in the input. Five modes are defined as `VIEW_MODE_*` constants (`BaseRelationField.php:81-89`):
+
+| Value | Constant | Renders as |
+|-------|----------|-----------|
+| `list` | `VIEW_MODE_LIST` | Vertical list of chips (default for most relation fields, `BaseRelationField.php:474`) |
+| `list-inline` | `VIEW_MODE_LIST_INLINE` | Chips flowing inline |
+| `cards` | `VIEW_MODE_CARDS` | Stacked element cards |
+| `cards-grid` | `VIEW_MODE_CARDS_GRID` | Cards in a multi-column grid |
+| `thumbs` | `VIEW_MODE_THUMBS` | Thumbnail tiles |
+
+The constructor defaults `viewMode` to `list` (`BaseRelationField.php:474`).
+
+**`large` is not a view mode.** It's a legacy alias remapped to `thumbs` in the constructor (`BaseRelationField.php:481-482`) — reading or writing `large` yields `thumbs`. Do not treat it as a distinct value.
+
+### previewMode (Assets only)
+
+`previewMode` is an **independent axis on the Assets field** (`fields/Assets.php:52-56`), not a `viewMode` value — do not conflate the two. It controls asset preview size:
+
+| Value | Constant | Default |
+|-------|----------|---------|
+| `full` | `PREVIEW_MODE_FULL` | yes (`fields/Assets.php:189`) |
+| `thumbs` | `PREVIEW_MODE_THUMBS` | |
+
+An Assets field therefore has both a `viewMode` (shared list/cards/thumbs layout) and a `previewMode` (`full`/`thumbs`) that further tunes the asset chip preview.
+
+### Core selection props
+
+| Prop | Type | Notes |
+|------|------|-------|
+| `maxRelations` | `?int` | Cap on related elements (`BaseRelationField.php:346`). The `limit` config key remaps to it in the constructor (`BaseRelationField.php:426`). `1` = single-select. Only enforced when `allowLimit` is true. |
+| `selectionLabel` | `?string` | Overrides the "Add …" button label (`BaseRelationField.php:357`). |
+| `sources` | `string\|string[]\|null` | Source keys the field can relate from; default `'*'` (`BaseRelationField.php:286`). Used when `allowMultipleSources` is true; the singular `source` (`:291`) is used otherwise. |
+| `showSiteMenu` | `bool` | Whether the selection modal shows a site menu (`BaseRelationField.php:302`, default `false`; defaults to `true` for pre-existing fields). |
+| `maintainHierarchy` | `bool` | Auto-relate structural ancestors (`BaseRelationField.php:308`). When on, the constructor clears `minRelations`/`maxRelations` in favour of `branchLimit`. |
+| `branchLimit` | `?int` | Max distinct structure branches when `maintainHierarchy` is on (`BaseRelationField.php:315`); cleared to `null` when hierarchy maintenance is off. |
+
+`maintainHierarchy` and `maxRelations`/`minRelations` are mutually exclusive by construction — the constructor nulls one set depending on the other (`BaseRelationField.php:453-454`), so a hierarchy-maintaining field is limited by branches, not by a flat relation count.
 
 ## Thumbnails
 
@@ -529,7 +578,7 @@ Element indexes support multiple view modes. Users switch between them via toolb
 | Mode | Icon | When to use | Rendering |
 |------|------|-------------|-----------|
 | **Table** | list | Default for all elements. Column-based with sort headers. | `attributeHtml()` per column |
-| **Cards** | grid | Visual overview with thumbnails. Good for media, products. | `cardBodyHtml()` + `defineCardAttributes()` |
+| **Cards** | grid | Visual overview with thumbnails. Good for media, products. | `getCardBodyHtml()` + `defineCardAttributes()` |
 | **Structure** | structure | Hierarchical elements with drag-to-reorder. | Table with nesting indicators |
 
 Table mode is always available. Cards require `defineCardAttributes()`. Structure requires the element type to support structures.

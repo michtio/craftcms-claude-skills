@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.9.0 -- Unreleased
+
+Control-panel UI reconciliation pass. Audited our CP-UI guidance against an external Craft CP UI & Brand style guide by **[@john-henry](https://github.com/john-henry)** and folded in the source-verified gaps. Every added claim was checked against Craft 5.10 (`craftcms/cms`) source before writing; where the guide disagreed with source, source won and the divergence was noted rather than encoded (several guide claims — a fabricated `Craft.confirm()` / `cp.addressCardHtml()`, the `.shade` / `.tabs` / `.search` class names, Craft 4-era `chipHtml()` / `cardHtml()` overrides, and a `.fld-element` wrapper — were rejected on that basis and reported back upstream). Minor bump: significant additions across five reference files.
+
+### Added
+
+- **`skills/craftcms/references/cp-ui-patterns.md`** — expanded "Craft CSS Custom Properties" into a semantic-token catalog: radius scale, spacing scale (rem-based), control sizing (`--ui-control-height`), hairline/border tokens, focus-ring tokens, the full `--fg-*` / `--bg-*` status/feedback family, text tokens (`--fg-subtle`, `--lh`), the system-UI font stack, and the `--<prefix>-<modifier>` naming convention. Verified in `_tokens.scss` / `_mixins.scss`.
+- **`skills/craftcms/references/cp.md`** — lightswitch-vs-checkbox decision rule (with the hidden-input mechanism that makes it matter), plus macro coverage the reference table was missing: `copytextField`, `moneyField`, buttons + modifier classes (`.submit` / `.secondary` / `.caution` / `.dashed`), `selectizeField` / `timeZoneField` / `languageMenuField` / `fileField` / `iconPickerField` / `rangeField`, and an inner-sidebar-nav (`_includes/nav.twig`) section.
+- **`skills/craftcms/references/cp-components.md`** — Editable Table Field (`forms.editableTableField`), Spinner, and Modals (markup + shade classes, cross-linked to `craft-garnish` for behavior).
+- **`skills/craftcms/references/element-index.md`** — Relation Field Display/Props reference: the five `viewMode`s, the Assets `previewMode` axis, and `maxRelations` / `selectionLabel` / `sources` / `maintainHierarchy` / `branchLimit`.
+- **`skills/craftcms/references/fields.md`** — Field-Layout UI Elements reference: built-in `Heading` / `Tip` / `HorizontalRule` / `LineBreak` / `Markdown` / `Template` / `Html`, their selector markup (`.fld-ui-element`, not `.fld-element`), and registration via `EVENT_DEFINE_UI_ELEMENTS` / `EVENT_DEFINE_NATIVE_FIELDS`.
+
+### Changed
+
+- **`skills/craftcms/references/cp-ui-patterns.md`** — corrected two pre-existing inaccuracies found during verification: a bare `.status` renders invisible because it has no `background-color` (not "no border"); and `.status-badge` is a draft-modification indicator (a 2px edge stripe with `.modified` / `.outdated`), not a muted empty-value badge — empty cells should use muted text (`<span class="light">`). Added `on` / `off` status synonyms and clarified that `off` / `suspended` / `expired` are distinct statuses that merely share a red fill.
+- **`skills/craftcms/references/cp.md`** — neutralized brand-flavored color adjectives on `tip` / `warning` (they are just the `notice` / `warning` classes, theme-driven) and documented that `instructions` / `tip` / `warning` are Markdown-aware. Expanded the "don't hand-write tabs" note with the real `.pane-tabs` / `role="tablist"` markup.
+- **`skills/craftcms/references/element-index.md`** — corrected the chip/card override points to the public `getChipLabelHtml()` / `getCardBodyHtml()` / `getCardTitle()` (were documented as protected `chipLabelHtml()` / `cardBodyHtml()`).
+- **`skills/craftcms/SKILL.md`** — new CP-UI task-example routes and trigger keywords for the additions above.
+
 ## 1.8.0 -- 2026-07-13
 
 A large doctrine release: two merged community/maintainer PRs plus a batch of incident-derived guidance folded across `craftcms`, `craft-php-guidelines`, `craft-site`, `craft-twig-guidelines`, `craft-content-modeling`, `craft-cloud`, and `ddev`. The headline is a **CP access-gating doctrine** — a plugin's own CP screens (settings, dashboards) are gated by a dedicated permission, not `requireAdmin()`; `allowAdminChanges` governs writability only — which a whole plugin estate had been getting wrong. All API/mechanism claims were verified against Craft 5.10 (`craftcms/cms`) and, for the Cloud item, `craftcms/cloud` source. Minor bump: new reference file plus significant multi-skill additions.

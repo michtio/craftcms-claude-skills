@@ -9,6 +9,9 @@ Standalone CP component types: dashboard widgets, utility pages, slideout editor
 - Slideout Editors — automatic behavior, customization, programmatic triggering
 - Ajax Endpoints for CP — controller actions, Craft.sendActionRequest()
 - VueAdminTable — paginated/searchable CP lists via a permission-gated JSON data action
+- Editable Table Field — inline-editable row data via forms.editableTableField
+- Spinner — loading indicator markup and variants
+- Modals — CP modal markup, shade classes, and the missing Craft.confirm()
 - CP Alerts and Notices — system-wide alerts, flash messages
 
 ## Utility Pages
@@ -311,6 +314,78 @@ public function actionTableData(): Response
 ```
 
 A plain Twig `<table>` is acceptable only for a provably small, fixed list (e.g. a handful of statuses). See `cp-ui-patterns.md` (CP Screen Composition) for when to reach for this.
+
+## Editable Table Field
+
+`forms.editableTableField` (macro `forms.twig:376`, wrapping the base `editableTable` at `forms.twig:136`) renders a grid of inline-editable rows — the same widget behind the Table field type. Reach for it when the author edits a small, structured set of rows in place (key/value pairs, ordered options, column definitions). It differs from VueAdminTable: editableTable is client-side and edits row *data*; VueAdminTable is server-driven and *displays* large paginated index tables (see the VueAdminTable section above — don't confuse the two).
+
+Columns are declared via `cols` (each `{heading, type}`); `rows` seeds initial data keyed by column ID; `addRowLabel` sets the "add" button text but only surfaces when `allowAdd: true`:
+
+```twig
+{% import '_includes/forms.twig' as forms %}
+{{ forms.editableTableField({
+    label: 'Redirects'|t('my-plugin'),
+    id: 'redirects',
+    name: 'redirects',
+    cols: {
+        from: { heading: 'From'|t('my-plugin'), type: 'singleline' },
+        to: { heading: 'To'|t('my-plugin'), type: 'url' },
+    },
+    rows: redirects,
+    allowAdd: true,
+    allowDelete: true,
+    allowReorder: true,
+    addRowLabel: 'Add a redirect'|t('my-plugin'),
+}) }}
+```
+
+Common `col.type` values include `singleline`, `multiline`, `number`, `url`, `email`, `date`, `time`, `color`, `checkbox`, `select`, `heading`, and `template`. Pass `static: true` to render a non-editable, read-only grid.
+
+For a purely presentational, read-only table you don't need the editable widget at all — a static `<table class="data">` (as used in the widget body template above) is lighter. Use editableTable only when the author actually edits the rows.
+
+## Spinner
+
+The CP loading indicator is a bare element — no JS required to show it; toggle it in/out of the DOM (or its visibility) as needed:
+
+```twig
+<div class="spinner"></div>
+```
+
+Size variants: `.spinner.small` and `.spinner.big`. Add `.spinner-absolute` to center it over a positioned container (it uses absolute positioning with a centered transform), which is handy for overlaying a spinner on a panel while an async request runs. Verified in `_main.scss` (~lines 2414-2447).
+
+## Modals
+
+> Modal and HUD *behavior* — the focus trap, ARIA wiring, open/close lifecycle, layer management — lives in the `craft-garnish` skill (`Garnish.Modal`, `Garnish.HUD`). This section only documents the CP markup and class contract; it does not duplicate the JS.
+
+### Container and size variants
+
+The modal container is `.modal`. A standard modal defaults to roughly 66% of the viewport (with a min size) unless you opt into a variant (verified `_main.scss` ~6901+):
+
+- `.fitted` — shrinks to its content (`width: auto; height: auto`).
+- `.fullscreen` — fills the viewport.
+- `.alert` — adds an alert icon to the modal body (`.alert .body`), for confirmation-style dialogs.
+
+### Shade (overlay) class
+
+The dark backdrop behind a modal is `.modal-shade`, not a bare `.shade`. This is Garnish's `shadeClass` setting — the default is defined in `Modal.js` (~438) and the element is created from it (`Modal.js` ~41). HUDs use their own `.hud-shade` (`HUD.js` ~733). If you style or query the overlay, target `.modal-shade` / `.hud-shade`.
+
+### Modal body/parts
+
+The only content part on a base modal is `.body` (`.modal .body`, `_main.scss` ~6857/6865). There are **no** `.modal .header` or `.modal .footer` classes on a base Garnish modal. Structured CP screens use `Craft.CpModal` (which extends `Garnish.Modal`, `CpModal.js:9`), and it creates its own parts: `.cpmodal-body` (`CpModal.js:47`) and `.cpmodal-footer` (`CpModal.js:55`). Use those class names only with a `Craft.CpModal`, not a plain `Garnish.Modal`.
+
+### There is no `Craft.confirm()`
+
+There is no `Craft.confirm()` method — grepping `cp/src/js` for it returns nothing. For an alert-style confirmation, choose one of:
+
+- **`Garnish.Modal` + `.modal.alert`** — a custom modal with the alert icon and your own confirm/cancel buttons (behavior via the `craft-garnish` skill).
+- **`Craft.CpModal`** — a structured CP modal with `.cpmodal-footer` action buttons.
+- **Native `confirm()` via `data-confirm`** — the lightest option. `Craft.submitForm()` (and the button handler at `Craft.js` ~3254) reads a button's `data-confirm` attribute into `options.confirm` and shows the browser's native `confirm()` before submitting (`Craft.js` ~2760). No custom JS needed:
+
+```twig
+<button type="submit" class="btn submit" data-confirm="{{ 'Delete this item?'|t('my-plugin') }}">
+    {{ 'Delete'|t('my-plugin') }}
+</button>
+```
 
 ## CP Alerts and Notices
 
