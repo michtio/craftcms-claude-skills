@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.9.0 -- Unreleased
+## 1.9.0 -- 2026-07-14
 
 Control-panel UI reconciliation pass. Audited our CP-UI guidance against an external Craft CP UI & Brand style guide by **[@john-henry](https://github.com/john-henry)** and folded in the source-verified gaps. Every added claim was checked against Craft 5.10 (`craftcms/cms`) source before writing; where the guide disagreed with source, source won and the divergence was noted rather than encoded (several guide claims — a fabricated `Craft.confirm()` / `cp.addressCardHtml()`, the `.shade` / `.tabs` / `.search` class names, Craft 4-era `chipHtml()` / `cardHtml()` overrides, and a `.fld-element` wrapper — were rejected on that basis and reported back upstream). Minor bump: significant additions across five reference files.
 
