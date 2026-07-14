@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.9.2 -- Unreleased
+
+Patch: slimmed the `description` frontmatter on the six largest skills. Over successive releases these had grown to 1.5–4.3 KB of trigger keywords, but Claude Code only reads ~1,536 characters of a skill's description for routing (it truncates the rest in the skill listing) — so the tails were inert for triggering. Each was rewritten to a denser, de-duplicated form that fits inside that window, with **no change to Claude triggering behaviour**; the trimmed long-tail keywords remain documented in each skill's reference files.
+
+- `craftcms` 4,345 → 1,265
+- `craft-plugins` 2,006 → 1,520 (all 24 plugin-name triggers preserved)
+- `craft-content-modeling` 1,847 → 1,529
+- `craft-site` 1,895 → 1,534
+- `craft-garnish` 1,682 → 1,534
+- `craft-php-guidelines` 1,608 → 1,423
+
+The pack stays Claude Code-targeted: descriptions are intentionally richer than the 1,024-character cap some other agents (e.g. Codex) enforce, and that trade-off is by design (see #4). The bottom five skills were already within the window and were left untouched.
+
+### Changed
+
+- **Six `SKILL.md` descriptions** — rewritten for keyword density within Claude Code's routing window; no reference-file content changed.
+
 ## 1.9.1 -- 2026-07-14
 
 Patch: one clarity addition on **programmatic schema authoring**. The pack already said "never manually edit YAML — let Craft manage it" (`craft-content-modeling/references/infrastructure.md`) and demonstrates `saveSection()`/`saveField()`/`saveEntryType()` in content migrations (`craftcms/references/migrations.md`), but never tied it together for the case of code — a migration, a script, or an AI/MCP tool — creating schema. Verified against Craft 5's project-config behavior.
