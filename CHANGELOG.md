@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.9.1 -- Unreleased
+## 1.9.1 -- 2026-07-14
 
 Patch: one clarity addition on **programmatic schema authoring**. The pack already said "never manually edit YAML — let Craft manage it" (`craft-content-modeling/references/infrastructure.md`) and demonstrates `saveSection()`/`saveField()`/`saveEntryType()` in content migrations (`craftcms/references/migrations.md`), but never tied it together for the case of code — a migration, a script, or an AI/MCP tool — creating schema. Verified against Craft 5's project-config behavior.
 
