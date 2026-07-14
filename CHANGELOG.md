@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.9.2 -- Unreleased
+## 1.9.2 -- 2026-07-14
 
 Patch: slimmed the `description` frontmatter on the six largest skills. Over successive releases these had grown to 1.5–4.3 KB of trigger keywords, but Claude Code only reads ~1,536 characters of a skill's description for routing (it truncates the rest in the skill listing) — so the tails were inert for triggering. Each was rewritten to a denser, de-duplicated form that fits inside that window, with **no change to Claude triggering behaviour**; the trimmed long-tail keywords remain documented in each skill's reference files.
 
