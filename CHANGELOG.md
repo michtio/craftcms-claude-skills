@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.9.1 -- Unreleased
+
+Patch: one clarity addition on **programmatic schema authoring**. The pack already said "never manually edit YAML — let Craft manage it" (`craft-content-modeling/references/infrastructure.md`) and demonstrates `saveSection()`/`saveField()`/`saveEntryType()` in content migrations (`craftcms/references/migrations.md`), but never tied it together for the case of code — a migration, a script, or an AI/MCP tool — creating schema. Verified against Craft 5's project-config behavior.
+
+### Changed
+
+- **`skills/craft-content-modeling/references/infrastructure.md`** — new "Authoring schema from code (migrations, scripts, MCP tools)" subsection: author schema through the service layer (Craft validates, assigns UIDs, and writes the YAML for you, so "author through Craft" and "YAML is source of truth" are the same thing); `project-config/apply` is for propagating committed YAML across environments, not for authoring; `allowAdminChanges => false` on production refuses runtime project-config writes, so the lifecycle is author-in-dev → commit → deploy → `craft up`; and the schema-vs-content boundary (content uses `saveElement()` and never touches project config).
+- **`skills/craftcms/references/migrations.md`** — Content Migrations section now states the service-layer calls apply to *any* programmatic schema authoring (not just migrations) and cross-links the infrastructure.md note.
+
 ## 1.9.0 -- 2026-07-14
 
 Control-panel UI reconciliation pass. Audited our CP-UI guidance against an external Craft CP UI & Brand style guide by **[@john-henry](https://github.com/john-henry)** and folded in the source-verified gaps. Every added claim was checked against Craft 5.10 (`craftcms/cms`) source before writing; where the guide disagreed with source, source won and the divergence was noted rather than encoded (several guide claims — a fabricated `Craft.confirm()` / `cp.addressCardHtml()`, the `.shade` / `.tabs` / `.search` class names, Craft 4-era `chipHtml()` / `cardHtml()` overrides, and a `.fld-element` wrapper — were rejected on that basis and reported back upstream). Minor bump: significant additions across five reference files.
