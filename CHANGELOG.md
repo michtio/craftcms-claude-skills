@@ -11,7 +11,7 @@ Patch: slimmed the `description` frontmatter on the six largest skills. Over suc
 - `craft-garnish` 1,682 → 1,534
 - `craft-php-guidelines` 1,608 → 1,423
 
-The pack stays Claude Code-targeted: descriptions are intentionally richer than the 1,024-character cap some other agents (e.g. Codex) enforce, and that trade-off is by design (see #4). The bottom five skills were already within the window and were left untouched.
+The pack stays Claude Code-targeted: descriptions are intentionally richer than the 1,024-character cap some other agents (e.g. Codex) enforce, and that trade-off is by design. The bottom five skills were already within the window and were left untouched.
 
 ### Changed
 
