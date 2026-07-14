@@ -198,6 +198,8 @@ $this->dropForeignKey($fkName, '{{%my_table}}');
 
 ## Content Migrations -- Creating Sections, Fields, Entry Types
 
+Use these service-layer calls for **any** programmatic schema authoring — migrations, setup scripts, or AI/MCP tools — not just migrations. Craft validates, assigns UIDs, and writes the project-config YAML for you; don't hand-write YAML and `project-config/apply` to author schema (that's for deploys), and remember runtime writes are refused when `allowAdminChanges` is off. See the `craft-content-modeling` skill's `infrastructure.md` → "Authoring schema from code".
+
 ### Creating a section
 
 ```php

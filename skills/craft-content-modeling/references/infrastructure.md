@@ -73,6 +73,16 @@ plugins, permissions) are stored as YAML in `config/project/`.
 - **After every project config change** (whether editing `project.yaml` or any subfile in `config/project/`): run `ddev craft project-config/touch` to update the `dateModified` timestamp, then `ddev craft up` to apply. The CP auto-updates `dateModified` when changes are saved through the UI, but any change made outside the CP (Git pull, manual edit, merge conflict resolution, script) requires `project-config/touch` to signal that config has changed. Without it, `craft up` on other environments won't detect the change. This is a hard rule — never skip it.
 - **After creating sections or singles** that appear in Entries: tidy `elementSources.craft\elements\Entry` (placement under the right heading, `tableAttributes` / `defaultSort` matched to role peers). This is part of the content model, not optional CP cosmetics. Full checklist: `element-index-sources.md`.
 
+### Authoring schema from code (migrations, scripts, MCP tools)
+
+When code creates schema — a content migration, a setup script, an AI/MCP tool — author it through the **service layer**: `Craft::$app->getEntries()->saveSection()`, `->saveEntryType()`, `Craft::$app->getFields()->saveField()`, and the field-layout APIs (see the `craftcms` skill's `migrations.md` → "Content Migrations"). Craft validates the model (you get structured errors back), assigns/reuses UIDs, and writes the project-config YAML for you — so "author through Craft" and "YAML is the source of truth" are the same thing, not a trade-off.
+
+Do **not** have code emit raw `config/project/*.yaml` and lean on `project-config/apply` to *author* new schema. Hand-composing YAML means hand-managing UIDs, key ordering, and nested structure; validation only happens at apply time, as an all-or-nothing diff that fails opaquely. `project-config/apply` is for **propagating already-committed YAML across environments** (the deploy step), not for authoring.
+
+This also decides *where* a change is even possible: production runs `allowAdminChanges => false`, which makes Craft refuse runtime project-config writes. So service-layer schema writes only work where `allowAdminChanges` is `true` (typically local/dev). The correct lifecycle is: author in dev via the service layer → commit the YAML Craft wrote → deploy → `craft up` applies it. An agent hand-writing YAML on a locked-down prod box and running `apply` is effectively an out-of-band deploy that drifts from Git — avoid it.
+
+Note the boundary: this is about **schema** (project config). **Content** (entries, assets — "create a blog post") is database state written with `saveElement()` and never touches project config, regardless of `allowAdminChanges`.
+
 ## How Craft Stores Content
 
 Understanding the storage architecture helps make better content modeling decisions.
