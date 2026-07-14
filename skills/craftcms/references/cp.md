@@ -31,7 +31,7 @@ CP templates, form macros, navigation, settings pages, permissions, and read-onl
 - [CP Templates](#cp-templates) — form macros, editable tables, tabbed settings, reserved DOM IDs, VueAdminTable
 - [CP Navigation](#cp-navigation)
 - [Settings Pages](#settings-pages) — settings model, env var support, keeping settings inside the plugin's CP section, split settings pages (savePluginSettings footgun)
-- [Form Macros Reference](#form-macros-reference)
+- [Form Macros Reference](#form-macros-reference) — lightswitch vs checkbox, copytext, money, buttons + modifier classes, inner sidebar nav (`_includes/nav.twig`)
 - [Permissions](#permissions)
 - [Read-Only Mode (allowAdminChanges)](#read-only-mode-allowadminchanges) — controller setup, template patterns, disabled fields
 
@@ -285,7 +285,7 @@ Set the `tabs` variable in your template. Each tab links to a different URL or a
 
 Each tab is a separate template (or a shared template with conditional blocks). The `selectedTab` variable highlights the active tab. Register CP URL rules for each tab path.
 
-**Don't include `_includes/tabs.twig` directly.** It is a private helper that `_layouts/cp.twig` calls internally to render the strip from the `tabs` variable in *its own* rendering context. Including the partial yourself produces the tab strip markup but no JS wiring, no ARIA controller setup, no error highlighting per tab. The fix is always to `{% extends "_layouts/cp" %}` and `{% set tabs = ... %}` — let the layout handle the strip. If you find yourself reaching for `{% include "_includes/tabs" %}`, you're in the wrong template lineage.
+**Don't hand-write or include the tab strip.** `_includes/tabs.twig` is a private helper that `_layouts/cp.twig` calls internally to render the strip from the `tabs` variable in *its own* rendering context. Including the partial yourself — or emitting the markup by hand — produces the tab strip but no JS wiring, no ARIA controller setup, no error highlighting per tab. The strip's real container is `<div class="pane-tabs">` wrapping a `role="tablist"`, and each tab is an `<a role="tab">` carrying `aria-controls` (pointing at its pane ID) plus `.sel` on the active one (`tabs.twig:2,16,23-37`). There is **no** `.tabs` or `.tab` class — the label lives in a `.tab-label` span — so any snippet keying off `.tab` is not Craft's markup. The fix is always to `{% extends "_layouts/cp" %}` and `{% set tabs = ... %}` — let the layout handle the strip. See [PHP-level tabs](#php-level-tabs-via-ascpscreen) and [Anchor-based tabs](#anchor-based-tabs-single-page) for the wiring; if you find yourself reaching for `{% include "_includes/tabs" %}`, you're in the wrong template lineage.
 
 #### Anchor-based tabs (single page)
 
@@ -771,14 +771,16 @@ All macros live in `_includes/forms.twig`. Import with `{% import '_includes/for
 
 Every `*Field` macro wraps its input in a `<div class="field">` with label, instructions, tip, warning, and error display. The non-`Field` variants (e.g., `forms.text` vs `forms.textField`) render just the input — use these when building custom layouts or embedding inputs in other containers.
 
+`instructions`, `tip`, and `warning` all support Markdown — Craft runs each through `Cp::parseMarkdown()` (`instructions` at `Cp.php:1743`; `tip`/`warning` via `Cp::_noticeHtml()`), so inline links and emphasis render. `tip` and `warning` are just the CSS classes `notice` and `warning` on a `<p>` element (`Cp::_noticeHtml()`, `Cp.php:1859-1860`) — their exact appearance is theme-driven, so describe them by role ("a tip" / "a warning"), not by color.
+
 ### Common parameters (all field macros)
 
 | Param | Type | Purpose |
 |-------|------|---------|
 | `label` | `string` | Field label (translate with `\|t('my-plugin')`) |
 | `instructions` | `string` | Help text below the label |
-| `tip` | `string` | Green info tip below the input |
-| `warning` | `string` | Orange warning below the input |
+| `tip` | `string` | Info tip below the input (rendered as `<p class="notice">`; Markdown-aware) |
+| `warning` | `string` | Warning below the input (rendered as `<p class="warning">`; Markdown-aware) |
 | `id` | `string` | Input element ID |
 | `name` | `string` | Input name (for POST data) |
 | `value` | `mixed` | Current value |
@@ -797,14 +799,22 @@ Every `*Field` macro wraps its input in a `<div class="field">` with label, inst
 | `forms.passwordField` | Password input | `placeholder` |
 | `forms.selectField` | Dropdown | `options` (array of `{label, value}` or flat `{value: label}`) |
 | `forms.multiselectField` | Multi-select list | `options`, `values` (array of selected values) |
-| `forms.lightswitchField` | Toggle switch | `on` (bool), `toggle` (CSS selector to show/hide) |
+| `forms.lightswitchField` | Toggle switch (single boolean) | `on` (bool), `small` (bool), `onLabel`/`offLabel`, `toggle` (CSS selector to show/hide) — see [Lightswitch vs checkbox](#lightswitch-vs-checkbox) |
 | `forms.checkboxField` | Single checkbox | `checked` (bool), `toggle` (CSS selector) |
 | `forms.checkboxGroupField` | Multiple checkboxes | `options`, `values` (array of checked values) |
 | `forms.radioGroupField` | Radio button group | `options`, `value` |
 | `forms.buttonGroupField` | Button-style option selector (exclusive) | `options`, `value` — see [buttonGroupField](#buttongroupfield) |
+| `forms.selectizeField` | Searchable / taggable select | `options`, `value`, `multi` (bool — tag mode), `selectizeOptions` |
 | `forms.colorField` | Color picker | `value` (hex string) |
 | `forms.dateTimeField` | Date and time picker | `value` (DateTime object or string) |
 | `forms.timeField` | Time-only picker | `value` (time string) |
+| `forms.timeZoneField` | Time-zone selector | `value` (time-zone identifier) |
+| `forms.languageMenuField` | Language / locale selector | `value` (locale ID) |
+| `forms.copytextField` | Read-only value with a copy button | `value` — see [copytextField](#copytextfield) |
+| `forms.moneyField` | Currency input | `currency`, `currencyLabel`, `decimals`, `showClear` — see [moneyField](#moneyfield) |
+| `forms.fileField` | File upload input | `name` (POSTs as a `$_FILES` entry) |
+| `forms.iconPickerField` | Craft icon picker | `value` (icon identifier) |
+| `forms.rangeField` | Range slider (with paired number input) | `min`, `max`, `step`, `suffix` |
 | `forms.autosuggestField` | Text with autocomplete | `suggestEnvVars`, `suggestAliases`, `suggestions` |
 | `forms.editableTableField` | Editable table with add/delete/reorder | `cols`, `rows`, `allowAdd`, `allowDelete`, `allowReorder` — see [Editable Table](#editable-table) |
 | `forms.elementSelectField` | Element relation selector (entries, assets, users) | `elementType`, `sources`, `criteria`, `limit`, `elements` (pre-selected), `modalStorageKey` |
@@ -902,6 +912,115 @@ Options can be a flat hash (`{ value: label }`) or an array of objects with `lab
 Server-side, the POST value is the selected option's `value` string. The raw variant (`forms.buttonGroup`) renders without the field wrapper — use it inside custom layouts or inline with other inputs.
 
 `buttonGroupField` is for simple exclusive selects (display mode, priority level). It is **not** the right tool for tri-state inheritance controls (off/inherit/on) — its hidden input doesn't distinguish empty (inherit) from explicit values, and the uniform button styling doesn't convey state semantics. For inheritance UI, use the webhook table pattern below.
+
+### Lightswitch vs checkbox
+
+For a single boolean **setting**, reach for `lightswitchField` — not `checkboxField`. The difference is what posts.
+
+`lightswitch.twig` always emits a hidden input alongside the toggle whenever a `name` is set (`lightswitch.twig:53-55`): it posts the on-value when on, and an empty string when off. So a lightswitch behaves like a normal field — it always contributes a value to POST data, and a settings model with `public bool $enableSync` receives `''` (which casts to `false`) rather than the key going missing.
+
+A **raw** single `checkbox` does *not* post when unchecked — an unchecked HTML checkbox sends nothing. `checkbox.twig` compensates for this by emitting a hidden empty input just before the checkbox (`checkbox.twig:35-37`), but only when the `name` is a plain scalar name (not an array `name[]`). If you hand-roll a bare `<input type="checkbox">` without that hidden companion, an unchecked box silently drops the key from POST — the classic "the setting won't turn off" bug.
+
+Rule of thumb:
+
+- **Single boolean setting** → `lightswitchField`. Posts a value in every state via its hidden input.
+- **Multi-select opt-in list** (pick any of N) → `checkboxGroupField`. Each checked box posts into the `values` array; unchecked boxes are simply absent, which is the intended semantics for a set.
+- **Raw single `checkbox`** → only when you understand the hidden-input mechanism and are inside a container (e.g. an editable-table cell) that handles the absent-when-unchecked case.
+
+Extra lightswitch params beyond `on`/`toggle`:
+
+| Param | Purpose |
+|-------|---------|
+| `small` | Renders the compact variant (adds the `small` class). |
+| `onLabel` / `offLabel` | Visible state labels flanking the switch; also drive a visually-hidden description for screen readers. `onLabel` defaults to `label`. |
+
+Verified against `lightswitch.twig:6,10-13,53-55`.
+
+### copytextField
+
+Read-only value with a one-click copy button — use for API keys, tokens, webhook URLs, or any generated value the user copies but never types into.
+
+```twig
+{{ forms.copytextField({
+    label: 'Webhook URL'|t('my-plugin'),
+    id: 'webhookUrl',
+    value: webhookUrl,
+}) }}
+```
+
+`copytext.twig` forces the inner text input to `readonly: true` and appends a `.btn` that selects the field and copies it to the clipboard (`copytext.twig:5-20`). There is no editable variant — it's display-plus-copy only, so don't reach for it when the value should be editable.
+
+### moneyField
+
+Currency input. It ships in core `forms.twig` (`money`/`moneyField`, `forms.twig:201,533`) and registers `MoneyAsset`, but it's primarily Commerce-driven — most non-Commerce settings are better served by a plain `textField` with an `inputmode`. Reach for it when you genuinely need locale-aware currency parsing.
+
+```twig
+{{ forms.moneyField({
+    label: 'Threshold'|t('my-plugin'),
+    name: 'threshold',
+    currency: 'USD',
+    value: settings.threshold,
+}) }}
+```
+
+It posts a nested map — `name[value]` (the amount) and `name[locale]` (the formatting locale) — so read it with `$request->getBodyParam('threshold')['value']` server-side (`money.twig`).
+
+### Buttons
+
+`forms.button` and `forms.submitButton` render a `<button>` via `button.twig`. `submitButton` is sugar: it merges `type: 'submit'` and adds the `submit` class (`forms.twig:14-20`), so you rarely style it yourself.
+
+Useful params (`button.twig:1-9,36-62`):
+
+| Param | Purpose |
+|-------|---------|
+| `label` / `labelHtml` | Button text (plain or raw HTML). |
+| `icon` / `iconHtml` | Leading icon — a Craft icon identifier or raw SVG. |
+| `spinner: true` | Renders an absolutely-positioned spinner inside the button, reserving its space so the button doesn't reflow when it enters a loading state. |
+| `busyMessage` / `successMessage` / `failureMessage` / `retryMessage` | Populate `data-*-message` attributes and, when any is set together with `spinner`, an ARIA live region (`role="status"`) so state changes are announced to screen readers. |
+
+Every button carries the `.btn` base class unconditionally (`button.twig:21`); the modifiers below layer on top.
+
+#### Button modifier classes
+
+Add these to a button's `class` to signal its role (verified against `button.twig` and CP CSS — `.btn.submit`, `.btn.secondary`, `.btn.caution`, `.btn.dashed`):
+
+| Class | Role |
+|-------|------|
+| `.btn` | Neutral base — always present, applied by `button.twig` itself. |
+| `.submit` | Primary action (Save, Create). Applied automatically by `submitButton`. |
+| `.secondary` | Secondary action that sits beside the primary one. |
+| `.caution` | Destructive action (Delete, Reset) — styled with error coloring. |
+| `.dashed` | Add / new affordance — dashed border, transparent background. |
+
+By convention a screen has one primary `.submit` button; additional actions use `.secondary`, `.caution`, or `.dashed` so the primary action stays visually singular. Treat this as a convention for scannability, not a hard rule — a toolbar with several equal-weight actions is a legitimate exception.
+
+### Inner sidebar navigation (`_includes/nav.twig`)
+
+For a secondary nav list inside a CP pane (a settings sub-menu, a filtered index sidebar), Craft ships `_includes/nav.twig`. Its `list` macro takes a flat list of item hashes plus a `selectedItem` key:
+
+```twig
+{% include '_includes/nav.twig' with {
+    label: 'Settings sections'|t('my-plugin'),
+    items: {
+        general: { label: 'General'|t('my-plugin'), url: url('my-plugin/settings/general') },
+        sync: { heading: 'Sync'|t('my-plugin'), nested: {
+            connection: { label: 'Connection'|t('my-plugin'), url: url('my-plugin/settings/connection') },
+            schedule: { label: 'Schedule'|t('my-plugin'), url: url('my-plugin/settings/schedule') },
+        } },
+    },
+    selectedItem: 'general',
+} only %}
+```
+
+Per-item keys (`nav.twig:1-31`):
+
+| Key | Meaning |
+|-----|---------|
+| `label` + `url` | A plain link item. |
+| `heading` + `nested` | A section heading with its own nested list of items (recurses through the same macro). |
+| `selected` | Force an item active regardless of `selectedItem`. |
+
+The active link is the one whose key matches `selectedItem` (or whose own `selected` is truthy). Craft applies the `sel` class and `aria-current="page"` to it (`nav.twig:16,21`) — the exact active-link styling is theme-driven, so rely on the `sel` class rather than any specific color.
 
 ## Permissions
 

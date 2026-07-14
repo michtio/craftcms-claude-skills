@@ -21,6 +21,7 @@
 - [Custom Field Types](#custom-field-types)
 - [Native Fields](#native-fields)
 - [UI Elements](#ui-elements)
+- [Field-Layout UI Elements Reference](#field-layout-ui-elements-reference)
 - [FieldLayoutBehavior](#fieldlayoutbehavior)
 - [Validation](#validation)
 - [Search Keywords](#search-keywords)
@@ -232,6 +233,39 @@ Event::on(FieldLayout::class, FieldLayout::EVENT_DEFINE_UI_ELEMENTS,
     }
 );
 ```
+
+## Field-Layout UI Elements Reference
+
+Craft ships several built-in UI elements you can reuse in a layout definition, or reference for structure when writing your own. They live in `fieldlayoutelements/`.
+
+### Built-in elements
+
+| Element | Renders | Base class | Notes |
+|---------|---------|-----------|-------|
+| `Heading` | `<h2>` (`Heading.php`) | `BaseUiElement` | Configurable `heading` text; translated through the `site` category. |
+| `Tip` | `.pane` + style class (`Tip.php`) | `BaseUiElement` | Single class covering both styles via `STYLE_TIP`/`STYLE_WARNING` (there is no separate "Warning" class). Optional `dismissible` adds a close button. |
+| `HorizontalRule` | `<hr>` (`HorizontalRule.php`) | `FieldLayoutElement` | Bespoke `.fld-hr` selector markup. |
+| `LineBreak` | `.line-break` div (`LineBreak.php`) | `FieldLayoutElement` | Bespoke `.fld-br` selector markup; forces subsequent elements onto a new row. |
+| `Markdown` | rendered Markdown (`Markdown.php`) | `BaseUiElement` | |
+| `Template` | rendered Twig template (`Template.php`) | `BaseUiElement` | |
+| `Html` | raw HTML (`Html.php`) | `FieldLayoutElement` | Bespoke selector markup, like the rules above. |
+
+`Tip` is a single class — its appearance is driven by the `style` property (`STYLE_TIP` vs `STYLE_WARNING`), not by two separate element types.
+
+### Selector markup
+
+A `BaseUiElement`'s field-layout-designer selector wrapper is a single `.fld-ui-element` div carrying a `data-type` attribute (the escaped class name), assembled in `BaseUiElement.php:46-65`. It is **not** a combined `.fld-element fld-ui-element` class — matching on the latter will miss these elements.
+
+`HorizontalRule`, `LineBreak`, and `Html` extend `FieldLayoutElement` directly rather than `BaseUiElement`, so they do not use the `.fld-ui-element` wrapper — each defines its own `selectorHtml()` (`.fld-hr`, `.fld-br`, and custom markup respectively).
+
+### Registering your own
+
+Plugins register components via `FieldLayout` events (`models/FieldLayout.php`):
+
+- Custom UI elements — `FieldLayout::EVENT_DEFINE_UI_ELEMENTS` (`FieldLayout.php:130`); extend `BaseUiElement` (see [UI Elements](#ui-elements) above).
+- Native fields — `FieldLayout::EVENT_DEFINE_NATIVE_FIELDS` (`FieldLayout.php:75`); see [Native Fields](#native-fields).
+
+Both events pass a `DefineFieldLayoutFieldsEvent`. For the full registration event catalog, see `events.md`.
 
 ## FieldLayoutBehavior
 

@@ -4,12 +4,12 @@ Battle-tested CP patterns from Craft core and first-party plugins, plus conditio
 
 ## Contents
 
-- CP UI Patterns — tri-state inheritance, status indicators, field warnings, CSS variables, `[hidden]` gotcha, platform PHP mismatch
+- CP UI Patterns — tri-state inheritance, status indicators (`on`/`off` + distinct red statuses), field warnings, semantic CSS tokens (color/status/spacing/radius/control/focus/fonts), `[hidden]` gotcha, platform PHP mismatch
 - Condition Builders — BaseCondition, custom condition rules, rule input HTML, rendering in templates, registration
 - Asset Bundles — CP asset bundle, JS configuration injection, registration
 - CP Markup Patterns — sidebar badges, notice/warning blocks, tip/warning on form fields
 - Element Edit Screen — sidebar panels (`.meta` vs `.meta read-only`), `metaFieldsHtml()` override, top-toolbar split button (`EVENT_DEFINE_SIDEBAR_HTML` / `EVENT_DEFINE_ADDITIONAL_BUTTONS`)
-- CP Screen Composition — native UX defaults: tabs + the namespace/id tab trap, lightswitches vs checkboxes, two-layer field guidance (`instructions` + `<span class="info">`), cross-setting callout markup, env-var numerics, VueAdminTable for unbounded lists, native stats, honest empty values
+- CP Screen Composition — native UX defaults: tabs + the namespace/id tab trap, lightswitches vs checkboxes, two-layer field guidance (`instructions` + `<span class="info">`), cross-setting callout markup, env-var numerics, VueAdminTable for unbounded lists, native stats, honest empty values, `.status-badge` is a draft indicator (not an empty-value badge)
 
 ## CP UI Patterns
 
@@ -42,15 +42,17 @@ Don't reinvent with `buttonGroupField` + custom captions. The webhook table patt
 
 ### Status Indicator Classes
 
-Bare `<div class="status"></div>` renders **invisibly** in Craft 5 — no border-width/style on the base rule. Always add a modifier:
+Bare `<div class="status"></div>` renders **invisibly** in Craft 5 — the base `.status` rule *does* size the dot (`width`/`height` of `calc(12rem/16)`, `border-radius:100%`, `box-sizing:border-box`), but it sets no fill; the `background-color` only comes from a modifier class. Always add one:
 
 | Class | Appearance | Use for |
 |-------|-----------|---------|
-| `.status.green` / `.status.live` / `.status.active` | Green filled circle | Enabled, live, active |
-| `.status.red` / `.status.off` | Red filled circle | Disabled, off, error |
+| `.status.on` / `.status.live` / `.status.active` / `.status.enabled` | Green filled circle | Enabled, live, active |
+| `.status.off` / `.status.suspended` / `.status.expired` / `.status.red` | Red filled circle | Disabled / suspended / expired |
 | `.status.gray` / `.status.grey` | Grey filled circle | Neutral, pending |
 | `.status.inactive` / `.status.disabled` | Hollow outlined circle (`box-shadow inset`) | Inherit, unset, neutral indicator |
 | `.status.orange` / `.status.pending` | Orange filled circle | Pending, warning |
+
+The synonym groups are defined in `Color::tryFromStatus()` (`src/enums/Color.php`): `on`/`live`/`active`/`enabled` all map to teal (the green fill), and `off`/`suspended`/`expired` all map to red. `on` and `off` are the first-class boolean pair — prefer them for lightswitch-style state. But `off`, `suspended`, and `expired` are **distinct statuses that merely share the red fill** — they are not synonyms for one another, so pass the status that actually applies (`suspended` for a suspended user, `expired` for an expired entry) rather than flattening everything to `off`.
 
 For "inherit/neutral" indicators, use `.status.inactive` (hollow). When placing an inactive status inside a dark `.active` button background, override the outline color for WCAG contrast: `--outline-color: var(--white)` (the default `var(--gray-500)` fails 3:1 contrast against dark backgrounds).
 
@@ -92,19 +94,66 @@ Avoid this by using server-rendered `warning:` / `tip:` parameters (see above) i
 
 ### Craft CSS Custom Properties
 
-Don't hardcode hex colors. Craft provides semantic CSS variables that adapt to light/dark mode and are pre-tested for WCAG accessibility:
+Don't hardcode raw values. Craft exposes a layer of **semantic tokens** on top of its color/size ramps (all in `_tokens.scss`). The point is indirection: a semantic token like `--bg-enabled` re-points itself under theming and light/dark mode, so referencing the token name keeps your UI in step with Craft automatically — hardcoding the value it happens to resolve to today freezes you out of that. Prefer the semantic token (`--bg-*`, `--fg-*`, `--ui-*`, `--border-*`, `--radius-*`, `--focus-*`) over the raw ramp value, and prefer the ramp value over a literal hex.
 
-| Variable | Purpose | Notes |
-|----------|---------|-------|
-| `var(--ui-control-color)` | Default control/text color | |
-| `var(--ui-control-active-color)` | Active/selected state | |
-| `var(--bg-enabled)` | Live/on/active green | Passes WCAG AA against white |
-| `var(--bg-disabled)` | Off/disabled red | Passes WCAG AA against white |
-| `var(--white)` | High-contrast text on filled backgrounds | |
-| `var(--gray-050)` through `var(--gray-900)` | Grey scale | |
-| `var(--red-050)` through `var(--red-600)` | Red scale | |
-| `var(--blue-050)` through `var(--blue-600)` | Blue scale | |
-| `var(--yellow-050)` through `var(--yellow-600)` | Yellow/warning scale | |
+**Naming convention.** Tokens follow `--<prefix>-<modifier>`: `--ui-` (control chrome), `--fg-`/`--bg-` (foreground/background), `--border-`, `--focus-`, `--radius-`. Recognizing the prefix tells you what layer a token belongs to.
+
+**Color ramps** (raw scales — reach for a semantic token first):
+
+| Variable | Purpose |
+|----------|---------|
+| `var(--white)` | High-contrast text on filled backgrounds |
+| `var(--gray-050)` through `var(--gray-900)` | Grey scale |
+| `var(--red-050)` through `var(--red-600)` | Red scale |
+| `var(--blue-050)` through `var(--blue-600)` | Blue scale |
+| `var(--yellow-050)` through `var(--yellow-600)` | Yellow scale |
+
+**Semantic status / feedback tokens** — use these for state coloring rather than picking a ramp shade by eye; each maps to the ramp centrally:
+
+| Variable | Maps to | Purpose |
+|----------|---------|---------|
+| `var(--bg-primary)` | `--red-600` | Primary action / brand background |
+| `var(--bg-secondary)` | `--gray-500` | Secondary background |
+| `var(--bg-enabled)` | teal | Live / on / active fill |
+| `var(--bg-disabled)` | `--red-600` | Off / disabled fill |
+| `var(--bg-pending)` | orange | Pending fill |
+| `var(--bg-success)` / `var(--fg-success)` | teal | Success callout bg / text |
+| `var(--bg-warning)` / `var(--fg-warning)` | amber | Warning callout bg / text |
+| `var(--bg-error)` / `var(--fg-error)` | red | Error callout bg / text |
+| `var(--bg-notice)` / `var(--fg-notice)` | sky | Notice callout bg / text |
+
+**Text tokens:**
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `var(--fg-subtle)` | `--gray-550` | Muted/secondary text (readouts, help) |
+| `var(--lh)` / `var(--size-line-height)` | `1.42em` | Body line-height |
+
+**UI control chrome** — the tokens that size and round Craft's inputs/buttons. Match these so custom controls line up with native ones:
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `var(--ui-control-color)` | — | Default control/text color |
+| `var(--ui-control-active-color)` | — | Active/selected state |
+| `var(--ui-control-radius)` | `= --radius-lg` | Control corner radius |
+| `var(--ui-control-height)` | `34px` (`calc(34rem/16)`) | Standard control height |
+| `var(--ui-control-height-small)` | `30px` (`calc(30rem/16)`) | Compact control height |
+
+**Radius scale:**
+
+| Variable | Value |
+|----------|-------|
+| `var(--radius-sm)` | `3px` |
+| `var(--radius-md)` | `4px` |
+| `var(--radius-lg)` | `5px` (also `--ui-control-radius`) |
+
+**Spacing scale.** These are relative — each is `calc(<n>rem/16)` (e.g. `--xl` is `calc(24rem/16)`), so they scale with the root font size. **Use the token, not a px equivalent**, for gaps/padding: `--2xs`, `--xs`, `--s`, `--m`, `--l`, `--xl`. `var(--padding)` aliases `--xl` (contextually re-pointed to a smaller step in tight layouts).
+
+**Hairline / border tokens:** `var(--border-hairline)` and `var(--border-hairline-medium)` for the thin dividers Craft draws between meta rows, card sections, etc. Reference by name — they're theme-aware and adjust for dark mode; don't quote the color.
+
+**Focus tokens:** `var(--focus-ring)` is the composed box-shadow Craft puts on focused controls (it aliases `--focus-ring-medium`); `var(--focus-outline-medium)` is the underlying outline color. Applying `box-shadow: var(--focus-ring)` on a custom control gives it the exact native focus treatment (and keeps it correct if Craft retunes the ring).
+
+**Fonts — no web fonts to load.** Craft's UI type is a system-UI stack: the `sans-serif-font` mixin (`_mixins.scss`) resolves to `system-ui, BlinkMacSystemFont, -apple-system, 'Segoe UI', 'Roboto', … sans-serif`. So there is no text webfont to bundle or preload — only the separate `Craft` icon font (used by `data-icon`) is a real font file. For code, handles, and other monospace UI, use the `fixed-width-font` mixin (`'SFMono-Regular', Consolas, Menlo, monospace`) rather than hardcoding a family.
 
 White text on hardcoded `#27ae60` is 2.6:1 — fails AA (needs 4.5:1). Use `var(--bg-enabled)` instead.
 
@@ -507,5 +556,9 @@ Any CP list that grows with usage — logs, sign-ins, grants, submissions — sh
 ### Native stats and honest empty values
 
 - Posture / summary data (counts, health, "N of M configured") renders with Craft's native stat presentation, not paragraphs of prose.
-- Unknown or empty cells in an admin table render as a **muted badge with words** (`<span class="status-badge"> Location unknown </span>`-style), never a bare `-`.
+- Unknown or empty cells in an admin table render as **muted words**, never a bare `-` — set an empty value's cell to something like `<span class="light">Location unknown</span>`. (Do **not** reach for `.status-badge` here: in Craft source that class is a draft-modification indicator, not an empty-value label — see below.)
 - An admin table shows **facts**, not user alerts. A signal meant for the end user (e.g. a "new sign-in location" security notice) ships through the user-facing channel (email/notification) — it does not get an admin-table column.
+
+### `.status-badge` is a draft-modification indicator, not an empty-value badge
+
+Don't confuse `.status-badge` with the muted empty-value text above. In Craft source (`.status-badge` in `_main.scss`; emitted by `Cp::elementHtml()` and `Cp::fieldHtml()` in `src/helpers/Cp.php`) it is an **absolutely-positioned 2px stripe** pinned to the inline-start edge of an element card or field (`position:absolute; inset-inline-start:0; width:2px; height:100%`), always paired with a visually-hidden label. Its two modifiers signal draft state: `.status-badge.modified` (blue, `var(--blue-600)`) marks an element that has unsaved/edited draft changes, and `.status-badge.outdated` (orange, `var(--bg-pending)`) marks a derivative that has fallen behind its canonical. It is not a word-label control and never carries visible text — for an "unknown/empty" cell use muted text (`<span class="light">…</span>`), not this class.
