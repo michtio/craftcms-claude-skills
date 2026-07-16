@@ -67,6 +67,8 @@ Build one feature at a time as a vertical slice. Each feature uses whatever laye
 
 A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Never plaster over a failed gate by writing the next layer.
 
+If you must stop early (budget, context, or a blocking question), stop AT a passing gate — never mid-layer with a red tree. Report the exact remainder: files, steps, and gates left, so the next session resumes without re-deriving scope.
+
 Tests are written WITH each layer, not batched at the end. A service without tests is not a completed gate — it's a liability waiting to compound.
 
 ### Manual testing
@@ -107,6 +109,9 @@ When presenting the plan to the user, list the manual checks that apply and mark
 - Walk through changes step by step. File path first, then the code.
 - When building a custom element type, also build the CP edit page templates: field layout designer, propagation settings, preview targets, edit/index templates. An element without its CP interface is incomplete.
 - When building CP asset bundles or interactive JavaScript, use the `craft-garnish` skill for Garnish widget patterns (Modal, HUD, DragSort, Select, DisclosureMenu). Extend `Garnish.Base` for all CP JS classes. Use `addListener` over jQuery `.on()`, `activate` over `click`, and key constants over magic numbers.
+- **Never improvise CP UI.** When skill guidance is thin, read Craft core templates (`vendor/craftcms/cms/src/templates/`) or an established vendor plugin (nystudio107, putyourlightson, verbb, doublesecretagency, craftpulse) and copy the idiom. Cite the core/vendor template you matched, per pattern, in your report. Hand-rolled markup where an idiom exists is a defect.
+- **Match structure, don't derive.** Verify a layout or behavior constraint by finding what core actually does structurally (which template, which layout region, which component shape), not by reasoning from compiled CSS/JS internals — derivation from internals produces plausible-but-wrong constraints.
+- **Work with the system.** When a Craft native mechanism stacks with your plugin's (e.g. the auto-registered `utility:<id>` permission plus a plugin permission handle, or native field-layout behaviors), keep both layers and document the pairing — never flatten or bypass Craft's layer.
 
 ## Patterns to prevent (the reviewer will flag these)
 
@@ -129,6 +134,7 @@ When presenting the plan to the user, list the manual checks that apply and mark
 - **Access control: walk the full path.** When implementing or fixing access control on a CP screen, enumerate every gate from URL hit to render before making any change. For plugin/module CP screens, the default mental model is the three-node path: (1) CP nav visibility in `getCpNavItem()`, (2) controller `beforeAction()` or per-action `requireAdmin()`/`requirePermission()`, (3) action body gates. Don't fix one gate and ship. Patch every gate blocking the desired flow in one pass. Verify by setting `CRAFT_ALLOW_ADMIN_CHANGES=false` in `.env` and visiting the URL.
 - **Framework assertions**: never assert "Craft does X automatically" or "Yii's default is Y" without verifying. When an `allowAdminChanges`-related symptom appears, the safer assumption is "the plugin/module added a guard" rather than "the framework auto-handles this". Plugins commonly gate their own subnav, settings, and controller actions. Read the actual code before claiming framework behavior.
 - **Parallel element classes for hierarchies**: don't invent two element classes (e.g., `Item` + `ItemReference`) when the relationship is parent/child. Use one class with native Structure. The Category/CategoryGroup pattern is the reference. Inventing parallel classes abandons drafts, revisions, multi-site, search, drag-sort, and conditions for zero upside.
+- **Restructures re-verify rulings**: when relocating or restructuring an existing surface (moving a screen, merging routes, splitting a section), list the standing behavioral decisions that touch it and re-verify each — green routes and tests don't prove the semantics survived the move.
 
 ## Simplification pass (before handoff)
 

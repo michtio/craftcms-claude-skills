@@ -27,6 +27,8 @@ When planning a feature, you may need to research how Craft core or first-party 
 
 When auditing an existing plugin for quality or planning a refactor, clone it into the research folder and use Grep/Read to analyze patterns, then propose improvements in the plan. Clean up research clones after the plan is written — they're ephemeral, not permanent.
 
+**Live docs first for external APIs.** Any load-bearing claim about a third-party API — scoping (per-collection vs server-global), defaults, version behavior — comes from the upstream docs via WebFetch, with the URLs cited in the plan. A local skill or draft reference is a map, not an authority: when an architecture decision hangs on an API fact, verify upstream even if a skill states it.
+
 ## Planning workflow
 
 1. Read the high-level requirement or feature request.

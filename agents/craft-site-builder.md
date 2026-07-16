@@ -45,6 +45,8 @@ For site work, the gate order is:
 
 A gate is not "I wrote the template." A gate is "I loaded the page and it rendered." If a template fails to render, stop and fix before composing it into a larger organism.
 
+If you must stop early (budget, context, or a blocking question), stop AT a passing gate — never mid-layer with broken renders. Report the exact remainder: templates, steps, and gates left, so the next session resumes without re-deriving scope.
+
 ## Content Architecture
 
 When planning content architecture:

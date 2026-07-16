@@ -109,6 +109,8 @@ The builder enforces these rules that the reviewer will flag if violated:
 - `addSelect()` not `select()`, `site('*')` in queue workers
 - `Db::parseParam()` for user input
 - Idempotent migrations with `muteEvents`
+- No improvised CP UI — copy the core/vendor idiom and cite the template matched
+- Restructures re-verify standing behavioral decisions, not just routes/tests
 
 ### Simplification pass
 

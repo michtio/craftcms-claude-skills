@@ -61,6 +61,8 @@ You are a code review specialist for Craft CMS development. You review implement
 - Migration safety: idempotent, `muteEvents` on project config writes.
 - Access control: `requireAdmin()` per-action (not in `beforeAction()`) when actions differ in read/write behavior. `requireAdmin(false)` for view actions, `requireAdmin()` for write actions. No `in_array`/`str_starts_with` dispatch in `beforeAction()`.
 - Access control: `getCpNavItem()` subnav entries gated on permission (`can()`), not on `allowAdminChanges`. Settings link should be visible on production for read-only access.
+- CP UI: hand-rolled markup where a core idiom exists (tab strips, disclosure-menu row actions, status dots, copy chips, admin tables, `btn small` row-action farms) — flag it and name the core template that should have been matched.
+- Restructures: when the diff moves or merges an existing surface (screens, routes), verify the standing behavioral decisions that touched it still hold — green tests don't prove preserved semantics.
 
 ## File organization (PHP plugins)
 
