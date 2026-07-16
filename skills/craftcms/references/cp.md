@@ -258,9 +258,17 @@ Setting `details` (block or var) is what makes the right-hand panel and its disc
 
 Two approaches for multi-tab CP pages: Twig-level tabs (template-driven) and PHP-level tabs (controller-driven via `asCpScreen()`).
 
+#### Tabs switch panes — they never navigate
+
+`Craft.Tabs` intercepts every tab click: the compiled handler (`web/assets/cp/dist/cp.js`) calls `preventDefault()` and `selectTab()` unconditionally (the only carve-out is ctrl/cmd-click on a `#` href), and `selectTab()` only moves `.sel`/ARIA state while `Craft.CP`'s `selectTab` listener toggles `hidden` on the pane matching `$(tab.href)`. A tab whose `url` is a real page URL therefore does nothing when clicked — no navigation, and no pane to match. No core template sets URL-based tabs (grepping `set tabs` under `src/templates/` hits only the layout internals and the Matrix block partial).
+
+The decision rule: `tabs` is for same-page anchor panes only. When permission-gated or structurally separate sections live at their own URLs, use the inner sidebar nav idiom instead — `settings/users/_layout.twig` renders `_includes/nav` in `{% block sidebar %}` with one URL per section (see [Inner sidebar navigation](#inner-sidebar-navigation-_includesnavtwig)).
+
 #### Twig-level tabs
 
 Set the `tabs` variable in your template. Each tab links to a different URL or anchor. The CP layout renders the tab bar automatically when `tabs` has more than one entry.
+
+> **Caution:** the separate-URL variant below is undermined by the click interception documented above — Craft's tab JS prevents the navigation, so URL tabs are dead clicks on any page where `Craft.Tabs` initializes the strip (which the CP layout does). Prefer anchor tabs or the inner sidebar nav.
 
 ```twig
 {% extends '_layouts/cp.twig' %}
