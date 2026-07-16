@@ -39,7 +39,7 @@ class MyUtility extends Utility
 }
 ```
 
-`icon()` returns a built-in system icon name (`'wand'`, `'magnifying-glass'`) or an SVG **file path**. Derive paths from the file's own location — `dirname(__DIR__) . '/icon.svg'` — never from a Yii alias you assume exists. Failures are silent: `Cp::iconSvg()` only logs a warning, and `UtilitiesController::_getUtilityIconSvg()` catches the exception and falls back to the default icon, so a wrong alias (e.g. a legacy plugin namespace whose alias differs from the assumed one) ships an invisible bug.
+`icon()` returns a built-in system icon name (`'wand'`, `'magnifying-glass'`) or an SVG **file path**. Derive paths from the file's own location — `dirname(__DIR__) . '/icon.svg'` — never from a Yii alias you assume exists. Failures are silent: `Cp::iconSvg()` catches the lookup exception internally, logs a single `Craft::warning`, and returns an empty string; `UtilitiesController::_getUtilityIconSvg()` then falls back to the default icon on that empty string (its own `catch` never fires for this path — it's belt-and-suspenders), so a wrong alias (e.g. a legacy plugin namespace whose alias differs from the assumed one) ships an invisible bug.
 
 Craft auto-gates every utility behind a `utility:<id>` permission — see `permissions.md` (Utility Permissions) for how plugin permission checks stack on top of that native gate.
 
