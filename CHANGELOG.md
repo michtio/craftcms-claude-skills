@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.10.0 -- 2026-07-16
+
+Folds the source-verified lessons from a Typesense 5.9.0 plugin-review round into the CP references and agent definitions. Every added Craft claim was checked against Craft 5 (`craftcms/cms`) source before writing — VueAdminTable's pane behaviour and footer condition, the CP tab JS, utility permissions and icon resolution, and `FieldLayoutComponent::conditional()`. Where a long-standing reference claim disagreed with source, source won: the Twig-level "URL tabs" example was corrected — Craft's tab JS `preventDefault()`s every click and only switches same-page panes, so URL-based tabs are dead clicks — rather than left standing behind a caution. Minor bump: additions across six reference files plus four agent definitions.
+
+### Added
+
+- **`skills/craftcms/references/cp-components.md`** — `Craft.VueAdminTable` must be the sole content of its pane (intro copy via `contentNotice`, primary button via the `actionButton` block, one table per pane, the transforms-style secondary `.buttons` block as the lone exception); the "X of Y" footer only renders for endpoint-driven tables (`showFooter = (checkboxes && itemActions.length) || tableDataEndpoint`, per the compiled `admintable/dist/js/app.js`). Utility `icon()` path guidance (`__DIR__`-derived paths, not assumed Yii aliases; failures are silent — `Cp::iconSvg()` warns and returns `''`, and the utility falls back to the default icon). PHP-rendered slideouts have no `languageMenuField` equivalent — `Cp::selectFieldHtml()` fallback.
+- **`skills/craftcms/references/cp-ui-patterns.md`** — "never improvise CP UI" rule (copy the core/vendor idiom and cite the template matched); index-screen column scheme (bold linked name, `__slot:handle` copy chips, status dots, disclosure-menu row actions, native `deleteAction`).
+- **`skills/craftcms/references/cp.md`** — "Tabs switch panes — they never navigate" decision rule (anchor panes vs the inner sidebar-nav idiom for separate-URL sections).
+- **`skills/craftcms/references/permissions.md`** — `utility:<id>` is auto-registered per utility and enforced by `Utilities::checkAuthorization()`; a plugin utility's own permission stacks *on top of* the native gate — keep both layers.
+- **`skills/craftcms/references/fields.md`** — suppress the Visibility/Editability condition builders by overriding `FieldLayoutComponent::conditional()` to `false`, not with CSS.
+- **Agent definitions** — process rules from the review round: never improvise CP UI (builder + reviewer + `docs/agents.md` parity), match structure don't derive, work with native gates, stop at a passing gate with a precise remainder (feature + site builders), restructures re-verify standing behavioural rulings (builder + reviewer), live-docs-first for external APIs (planner).
+
+### Changed
+
+- **`skills/craftcms/references/cp.md`** — the Twig-level tabs example no longer shows separate-URL tabs (dead clicks under Craft's tab JS); it now defers to the anchor-based example and points separate-URL sections at the inner sidebar-nav idiom.
+- **`skills/craftcms/SKILL.md`** — task-example routes for the new sections (`description` frontmatter unchanged).
+
 ## 1.9.2 -- 2026-07-14
 
 Patch: slimmed the `description` frontmatter on the six largest skills. Over successive releases these had grown to 1.5–4.3 KB of trigger keywords, but Claude Code only reads ~1,536 characters of a skill's description for routing (it truncates the rest in the skill listing) — so the tails were inert for triggering. Each was rewritten to a denser, de-duplicated form that fits inside that window, with **no change to Claude triggering behaviour**; the trimmed long-tail keywords remain documented in each skill's reference files.

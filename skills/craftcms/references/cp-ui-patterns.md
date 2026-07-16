@@ -9,7 +9,7 @@ Battle-tested CP patterns from Craft core and first-party plugins, plus conditio
 - Asset Bundles — CP asset bundle, JS configuration injection, registration
 - CP Markup Patterns — sidebar badges, notice/warning blocks, tip/warning on form fields
 - Element Edit Screen — sidebar panels (`.meta` vs `.meta read-only`), `metaFieldsHtml()` override, top-toolbar split button (`EVENT_DEFINE_SIDEBAR_HTML` / `EVENT_DEFINE_ADDITIONAL_BUTTONS`)
-- CP Screen Composition — native UX defaults: tabs + the namespace/id tab trap, lightswitches vs checkboxes, two-layer field guidance (`instructions` + `<span class="info">`), cross-setting callout markup, env-var numerics, VueAdminTable for unbounded lists, native stats, honest empty values, `.status-badge` is a draft indicator (not an empty-value badge)
+- CP Screen Composition — native UX defaults: never improvise CP UI (copy the core/vendor idiom), tabs + the namespace/id tab trap, lightswitches vs checkboxes, two-layer field guidance (`instructions` + `<span class="info">`), cross-setting callout markup, env-var numerics, VueAdminTable for unbounded lists, index-screen column scheme + disclosure-menu row actions, native stats, honest empty values, `.status-badge` is a draft indicator (not an empty-value badge)
 
 ## CP UI Patterns
 
@@ -507,6 +507,8 @@ Or skip the hand-rolled menu: `Cp::disclosureMenu($items, ['withButton' => true,
 
 A plugin's CP screens should look and behave like Craft's own — native Craft UX is the default, not a later polish pass. These are the conventions (and the traps) that make a screen read as part of Craft rather than "almost Craft." For the settings-page controller/template plumbing and the in-section pattern, see `cp.md` (Settings Pages).
 
+**Never improvise CP UI.** Thin guidance is not a license to invent: when a pattern isn't documented here, read Craft core's templates (`vendor/craftcms/cms/src/templates/`) or an established vendor plugin (nystudio107, putyourlightson, verbb, doublesecretagency, craftpulse) and copy the idiom — and note which template you matched. Hand-rolled markup where a core idiom exists is a defect, not a style choice.
+
 ### Tabs by default — and the namespace/id tab trap
 
 A settings or management screen with more than ~2 sections uses CP tabs (`{% set tabs %}` + pane divs), not one long scroll. Craft's tab JS toggles panes by reading each tab's `href="#pane-id"` and matching it as a selector against the pane's literal `id` (showing that pane, adding `class="hidden"` to the rest). Two consequences:
@@ -552,6 +554,16 @@ Anything an operator might need to change in production without a deploy — TTL
 ### No unbounded static tables
 
 Any CP list that grows with usage — logs, sign-ins, grants, submissions — ships as a paginated, searchable **VueAdminTable** backed by a permission-gated JSON data action, or as an **element index** when the rows are elements. A plain Twig `<table>` is only for a provably small, fixed list. See `cp-components.md` (VueAdminTable) for the wiring.
+
+### Index-screen column scheme and row actions
+
+Match core's settings indexes (`settings/plugins/index.twig`, `settings/sections/_index.twig`):
+
+- **Name first, bold, linked** to the edit screen — the row's name is the way in, not a separate Edit button.
+- **Technical / copyable values** (handles, external resource names, IDs) render as monospace copy chips — VueAdminTable's `__slot:handle` column does this natively (the compiled component renders a copy-text button with `code light` classes). Surface the name developers actually integrate against — the alias-aware, query-correct external name — not an internal label.
+- **Boolean state** renders as status dots with a label (`<span class="status on"></span>` / `off` / `disabled` + `<span class="light">` — `settings/plugins/index.twig:233-245`), not bare words.
+- **Meta columns** (dates, counts) stay plain.
+- **Per-row actions** live in a disclosure menu (`Cp::disclosureMenu()` — `settings/plugins/index.twig:258`); row deletion uses VueAdminTable's native `deleteAction`. A farm of `btn small` buttons per row is not a Craft idiom.
 
 ### Native stats and honest empty values
 

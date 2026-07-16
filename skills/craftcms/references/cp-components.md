@@ -39,6 +39,10 @@ class MyUtility extends Utility
 }
 ```
 
+`icon()` returns a built-in system icon name (`'wand'`, `'magnifying-glass'`) or an SVG **file path**. Derive paths from the file's own location — `dirname(__DIR__) . '/icon.svg'` — never from a Yii alias you assume exists. Failures are silent: `Cp::iconSvg()` catches the lookup exception internally, logs a single `Craft::warning`, and returns an empty string; `UtilitiesController::_getUtilityIconSvg()` then falls back to the default icon on that empty string (its own `catch` never fires for this path — it's belt-and-suspenders), so a wrong alias (e.g. a legacy plugin namespace whose alias differs from the assumed one) ships an invisible bug.
+
+Craft auto-gates every utility behind a `utility:<id>` permission — see `permissions.md` (Utility Permissions) for how plugin permission checks stack on top of that native gate.
+
 ### Utility Template
 
 Does not extend a layout — Craft wraps it. Use `csrfInput()` since this is not a `fullPageForm`:
@@ -188,6 +192,8 @@ Override these methods on your element class:
 
 Use `Craft::$app->getRequest()->getAcceptsJson()` to detect slideout context if you need to render differently.
 
+When composing slideout HTML in PHP, note that not every Twig form macro has a `Cp` helper equivalent. `forms.languageMenuField` is Twig-only (`_includes/forms.twig:489`; `Cp.php` has no language-menu helper) — the PHP-side fallback is `Cp::selectFieldHtml()` with a normalized language option list.
+
 ### Triggering Programmatically
 
 ```js
@@ -314,6 +320,17 @@ public function actionTableData(): Response
 ```
 
 A plain Twig `<table>` is acceptable only for a provably small, fixed list (e.g. a handful of statuses). See `cp-ui-patterns.md` (CP Screen Composition) for when to reach for this.
+
+### The table is the sole pane content
+
+`Craft.VueAdminTable` is designed to be the **only** child of its pane — the component pulls itself to the pane edges with negative margins (the sticky footer especially), so sibling markup above or below the table in the same pane gets clipped or overlapped. Core index screens show the correct shape (`settings/entry-types/index.twig`, `settings/sections/_index.twig`):
+
+- Intro / read-only copy goes in the layout's `contentNotice` region (`{% set contentNotice = ... %}`), not a paragraph above the table.
+- The primary "New X" button goes in the layout's `{% block actionButton %}`, not beside the table.
+- **One table per pane.** Grouped tables get one pane each behind anchor tabs — never stack two tables in one pane (the second table's chrome clips the heading between them).
+- The one core-blessed exception is a secondary `.buttons` block *below* the table (`settings/assets/transforms/_index.twig:22-25`).
+
+The "X of Y items" footer only renders for endpoint-driven tables: in the compiled component (`web/assets/admintable/dist/js/app.js`), `showFooter` is `(checkboxes && itemActions.length) || tableDataEndpoint` — inline `tableData` alone never shows it. If you want the count/pagination footer, or the list is unbounded, feed the table from a permission-gated JSON `tableDataEndpoint` as above.
 
 ## Editable Table Field
 

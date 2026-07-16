@@ -258,32 +258,17 @@ Setting `details` (block or var) is what makes the right-hand panel and its disc
 
 Two approaches for multi-tab CP pages: Twig-level tabs (template-driven) and PHP-level tabs (controller-driven via `asCpScreen()`).
 
+#### Tabs switch panes — they never navigate
+
+`Craft.Tabs` intercepts every tab click: the compiled handler (`web/assets/cp/dist/cp.js`) calls `preventDefault()` and `selectTab()` unconditionally (the only carve-out is ctrl/cmd-click on a `#` href), and `selectTab()` only moves `.sel`/ARIA state while `Craft.CP`'s `selectTab` listener toggles `hidden` on the pane matching `$(tab.href)`. A tab whose `url` is a real page URL therefore does nothing when clicked — no navigation, and no pane to match. No core template sets URL-based tabs (grepping `set tabs` under `src/templates/` hits only the layout internals and the Matrix block partial).
+
+The decision rule: `tabs` is for same-page anchor panes only. When permission-gated or structurally separate sections live at their own URLs, use the inner sidebar nav idiom instead — `settings/users/_layout.twig` renders `_includes/nav` in `{% block sidebar %}` with one URL per section (see [Inner sidebar navigation](#inner-sidebar-navigation-_includesnavtwig)).
+
 #### Twig-level tabs
 
-Set the `tabs` variable in your template. Each tab links to a different URL or anchor. The CP layout renders the tab bar automatically when `tabs` has more than one entry.
+Set the `tabs` variable in your template; the CP layout renders the tab bar automatically when `tabs` has more than one entry. Each tab is an **anchor to a same-page pane** (`url: '#paneId'`) — see [Anchor-based tabs](#anchor-based-tabs-single-page) below for the full example, and use `selectedTab` to highlight the active pane.
 
-```twig
-{% extends '_layouts/cp.twig' %}
-{% set title = 'Settings'|t('my-plugin') %}
-{% set selectedSubnavItem = 'settings' %}
-{% set fullPageForm = true %}
-
-{% set tabs = {
-    general: { label: 'General'|t('my-plugin'), url: url('my-plugin/settings/general') },
-    sync: { label: 'Sync'|t('my-plugin'), url: url('my-plugin/settings/sync') },
-    advanced: { label: 'Advanced'|t('my-plugin'), url: url('my-plugin/settings/advanced') },
-} %}
-
-{% set selectedTab = 'general' %}
-
-{% block content %}
-    {{ actionInput('my-plugin/settings/save-general') }}
-    {{ redirectInput('my-plugin/settings/general') }}
-    {# Tab-specific form fields #}
-{% endblock %}
-```
-
-Each tab is a separate template (or a shared template with conditional blocks). The `selectedTab` variable highlights the active tab. Register CP URL rules for each tab path.
+Don't give a tab a real page `url` or register CP URL rules per tab — those tabs are dead clicks (see [Tabs switch panes](#tabs-switch-panes--they-never-navigate) above). When sections are structurally separate or permission-gated and genuinely need their own URLs, use the inner sidebar nav idiom instead — `settings/users/_layout.twig` renders `_includes/nav` in `{% block sidebar %}` with one URL per section.
 
 **Don't hand-write or include the tab strip.** `_includes/tabs.twig` is a private helper that `_layouts/cp.twig` calls internally to render the strip from the `tabs` variable in *its own* rendering context. Including the partial yourself — or emitting the markup by hand — produces the tab strip but no JS wiring, no ARIA controller setup, no error highlighting per tab. The strip's real container is `<div class="pane-tabs">` wrapping a `role="tablist"`, and each tab is an `<a role="tab">` carrying `aria-controls` (pointing at its pane ID) plus `.sel` on the active one (`tabs.twig:2,16,23-37`). There is **no** `.tabs` or `.tab` class — the label lives in a `.tab-label` span — so any snippet keying off `.tab` is not Craft's markup. The fix is always to `{% extends "_layouts/cp" %}` and `{% set tabs = ... %}` — let the layout handle the strip. See [PHP-level tabs](#php-level-tabs-via-ascpscreen) and [Anchor-based tabs](#anchor-based-tabs-single-page) for the wiring; if you find yourself reaching for `{% include "_includes/tabs" %}`, you're in the wrong template lineage.
 

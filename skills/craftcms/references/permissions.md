@@ -125,6 +125,8 @@ Key facts about admin status:
 | `utility:find-replace` | Find and Replace |
 | `utility:migrations` | Migrations |
 
+A `utility:<id>` permission is registered automatically for **every** utility, including plugin-provided ones (`services/UserPermissions.php` builds one per registered utility class), and `Utilities::checkAuthorization()` enforces it on every visit (the Project Config utility is additionally admin-only). A plugin utility that also checks its own permission (e.g. `my-plugin:manageOps` inside its content or actions) stacks **on top of** the native gate — the user needs both. Keep both layers and document the pairing; never flatten the plugin check into the `utility:` gate or bypass Craft's layer.
+
 ## User Groups
 
 User groups are the primary mechanism for organizing permissions. Created in Settings > Users.
