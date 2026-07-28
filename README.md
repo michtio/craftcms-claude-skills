@@ -183,6 +183,8 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | [Prompt Guide](docs/prompt-guide.md) | 40+ real-world prompts organized by task type |
 | [Agents](docs/agents.md) | 6 agents with tools, gate patterns, composition examples |
 | [Contributing](docs/contributing.md) | Adding plugin references, improving skills, reporting issues |
+| [Code of Conduct](CODE_OF_CONDUCT.md) | Contributor Covenant 2.1 — expected behavior and enforcement |
+| [Security Policy](SECURITY.md) | Supported versions, private vulnerability reporting, what's in and out of scope |
 
 ## Requirements
 

@@ -2,6 +2,8 @@
 
 Contributions are welcome. This page covers how to add plugin references, improve existing skills, report issues, and follow the conventions that keep the skill pack consistent.
 
+By participating you agree to the [Code of Conduct](../CODE_OF_CONDUCT.md). For anything security-sensitive, follow the [Security Policy](../SECURITY.md) instead of filing a public issue.
+
 ## Adding a New Plugin Reference
 
 Plugin references live in `skills/craft-plugins/references/`. Each file documents one Craft plugin with enough detail for Claude to use it correctly across templates, configuration, PHP/migrations, and deployment. Register the new reference in the `craft-plugins` skill's routing table (`skills/craft-plugins/SKILL.md`) and add its trigger name to that skill's `description`.
@@ -124,6 +126,8 @@ If you add, remove, or rename a reference file:
 3. If the line count changed significantly, update the README's skill description
 
 ## Reporting Issues
+
+> **Security issues don't go here.** If a skill would lead an agent to do something destructive or leak data, or a code example carries a real vulnerability, use [private vulnerability reporting](https://github.com/michtio/craftcms-claude-skills/security/advisories/new) instead. See the [Security Policy](../SECURITY.md) for scope.
 
 ### Bug reports
 
