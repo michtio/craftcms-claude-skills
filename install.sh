@@ -43,11 +43,11 @@ for skill_dir in "${SCRIPT_DIR}/skills/"*/; do
 
     if [ -e "${target}" ] || [ -L "${target}" ]; then
         echo -e "  ${YELLOW}⚠ ${skill_name}${NC} — already exists, skipping"
-        ((skipped++))
+        skipped=$((skipped + 1))
     else
         ln -s "${skill_dir}" "${target}"
         echo -e "  ${GREEN}✓ ${skill_name}${NC}"
-        ((linked++))
+        linked=$((linked + 1))
     fi
 done
 
@@ -65,11 +65,11 @@ for agent_file in "${SCRIPT_DIR}/agents/"*.md; do
 
     if [ -e "${target}" ] || [ -L "${target}" ]; then
         echo -e "  ${YELLOW}⚠ ${agent_name}${NC} — already exists, skipping"
-        ((skipped++))
+        skipped=$((skipped + 1))
     else
         ln -s "${agent_file}" "${target}"
         echo -e "  ${GREEN}✓ ${agent_name}${NC}"
-        ((linked++))
+        linked=$((linked + 1))
     fi
 done
 

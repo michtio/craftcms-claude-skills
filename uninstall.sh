@@ -38,10 +38,10 @@ for skill_dir in "${SCRIPT_DIR}/skills/"*/; do
     if [ -L "${target}" ] && [ "$(readlink "${target}")" = "${skill_dir}" ]; then
         rm "${target}"
         echo -e "  ${GREEN}✓ Removed ${skill_name}${NC}"
-        ((removed++))
+        removed=$((removed + 1))
     elif [ -e "${target}" ]; then
         echo -e "  ${YELLOW}⚠ ${skill_name}${NC} — not a symlink to this repo, skipping"
-        ((skipped++))
+        skipped=$((skipped + 1))
     fi
 done
 
@@ -60,10 +60,10 @@ for agent_file in "${SCRIPT_DIR}/agents/"*.md; do
     if [ -L "${target}" ] && [ "$(readlink "${target}")" = "${agent_file}" ]; then
         rm "${target}"
         echo -e "  ${GREEN}✓ Removed ${agent_name}${NC}"
-        ((removed++))
+        removed=$((removed + 1))
     elif [ -e "${target}" ]; then
         echo -e "  ${YELLOW}⚠ ${agent_name}${NC} — not a symlink to this repo, skipping"
-        ((skipped++))
+        skipped=$((skipped + 1))
     fi
 done
 
