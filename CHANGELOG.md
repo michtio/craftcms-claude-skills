@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.12.1 -- 2026-07-28
+
+Patch: fixes the `git clone` + `install.sh` install path, which linked exactly one skill and then exited. Reported by [@dusan-stojnic](https://github.com/dusan-stojnic) in [#13](https://github.com/michtio/craftcms-claude-skills/issues/13), who also identified the fix. No skill or agent content changed.
+
+`((var++))` is a post-increment: it evaluates to the **old** value, so the first call with a counter at 0 evaluates to 0 and the arithmetic command returns exit status 1. Under `set -euo pipefail` that terminates the script — so the installer symlinked one skill, no agents, and exited 1.
+
+macOS's stock bash 3.2 does not honour `set -e` for arithmetic commands, which is why this survived local testing; bash 4/5 — every Linux runner and any modern shell — aborts. Reproduced on bash 5.2 (1 skill, exit 1) and verified fixed (12 skills + 6 agents, exit 0), with the all-skipped re-run branch and `uninstall.sh` exercised on both bash 5.2 and bash 3.2 against a sandboxed `HOME`.
+
+### Fixed
+
+- **`install.sh`** — counter increments now use `var=$((var + 1))`. An assignment's exit status is always 0 regardless of the value; the reporter's `((++var))` also works, but only because a counter never lands back on 0, so the assignment form is the one that can't regress.
+- **`uninstall.sh`** — same defect in all four of its counter sites, fixed the same way. Unreported, but it would have left a half-removed install.
+
 ## 1.12.0 -- 2026-07-28
 
 Second wave of source-verified learnings from the same multi-plugin estate work that produced 1.11.0. Seven items: five on the `craft-pest` harness, two on Craft-core runtime behavior around runtime site creation and deletion. Every named class and method was read in the installed package source — verified against `craftcms/cms` 5.10.11, `markhuot/craft-pest-core` 3.2.2, `pestphp/pest` 2.36.1, and `yiisoft/yii2`.
