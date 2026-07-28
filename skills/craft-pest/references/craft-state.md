@@ -180,6 +180,40 @@ afterEach(function () {
 });
 ```
 
+**Prefix-matching sweeps: use the raw condition form, and assert the sweep matches.** The cleanup above filters in PHP (`str_starts_with`), which is safe. The moment you push the prefix match into an *element query*, there's a trap that makes cleanup silently stop working:
+
+```php
+// WRONG — matches nothing, permanently, with no error.
+// Param setters take values, not conditions: QueryParam::parse() only knows
+// and/or/not, so this compiles to `title IN ('like', 'test-%')`.
+$stale = Entry::find()->title(['like', 'test-%'])->all();
+
+// Right — raw Yii condition against the real column. Trailing `false` keeps
+// your own % intact instead of letting Yii escape and re-wrap it.
+$stale = Entry::find()
+    ->andWhere(['like', 'elements_sites.title', 'test-%', false])
+    ->all();
+```
+
+The mechanism is in the `craftcms` skill's `architecture.md` (Element-query param setters don't take Yii operator tuples). What matters here is the failure shape: a broken sweep returns an empty array, deletes nothing, throws nothing, and leaves the suite green — so fixtures accumulate in a shared install indefinitely and the first symptom is unrelated tests failing weeks later on data nobody remembers creating.
+
+Because a no-op sweep is indistinguishable from a clean one, **assert at least once that the sweep finds what it should**:
+
+```php
+it('cleans up its own fixtures', function () {
+    Entry::factory()->section('blog')->title('test-alpha')->create();
+
+    $matched = Entry::find()
+        ->andWhere(['like', 'elements_sites.title', 'test-%', false])
+        ->all();
+
+    // Guards the query itself, not just the deletion.
+    expect($matched)->not->toBeEmpty();
+});
+```
+
+One test like this per sweep pattern is enough — it converts a silent no-op into a red build.
+
 **Why explicit deletion rather than trusting the rollback.** Pest's `afterEach` runs *before* the `RefreshesDatabase` rollback, so you get a clean window to undo project-config-backed state while the transaction is still open. The ordering is in `Pest\Concerns\Testable::tearDown()` (verified against `pestphp/pest` 2.36.1):
 
 ```php

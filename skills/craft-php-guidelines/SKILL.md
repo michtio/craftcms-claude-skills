@@ -34,6 +34,7 @@ When unsure about a convention, `WebFetch` the coding guidelines page for the au
 - Forget `parent::defineRules()` and you lose all inherited validation.
 - Using `[$this, '_validateFoo']` callable arrays or inline closures in `defineRules()` — Craft core uses string method names: `[['attr'], 'validateAttr']`. The validator method is public, no underscore — Yii invokes it by name.
 - `DateTimeHelper` in elements/queries, `Carbon` in services — never mix in the same class.
+- Parsing a raw DB datetime with `strtotime()` or `new DateTime()` — those columns are naive UTC strings and the process timezone is `system.timeZone`, so the result is off by the full offset on any non-UTC install. Parse with an explicit UTC zone. See Date Handling below.
 - Missing `@throws` chains — document exceptions from called methods too, not just your own throws.
 - Using magic property access (`$plugin->settings`, `$app->view`) instead of explicit getters (`$plugin->getSettings()`, `$app->getView()`) — PHPStan can't resolve `__get()` calls, so magic access passes at runtime but fails static analysis. Always use explicit getters for Yii2 components and Craft plugin properties.
 - Calling Craft-specific methods directly on `Craft::$app` (`Craft::$app->getConfig()`) — PHPStan can't resolve them because the static type is Yii's base union. Narrow with a typed local: `/** @var \craft\web\Application $app */ $app = Craft::$app;`. Don't use `@phpstan-ignore-line`.
@@ -111,6 +112,7 @@ Only include sections that have content. Blank line after the separator, before 
 - **Elements and element queries**: `craft\helpers\DateTimeHelper`.
 - **Services** (date arithmetic): `Carbon\Carbon`.
 - Never mix both in the same class.
+- **Name the timezone when parsing a value that came out of the database.** Datetime columns hold naive UTC strings (`Db::prepareDateForDb()` formats in UTC without an offset), while Craft sets the PHP process timezone to `system.timeZone` — so `strtotime()` or bare `new DateTime()` on a raw column value shifts every comparison by the full UTC offset on a non-UTC install, and is silently correct on a UTC one. Use `DateTimeHelper::toDateTime($value)` (naive input is assumed UTC by default) or `Carbon::createFromFormat('Y-m-d H:i:s', $value, 'UTC')`. See the `craftcms` skill's `architecture.md` (Record-to-Model Hydration Boundary → Those strings are naive UTC).
 
 ## Database Conventions
 

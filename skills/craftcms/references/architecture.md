@@ -26,6 +26,8 @@
 - A render-builder class whose config-array constructor silently ignores unknown keys — a typo (`{ digitz: 6 }`) then does nothing with no error. Make an unknown key throw so mistakes fail loudly. See [Front-End Output From Plugins](#front-end-output-from-plugins).
 - Calling `Sites::refreshSites()` after creating a site and assuming element queries now filter by site — they don't. `refreshSites()` refreshes `_isMultiSite`, but `ElementQuery::beforePrepare()` gates its `siteId` clause on the separately-memoized `_isMultiSiteWithTrashed`. Also call `Craft::$app->getIsMultiSite(true, true)`. See [Creating or deleting sites at runtime](#creating-or-deleting-sites-at-runtime).
 - Trusting in-process `Entries`/`Categories` service caches after `deleteSite()` — core prunes the project-config paths but never nulls those services' `MemoizableArray` memos, so section and category-group models still carry the deleted site. And delete the site *before* saving category groups: `Categories::saveGroup()` throws if `siteSettings` omits any currently-existing site. See [Creating or deleting sites at runtime](#creating-or-deleting-sites-at-runtime).
+- Parsing a datetime column value with `strtotime()` or bare `new DateTime()` — the column holds a **naive UTC** string while Craft has set the process timezone to `system.timeZone`, so every comparison shifts by the full UTC offset on a non-UTC install (and is correct on a UTC one, so it passes CI). Use `DateTimeHelper::toDateTime()` or `Carbon::createFromFormat(..., 'UTC')`. See [Those strings are naive UTC](#those-strings-are-naive-utc--never-parse-them-with-ambient-timezone-functions).
+- Passing a Yii operator tuple to an element-query param setter — `->title(['like', 'foo%'])` is parsed as two *literal values* OR'd into an `IN`, so it matches nothing, silently and permanently. Use `->andWhere(['like', 'elements_sites.title', 'foo%', false])`. See [Element-query param setters don't take Yii operator tuples](#element-query-param-setters-dont-take-yii-operator-tuples).
 - Comparing a stored value that may end in `*` through a query-param helper — `Db::parseParam()` treats a leading or trailing asterisk as a SQL `LIKE` wildcard, so a "uniqueness check" silently matches by prefix. See [Db::parseParam() turns asterisks into wildcards](#dbparseparam-turns-asterisks-into-wildcards).
 - Serializing a hash chain (or any ordered writer) without bounded retry on MySQL deadlocks — under concurrency the loser of a lock cycle throws SQLSTATE 40001 and, if the caller catches `Throwable` and continues, the write is lost silently. See [Serialized writers need bounded deadlock retry](#serialized-writers-need-bounded-deadlock-retry).
 - Storing IPs (or comparable personal data) with no privacy story — no data inventory, no retention statement, no anonymization option. Ship `docs/privacy.md` and offer an `anonymizeIp` lightswitch applied at the storage boundary. See [Storing Personal Data](#storing-personal-data).
@@ -412,6 +414,55 @@ public static function fromRecord(MyEntityRecord $record): self
 }
 ```
 
+#### Those strings are naive UTC — never parse them with ambient-timezone functions
+
+The raw column value isn't just "a string", it's a **naive UTC** string: no offset, no zone name. `Db::prepareDateForDb()` is what wrote it that way:
+
+```php
+// craft\helpers\Db::prepareDateForDb()
+$date = clone $date;
+$date->setTimezone(new DateTimeZone('UTC'));
+return $date->format('Y-m-d H:i:s');
+```
+
+Meanwhile the PHP process default timezone is **not** UTC on most installs. Craft's init sets it from config: `ApplicationTrait::_setTimeZone()` resolves `generalConfig->timezone ?? projectConfig->get('system.timeZone')` and passes it to Yii's `setTimeZone()`, which is `date_default_timezone_set()`. So on a site configured for `America/Los_Angeles` or `Europe/Brussels`, the process default *is* that zone — Craft actively sets it.
+
+Put those two facts together and any ambient-timezone parser misreads every value:
+
+```php
+// WRONG — parses a UTC string as if it were local time.
+// Under America/Los_Angeles that's 7-8 hours off, in the wrong direction.
+$changedSince = strtotime($record->dateUpdated);
+$changedSince = new DateTime($record->dateUpdated);
+```
+
+The failure is quiet and direction-dependent: a "which records changed since X" comparison returns too many rows or too few depending on which side of the offset the data sits — and it is exactly correct on a UTC-configured machine, so it survives local testing and CI and breaks only on a non-UTC deployment.
+
+Parse with an explicit UTC zone:
+
+```php
+use Carbon\Carbon;
+use craft\helpers\DateTimeHelper;
+
+// Preferred: toDateTime() treats a naive string as UTC by default.
+$changedSince = DateTimeHelper::toDateTime($record->dateUpdated);
+
+// In a service doing date arithmetic, Carbon with the zone named explicitly:
+$changedSince = Carbon::createFromFormat('Y-m-d H:i:s', $record->dateUpdated, 'UTC');
+```
+
+`DateTimeHelper::toDateTime()` is the safe choice because of its signature — `toDateTime(mixed $value, bool $assumeSystemTimeZone = false, bool $setToSystemTimeZone = true)` — and this line inside it:
+
+```php
+$defaultTimeZone = ($assumeSystemTimeZone ? Craft::$app->getTimeZone() : 'UTC');
+```
+
+With the default `$assumeSystemTimeZone = false` a naive string is interpreted as UTC, which is precisely what the column holds. (`$setToSystemTimeZone = true` then shifts the result into the system zone for display; the *instant* is already right, so comparisons are unaffected.) Pass `true` for the second argument only when parsing something a human typed in their own timezone — never for a value that came out of the database.
+
+**Rule of thumb:** every datetime crossing the DB boundary names its zone. `Db::prepareDateForDb()` on the way in, `DateTimeHelper::toDateTime()` or `Carbon::createFromFormat(..., 'UTC')` on the way out. `strtotime()` and bare `new DateTime()` have no place at that boundary.
+
+This is the production-side twin of a testing rule: the `craft-pest` skill's `isolation.md` pins `date_default_timezone_set('UTC')` after app creation so test datetimes line up. That pin protects suites; explicit-UTC parsing protects production, where you don't control the process timezone and shouldn't try to.
+
 ### `Db::parseParam()` turns asterisks into wildcards
 
 `Db::parseParam()` exists to translate Craft's element-query param syntax into SQL, and part of that syntax is asterisk-as-wildcard. For a string value with an `=` or `!=` operator it does:
@@ -451,6 +502,54 @@ $exists = (new Query())
 ```
 
 Escaping the asterisk (`\*`) also works — `parseParam()` unescapes `\*` back to a literal `*` after the wildcard pass — but it means every call site has to remember to escape. Prefer the raw `andWhere()` for stored-value comparisons and reserve `parseParam()` for actual user-supplied query criteria.
+
+### Element-query param setters don't take Yii operator tuples
+
+The sibling failure to the asterisk case above — same parser, opposite direction. There, a value you meant literally became a `LIKE`. Here, a condition you meant as `LIKE` becomes two literal values.
+
+Element-query param setters route their argument through `Db::parseParam()`, which starts with `QueryParam::parse()`. That parser recognizes exactly three leading operators:
+
+```php
+// craft\db\QueryParam::extractOperator()
+if (!in_array($firstVal, [self::AND, self::OR, self::NOT], true)) {
+    return null;
+}
+```
+
+`'like'` is not one of them. So this:
+
+```php
+// WRONG — silently matches nothing
+Entry::find()->title(['like', $prefix . '%'])->all();
+```
+
+parses as *two literal values* with the default `OR` operator, and `Db::parseParam()` collapses an OR-list of `=` comparisons into an `IN`:
+
+```sql
+WHERE elements_sites.title IN ('like', 'fixture-%')
+```
+
+Zero rows, unless an entry is literally titled `like`. And note `%` is not a wildcard to `parseParam()` — it only translates `*` — so nothing rescues it.
+
+**This fails silently in the worst possible way.** No exception, no warning, valid SQL, an empty result set that looks like "nothing matched." Anything built on such a query — a cleanup sweep, a maintenance job, a bulk re-save — becomes a permanent no-op that reports success. A real case had 11 call sites of a prefix-based cleanup sweep quietly matching nothing for weeks while the suite stayed green.
+
+For `LIKE` and other operator conditions, drop to the raw Yii condition form against the underlying column:
+
+```php
+// Right — real LIKE against the column the param setter would have targeted
+Entry::find()
+    ->andWhere(['like', 'elements_sites.title', $prefix . '%', false])
+    ->all();
+```
+
+Two details in that call:
+
+- **`elements_sites.title`** is where the column lives in Craft 5 (`ElementQuery` maps it as `$this->_columnMap['title'] = 'elements_sites.title'`). Use the real column, not the param name.
+- **The trailing `false`** maps to Yii's `escapingReplacements` (`LikeCondition::fromArrayDefinition()` assigns `$operands[2]`). Setting it `false` means "already escaped, don't touch" — which both preserves your own `%` and stops Yii from auto-wrapping the value in its own `%…%`. Omit it and Yii escapes your `%` into a literal and wraps the whole thing, giving you `LIKE '%fixture-\%%'`.
+
+The general rule: **param setters take values, not conditions.** `->title('foo')`, `->title(['foo', 'bar'])`, `->title(['not', 'foo'])`, `->title('foo*')` — all fine, all value syntax. The moment you want a SQL operator, you've left the param API and want `andWhere()`.
+
+**Verify the sweep matches.** Because the failure mode is an empty result rather than an error, a query like this deserves one assertion that it finds what it should — see the `craft-pest` skill's `craft-state.md` for the fixture-cleanup version of this.
 
 ### Serialized writers need bounded deadlock retry
 
