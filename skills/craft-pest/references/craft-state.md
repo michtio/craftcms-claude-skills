@@ -8,6 +8,8 @@ Craft behaviors that are correct in production and surprising in a test process.
 - Simulating a login in a console-driven harness
 - Fixture timestamps: MySQL session clock vs Craft's UTC
 - Muting audit/event surfaces — all of them
+- Site fixtures are per-test, never bootstrap-created
+- Service caches go stale when craft-pest swaps components
 - Queue stubs
 - Project-config writes inside a rolled-back transaction
 
@@ -149,6 +151,116 @@ function muteAuditSurfaces(): void
 Call it from a single `beforeEach()` in `tests/Pest.php` rather than per-file — a suite where 9 of 10 files remember is a suite that writes audit rows.
 
 If you own the emitting plugin, this is also a documentation obligation: a second event surface that isn't in the README's events section produces consumer bugs. See the `craftcms` skill's `events.md` (Cross-plugin event contracts).
+
+## Site fixtures are per-test, never bootstrap-created
+
+It is tempting to create the extra sites a multi-site suite needs once, at bootstrap, and reuse them. Don't: a site created at bootstrap is **durable**. It's project-config-backed, so it survives the per-test transaction rollback and permanently mutates the test database. Two consequences follow, and the second is the one that bites:
+
+- The suite stops being reproducible. Run 1 creates the site; runs 2..n silently exercise a *different* schema than a fresh checkout does.
+- CI, which starts from an empty database every time, is the only place that ever runs the real fresh-DB path — so the suite goes green locally for weeks and fails the moment CI's ordering differs.
+
+Create sites inside the test that needs them, and delete them explicitly in a global `afterEach()`:
+
+```php
+// tests/Pest.php
+afterEach(function () {
+    $sites = Craft::$app->getSites();
+
+    foreach ($sites->getAllSites(true) as $site) {
+        if (!str_starts_with($site->handle, 'test')) {
+            continue;
+        }
+
+        $sites->deleteSite($site);
+    }
+
+    // Core leaves these stale — see the craftcms skill's architecture.md.
+    $sites->refreshSites();
+    Craft::$app->getIsMultiSite(true, true);
+});
+```
+
+**Why explicit deletion rather than trusting the rollback.** Pest's `afterEach` runs *before* the `RefreshesDatabase` rollback, so you get a clean window to undo project-config-backed state while the transaction is still open. The ordering is in `Pest\Concerns\Testable::tearDown()` (verified against `pestphp/pest` 2.36.1):
+
+```php
+protected function tearDown(): void
+{
+    $afterEach = TestSuite::getInstance()->afterEach->get(self::$__filename);
+    // ...
+    try {
+        $this->__callClosure($afterEach, func_get_args());
+    } finally {
+        parent::tearDown();          // ← craft-pest's TestCase::tearDown() → rollback
+        // ...
+    }
+}
+```
+
+`parent::tearDown()` is craft-pest's `TestCase::tearDown()`, which calls `callTraits('tearDown')` and therefore `tearDownRefreshesDatabase()`. So: your `afterEach` first, rollback second. Relying on the rollback alone is what leaves sites behind — project-config writes don't cleanly reverse with it (see `isolation.md`, "What it does not cleanly cover").
+
+**Two core caches must be refreshed when sites change mid-process**, and they're the reason a site fixture appears to half-work: `Sites::refreshSites()` does *not* invalidate the `getIsMultiSite()` variant that `ElementQuery` reads, and `deleteSite()`'s project-config prune is invisible to the `Entries`/`Categories` services' memoized models. Both are Craft-core behaviors, documented with the mechanism in the **`craftcms`** skill's `architecture.md` → "Creating or deleting sites at runtime". Skipping the `getIsMultiSite(true, true)` call is why a freshly-created test site produces element queries that don't filter by site.
+
+## Service caches go stale when craft-pest swaps components
+
+craft-pest's fake requests replace application components mid-suite. `RequestHandler::registerWithCraft()` does:
+
+```php
+$this->app->set('request', $request);
+$this->app->set('response', $response);
+
+$this->app->setComponents([
+    'request' => $request,
+    'response' => $response,
+    // "We'll help out by resetting a few components (causing them to
+    //  recalculate their internal state)." — craft-pest's own comment
+    'urlManager' => [
+        'class' => UrlManager::class,
+        'enablePrettyUrl' => true,
+        'ruleConfig' => ['class' => UrlRule::class],
+    ],
+]);
+```
+
+Passing a **config array** to `setComponents()` registers a definition rather than an instance, so the next `get()` builds a **brand-new object**. That's deliberate and usually what you want. The hazard is what stays behind on the old one.
+
+Class-level handlers (`Event::on(SomeService::class, ...)`) keep working — they're keyed on the class. But an **instance-level** listener — `Craft::$app->getSomeService()->on(...)`, or anything a plugin attached to a resolved component in `init()` — remains bound to the *original* instance and never fires for the replacement. Meanwhile the replacement's memoized caches start from scratch, or are populated fresh from state a fixture already mutated. Nothing errors; results just depend on whether a fake request happened to run earlier in the file. That's an order-dependent cross-test leak, and it reproduces only in the ordering that created it.
+
+Craft core acknowledges this hazard directly. Its project-config listeners are registered through a `_proxy()` indirection specifically so that "the correct component is called if it happens to get swapped out (**e.g. for a test**)" — the comment is in `ApplicationTrait`.
+
+**The pattern: give any service with process-lifetime memoization an explicit `reset()`,** mirroring core's `UserPermissions::reset()`, and call it from the fixture that mutated the underlying state rather than trusting a listener to fire:
+
+```php
+namespace acme\myplugin\services;
+
+class Rules extends Component
+{
+    private ?MemoizableArray $_rules = null;
+
+    /**
+     * Clears the memoized rule set.
+     *
+     * Mirrors craft\services\UserPermissions::reset(). Call this from any code
+     * that mutates the underlying rows in the same process — including test
+     * fixtures. Do not rely on an event listener: craft-pest's fake requests
+     * can replace component instances, leaving instance-level listeners bound
+     * to an object nothing reads any more.
+     *
+     * @return void
+     */
+    public function reset(): void
+    {
+        $this->_rules = null;
+    }
+}
+```
+
+```php
+// In the fixture, right after mutating state:
+seedRuleRows($rows);
+MyPlugin::getInstance()->getRules()->reset();     // direct, not via a listener
+```
+
+Two habits that keep this from recurring: register plugin event handlers at **class level** (`Event::on(Rules::class, ...)`) rather than on a resolved instance, and treat "works alone, fails in the suite" as a cache-invalidation question before a logic one.
 
 ## Queue stubs
 

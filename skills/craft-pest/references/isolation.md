@@ -6,7 +6,8 @@ How to make a plugin's Pest suite run against its own database, install what it 
 
 - What craft-pest-core actually does at boot
 - Pinning the test database (`tests/bootstrap.php`)
-- `phpunit.xml.dist` — the second half of the belt-and-braces
+- Pin the process timezone *after* the app is created
+- `phpunit.xml.dist` — the second half of the belt-and-braces (force the DB name, default the coordinates)
 - Installing the plugin under test
 - `RefreshesDatabase` — what rolls back and what doesn't
 - Invocation paths (safe and unsafe)
@@ -59,6 +60,39 @@ Why this file *and* the XML `<env>` entries: the bootstrap works regardless of h
 
 **Create the database first.** Nothing in this chain creates it: `ddev mysql -e 'CREATE DATABASE IF NOT EXISTS db_test'`.
 
+## Pin the process timezone *after* the app is created
+
+Creating the Craft app sets the PHP process timezone from the install's config, and on a fresh install that value is **not** UTC.
+
+The chain: `ApplicationTrait::_setTimeZone()` runs during init and resolves
+
+```php
+$timeZone = $this->getConfig()->getGeneral()->timezone ?? $this->getProjectConfig()->get('system.timeZone');
+// ...
+$this->setTimeZone(App::parseEnv($timeZone));   // → Yii's Application::setTimeZone()
+```
+
+and Yii's `Application::setTimeZone()` is literally `date_default_timezone_set($value)`. Craft's own install migration seeds `'timeZone' => 'America/Los_Angeles'` (`craft\migrations\Install`), so a test database installed from scratch hands your process a UTC-8/-7 clock.
+
+Every `DateTime` built after that point is constructed in that zone. Craft stores datetimes in UTC, so values round-trip through saved element attributes shifted by the full offset. The symptom is rarely "timezone" — it presents as intermittent, environment-dependent expiry logic: a token seeded as expired reads as still valid, or a "not yet due" fixture reads as overdue, depending on which side of the offset the test data sits.
+
+Pin UTC **after** app creation, so your pin wins rather than being overwritten:
+
+```php
+// tests/bootstrap.php — after the app is created, not before
+
+$app = require dirname(__DIR__) . '/vendor/craftcms/cms/bootstrap/console.php';
+
+// Craft's init just called date_default_timezone_set() from system.timeZone,
+// which is America/Los_Angeles on a fresh install. Re-pin so DateTimes built in
+// tests match the UTC that Craft stores.
+date_default_timezone_set('UTC');
+```
+
+Craft core does the same thing in its own example test-suite bootstrap (`src/test/internal/example-test-suite/tests/_bootstrap.php`), which opens with both `ini_set('date.timezone', 'UTC')` and `date_default_timezone_set('UTC')` — so this is core's convention, not a workaround.
+
+Setting it *before* app creation (or in `php.ini`) is not sufficient on its own: init overwrites it. If you'd rather fix it at the source, set `timezone` in the test `config/general.php` or pin `system.timeZone` to UTC in the project config the test database installs from — then the value init applies is already UTC. Doing both is harmless.
+
 ## `phpunit.xml.dist` — the second half
 
 ```xml
@@ -78,7 +112,20 @@ Why this file *and* the XML `<env>` entries: the bootstrap works regardless of h
         </include>
     </source>
     <php>
+        <!-- Force ONLY what local dev gets wrong: the database name and the
+             table prefix. Everything else stays default-only so a CI job's own
+             MySQL service env flows through. -->
         <env name="CRAFT_DB_DATABASE" value="db_test"/>
+        <env name="CRAFT_DB_TABLE_PREFIX" value=""/>
+
+        <!-- Defaults, not overrides: `default="true"` applies the value only when
+             the variable isn't already set in the environment. -->
+        <env name="CRAFT_DB_DRIVER" value="mysql" default="true"/>
+        <env name="CRAFT_DB_SERVER" value="db" default="true"/>
+        <env name="CRAFT_DB_PORT" value="3306" default="true"/>
+        <env name="CRAFT_DB_USER" value="db" default="true"/>
+        <env name="CRAFT_DB_PASSWORD" value="db" default="true"/>
+
         <env name="QUEUE_DRIVER" value="sync"/>
         <env name="CRAFT_INSTALL_EMAIL" value="test@example.com"/>
         <env name="CRAFT_INSTALL_PASSWORD" value="secret"/>
@@ -86,6 +133,23 @@ Why this file *and* the XML `<env>` entries: the bootstrap works regardless of h
     </php>
 </phpunit>
 ```
+
+### Force the database name, default everything else
+
+The split above is what makes one config work on both a developer's machine and a CI runner, and it's worth understanding *why* rather than copying it.
+
+**Force** the two things local dev genuinely gets wrong:
+
+- `CRAFT_DB_DATABASE` — the whole point of the isolation. Local dev supplies the *development* database, and that is the value you must beat.
+- `CRAFT_DB_TABLE_PREFIX` — a stale or absent prefix produces "table doesn't exist" errors that look like migration problems. Pin it explicitly to whatever your plugin expects (usually empty).
+
+**Never unconditionally force** connection coordinates — driver, server, port, user, password. Those are correct in each environment already and wrong everywhere else. Hardcoding a local hostname is the specific trap: `<env name="CRAFT_DB_SERVER" value="db"/>` is right inside DDEV (where `db` is the database container) and breaks a GitHub Actions runner, where the service is reachable at `127.0.0.1`. The suite then fails to connect with an error that says nothing about the config that caused it.
+
+If you've reached for an `/etc/hosts` alias in CI to make `db` resolve, that's the signal you've forced a value you should have defaulted. It's a workaround for a self-inflicted problem, not a pattern — remove the force instead.
+
+PHPUnit's `default="true"` attribute is the right tool: the value is applied only when the variable is **not** already present in the environment. So a DDEV shell (which exports `CRAFT_DB_SERVER` etc.) and a CI job (which sets them in the workflow `env:`) both win, while a bare local run still gets something sensible. Compare `force="true"`, which overrides — and note that neither attribute touches `$_SERVER`, which is why the `tests/bootstrap.php` pins exist (see the caveat below).
+
+The corollary on the CI side: the workflow supplies the connection coordinates in its own `env:` block, and they flow through untouched. See `ci.md` (Database service).
 
 Notes on the `<env>` entries:
 

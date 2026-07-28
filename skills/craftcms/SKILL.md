@@ -1,6 +1,6 @@
 ---
 name: craftcms
-description: "Craft CMS 5 plugin and module development — extending Craft with PHP. Covers elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types, native fields, events, behaviors, Twig extensions, widgets, filesystems, permissions, project config, GraphQL, testing, and debugging. Triggers on: beforePrepare()/afterSave()/defineSources()/defineTableAttributes()/attributeHtml(), MemoizableArray, BaseNativeField, EVENT_REGISTER_*/DEFINE_*/BEFORE_*/AFTER_*, CraftVariable, custom element or field type (normalizeValue/serializeValue/inputHtml), webhook, API endpoint, queue/batch job, CP section, dashboard widget, utility page, element action/exporter/condition, registerUserPermissions, requirePermission vs requireAdmin, manageSettings, allowAdminChanges, canView/canSave/canDelete, defineRules, elevated session, project-config/apply, drafts/revisions, element edit sidebar (EVENT_DEFINE_SIDEBAR_HTML) + toolbar buttons, metaFieldsHtml, VueAdminTable, GeneralConfig. Always use when writing, editing, or reviewing Craft plugin/module PHP — even when no API is named. For plugin-specific work also load craft-plugins. Do NOT trigger for front-end Twig (craft-site) or content modeling (craft-content-modeling)."
+description: "Craft CMS 5 plugin and module development — extending Craft with PHP. Covers elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types, native fields, events, behaviors, Twig extensions, widgets, filesystems, permissions, project config, GraphQL, testing, and debugging. Triggers on: beforePrepare()/afterSave()/defineSources()/defineTableAttributes()/attributeHtml(), MemoizableArray, BaseNativeField, EVENT_REGISTER_*/DEFINE_*/BEFORE_*/AFTER_*, CraftVariable, custom element or field type (normalizeValue/serializeValue/inputHtml), webhook, API endpoint, queue/batch job, CP section, dashboard widget, utility page, element action/exporter/condition, registerUserPermissions, requirePermission vs requireAdmin, manageSettings, allowAdminChanges, canView/canSave/canDelete, defineRules, elevated session, project-config/apply, drafts/revisions, element edit sidebar (EVENT_DEFINE_SIDEBAR_HTML) + toolbar buttons, metaFieldsHtml, VueAdminTable, GeneralConfig, getIsMultiSite/refreshSites stale after creating a site, deleteSite phantom sites, element query stops filtering by siteId. Always use when writing, editing, or reviewing Craft plugin/module PHP — even when no API is named. For plugin-specific work also load craft-plugins. Do NOT trigger for front-end Twig (craft-site) or content modeling (craft-content-modeling)."
 ---
 
 # Craft CMS 5 — Extending (Plugins & Modules)
@@ -66,6 +66,9 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up Pest tests for a plugin" → load `craft-pest` skill → `isolation.md`
 - "Write a test for a controller action" → load `craft-pest` skill → `patterns.md`
 - "Tests are writing to my dev database / created thousands of stray elements" → load `craft-pest` skill → `isolation.md`
+- "Create or delete sites from code (importer, provisioning command, fixture)" → read `architecture.md` (Creating or deleting sites at runtime)
+- "Element queries stopped filtering by siteId after I created a site" → read `architecture.md` (Creating or deleting sites at runtime — `refreshSites()` doesn't invalidate the variant queries read)
+- "Deleted a site but sections/category groups still reference it" → read `architecture.md` (Creating or deleting sites at runtime — `deleteSite()`'s prune vs memoized service caches)
 - "Configure Redis for caching and sessions" → read `config-app.md`
 - "Set up environment variables for production" → read `config-bootstrap.md`
 - "Find a GeneralConfig setting" → read `config-general.md`
@@ -86,6 +89,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Upgrade a plugin from Craft 4 to 5" → read `quality.md` (Rector section)
 - "Set up CI for a Craft plugin" → read `quality.md` (CI/CD Integration section)
 - "Create sections or fields in a migration" → read `migrations.md` (Content Migrations section)
+- "Install fails with 'Too many keys specified; max 64 keys allowed' / duplicate indexes piling up" → read `migrations.md` (Re-runnable index creation and MySQL's 64-key ceiling)
 - "Set up database read replicas" → read `config-app.md` (Database Replicas section)
 - "Register a module in app.php" → read `config-app.md` (Module Registration section)
 - "Create a custom validator" → read `architecture.md` (Custom Validators section)
@@ -156,7 +160,7 @@ Load only the reference files your task needs — each file costs input tokens o
 |------|------|--------:|
 | Element core: lifecycle, queries, status, authorization, drafts, revisions, propagation, field layouts, user edit screens, events | `references/elements.md` | 8.4K |
 | Element index: sources, table/card attributes, status pills, sort, conditions, actions (bulk + per-element action menu), exporters, sidebar, metadata, relation-field display/props (viewMode, previewMode, maxRelations), extending via events | `references/element-index.md` | 6.1K |
-| Services, models, records, project config, MemoizableArray, events, API clients, custom validators | `references/architecture.md` | 6.0K |
+| Services, models, records, project config (incl. runtime site creation/deletion caches), MemoizableArray, events, API clients, custom validators | `references/architecture.md` | 7.4K |
 | Controllers: CP CRUD, webhooks, API endpoints, action routing, authorization | `references/controllers.md` | 3.9K |
 | CP templates, form macros (incl. lightswitch vs checkbox, copytext, money, button classes), settings pages, navigation (incl. inner sidebar nav), permissions, read-only mode | `references/cp.md` | 7.2K |
 | CP components: dashboard widgets, utility pages, slideout editors, ajax, editable tables, spinner, modals (markup + shade), alerts | `references/cp-components.md` | 1.8K |

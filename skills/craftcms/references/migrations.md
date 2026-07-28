@@ -10,6 +10,7 @@
 - Forgetting `muteEvents` on `ProjectConfig::set()` inside migrations -- triggers handlers that may depend on state that doesn't exist yet.
 - Generating random UIDs when project config YAML already ships from dev -- check if the config path exists first.
 - Non-idempotent steps -- always check column/table existence before adding.
+- Using `createIndex()` / `addForeignKey()` on a code path that can run twice (notably `Install::safeUp()` under a test harness) -- MySQL accepts duplicate indexes over the same columns, so they accumulate silently until the table hits the 64-key ceiling and installs fail with `Too many keys specified`. Use `createIndexIfMissing()` and a `Db::findForeignKey()` check. See [Re-runnable index creation](#re-runnable-index-creation-and-mysqls-64-key-ceiling).
 - Using `null` for FK name but specifying one for index -- use `null` for both, Craft generates deterministic names.
 - Missing `TRUNCATE cache` after failed migrations on Craft Cloud -- stale mutex locks block retries. See the `craft-cloud` skill (`commands-and-cron.md`) for running the truncate via the Console command runner.
 - Not thinking about ON DELETE behavior -- `CASCADE` for owned data, `SET NULL` for references, `RESTRICT` for protected refs.
@@ -61,7 +62,7 @@ The `Install.php` migration runs on plugin install. Numbered migrations run on `
 
 **Modules** don't have `Install.php` -- use content migrations created with `ddev craft migrate/create my_migration_name`. These go in the project's `migrations/` directory and share a global track.
 
-**Schema-change discipline.** Every change to plugin schema must land in BOTH `Install.php` (canonical fresh shape) AND a dated migration (idempotent upgrade path). Editing only `Install.php` leaves existing installs — including your `db_test` after the first test run — on the prior schema. See `testing.md` → "Schema migrations and db_test drift" for why this also bites your test suite even if you think there are "no users yet."
+**Schema-change discipline.** Every change to plugin schema must land in BOTH `Install.php` (canonical fresh shape) AND a dated migration (idempotent upgrade path). Editing only `Install.php` leaves existing installs — including your `db_test` after the first test run — on the prior schema. See the `craft-pest` skill's `shared-state.md` → "Schema drift: `Install.php` vs migrations in the test database" for why this also bites your test suite even if you think there are "no users yet."
 
 ## Safety Rules
 
@@ -118,6 +119,17 @@ $this->addForeignKey(null, Table::MY_ELEMENTS, ['categoryId'], Table::CATEGORIES
 
 Use `null` for the FK name -- Craft generates a deterministic name. Always decide: `CASCADE` for owned data, `SET NULL` for references, `RESTRICT` for protected references.
 
+There is no `addForeignKeyIfMissing()`. When a migration (or an `Install.php`) can run more than once against the same database, check first:
+
+```php
+use craft\helpers\Db;
+
+// Db::findForeignKey() returns the existing constraint name, or null.
+if (Db::findForeignKey(Table::MY_ELEMENTS, 'categoryId') === null) {
+    $this->addForeignKey(null, Table::MY_ELEMENTS, ['categoryId'], Table::CATEGORIES, ['id'], 'SET NULL', null);
+}
+```
+
 ## Indexes
 
 ```php
@@ -128,6 +140,28 @@ $this->createIndex(null, Table::MY_ELEMENTS, ['categoryId', 'externalId'], true)
 $this->createIndex(null, Table::MY_ELEMENTS, ['postDate']);
 $this->createIndex(null, Table::MY_ELEMENTS, ['expiryDate']);
 ```
+
+### Re-runnable index creation, and MySQL's 64-key ceiling
+
+`createIndex()` is **not** idempotent, and MySQL will not stop you: it accepts any number of indexes over the same columns as long as the names differ, and `null` names are generated per call. So a migration path that executes twice adds a second index; ten times adds ten.
+
+Nothing fails while this happens — until the table reaches **MySQL's hard limit of 64 keys per table**, at which point the next `createIndex()` (or `addForeignKey()`, since each FK carries an index) aborts with `Too many keys specified; max 64 keys allowed`. The error names the index that finally crossed the line, not the duplicate accumulation that consumed the budget, so it reads as a spurious failure on a line that has always worked.
+
+Use Craft's guarded variant, which delegates to `Db::findIndex()` and skips when an equivalent index already exists:
+
+```php
+$this->createIndexIfMissing(Table::MY_ELEMENTS, ['handle'], true);
+$this->createIndexIfMissing(Table::MY_ELEMENTS, ['categoryId']);
+```
+
+`craft\db\Migration::createIndexIfMissing(string $table, array|string $columns, bool $unique = false)` — verified against `craftcms/cms` 5.10.11. Note the signature takes no name argument; matching is by columns and uniqueness.
+
+**Where the double-execution comes from.** Normal `craft up` runs each numbered migration once (tracked in the `migrations` table), so this rarely bites production. The two paths that do re-run:
+
+- **`Install.php`** — re-invoked whenever plugin-install detection misses, which is routine in a standalone test harness that boots a fresh process per run. Guard `Install::safeUp()` exactly as above.
+- **Manual re-application** — someone reruns a migration after clearing its history row, or a botched deploy replays one.
+
+Diagnosing an existing table: `SHOW INDEX FROM myplugin_items` (or `$schema->getTableIndexes()`), and look for several differently-named indexes over identical columns. The test-harness angle and a regression test that asserts index/FK counts stay flat across two `safeUp()` calls are in the **`craft-pest`** skill's `shared-state.md` → "Plugin `Install` migrations must be idempotent".
 
 ## Common Schema Patterns
 

@@ -6,6 +6,7 @@ Isolating the database (see `isolation.md`) removes most of this class of proble
 
 - Restore what you found — never hardcode the default
 - Schema drift: `Install.php` vs migrations in the test database
+- Plugin `Install` migrations must be idempotent
 - Self-seeding: local database ≠ CI
 - Request-IP fixtures: overwrite the header *and* reset the memo
 - Console-created users may require a password reset
@@ -57,6 +58,75 @@ ddev exec --dir /var/www/html/vendor/acme/my-plugin vendor/bin/pest
 ```
 
 **Anti-pattern: dropping the test database on every run.** Slow (full Craft + plugin install each time), breaks parallel workers, and it paves over the actual drift instead of surfacing it.
+
+## Plugin `Install` migrations must be idempotent
+
+A standalone Pest harness re-invokes `Install::safeUp()` on **every process boot** whenever its plugin-install detection misses — a wiped `plugins` row, a bootstrap that installs unconditionally, a `$plugins->isPluginInstalled()` check that returns `false` because the plugin handle changed. That's a normal harness condition, not a bug you can assume away.
+
+An `Install` migration that calls `createIndex()` and `addForeignKey()` unguarded then adds *another* index and *another* foreign key each time. Nothing fails at first — MySQL happily accepts duplicate indexes over the same columns under different names. The suite goes green while the table quietly accumulates keys, until you hit **MySQL's hard ceiling of 64 keys per table** and installs start failing outright with an error that points at the last index added rather than the loop that added the first sixty.
+
+Craft ships the guards. Use them:
+
+```php
+public function safeUp(): bool
+{
+    if (!$this->db->tableExists('{{%myplugin_items}}')) {
+        $this->createTable('{{%myplugin_items}}', [
+            'id' => $this->primaryKey(),
+            'ownerId' => $this->integer()->notNull(),
+            'handle' => $this->string()->notNull(),
+            'dateCreated' => $this->dateTime()->notNull(),
+            'dateUpdated' => $this->dateTime()->notNull(),
+            'uid' => $this->uid(),
+        ]);
+    }
+
+    // Migration::createIndexIfMissing() delegates to Db::findIndex() and skips
+    // when an equivalent index already exists.
+    $this->createIndexIfMissing('{{%myplugin_items}}', ['handle'], true);
+    $this->createIndexIfMissing('{{%myplugin_items}}', ['ownerId'], false);
+
+    // No addForeignKeyIfMissing() exists — check first.
+    if (Db::findForeignKey('{{%myplugin_items}}', 'ownerId') === null) {
+        $this->addForeignKey(
+            null,
+            '{{%myplugin_items}}',
+            ['ownerId'],
+            Table::ELEMENTS,
+            ['id'],
+            'CASCADE',
+            null,
+        );
+    }
+
+    return true;
+}
+```
+
+Both helpers are core API (verified against `craftcms/cms` 5.10.11): `craft\db\Migration::createIndexIfMissing(string $table, array|string $columns, bool $unique = false)` returns early when `Db::findIndex()` finds a match, and `craft\helpers\Db::findForeignKey(string $tableName, string|array $columns, ?Connection $db = null): ?string` returns the existing constraint name or `null`. Passing `null` as the index/FK name lets Craft generate a deterministic one, which is what makes the "already exists" check meaningful.
+
+**Regression-test it directly** — this is a bug that hides from ordinary tests, so assert on the schema rather than on behavior:
+
+```php
+it('is idempotent when safeUp runs twice', function () {
+    $table = '{{%myplugin_items}}';
+    $schema = Craft::$app->getDb()->getSchema();
+
+    $indexesBefore = count($schema->getTableIndexes($table));
+    $fksBefore = count($schema->getTableSchema($table)->foreignKeys);
+
+    (new Install())->safeUp();
+
+    $schema->refresh();
+
+    expect(count($schema->getTableIndexes($table)))->toBe($indexesBefore)
+        ->and(count($schema->getTableSchema($table)->foreignKeys))->toBe($fksBefore);
+});
+```
+
+`$schema->refresh()` matters — Yii caches table schemas per connection, so without it you re-read the pre-migration shape and the test passes regardless.
+
+The same discipline applies to migrations generally, for a different reason: an `Install.php` edit never re-applies to an existing test database (see [Schema drift](#schema-drift-installphp-vs-migrations-in-the-test-database) above), so guards in numbered migrations are what make them safe to re-run across environments. See the `craftcms` skill's `migrations.md` for the idempotency patterns on the production side.
 
 ## Self-seeding: local database ≠ CI
 

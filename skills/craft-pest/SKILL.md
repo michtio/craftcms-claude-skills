@@ -1,6 +1,6 @@
 ---
 name: craft-pest
-description: "Testing Craft CMS 5 plugins and modules with Pest — test isolation, database safety, and the markhuot/craft-pest-core harness. ALWAYS load when writing, running, fixing, or reviewing tests for a Craft plugin or module, and whenever a test suite touches a real Craft install. Covers: markhuot/craft-pest-core (TestCase, RefreshesDatabase, InstallsCraft, factories, HTTP/queue/DB assertions), transaction rollback and why it is opt-in, tests/Pest.php and tests/bootstrap.php wiring, phpunit.xml.dist <env> pins, pinning CRAFT_DB_DATABASE to a test database (db_test), why --configuration= silently defeats DB isolation, installing the plugin under test, muting audit/event sinks, stubbing the queue, permission-tree memoization (UserPermissions::reset()), simulating logins in a console-driven harness, UTC fixture timestamps, pinning the CMS edition, scoping count assertions, and CI test jobs. Triggers on: Pest, pestphp, craft-pest, craft-pest-core, markhuot, RefreshesDatabase, InstallsCraft, uses(TestCase::class), tests/Pest.php, phpunit.xml.dist, phpunit.xml, vendor/bin/pest, composer test, ddev craft pest, test isolation, test database, db_test, CRAFT_DB_DATABASE, factories, Entry::factory(), assertDatabaseHas, plugin test suite, integration tests, fixtures, transaction rollback, beforeEach/afterEach, 'tests pass locally but pollute the database', 'tests created thousands of entries', 'tests wrote real audit rows', 'suite passes on dev but fails in isolation', orphaned test data, flaky order-dependent test, CI test job, no Pest job in the workflow, tests exist but never run in CI, suite isn't CI-enforced, fix-cs vs check-cs in CI, reviewing a plugin's code-analysis.yaml for a missing test step. Do NOT trigger for front-end/JS testing (Playwright, Vitest), or for PHP style/static analysis (craft-php-guidelines)."
+description: "Testing Craft CMS 5 plugins and modules with Pest — test isolation, database safety, and the markhuot/craft-pest-core harness. ALWAYS load when writing, running, fixing, or reviewing tests for a Craft plugin or module, and whenever a suite touches a real Craft install. Covers why rollback is opt-in, tests/Pest.php + tests/bootstrap.php wiring, phpunit.xml.dist <env> pins (force the DB name and table prefix, default the connection coordinates so CI still connects), why --configuration= defeats DB isolation, installing the plugin under test, pinning the process timezone after app creation, per-test site fixtures, idempotent Install migrations, stale service caches when components get swapped, muting audit sinks, queue stubs, factories, HTTP/DB assertions, CI test jobs. Triggers on: Pest, pestphp, craft-pest-core, markhuot, RefreshesDatabase, InstallsCraft, tests/Pest.php, phpunit.xml.dist, vendor/bin/pest, composer test, ddev craft pest, db_test, CRAFT_DB_DATABASE, CRAFT_DB_TABLE_PREFIX, Entry::factory(), assertDatabaseHas, afterEach, transaction rollback, test site fixture, createIndexIfMissing, Db::findForeignKey, UserPermissions::reset(), 'too many keys', 'tests pollute the database', 'tests created thousands of entries', 'passes on dev but fails in isolation', 'passes alone but fails in the suite', 'datetimes off by hours in tests', 'connects locally but not on CI', flaky order-dependent test, no Pest job in CI. Do NOT trigger for front-end/JS testing or PHP style analysis."
 ---
 
 # Testing Craft CMS Plugins with Pest
@@ -86,7 +86,11 @@ Run this against any plugin suite you inherit, write, or review. Each line has f
 |-------|-------|--------------------|
 | `RefreshesDatabase` bound alongside `TestCase` | `tests/Pest.php` | Every write commits permanently |
 | `CRAFT_DB_DATABASE` pinned before Craft boots | `tests/bootstrap.php` | Suite runs against the dev database |
+| `date_default_timezone_set('UTC')` **after** app creation | `tests/bootstrap.php` | Datetimes shift by the install's UTC offset |
 | Same pins present as `<env>` entries | `phpunit.xml.dist` | Correct-invocation path has no pins |
+| DB name + table prefix forced; coordinates `default="true"` | `phpunit.xml.dist` | A forced local hostname breaks CI runners |
+| `Install::safeUp()` guarded with `createIndexIfMissing()` / `Db::findForeignKey()` | `src/migrations/Install.php` | Duplicate keys accumulate to MySQL's 64-per-table cap |
+| Sites created per-test and deleted in `afterEach()` | tests, `tests/Pest.php` | Durable sites mutate the shared test database |
 | Suite invoked from the plugin's own root | `composer test`, CI, DDEV | `<env>` pins silently ignored |
 | Plugin under test explicitly installed | `tests/bootstrap.php` | Works only on an install that already has it |
 | Edition pinned explicitly | `beforeEach()` | Passes on Pro, fails on Solo/Team |
@@ -110,14 +114,19 @@ Read the reference file(s) your task needs — each costs input tokens on every 
 - "Raw SQL fixture isn't treated as expired" → `craft-state.md` (Fixture timestamps)
 - "Tests pollute a shared playground install" → `shared-state.md`
 - "`Install.php` changes aren't reaching the test database" → `shared-state.md` (Schema drift)
+- "Expiry/date assertions fail intermittently, or datetimes come back hours off" → `isolation.md` (Pin the process timezone)
+- "Suite connects fine locally but can't reach the database on CI" → `isolation.md` (Force the database name, default everything else) + `ci.md`
+- "Install fails with too many keys / duplicate indexes piling up" → `shared-state.md` (Install migrations must be idempotent)
+- "Set up a multi-site test / my test site's queries ignore siteId" → `craft-state.md` (Site fixtures) + the `craftcms` skill's `architecture.md`
+- "Test passes alone but fails in the suite / service returns stale data" → `craft-state.md` (Service caches go stale when craft-pest swaps components)
 - "Wire tests into CI" → `ci.md`
 
 | Reference | Scope |
 |-----------|-------|
-| `references/isolation.md` | Database isolation: `tests/bootstrap.php`, `phpunit.xml.dist`, `RefreshesDatabase`, `InstallsCraft` boot vs plugin install, invocation paths, ambient-state assumptions (editions, counts, pre-existing fixtures) |
-| `references/craft-state.md` | Craft internals that bite in tests: permission-tree memoization, login/session gates, UTC fixture timestamps, muting audit/event surfaces, queue stubs, project-config writes |
+| `references/isolation.md` | Database isolation: `tests/bootstrap.php`, process timezone, `phpunit.xml.dist` (force the DB name, default the connection coordinates), `RefreshesDatabase`, `InstallsCraft` boot vs plugin install, invocation paths, ambient-state assumptions (editions, counts, pre-existing fixtures) |
+| `references/craft-state.md` | Craft internals that bite in tests: permission-tree memoization, login/session gates, UTC fixture timestamps, muting audit/event surfaces, per-test site fixtures, component swapping and stale service caches, queue stubs, project-config writes |
 | `references/patterns.md` | Writing the tests: factories, HTTP, queue, database assertions, multi-site, mocking Craft services, console commands, events, file/test conventions |
-| `references/shared-state.md` | Suites that run against a shared or long-lived install: restore-what-you-found, `Install.php` vs migration drift in the test DB, self-seeding, request-IP fixtures |
+| `references/shared-state.md` | Suites that run against a shared or long-lived install: restore-what-you-found, `Install.php` vs migration drift in the test DB, idempotent `Install` migrations, self-seeding, request-IP fixtures |
 | `references/ci.md` | CI wiring: `check-cs` not `fix-cs`, a real Pest job, invocation from the plugin root, fresh-database verification |
 
 ## Two Harnesses (and when Pest isn't the answer)
@@ -140,4 +149,5 @@ Worth holding in mind, because each of these has shipped a real bug past a passi
 - **Service-layer tests never see the HTTP layer.** Reserved query params, CSRF, route resolution, and response formats only fail on a real request. See the `craftcms` skill's `controllers.md`.
 - **A green run on a seeded dev install is not authoritative.** Confirm against a freshly created test database before believing it.
 - **A console-driven harness is not a browser.** Sessions, user-agent gates, and impersonation behave differently. See `craft-state.md`.
+- **One long-lived process is not a sequence of requests.** Craft invalidates many caches by ending the request. A suite that creates sites, swaps components, or mutates project config mid-process carries stale memos that no production code path would ever see. See `craft-state.md`.
 - **A suite that isn't in CI doesn't exist.** It rots at the speed of the codebase. See `ci.md`.

@@ -79,7 +79,11 @@ The suite needs a MySQL (or Postgres) service and the test database to exist bef
       CRAFT_SECURITY_KEY: ci-only-not-a-secret
 ```
 
-`MYSQL_DATABASE` creates it, so no separate create step is needed. Note the env vars here are the *outer* environment — the suite's own `phpunit.xml.dist` `<env>` pins and `tests/bootstrap.php` still apply and should agree with them. If they disagree, the bootstrap pins win (they're set last, before Craft boots), which is the behavior you want: the suite decides its own database.
+`MYSQL_DATABASE` creates it, so no separate create step is needed.
+
+The env vars here are the *outer* environment, and they are what supplies the **connection coordinates** — `CRAFT_DB_SERVER: 127.0.0.1` is correct for a GitHub Actions service container and wrong inside DDEV. That division of labour only works if the suite's `phpunit.xml.dist` declares those variables with `default="true"` rather than forcing them; a forced local hostname (`value="db"`) overrides this block and the job can't connect. See `isolation.md` (Force the database name, default everything else) — if you find yourself adding an `/etc/hosts` alias so `db` resolves on the runner, fix the `<env>` entry instead.
+
+The suite still decides its own **database name**: the `phpunit.xml.dist` pin and `tests/bootstrap.php` apply on top, and the bootstrap pins win (set last, before Craft boots), which is the behavior you want.
 
 `CRAFT_SECURITY_KEY` must be set to something or Craft's install will generate one per run; a fixed dummy value keeps runs comparable.
 

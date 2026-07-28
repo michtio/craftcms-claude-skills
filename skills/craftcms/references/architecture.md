@@ -24,6 +24,8 @@
 - Plugin controller directory case not matching namespace — `controllers/Front/` vs `controllers/front/` works on macOS (case-insensitive APFS) but breaks on Linux containers, CI, and production (case-sensitive ext4). The directory name must exactly match the namespace segment casing.
 - Shipping front-end example templates as bare body fragments (no `<html>`/`<head>`/`<body>`) — they render as broken pages if hit directly and give integrators nothing working to start from. Ship a complete, copyable bundle with its own layout shell plus an install console command. See [Front-End Output From Plugins](#front-end-output-from-plugins) and the craft-site skill's `example-templates.md`.
 - A render-builder class whose config-array constructor silently ignores unknown keys — a typo (`{ digitz: 6 }`) then does nothing with no error. Make an unknown key throw so mistakes fail loudly. See [Front-End Output From Plugins](#front-end-output-from-plugins).
+- Calling `Sites::refreshSites()` after creating a site and assuming element queries now filter by site — they don't. `refreshSites()` refreshes `_isMultiSite`, but `ElementQuery::beforePrepare()` gates its `siteId` clause on the separately-memoized `_isMultiSiteWithTrashed`. Also call `Craft::$app->getIsMultiSite(true, true)`. See [Creating or deleting sites at runtime](#creating-or-deleting-sites-at-runtime).
+- Trusting in-process `Entries`/`Categories` service caches after `deleteSite()` — core prunes the project-config paths but never nulls those services' `MemoizableArray` memos, so section and category-group models still carry the deleted site. And delete the site *before* saving category groups: `Categories::saveGroup()` throws if `siteSettings` omits any currently-existing site. See [Creating or deleting sites at runtime](#creating-or-deleting-sites-at-runtime).
 - Comparing a stored value that may end in `*` through a query-param helper — `Db::parseParam()` treats a leading or trailing asterisk as a SQL `LIKE` wildcard, so a "uniqueness check" silently matches by prefix. See [Db::parseParam() turns asterisks into wildcards](#dbparseparam-turns-asterisks-into-wildcards).
 - Serializing a hash chain (or any ordered writer) without bounded retry on MySQL deadlocks — under concurrency the loser of a lock cycle throws SQLSTATE 40001 and, if the caller catches `Throwable` and continues, the write is lost silently. See [Serialized writers need bounded deadlock retry](#serialized-writers-need-bounded-deadlock-retry).
 - Storing IPs (or comparable personal data) with no privacy story — no data inventory, no retention statement, no anonymization option. Ship `docs/privacy.md` and offer an `anonymizeIp` lightswitch applied at the storage boundary. See [Storing Personal Data](#storing-personal-data).
@@ -35,7 +37,7 @@
 - [Services](#services)
 - [Models](#models)
 - [Records (ActiveRecord)](#records-activerecord)
-- [Project Config](#project-config)
+- [Project Config](#project-config) — incl. creating or deleting sites at runtime (the two caches that don't refresh)
 - [Yii2 Core Validators](#yii2-core-validators)
 - [Custom Validators](#custom-validators)
 - [Plugin Editions](#plugin-editions) — declaring, checking, feature gating, edition switching, helper methods, migrations
@@ -675,6 +677,109 @@ Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD,
 - Never hardcode UIDs. Always look them up or generate them.
 - In migrations: check if project config already has the UID before generating a new one.
 - `StringHelper::UUID()` generates v4 UUIDs.
+
+### Creating or deleting sites at runtime
+
+Sites are project-config-backed, and Craft assumes they change during a *request that ends*. Code that creates or deletes sites and then keeps running in the same process — importers, provisioning routines, multi-site setup commands, test fixtures — hits two caches that don't refresh themselves. Both fail silently. Verified against `craftcms/cms` 5.10.11.
+
+#### `refreshSites()` does not invalidate the cache element queries actually read
+
+`getIsMultiSite()` keeps **two** independent memos:
+
+```php
+// craft\base\ApplicationTrait
+public function getIsMultiSite(bool $refresh = false, bool $withTrashed = false): bool
+{
+    if ($withTrashed) {
+        if (!$refresh && isset($this->_isMultiSiteWithTrashed)) {
+            return $this->_isMultiSiteWithTrashed;
+        }
+        // ... counts rows in the sites table
+    }
+
+    if (!$refresh && isset($this->_isMultiSite)) {
+        return $this->_isMultiSite;
+    }
+    return $this->_isMultiSite = count($this->getSites()->getAllSites(true)) > 1;
+}
+```
+
+`Sites::refreshSites()` refreshes only the first one:
+
+```php
+public function refreshSites(): void
+{
+    $this->_allSitesById = null;
+    // ...
+    Craft::$app->getIsMultiSite(true);      // ← $withTrashed defaults to FALSE
+}
+```
+
+And `ElementQuery::beforePrepare()` gates its site filtering on the **other** one:
+
+```php
+if (Craft::$app->getIsMultiSite(false, true)) {
+    $this->subQuery->andWhere(['elements_sites.siteId' => $this->siteId]);
+}
+```
+
+So on a single-site install, `_isMultiSiteWithTrashed` memoizes `false` at first boot; code then creates a second site and calls `refreshSites()` like a good citizen; and **element queries still don't filter by site** for the rest of the process. Every query silently returns rows from all sites, with duplicate-looking results as the usual first symptom.
+
+Force both variants after any runtime site change:
+
+```php
+Craft::$app->getSites()->refreshSites();          // site models + _isMultiSite
+Craft::$app->getIsMultiSite(true, true);          // _isMultiSiteWithTrashed — the one queries read
+```
+
+The second call is the load-bearing one. It's easy to omit precisely because `refreshSites()` looks like it covers everything.
+
+#### `deleteSite()`'s prune is invisible to already-memoized service caches
+
+`Sites::deleteSite()` deletes sections that existed *only* on that site, removes the site's own project-config path, fires `EVENT_AFTER_DELETE_SITE`, and calls `refreshSites()`. An `ApplicationTrait` listener then prunes the site out of everything that referenced it:
+
+```php
+// Prune deleted sites from site settings
+Event::on(Sites::class, Sites::EVENT_AFTER_DELETE_SITE, function(DeleteSiteEvent $event) {
+    if (!Craft::$app->getProjectConfig()->getIsApplyingExternalChanges()) {
+        $this->getRoutes()->handleDeletedSite($event);
+        $this->getCategories()->pruneDeletedSite($event);     // removes categoryGroups.*.siteSettings.<uid>
+        $this->getEntries()->pruneDeletedSite($event);        // removes sections.*.siteSettings.<uid>
+    }
+});
+```
+
+Those prunes write to **project config**. They do not null the `MemoizableArray` caches those services already built — `Entries::$_sections` and `Categories::$_groups` are private and only cleared by their own save/delete handlers. So within the same process, `getSectionByHandle()` and `getGroupByHandle()` keep returning models whose `siteSettings` still include the deleted site. Downstream code reads those stale models and behaves as though the prune never happened, which looks like phantom sites accumulating.
+
+Note also the guard: when `getIsApplyingExternalChanges()` is true the entire prune is skipped by design (the incoming YAML is authoritative) — so a `project-config/apply` path prunes nothing here.
+
+**Ordering matters when both a site and a category group are changing.** `Categories::saveGroup()` validates that the group's site settings cover every site that currently exists:
+
+```php
+$allSiteSettings = $group->getSiteSettings();
+foreach (Craft::$app->getSites()->getAllSiteIds() as $siteId) {
+    if (!isset($allSiteSettings[$siteId])) {
+        throw new Exception('Tried to save a category group that is missing site settings');
+    }
+}
+```
+
+That's a thrown `Exception`, not a validation error you can inspect. So delete the site **first** — while the doomed site still exists, any `saveGroup()` call that omits it is rejected outright:
+
+```php
+// 1. Delete the site. Core prunes section/category-group siteSettings paths.
+Craft::$app->getSites()->deleteSite($site);
+
+// 2. Re-sync the caches core left stale.
+Craft::$app->getSites()->refreshSites();
+Craft::$app->getIsMultiSite(true, true);
+
+// 3. Only now touch category groups — getAllSiteIds() no longer includes the
+//    deleted site, so a group whose siteSettings omit it validates cleanly.
+Craft::$app->getCategories()->saveGroup($group);
+```
+
+If you need the section/group models themselves to reflect the prune mid-process and no public refresh exists (`Entries` exposes `refreshEntryTypes()` but no section equivalent), re-read from project config rather than from the service, or defer the dependent work to a fresh request or queue job — which is what Craft's own request lifecycle would have given you.
 
 ## Yii2 Core Validators
 
