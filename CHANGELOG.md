@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.12.2 -- 2026-07-29
+
+Patch: two source-verified Craft-core runtime facts from the wave-2 tail, both added to existing sections rather than new ones. Verified against `craftcms/cms` 5.10.11 and `yiisoft/yii2`. No new skills or reference files.
+
+Both are silent-failure bugs that are *correct* on a developer's machine and wrong in production or in a shared install — the reason they survive local testing and CI.
+
+### Added
+
+- **`skills/craftcms/references/architecture.md`** — **Those strings are naive UTC** (under Record-to-Model Hydration Boundary). Datetime columns hold naive UTC strings: `Db::prepareDateForDb()` does `setTimezone(new DateTimeZone('UTC'))` then `format('Y-m-d H:i:s')`, so no offset is stored. Meanwhile Craft's init points the PHP process timezone at a *non*-UTC zone — `ApplicationTrait::_setTimeZone()` resolves `generalConfig->timezone ?? projectConfig->get('system.timeZone')` and passes it to Yii's `setTimeZone()`, which is `date_default_timezone_set()`. So `strtotime()` or bare `new DateTime()` on a raw column value shifts every comparison by the full UTC offset on a non-UTC install, and is exactly correct on a UTC one. Parse with `DateTimeHelper::toDateTime()` — its `$assumeSystemTimeZone = false` default resolves to `'UTC'`, which is what the column holds — or `Carbon::createFromFormat('Y-m-d H:i:s', $value, 'UTC')`. This is the production-side twin of the test-bootstrap UTC pin added in 1.12.0; the pin protects suites, explicit parsing protects production.
+- **`skills/craftcms/references/architecture.md`** — **Element-query param setters don't take Yii operator tuples.** Param setters take *values*, not conditions. `QueryParam::extractOperator()` recognises only `and`, `or`, and `not`, so `->title(['like', $prefix . '%'])` parses as two literal values, defaults to `OR`, and `Db::parseParam()` collapses it to `title IN ('like', 'fixture-%')` — zero rows, no exception, valid SQL, permanently. Use the raw condition form against the real column: `->andWhere(['like', 'elements_sites.title', $prefix . '%', false])`. The trailing `false` sets Yii's `escapingReplacements` (`LikeCondition::fromArrayDefinition()` assigns `$operands[2]`), which both preserves your own `%` and stops Yii auto-wrapping the value in its own. Documented as the sibling of the existing trailing-asterisk `parseParam` item — same parser, opposite failure direction — and cross-linked both ways.
+- **`skills/craft-pest/references/craft-state.md`** — **Prefix-matching sweeps**, inside the site-fixture cleanup guidance. A fixture-cleanup sweep built on the broken query form is indistinguishable from a clean one: empty result, nothing deleted, nothing thrown, suite green, fixtures accumulating in a shared install until unrelated tests fail weeks later. Includes the assertion that turns a silent no-op into a red build.
+
+### Changed
+
+- **`skills/craft-php-guidelines/SKILL.md`** — the naive-UTC parsing rule added to Date Handling and Common Pitfalls, pointing at the mechanism in `craftcms`. A trigger eval showed that "read a raw ActiveRecord datetime into Carbon" routes to this skill rather than `craftcms` — the right skill for that phrasing, but it previously carried only the `DateTimeHelper` vs `Carbon` split and would have answered without the timezone caveat.
+- **`skills/craftcms/references/elements.md`** — Common Pitfalls entry for the operator-tuple trap, where someone writing `->title(...)` would look first.
+- **Trigger descriptions** — `craftcms` 1,389 → 1,509 and `craft-pest` 1,500 → 1,523 characters, both inside Claude Code's ~1,536-character routing window. Note `craft-pest` now has 13 characters of headroom; the next addition to it needs a trim rather than an append.
+
 ## 1.12.1 -- 2026-07-28
 
 Patch: fixes the `git clone` + `install.sh` install path, which linked exactly one skill and then exited. Reported by [@dusan-stojnic](https://github.com/dusan-stojnic) in [#13](https://github.com/michtio/craftcms-claude-skills/issues/13), who also identified the fix. No skill or agent content changed.
