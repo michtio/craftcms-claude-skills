@@ -18,6 +18,8 @@ Complete reference for the Craft CMS 5 permissions system: built-in permission h
 - Checking `currentUser.can()` without null-checking `currentUser` first -- anonymous visitors have no user object, causing a Twig error.
 - Not prefixing custom permission handles with the plugin handle -- leads to collisions between plugins.
 - Checking a non-existent permission handle via `requirePermission()` -- Craft does not throw an error. Admins pass (they bypass all checks). Non-admins get a 403 because the permission is never granted — which looks "correct" but is wrong for the wrong reason. Assigning that handle in the CP has no effect since it's not registered. Define permission handles as class constants and reference them in both registration and checking to prevent mismatches.
+- Trusting the array you passed to `saveGroupPermissions()` as the saved state -- nested permissions whose parent wasn't also submitted are silently dropped and the method still returns `true`. Re-read after saving, and expand ancestor chains before saving. See [saveGroupPermissions() silently drops orphaned nested permissions](#savegrouppermissions-silently-drops-orphaned-nested-permissions).
+- Granting dynamically-registered permissions in the same process that created the underlying data -- `getAllPermissions()` is memoized, so the new handles look like orphans and get dropped. Call `Craft::$app->getUserPermissions()->reset()` first.
 - Using string literals for permission handles across multiple files -- a typo in one file (`'my-plugin:delete-cookies'` vs `'my-plugin:remove-cookies'`) creates a phantom permission that silently behaves wrong. Constants eliminate this class of bug entirely.
 
 ## Contents
@@ -396,7 +398,101 @@ This pattern gives admins granular control over which plugin entities each user 
 
 ### Nested permissions and extra properties
 
-The `nested` key creates a hierarchy in the CP permissions UI. A nested permission is only checkable when its parent is checked. This is a UI convenience -- Craft does not enforce the hierarchy in `can()` checks. If you grant a nested permission directly (e.g., via database), `can()` will return `true` even if the parent is unchecked.
+The `nested` key creates a hierarchy in the CP permissions UI. A nested permission is only checkable when its parent is checked.
+
+Craft does not enforce the hierarchy at **read** time: `can()` checks a flat list, so a nested permission granted directly (e.g. written straight to the database) returns `true` even with its parent unchecked.
+
+It does enforce it at **write** time, silently — see below. The asymmetry is the trap.
+
+### `saveGroupPermissions()` silently drops orphaned nested permissions
+
+`saveGroupPermissions()` filters the submitted array before persisting it:
+
+```php
+public function saveGroupPermissions(int $groupId, array $permissions): bool
+{
+    Craft::$app->requireEdition(CmsEdition::Team);
+    $permissions = array_map('strtolower', $permissions);
+    $permissions = $this->_filterOrphanedPermissions($permissions);      // ← here
+    // ...
+    Craft::$app->getProjectConfig()->set($path, $permissions, ...);
+    return true;                                                          // ← always true
+}
+```
+
+`_filterOrphanedPermissions()` walks `getAllPermissions()` via `_findSelectedPermissions()`, whose recursion is gated on the parent:
+
+```php
+foreach ($permissionsGroup as $name => $data) {
+    // Only descends when the PARENT is selected (posted or already held)
+    if (($inPostedPermissions = in_array($name, $postedPermissions, true)) || in_array($name, $groupPermissions, true)) {
+        if (!empty($data['nested'])) {
+            $hasAssignedNestedPermissions = $this->_findSelectedPermissions($data['nested'], ...);
+        }
+        // ...
+    }
+}
+```
+
+So a nested handle submitted **without its ancestors** is never reached, never added to `$filteredPermissions`, and never saved. `saveGroupPermissions()` still returns `true`.
+
+Two consequences, both of which have produced real bugs:
+
+**1. Never trust the submitted array as the saved state.** Anything computing a diff, an audit record, or a "granted N permissions" count from the array it passed in will report grants that didn't happen. Re-read after saving:
+
+```php
+$service = Craft::$app->getUserPermissions();
+$service->saveGroupPermissions($group->id, $requested);
+
+// Authoritative: what actually persisted, not what we asked for.
+$actual = $service->getPermissionsByGroupId($group->id);
+
+$dropped = array_diff(array_map('strtolower', $requested), $actual);
+if ($dropped) {
+    Craft::warning('Dropped permissions: ' . implode(', ', $dropped), __METHOD__);
+}
+```
+
+**2. Anything authoring permission sets must expand the full ancestor chain.** A plugin that grants `my-plugin:export-reports` (nested under `my-plugin:view-reports`) has to submit both. Build the expansion from the registered tree rather than hardcoding it, so it stays correct as the tree changes:
+
+```php
+/**
+ * Expands each handle to include its full ancestor chain, so
+ * saveGroupPermissions()'s orphan filter doesn't drop nested grants.
+ *
+ * @param string[] $handles
+ * @return string[]
+ */
+private function _withAncestors(array $handles): array
+{
+    $expanded = [];
+
+    foreach (Craft::$app->getUserPermissions()->getAllPermissions() as $group) {
+        $this->_collectChains($group['permissions'], $handles, [], $expanded);
+    }
+
+    return array_values(array_unique($expanded));
+}
+```
+
+### The permission tree is memoized per process
+
+`getAllPermissions()` caches the assembled tree in a private `$_allPermissions` property and returns it for the life of the request. Since `_filterOrphanedPermissions()` reads that cache, **handles registered after the first call are invisible to it** and get dropped exactly as orphans do.
+
+This matters whenever permissions are derived from data created in the same process — a console command that creates a section and then grants its scoped permissions, an installer, a test. Reset the memo after the data exists:
+
+```php
+$section = $this->_createSection();
+
+// Drop the memoized tree so the new per-section handles are visible.
+Craft::$app->getUserPermissions()->reset();
+
+Craft::$app->getUserPermissions()->saveGroupPermissions($group->id, [
+    "viewentries:{$section->uid}",
+]);
+```
+
+In a long-lived web request this is rarely an issue; in console, queue, and test processes it's a common source of order-dependent flakiness. The test-side treatment is in the `craft-pest` skill's `craft-state.md`.
 
 Permission entries support these properties:
 

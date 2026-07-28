@@ -17,12 +17,15 @@
 - Not firing before/after events on save and delete — other plugins can't extend your code without them.
 - Deleting managed entities without cleaning up Craft elements first — CASCADE on the FK won't touch the `elements` table.
 - Skipping the rebuild handler — without `EVENT_REBUILD`, `project-config/rebuild` breaks your plugin's config.
+- Treating project-config writes as always-available — they're mutex-guarded (`ProjectConfig::MUTEX_NAME`), so concurrent writes throw `BusyResourceException` / `StaleResourceException`. Uncaught in a controller that's a 500; catch and retry or return a 409. See `controllers.md` (Project-config writes from controllers), and the `craft-pest` skill's `craft-state.md` for why the same exceptions cascade inside rolled-back test transactions.
 - Keeping plugin/operational settings (alert thresholds, notification routing, workflow mappings) in a DB-only column to allow "per-environment tuning" — project config is the canonical settings store; the real risk is YAML↔DB divergence, fixed by keeping project config authoritative, not by bypassing it. Use env vars / `config/{handle}.php` for genuinely per-environment values. See [Settings belong in project config](#settings-belong-in-project-config--including-operational-settings).
 - Assigning ActiveRecord datetime columns directly to typed Model properties — ActiveRecord returns raw SQL strings, not `DateTime` objects. Use `DateTimeHelper::toDateTime($record->dateCreated) ?: null`. See [Record-to-Model Hydration Boundary](#record-to-model-hydration-boundary).
 - Using `if ($cached !== false)` to check cache hits — Yii's `cache->get()` returns `false` for missing keys, which collides with a legitimately cached `false` value. If you cache booleans, use string sentinels (`'on'`/`'off'`) or check `cache->exists()` before `get()`.
 - Plugin controller directory case not matching namespace — `controllers/Front/` vs `controllers/front/` works on macOS (case-insensitive APFS) but breaks on Linux containers, CI, and production (case-sensitive ext4). The directory name must exactly match the namespace segment casing.
 - Shipping front-end example templates as bare body fragments (no `<html>`/`<head>`/`<body>`) — they render as broken pages if hit directly and give integrators nothing working to start from. Ship a complete, copyable bundle with its own layout shell plus an install console command. See [Front-End Output From Plugins](#front-end-output-from-plugins) and the craft-site skill's `example-templates.md`.
 - A render-builder class whose config-array constructor silently ignores unknown keys — a typo (`{ digitz: 6 }`) then does nothing with no error. Make an unknown key throw so mistakes fail loudly. See [Front-End Output From Plugins](#front-end-output-from-plugins).
+- Comparing a stored value that may end in `*` through a query-param helper — `Db::parseParam()` treats a leading or trailing asterisk as a SQL `LIKE` wildcard, so a "uniqueness check" silently matches by prefix. See [Db::parseParam() turns asterisks into wildcards](#dbparseparam-turns-asterisks-into-wildcards).
+- Serializing a hash chain (or any ordered writer) without bounded retry on MySQL deadlocks — under concurrency the loser of a lock cycle throws SQLSTATE 40001 and, if the caller catches `Throwable` and continues, the write is lost silently. See [Serialized writers need bounded deadlock retry](#serialized-writers-need-bounded-deadlock-retry).
 - Storing IPs (or comparable personal data) with no privacy story — no data inventory, no retention statement, no anonymization option. Ship `docs/privacy.md` and offer an `anonymizeIp` lightswitch applied at the storage boundary. See [Storing Personal Data](#storing-personal-data).
 
 ## Table of Contents
@@ -406,6 +409,123 @@ public static function fromRecord(MyEntityRecord $record): self
     return $model;
 }
 ```
+
+### `Db::parseParam()` turns asterisks into wildcards
+
+`Db::parseParam()` exists to translate Craft's element-query param syntax into SQL, and part of that syntax is asterisk-as-wildcard. For a string value with an `=` or `!=` operator it does:
+
+```php
+// craft\helpers\Db::parseParam()
+$val = preg_replace('/^\*|(?<!\\\)\*$/', '%', $val, -1, $count);
+$like = (bool)$count;
+// ...
+if ($like) {
+    $operator = $operator === '=' ? 'like' : 'not like';
+    $condition[] = [$operator, $column, static::escapeForLike($val), false];
+```
+
+A leading or trailing `*` becomes `%` and the comparison switches to `LIKE`. That is correct for query params and wrong for literal comparison.
+
+Where it bites: any stored value that *legitimately* ends in an asterisk — URI patterns, route patterns, glob-style rules, wildcard redirects. A uniqueness check written as a query param quietly becomes a prefix match:
+
+```php
+// WRONG — 'blog/*' becomes LIKE 'blog/%', matching blog/hello, blog/2026/x, …
+$exists = (new Query())
+    ->from(Table::RULES)
+    ->where(Db::parseParam('uriPattern', $pattern))
+    ->exists();
+```
+
+So saving `blog/*` reports "already exists" because `blog/posts` is there. The false duplicate is the visible symptom; the invisible one is the reverse — a real duplicate passing because the wildcard matched something unexpected.
+
+For literal comparison, bypass the helper:
+
+```php
+// Right — raw literal equality, no param-syntax interpretation
+$exists = (new Query())
+    ->from(Table::RULES)
+    ->andWhere(['uriPattern' => $pattern])
+    ->exists();
+```
+
+Escaping the asterisk (`\*`) also works — `parseParam()` unescapes `\*` back to a literal `*` after the wildcard pass — but it means every call site has to remember to escape. Prefer the raw `andWhere()` for stored-value comparisons and reserve `parseParam()` for actual user-supplied query criteria.
+
+### Serialized writers need bounded deadlock retry
+
+A writer that must serialize — a hash-chained audit log, a sequence-numbered ledger, anything reading a "head" row and writing the next one — will hit MySQL deadlocks under concurrent processes. InnoDB detects the lock cycle, picks a victim, and rolls its transaction back with **SQLSTATE 40001 / error 1213 (`ER_LOCK_DEADLOCK`)**. This is expected, recoverable behavior, not a bug to eliminate.
+
+Two failure modes compound:
+
+- **No retry.** Under 12-way concurrency a chain writer without retry lost 9 of 12 writes to uncaught deadlocks.
+- **A caller that swallows it.** `catch (Throwable) { continue; }` around the write turns each deadlock into **silent event loss** — no exception, no log line, nothing missing that anyone can see. For audit-class data that's the worst possible outcome.
+
+A docblock claiming "writers serialize" is not an implementation. The retry has to be there:
+
+```php
+/**
+ * Appends an entry, retrying on transient serialization failures.
+ *
+ * Each attempt re-reads the chain head inside a fresh transaction — the
+ * previous attempt's read is invalid once its transaction rolled back.
+ *
+ * @param array $payload
+ * @return int
+ * @throws ChainWriteFailedException if every attempt deadlocks
+ */
+public function append(array $payload): int
+{
+    $attempts = 0;
+
+    while (true) {
+        $attempts++;
+        $transaction = Craft::$app->getDb()->beginTransaction();
+
+        try {
+            // Re-read INSIDE this transaction — never reuse a head from a
+            // rolled-back attempt.
+            $head = $this->_lockChainHead();
+            $id = $this->_insertLinked($head, $payload);
+
+            $transaction->commit();
+
+            return $id;
+        } catch (Throwable $e) {
+            $transaction->rollBack();
+
+            if (!$this->_isSerializationFailure($e) || $attempts >= self::MAX_ATTEMPTS) {
+                // Distinct exception type so callers can requeue rather than
+                // treating this as "nothing to write".
+                throw new ChainWriteFailedException(
+                    "Chain append failed after {$attempts} attempts.", 0, $e,
+                );
+            }
+
+            // Jittered backoff — fixed sleeps re-collide.
+            usleep(random_int(1_000, 10_000) * $attempts);
+        }
+    }
+}
+
+/**
+ * @param Throwable $e
+ * @return bool
+ */
+private function _isSerializationFailure(Throwable $e): bool
+{
+    // 40001 is the SQLSTATE for serialization failure; MySQL's 1213 is the
+    // driver-level deadlock code. Lock-wait timeout (1205) is also retryable.
+    $sqlState = $e instanceof \yii\db\Exception ? ($e->errorInfo[0] ?? null) : null;
+    $driverCode = $e instanceof \yii\db\Exception ? ($e->errorInfo[1] ?? null) : null;
+
+    return $sqlState === '40001' || in_array($driverCode, [1213, 1205], true);
+}
+```
+
+Three design points that matter more than the code:
+
+1. **Re-read the head in a fresh transaction each attempt.** A retry that reuses the value read before the rollback writes a broken link.
+2. **Throw a distinct exception when retries exhaust**, so callers can requeue the event instead of dropping it. `ChainWriteFailedException` vs a generic `Exception` is the difference between a queued retry and silent loss.
+3. **Don't let callers catch `Throwable` and continue** around an audit write. If the write is important enough to hash-chain, it's important enough to fail loudly or requeue.
 
 ### Site Settings Model
 

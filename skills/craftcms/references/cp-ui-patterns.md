@@ -416,6 +416,50 @@ Event::on(
 
 For a static readout instead, append `Cp::metadataHtml(['Word count' => $count, ...])` (no wrapper needed — it carries its own `.meta read-only`).
 
+**Whose form is it?** The example above uses `'name' => 'fields[approved]'`, which is correct only because `approved` is a real custom field on that entry — the surrounding entry form posts it and Craft saves it as part of the element. That's one of two cases, and getting them mixed up is the single most common bug in injected panels.
+
+| The panel's values are saved by… | Give inputs a `name`? |
+|----------------------------------|----------------------|
+| The **host** form (real custom fields on that element) | Yes — `fields[handle]`, and let Craft save it |
+| **Your own** endpoint (plugin data, separate ajax call) | **No** — `id` only |
+
+**Fields injected into another form's DOM must be id-only when your plugin owns the data.** The element edit screen is one big `<form>`; anything with a `name` inside it is serialized and posted to Craft's element save action. A `name` your plugin invented then travels into `ElementsController::actionSave()`, which either ignores it (your value is silently dropped on every entry save) or — worse, if the name collides with something Craft or another plugin reads — writes it somewhere you didn't intend. Either way the host form "swallows" the field.
+
+So drop `name` entirely and address the inputs by `id`. `Cp::*FieldHtml()` accepts `id` without `name`:
+
+```php
+$event->html .= Html::tag('fieldset',
+    Html::tag('legend', Craft::t('my-plugin', 'Share Options'), ['class' => 'h6']) .
+    Html::tag('div',
+        // id only — no `name`. The host entry form must not serialize these.
+        Cp::textFieldHtml([
+            'label' => Craft::t('my-plugin', 'Recipient email'),
+            'id' => 'my-plugin-share-email',
+            'value' => $existing->email ?? '',
+        ]) .
+        Cp::lightswitchFieldHtml([
+            'label' => Craft::t('my-plugin', 'Require password'),
+            'id' => 'my-plugin-share-requirePassword',
+            'on' => (bool)($existing->requirePassword ?? false),
+        ]) .
+        Html::button(Craft::t('my-plugin', 'Create link'), [
+            'type' => 'button',            // never 'submit' inside the host form
+            'class' => 'btn',
+            'id' => 'my-plugin-share-submit',
+        ]),
+        ['class' => 'meta'],
+    ),
+);
+```
+
+Three details that make it behave:
+
+- **Build the markup with Craft's `Cp::*FieldHtml()` helpers** (or `forms.*` macros in a template), not hand-rolled `<div class="field">`. They emit the correct structure, handle status/errors/translation, and stay right across Craft versions — and they let you pass `id` without `name`.
+- **`type="button"`, never `type="submit"`.** A submit button inside the host form saves the entry.
+- **Guard the Enter key**, or typing in your text field and pressing Enter submits the *entry* form. That's the JS half — see the `craft-garnish` skill's `integration.md` (Panels injected into another form).
+
+Namespace the ids with your plugin handle (`my-plugin-share-email`). Ids are global on the page, the edit screen already has many, and Craft reserves a set of its own — see `cp.md` (Reserved DOM IDs).
+
 ### (b) `metaFieldsHtml()` override on your own element
 
 When you define the element, override `protected function metaFieldsHtml(bool $static): string` and return the field rows concatenated. `getSidebarHtml()` wraps the whole return value in a single `.meta` card, so return field HTML directly — do **not** add your own `.meta`/`fieldset` per field. Append `parent::metaFieldsHtml($static)` last so the base element's meta fields (and the `EVENT_DEFINE_META_FIELDS_HTML` event) still fire:

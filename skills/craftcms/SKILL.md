@@ -16,6 +16,7 @@ When this skill triggers, also load:
 - **`craft-php-guidelines`** — PHPDoc standards, section headers, naming conventions, class organization, ECS/PHPStan, verification checklist. Required for any PHP code.
 - **`ddev`** — All commands run through DDEV. Required for running ECS, PHPStan, scaffolding, and tests.
 - **`craft-garnish`** — When working on CP JavaScript, asset bundles, or interactive CP components. Covers Garnish's class system, UI widgets (Modal, HUD, DisclosureMenu, Select), drag system, and the Craft.* JS class pattern.
+- **`craft-pest`** — When writing, running, fixing, or reviewing tests. Covers the `markhuot/craft-pest-core` harness, database isolation (its rollback is opt-in and its env overrides are cwd-bound — both cause silent writes to the dev database), factories, HTTP/queue/DB assertions, and CI test jobs.
 - **`craft-cloud`** — When the project is hosted on Craft Cloud (detect via `craft-cloud.yaml` at the repo root or `craftcms/cloud` in `composer.json`). Required for plugin Cloud-compatibility constraints — `App::isEphemeral()` guards, asset-bundle CDN publishing, 15-minute queue-job cap, `csrfInput()` function over raw token output, and the `cloud/up` deploy lifecycle events.
 
 ## Documentation
@@ -36,6 +37,8 @@ Use `WebFetch` on specific doc pages when a reference file doesn't cover enough 
 - `DateTimeHelper` in elements/queries, `Carbon` in services — never mix in the same class.
 - Hardcoding `/admin` in CP URLs — `cpTrigger` is configurable. Use `UrlHelper::cpUrl()` in PHP, `cpUrl()` in Twig.
 - Passing `$request->getBodyParams()` directly to `savePluginSettings()` on split-settings pages — only submitted keys persist, other settings are silently dropped. Load the full settings model first, update properties, then save.
+- **Naming a route or query param `token`** — it collides with Craft's reserved `tokenParam` and the request is rejected with a 400 before your controller runs. See `controllers.md` (Reserved request params).
+- Any non-underscore-prefixed template in a plugin's `templates/` dir is **directly routable in the CP**, bypassing your controller's `beforeAction()` gates. Underscore-prefix every template that isn't an intentional direct route. See `cp.md` (CP template routing bypasses controllers).
 
 ## Reference Files
 
@@ -60,8 +63,9 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Write CP JavaScript for a custom field type" → read `fields.md` + load `craft-garnish` skill
 - "Build a headless Craft API" → read `graphql.md` + load `craft-site` skill for `headless.md`
 - "Configure preview for a Next.js front-end" → load `craft-site` skill for `headless.md`
-- "Set up Pest tests for a plugin" → read `testing.md`
-- "Write a test for a controller action" → read `testing.md`
+- "Set up Pest tests for a plugin" → load `craft-pest` skill → `isolation.md`
+- "Write a test for a controller action" → load `craft-pest` skill → `patterns.md`
+- "Tests are writing to my dev database / created thousands of stray elements" → load `craft-pest` skill → `isolation.md`
 - "Configure Redis for caching and sessions" → read `config-app.md`
 - "Set up environment variables for production" → read `config-bootstrap.md`
 - "Find a GeneralConfig setting" → read `config-general.md`
@@ -162,7 +166,7 @@ Load only the reference files your task needs — each file costs input tokens o
 | Console commands, arguments, options, progress bars, output helpers, resave actions | `references/console-commands.md` | 6.0K |
 | Debugging, performance, query strategy, profiling, Xdebug, caching, logging | `references/debugging.md` | 4.6K |
 | PHPStan, ECS, code review checklist | `references/quality.md` | 3.5K |
-| Testing: Pest setup, element factories, HTTP/queue/DB assertions, mocking, multi-site, console, events | `references/testing.md` | 2.9K |
+| Testing: pointer to the `craft-pest` skill (Pest/craft-pest-core lives there) + Codeception basics | `references/testing.md` | 0.6K |
 | Field types, native fields, BaseNativeField, field layout elements (built-in Tip/Heading/LineBreak/HorizontalRule reference), FieldLayoutBehavior | `references/fields.md` | 3.6K |
 | Events: registration, lifecycle, naming conventions, custom events, behaviors, Twig extensions, utilities, widgets, filesystems | `references/events.md` | 4.4K |
 | GraphQL types, queries, mutations, directives, schema components, resolvers | `references/graphql.md` | 4.6K |

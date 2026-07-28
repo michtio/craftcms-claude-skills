@@ -99,6 +99,78 @@ The following component types have **no generator** — create manually followin
 
 Full generator reference: https://craftcms.com/docs/5.x/extend/generator.html
 
+## Composer Hygiene for Plugin Repos
+
+A plugin repo has to resolve on a machine that is not yours. Four rules cover the ways that breaks.
+
+### Never ship `../*` path repositories
+
+```json
+{
+    "repositories": [
+        { "type": "path", "url": "../*" }
+    ]
+}
+```
+
+This resolves only where that relative layout happens to exist — your disk. Anyone cloning the repo, and every CI runner, gets an unresolvable dependency. It's a convenience that leaks the author's directory structure into the package's public contract.
+
+**Unpublished sibling dependencies get a `vcs` entry instead**, which resolves anywhere the repo is reachable:
+
+```json
+{
+    "repositories": [
+        { "type": "vcs", "url": "https://github.com/acme/craft-shared-lib" }
+    ],
+    "require": {
+        "acme/craft-shared-lib": "^1.0"
+    }
+}
+```
+
+**Packagist dependencies need no `repositories` entry at all.** Adding one is noise that can shadow the real source.
+
+Path repos are still fine for **local development** — just keep them out of the committed manifest. Put them in a git-ignored `composer.local.json`, or use a globally configured path repo, or configure the *host project* (not the plugin) with the path repo. See the `ddev` skill for the volume-mount requirement that makes path repos work inside containers.
+
+### `composer.lock` stays gitignored for plugins
+
+A plugin is a library: the consuming project pins versions, so a committed lock file is at best ignored and at worst misleading about what the plugin supports. Applications commit their lock; libraries don't.
+
+```gitignore
+composer.lock
+```
+
+The consequence to expect: every CI run resolves fresh, which is exactly what surfaces a broken `repositories` entry — a feature, not a cost.
+
+### Prove standalone resolvability
+
+The check that actually catches these problems, because it removes your machine's state from the equation:
+
+```bash
+# 1. Confirm no global repositories are silently supplying dependencies.
+#    Expect empty output (or "[]"). A global path repo here makes a broken
+#    manifest look fine locally and fail everywhere else.
+composer config --global repositories
+
+# 2. Resolve from scratch with no lock file.
+rm -f composer.lock
+composer update --dry-run
+```
+
+Step 1 is the one people skip, and it's the one that explains the "works on my machine" cases. If a global path repo exists, either remove it or run the dry-run in a container to get a clean environment.
+
+### Remove per-repo CI workarounds once the `vcs` entry exists
+
+Repos that shipped `../*` path repos usually grew a CI step to compensate — a `composer config repositories.x vcs …` line injected before install, or a checkout of the sibling into a synthesized path. Once the manifest carries a proper `vcs` entry, those steps are dead weight that hides the real configuration and drifts from it:
+
+```yaml
+# DELETE once composer.json has the vcs repository entry
+- name: Configure sibling repo
+  run: composer config repositories.shared-lib vcs https://github.com/acme/craft-shared-lib
+```
+
+Leaving it means CI is testing a different manifest than the one users get — which is how a broken `repositories` block stays green for months.
+
 ## Commit Messages
 
 Conventional commits: `feat(scope):`, `fix(scope):`, `refactor(scope):`, `docs:`, `test:`, `chore:`.

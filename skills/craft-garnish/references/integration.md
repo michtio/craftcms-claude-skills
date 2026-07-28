@@ -19,6 +19,7 @@
 - Requiring Garnish before `CpAsset` is loaded — if your asset bundle doesn't depend on `CpAsset` (or `GarnishAsset`), Garnish won't be available.
 - Using `Craft.MyClass = function() {}` instead of `Garnish.Base.extend()` — loses event system, listener management, settings, and destroy lifecycle.
 - Calling `Craft.initUiElements()` on content without context — it re-initializes all UI widgets in the container, which can double-instantiate.
+- Giving `name` attributes to inputs in a panel injected into an element edit screen — the surrounding element form serializes them and your values are silently dropped on save (or collide with something Craft reads). Id-only markup, read by id in your own JS, plus an Enter-key guard so the host form doesn't submit. See [Panels Injected Into Another Form](#panels-injected-into-another-form).
 - Reusing Craft's reserved CP DOM IDs (`#notifications`, `#content`, `#tabs`, `#sidebar`, `#details`, `#main`, etc.) on plugin markup — `Craft.CP` caches chrome refs via `$('#foo')` during init and takes the first match in DOM order, so a same-named plugin element silently hijacks notification toasts, ARIA masking, or layout wiring. Pick feature-specific names for tab keys, slideout/HUD roots, and any container you give an `id`. See `craftcms` skill `references/cp.md` (Reserved DOM IDs) for the full list.
 
 ## Table of Contents
@@ -29,6 +30,7 @@
 - [Plugin Asset Bundles](#plugin-asset-bundles)
 - [Craft.* Class Pattern](#craft-class-pattern)
 - [Twig JavaScript Blocks](#twig-javascript-blocks)
+- [Panels Injected Into Another Form](#panels-injected-into-another-form)
 - [Custom Field Input JS & Dynamic Re-init](#custom-field-input-js--dynamic-re-init)
 - [Element Index JS Loading](#element-index-js-loading)
 - [Form Widgets](#form-widgets)
@@ -322,6 +324,81 @@ In CP templates, use `{% js %}` blocks to write JavaScript that uses Garnish:
 `Craft.initUiElements($container)` initializes the Craft/Garnish widgets inside `$container`: `.menubtn` / `[data-disclosure-trigger]` (menus, run last as they mutate the DOM), `.checkbox-select`, `.fieldtoggle`, `.lightswitch`, `.nicetext`, date/time inputs (`.datetimewrapper`), `.formsubmit`, `.info` icons, and expandable buttons. Always pass a container so you don't re-init the whole page (double-instantiation). There is **no** `initUi` jQuery event to listen for — `Craft.initUiElements($container)` is the idempotent re-init entry point.
 
 ---
+
+## Panels Injected Into Another Form
+
+A plugin panel added to an element edit screen (via `EVENT_DEFINE_SIDEBAR_HTML`, a CP template hook, or any injected markup) lives **inside Craft's element form**. That form owns submission, and it will happily swallow your panel unless the panel is built to stay out of its way.
+
+Three rules, and they only make sense together:
+
+**1. The panel's inputs carry `id` but no `name`.** Anything with a `name` inside the host form gets serialized and posted to Craft's element save action — where your plugin's key is ignored (value silently lost on every save) or, if it collides, written somewhere you didn't intend. Without a `name`, the host form can't see the field at all, which is exactly what you want when your plugin saves the data itself. The markup side of this is in the `craftcms` skill's `cp-ui-patterns.md` (Element Edit Screen).
+
+**2. Your JS reads the values by `id` and posts them itself.**
+
+**3. Guard the Enter key**, or a visitor typing in your text input and pressing Enter submits the entry.
+
+```js
+// my-plugin/src/js/SharePanel.js
+Craft.MyPluginSharePanel = Garnish.Base.extend({
+  $email: null,
+  $requirePassword: null,
+  $submit: null,
+
+  init: function (elementId, settings) {
+    this.setSettings(settings, Craft.MyPluginSharePanel.defaults);
+
+    this.elementId = elementId;
+    // Read by id — these inputs deliberately have no `name`, so they are
+    // invisible to the surrounding element form's serialization.
+    this.$email = $('#my-plugin-share-email');
+    this.$requirePassword = $('#my-plugin-share-requirePassword');
+    this.$submit = $('#my-plugin-share-submit');
+
+    this.addListener(this.$submit, 'activate', 'createLink');
+
+    // Enter inside our fields must not submit the ENTRY form. Craft's form
+    // handles submit on the <form> element, so stop the keydown here before
+    // it bubbles — and do the panel's own action instead.
+    this.addListener(this.$email, 'keydown', function (ev) {
+      if (ev.keyCode === Garnish.RETURN_KEY) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.createLink();
+      }
+    });
+  },
+
+  createLink: function () {
+    // Lightswitch state comes from the Garnish widget, not a checked property.
+    var data = {
+      elementId: this.elementId,
+      email: this.$email.val(),
+      requirePassword: this.$requirePassword.data('lightswitch').on ? 1 : 0,
+    };
+
+    // Our own endpoint — Craft.sendActionRequest adds the CSRF token.
+    Craft.sendActionRequest('POST', 'my-plugin/share/create', {data: data})
+      .then(
+        function (response) {
+          Craft.cp.displayNotice(Craft.t('my-plugin', 'Share link created.'));
+        }.bind(this),
+      )
+      .catch(function (e) {
+        Craft.cp.displayError(e?.response?.data?.message);
+      });
+  },
+});
+
+Craft.MyPluginSharePanel.defaults = {};
+```
+
+Details worth knowing:
+
+- **`preventDefault()` alone may not be enough** — use `stopPropagation()` too so the keydown never reaches the form's handler. `Garnish.RETURN_KEY` over the magic number `13`.
+- **Read lightswitches through the widget** (`$el.data('lightswitch').on`), not `.is(':checked')` — Craft's lightswitch is not a checkbox.
+- **`activate`, not `click`**, on the submit button, so keyboard users get the same behavior (this is why the button is `type="button"`).
+- **`Craft.sendActionRequest`** handles the CSRF token; hand-rolled `$.post` to an action URL will 400 without it.
+- **Call `destroy()`** if the panel can be torn down and rebuilt — slideouts and live preview recreate their DOM, and listeners added with `addListener()` are what `destroy()` cleans up. See `class-system.md`.
 
 ## Custom Field Input JS & Dynamic Re-init
 

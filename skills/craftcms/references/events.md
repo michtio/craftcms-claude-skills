@@ -12,6 +12,7 @@
 - Twig Extensions
 - Registration Pattern — full plugin init example; registration scope (never gate element/field type registration by request context)
 - Custom Events in Your Plugin
+- Cross-Plugin Event Contracts — open vocabulary vs closed enum, dual event surfaces
 - Discovering Events
 
 ## Documentation
@@ -28,6 +29,8 @@
 - Using string event names instead of class constants — no IDE autocomplete, no deprecation warnings when Craft renames events, and typos fail silently.
 - Confusing `CancelableEvent->isValid` with model validation — `isValid = false` tells the sender to halt the operation (e.g., cancel a save), it doesn't add validation errors.
 - Listening for element events on `Element::class` when you only want entries — your handler fires for every element type (assets, users, categories). Use `Entry::class` to scope.
+- Consuming another plugin's open-vocabulary event with a closed `enum` and dropping unknown values — the emitter succeeds, the consumer logs a warning at most, and the data is gone. See [Cross-Plugin Event Contracts](#cross-plugin-event-contracts).
+- Shipping a second event surface (a sink registry *and* an after-record event) without documenting both in the README — consumers mute or subscribe to one and assume they've covered the plugin. See [Cross-Plugin Event Contracts](#cross-plugin-event-contracts).
 - Gating `EVENT_REGISTER_ELEMENT_TYPES` (or `EVENT_REGISTER_FIELD_TYPES`) behind `getIsCpRequest()` — the type then vanishes from `getAllElementTypes()` in console/queue contexts, so `Gc::hardDeleteElements()` never purges its trashed rows (they pile up silently) and `resave/*` skips it. Register component types unconditionally in `init()`. See "Registration scope" under Registration Pattern.
 
 ## Event Anatomy
@@ -552,6 +555,80 @@ public function saveItem(MyEntity $item): bool
 ```
 
 The `hasEventHandlers()` check is a performance optimization — avoids creating event objects when nobody's listening.
+
+## Cross-Plugin Event Contracts
+
+Once a second plugin consumes your events, the event shape is an API. Two failure modes cause invisible data loss, and both are contract problems rather than code bugs.
+
+### Open vocabulary + closed enum = silent loss
+
+If your emitter documents a value set as **open** (categories, types, tags — "additive, plugins may introduce their own"), every consumer must accept values it doesn't recognize. A consumer that validates against a **closed** `enum` and drops the mismatch has broken the contract, and the break is invisible: the emitter succeeds, the consumer logs a warning at most, and the data is gone.
+
+A real instance: a consumer's closed `Category` enum silently discarded events from three separate plugins whose categories weren't in it. The only trace was a warning-level log line nobody was reading, and no test on either side failed — the emitter's tests asserted it fired, the consumer's tests only used known values.
+
+Pick one and honor it:
+
+**Open vocabulary** — the consumer must handle unknown values, not reject them:
+
+```php
+// Consumer: accept unknown categories instead of dropping the event.
+$category = Category::tryFrom($event->category) ?? Category::Other;
+
+if ($category === Category::Other) {
+    // Keep the raw value so the record stays faithful and reportable.
+    $record->rawCategory = $event->category;
+    Craft::info("Unrecognized category '{$event->category}' recorded as Other.", __METHOD__);
+}
+```
+
+**Closed vocabulary** — then say so in the docblock, reject loudly (throw or fail the operation), and version the enum. A closed set that drops quietly is the one combination that's never acceptable.
+
+For audit-class data — anything a compliance, ledger, or activity-trail feature depends on — **silent drops are never acceptable regardless of which model you chose.** Route unknown values to a catch-all with the raw value preserved, and surface the count somewhere an operator sees.
+
+**Contract-test both directions.** One test per side, in each plugin's own suite:
+
+```php
+// In the EMITTER's suite: a documented-open value the consumer hasn't seen
+// still round-trips through a registered sink.
+it('delivers events with plugin-defined categories', function () {
+    $received = [];
+    MyPlugin::getInstance()->getBus()->setSinks([
+        fn(array $event) => $received[] = $event,
+    ]);
+
+    MyPlugin::getInstance()->getEmitter()->emit(category: 'wallet', payload: []);
+
+    expect($received)->toHaveCount(1)
+        ->and($received[0]['category'])->toBe('wallet');
+});
+
+// In the CONSUMER's suite: an unknown category is stored, not dropped.
+it('records events with unrecognized categories', function () {
+    $consumer->handle(['category' => 'not-in-my-enum', 'payload' => []]);
+
+    expect($consumer->countRecorded())->toBe(1);
+});
+```
+
+See the `craft-pest` skill's `patterns.md` (Event testing) for the harness side.
+
+### Dual event surfaces are legitimate — but both must be documented
+
+A plugin can legitimately expose two structurally independent seams: a **sink registry** it fans out to itself, and a lifecycle event (`EVENT_AFTER_RECORD` or similar) that other plugins hook, typically bridged onward to a bus. Neither implies the other, and neither is redundant — the registry is for in-process consumers, the event is for external ones.
+
+The failure is documentation, not design. An undocumented second surface produces real consumer bugs, because a consumer that mutes or subscribes to the surface it knows about assumes it has covered the plugin:
+
+- Somebody mutes the sink registry in tests and is surprised when rows still appear — the bridge → bus path was still live. (See the `craft-pest` skill's `craft-state.md` for muting all surfaces.)
+- Somebody subscribes to the event and double-counts, because a sink is also recording.
+
+**Rule: the README's events section lists every surface, with what fires on it and what it's for.** If a surface exists that you'd be annoyed to discover from source, it isn't documented enough.
+
+| Surface | Fires when | Intended consumer | Mute for tests via |
+|---------|-----------|-------------------|--------------------|
+| Sink registry | Every recorded event | In-process, same plugin | `setSinks([])` |
+| `EVENT_AFTER_RECORD` | After the row is written | Other plugins / bridges | `Event::off(...)` |
+
+Keep both surfaces in that table as the plugin evolves. A surface added in a minor release without a README entry is the same bug again.
 
 ## Discovering Events
 

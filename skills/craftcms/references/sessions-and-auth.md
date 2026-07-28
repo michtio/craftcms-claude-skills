@@ -15,6 +15,7 @@ How Craft CMS 5's session and authentication system works under the hood: the du
 - Setting `elevatedSessionDuration` to `0` in production — this disables the password re-entry requirement for sensitive operations entirely. `getHasElevatedSession()` always returns `true`.
 - Not understanding that `securityKey` change invalidates everything — changing `CRAFT_SECURITY_KEY` invalidates all sessions, password reset tokens, and encrypted field values across all users.
 - Reading `$user->lastPasswordChangeDate` from an element query and getting `null` — `UserQuery::beforePrepare()` intentionally excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, `lastLoginAttemptIp`). Query `Table::USERS` directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`.
+- Assuming a vetoed impersonation rolls back cleanly — Craft sets `impersonatorId` before `loginByUserId()` and only clears it when login returns `false`, but Yii's `login()` returns `!getIsGuest()`, which is `true` for the already-authenticated actor. A plugin vetoing sign-in-as must clear it itself. See [Vetoing impersonation](#vetoing-impersonation-leaks-impersonatorid).
 - Missing `User::EVENT_BEFORE_AUTHENTICATE` for password inspection — this is the only Craft 5 hook where the plaintext password is in scope (passed on the event). Plaintext is cleared after authentication completes. If your plugin needs to check the password against an external service (HIBP breach detection, policy validation), listen here. Hash inside the handler, never log the plaintext or the full hash.
 
 ## Contents
@@ -194,6 +195,66 @@ Built-in operations that call `requireElevatedSession()`:
 - Plugin settings changes (when `$requireAdmin` is true)
 
 Plugins should call `$this->requireElevatedSession()` in controller actions that modify authentication state, security settings, or access controls.
+
+## Vetoing impersonation leaks `impersonatorId`
+
+A plugin that gates "sign in as" (an approval workflow, a compliance rule, a break-glass audit requirement) by cancelling the login must **clear `impersonatorId` itself**. Craft's own rollback does not fire for a vetoed impersonation.
+
+The mechanism, in `UsersController::actionImpersonate()`:
+
+```php
+// Save the original user ID to the session now so User::findIdentity()
+// knows not to worry if the user isn't active yet
+$userSession->setImpersonatorId($userSession->getId());
+
+if (!$userSession->loginByUserId($userId)) {
+    $userSession->setImpersonatorId(null);      // ← the only rollback
+    // ...
+    return null;
+}
+```
+
+`impersonatorId` is set **before** the login attempt, and cleared only when `loginByUserId()` returns `false`. But `loginByUserId()` delegates to Yii's `User::login()`, which ends:
+
+```php
+// yii\web\User::login()
+if ($this->beforeLogin($identity, false, $duration)) {
+    $this->switchIdentity($identity, $duration);
+    // ...
+    $this->afterLogin($identity, false, $duration);
+}
+
+return !$this->getIsGuest();
+```
+
+The return value is `!getIsGuest()` — **not** whether `beforeLogin()` passed. The actor performing the impersonation is already authenticated, so they are not a guest, so `login()` returns `true` **whether the veto fired or not**. Craft's rollback branch is unreachable in the veto case.
+
+Result: the veto correctly prevents the identity switch, but `__impersonator_id` stays in the session. On the next request `User::getImpersonator()` resolves a real impersonator, and Craft behaves as though an impersonation is in progress — the CP shows the impersonation banner and the "return to your account" flow performs a bogus redirect.
+
+Clear it at the veto point:
+
+```php
+use craft\elements\User as UserElement;
+use craft\web\User as UserSession;
+use yii\web\UserEvent;
+
+Event::on(
+    UserSession::class,
+    UserSession::EVENT_BEFORE_LOGIN,
+    function(UserEvent $event) {
+        if (!MyPlugin::getInstance()->getGate()->canImpersonate($event->identity)) {
+            $event->isValid = false;
+
+            // Craft only rolls this back when login() returns false — and it
+            // returns !getIsGuest(), which is true for the already-authenticated
+            // actor. Without this the next request thinks an impersonation is live.
+            Craft::$app->getUser()->setImpersonatorId(null);
+        }
+    },
+);
+```
+
+`setImpersonatorId(null)` calls `SessionHelper::remove($this->impersonatorIdParam)` — the same path Craft's own rollback uses, so it's safe to call unconditionally in the veto branch.
 
 ## Session Configuration Quick Reference
 

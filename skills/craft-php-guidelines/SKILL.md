@@ -38,6 +38,10 @@ When unsure about a convention, `WebFetch` the coding guidelines page for the au
 - Using magic property access (`$plugin->settings`, `$app->view`) instead of explicit getters (`$plugin->getSettings()`, `$app->getView()`) — PHPStan can't resolve `__get()` calls, so magic access passes at runtime but fails static analysis. Always use explicit getters for Yii2 components and Craft plugin properties.
 - Calling Craft-specific methods directly on `Craft::$app` (`Craft::$app->getConfig()`) — PHPStan can't resolve them because the static type is Yii's base union. Narrow with a typed local: `/** @var \craft\web\Application $app */ $app = Craft::$app;`. Don't use `@phpstan-ignore-line`.
 - Duplicating contract constants as `private const` across multiple classes with "keep in lockstep" comments — PHPStan can't detect drift. Declare `public const` on the owning service, reference as `OwnerService::CONSTANT_NAME` everywhere else. This applies specifically to **permission handles**: a handle like `'my-plugin:manageSettings'` is a contract string referenced from registration (`EVENT_REGISTER_PERMISSIONS`), the controller gate (`requirePermission()`), and the nav check (`->can()`); a bare literal drifts silently and a typo passes for admins (who hold every permission) while denying everyone else. Declare it as a `public const` on the controller that enforces it — `SettingsController::PERMISSION_MANAGE_SETTINGS` — and reference the const everywhere. (Craft core uses bare literals here; the const is a deliberately stricter house rule. See the `craftcms` skill's `permissions.md`.)
+- Writing the same authorization check separately in a CP controller, a console command, and a GraphQL resolver — they drift, and the surface that drifts is the one nobody tests. One shared gate method called by every surface, with a test per surface. Console is not exempt (a documented cron path with no permission check is an unauthenticated capability), and GraphQL schema scope is **not** the plugin's permission matrix. See `references/authorization-parity.md`.
+- Assuming Craft prevents self-approval / self-review — it has no such concept, and peer permissions are the opposite axis. Write the guard into the shared gate, orthogonal to role checks, with an explicit bypass permission. See `references/authorization-parity.md`.
+- Shipping `../*` path repositories in a plugin's `composer.json` — resolution works only on the author's disk. Unpublished sibling deps get a `vcs` entry; Packagist deps need nothing; `composer.lock` stays gitignored for plugins. Prove it with `composer config --global repositories` (expect empty) then a no-lock `composer update --dry-run`. See `references/tooling.md` (Composer Hygiene).
+- Using `Db::parseParam()` for a literal comparison — a leading or trailing `*` becomes a SQL `LIKE` wildcard, so a uniqueness check on a stored pattern silently becomes a prefix match. Use a raw `andWhere(['col' => $value])`. See the `craftcms` skill's `architecture.md`.
 - Registering `EVENT_REGISTER_ELEMENT_TYPES` / `EVENT_REGISTER_FIELD_TYPES` inside a `getIsCpRequest()` (or other request-context) branch in `init()` — component-type registration must run in **every** context (CP, console, site) or the type disappears from `getAllElementTypes()` in console/queue requests, and `Gc::hardDeleteElements()` silently stops purging its trashed rows. Register unconditionally; only CP-*rendering*/routing (URL rules, asset bundles, nav) may be gated. See the `craftcms` skill's `events.md` → "Registration scope".
 
 ## Reference Files
@@ -50,7 +54,8 @@ Read the relevant reference file(s) for your task:
 | Class structure, section headers, ordering, enums, control flow, comments, whitespace | `references/class-organization.md` |
 | Naming classes, methods, properties, files, services, events, migrations | `references/naming-conventions.md` |
 | CP Twig templates, form macros, translations, file headers, validation | `references/templates-and-patterns.md` |
-| ECS, PHPStan, scaffolding commands, commit messages | `references/tooling.md` |
+| ECS, PHPStan, scaffolding commands, composer hygiene for plugin repos, commit messages | `references/tooling.md` |
+| Authorization parity across CP / console / GraphQL / queue surfaces, self-referential guards, one shared gate | `references/authorization-parity.md` |
 
 ## Critical Rules
 
@@ -112,7 +117,7 @@ Only include sections that have content. Blank line after the separator, before 
 - `[[column]]` quoting in Yii2 join conditions.
 - `addSelect()` in `beforePrepare()` — safely additive.
 - `postDate` and `expiryDate` in `addSelect()` and indexed on element tables.
-- `Db::parseParam()` for query parameters. `Db::parseDateParam()` for dates.
+- `Db::parseParam()` for query parameters. `Db::parseDateParam()` for dates. But **not** for literal comparison — it treats a leading/trailing `*` as a `LIKE` wildcard; use a raw `andWhere(['col' => $value])` when comparing stored values exactly.
 - Foreign keys with explicit `CASCADE` / `SET NULL` behavior.
 
 ## Naming Quick-Reference

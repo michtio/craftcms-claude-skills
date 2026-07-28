@@ -1,6 +1,6 @@
 ---
 name: ddev
-description: "DDEV local development environment for Craft CMS projects. ALWAYS load this skill when running any ddev command, configuring .ddev/config.yaml, or troubleshooting local container issues. Covers: config.yaml settings (project type, PHP/Node versions, database, docroot), shorthand commands (ddev composer, ddev craft, ddev npm), add-ons (ddev add-on get for Redis; built-in Mailpit), custom commands (.ddev/commands/), Vite dev server exposure (web_extra_exposed_ports, web_extra_daemons), database import/export (ddev import-db, ddev export-db, ddev craft db/backup), Xdebug toggling (ddev xdebug on/off), sharing local sites (ddev share, temporary public URLs), and troubleshooting (ddev poweroff, ddev logs, ddev describe, ddev delete, port conflicts, container restart issues). Triggers on: ddev start/stop/restart, ddev craft, ddev composer, ddev npm, ddev ssh, ddev import-db, ddev export-db, ddev xdebug, ddev share, ddev add-on, ddev poweroff, ddev describe, ddev logs, .ddev/config.yaml, web_extra_exposed_ports, web_extra_daemons, PHP version or Node version in local dev, database backup/restore locally, ran npm/composer on host instead of ddev, wrong node_modules architecture, local dev environment for Craft CMS, ddev-injected PRIMARY_SITE_URL, .ddev/.env.web regenerated on restart, CRAFT_ env var overriding config/general.php, general-config edit has no effect. NOT for production deployment, CI/CD pipelines, GitHub Actions, or server configuration. NOT for Docker/container usage outside of DDEV."
+description: "DDEV local development environment for Craft CMS projects. ALWAYS load this skill when running any ddev command, configuring .ddev/config.yaml, or troubleshooting local container issues. Covers: config.yaml settings (project type, PHP/Node versions, database, docroot), shorthand commands (ddev composer, ddev craft, ddev npm), add-ons (ddev add-on get for Redis; built-in Mailpit), custom commands (.ddev/commands/), Vite dev server exposure (web_extra_exposed_ports, web_extra_daemons), database import/export (ddev import-db, ddev export-db, ddev craft db/backup), Xdebug toggling (ddev xdebug on/off), sharing local sites (ddev share, temporary public URLs), and troubleshooting (ddev poweroff, ddev logs, ddev describe, ddev delete, port conflicts, container restart issues). Triggers on: ddev start/stop/restart, ddev craft, ddev composer, ddev npm, ddev ssh, ddev import-db, ddev export-db, ddev xdebug, ddev share, ddev add-on, ddev poweroff, ddev describe, ddev logs, .ddev/config.yaml, web_extra_exposed_ports, web_extra_daemons, PHP version or Node version in local dev, database backup/restore locally, ran npm/composer on host instead of ddev, wrong node_modules architecture, local dev environment for Craft CMS, ddev-injected PRIMARY_SITE_URL, .ddev/.env.web regenerated on restart, CRAFT_ env var overriding config/general.php, general-config edit has no effect, ddev exec --dir, running a plugin's Pest suite inside a host project, ddev craft pest, tests wrote to the dev database. NOT for production deployment, CI/CD pipelines, GitHub Actions, or server configuration. NOT for Docker/container usage outside of DDEV."
 ---
 
 # DDEV for Craft CMS Development
@@ -239,6 +239,28 @@ DDEV sites are accessible at `https://{project}.ddev.site`. To inspect CP pages:
 ### Project setup
 
 The `craft-project-setup` skill offers to install Chrome DevTools MCP during scaffolding. If installed later, run `claude mcp add chrome-devtools -- npx chrome-devtools-mcp@latest` from the project root — this writes to the project's `.claude.json`, keeping it project-level.
+
+## Running a Plugin's Own Test Suite
+
+When a plugin is symlinked into a host project, run its suite **from the plugin's own directory** inside the container:
+
+```bash
+ddev exec --dir /var/www/html/vendor/acme/my-plugin vendor/bin/pest
+ddev exec --dir /var/www/html/vendor/acme/my-plugin composer test
+```
+
+`--dir` sets the working directory, and that is the load-bearing part. `markhuot/craft-pest-core` reads its environment overrides from `getcwd().'/phpunit.xml(.dist)'` only — it does **not** parse a `--configuration=` flag. So the shared-root form:
+
+```bash
+# UNSAFE — runs the tests, but against the project's live database
+ddev craft pest -- --configuration=vendor/acme/my-plugin/phpunit.xml.dist
+```
+
+…discovers and executes the plugin's tests while silently ignoring the plugin's own `CRAFT_DB_DATABASE` pin. Combined with a suite that hasn't bound the `RefreshesDatabase` trait (rollback is opt-in), that writes test data permanently into your development database. Treat the shared-root invocation as unsafe for any craft-pest-core suite.
+
+The full mechanism, the isolation checklist, and the CI equivalent are in the `craft-pest` skill (`references/isolation.md`).
+
+For plugins mounted via a Composer path repo, the `--dir` path is the symlink target inside the container — see [Composer Path Repos and Volume Mounts](#composer-path-repos-and-volume-mounts) for making that path resolve.
 
 ## Troubleshooting
 

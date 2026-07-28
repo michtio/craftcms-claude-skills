@@ -1,6 +1,6 @@
 # Skills Overview
 
-11 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), and managed hosting (Craft Cloud and Servd). Reference files spread across each skill's `references/` directory.
+12 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), and managed hosting (Craft Cloud and Servd). Reference files spread across each skill's `references/` directory.
 
 ## How Skills Load
 
@@ -128,6 +128,31 @@ This is the only documentation that exists for Garnish -- the official Craft doc
 
 ---
 
+## craft-pest
+
+**Track:** Plugin Development
+**Reference files:** 5
+**SKILL.md:** ~130 lines
+
+Testing Craft plugins and modules with Pest, primarily via `markhuot/craft-pest-core`. Leads with **isolation** rather than assertions, because the dominant failure mode in Craft plugin testing isn't a wrong assertion — it's a suite writing to a database it shouldn't, or passing only because of ambient state on the developer's install. Both are silent, and both look like a green suite.
+
+The two facts that cause data loss, verified in package source rather than taken from the README (neither is stated there):
+
+- **Rollback is opt-in.** `TestCase` boots Craft and mixes in ~15 traits, but `RefreshesDatabase` is not one of them. Bind both in `tests/Pest.php`, or every factory write commits permanently.
+- **The env override is cwd-bound.** `InstallsCraft::loadPhpunitXmlEnvironmentVariables()` reads only `getcwd().'/phpunit.xml(.dist)'` and does not parse `--configuration=`, so running a plugin suite from a shared project root discards the plugin's own DB pins and runs against the live database.
+
+Also covers: pinning `CRAFT_DB_DATABASE` before Craft boots, installing the plugin under test (`InstallsCraft` never does), Craft internals that bite in tests (permission-tree memoization and `UserPermissions::reset()`, why real `loginByUserId()` fails under CLI, `UTC_TIMESTAMP()` in raw fixtures, muting every audit/event surface, queue stubs, project-config writes inside rolled-back transactions), factories and HTTP/queue/DB assertions, shared-playground hygiene, `Install.php` vs migration drift in the test DB, and CI test jobs (`check-cs` not `fix-cs`, invoked from the plugin root).
+
+**Verified against** `markhuot/craft-pest-core` 3.2.2 and `craftcms/cms` 5.10.11.
+
+**When it triggers:** Any prompt about tests for a Craft plugin or module — Pest setup, `RefreshesDatabase`, `phpunit.xml.dist`, factories, test databases, orphaned test data, order-dependent flakes, CI test jobs — and symptom reports like "tests pass locally but pollute the database."
+
+**Companion skills:** `craftcms` (when the code under test is also being changed), `craft-php-guidelines` (standards for the test files), `ddev` (the `ddev exec --dir` invocation).
+
+**Boundary:** Does NOT trigger for front-end/JS testing (Playwright, Vitest) or for PHP style/static analysis. Codeception basics stay in `craftcms` (`testing.md`), which now points here for everything Pest.
+
+---
+
 ## ddev
 
 **Track:** Shared (both plugin and site development)
@@ -210,5 +235,7 @@ Understanding which skill handles what prevents misfires and gets you better res
 | "Build a language switcher" | `craft-site` (multi-site-patterns.md) |
 | "Plan a multi-site content model" | `craft-content-modeling` |
 | "Add drag-to-reorder to my settings page" | `craft-garnish` |
+| "Set up Pest tests for my plugin" | `craft-pest` |
+| "My tests are writing to the dev database" | `craft-pest` (isolation.md) |
 | "Deploy Craft to production" | `craftcms` (deployment.md) |
 | "Set up login and registration forms" | `craft-site` (auth-flows.md) |

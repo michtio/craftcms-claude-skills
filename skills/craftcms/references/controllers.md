@@ -7,6 +7,10 @@
 
 ## Common Pitfalls
 
+- **Naming a route or query param `token`** — Craft reserves it globally (`GeneralConfig::$tokenParam`, default `'token'`) and 400s the request in `Application::init()` before your controller runs. See [Reserved request params](#reserved-request-params).
+- **`WrongEditionException` uncaught in `beforeAction()` is a 500** — it extends `yii\base\Exception` with no HTTP status. Catch it and rethrow `NotFoundHttpException`. See [Edition gating](#edition-gating).
+- **Uncaught project-config exceptions on concurrent writes** — a controller action that writes project config can throw `BusyResourceException` / `StaleResourceException` under concurrency. See [Project-config writes from controllers](#project-config-writes-from-controllers).
+- **Buffering an unbounded query into a PDF/export renderer** — see [Bounding synchronous exports](#bounding-synchronous-exports).
 - **Hardcoding `/admin/` in CP URLs** — `cpTrigger` is configurable. Use `UrlHelper::cpUrl()` in PHP, `cpUrl()` in Twig. See `config-general.md` (Routing & URLs section) for the full pattern.
 - Forgetting `$this->requirePostRequest()` on mutating actions — without it, state-changing actions are accessible via GET, which browsers prefetch and bots crawl.
 - Returning `null` from a save action without passing the entity back via `setRouteParams()` — the template re-renders but the entity (with its validation errors and filled-in values) is lost, showing a blank form.
@@ -56,6 +60,11 @@ The rule of thumb: register a route only when the URL is visible to humans (brow
 - [CP Screen Response](#cp-screen-response)
 - [Streaming and Download Responses](#streaming-and-download-responses) — asRaw, stream resource, callable closure, sendContentAsFile
 - [Action Routing](#action-routing)
+- [Reserved request params](#reserved-request-params)
+- [Response formats — `renderTemplate()` does not set `FORMAT_HTML`](#response-formats--rendertemplate-does-not-set-format_html)
+- [Edition gating](#edition-gating)
+- [Project-config writes from controllers](#project-config-writes-from-controllers)
+- [Bounding synchronous exports](#bounding-synchronous-exports)
 - [Authorization Summary](#authorization-summary)
 
 ## Scaffold
@@ -410,6 +419,155 @@ Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_SITE_URL_RULES,
     }
 );
 ```
+
+## Reserved request params
+
+**Never name a route segment, query param, or body param `token`.** Craft claims it globally: `GeneralConfig::$tokenParam` defaults to `'token'`, and `craft\web\Request::getToken()` reads `getQueryParam($this->generalConfig->tokenParam)` (falling back to the `X-Craft-Token` header). If that value doesn't resolve to a valid token row, `Application::init()` throws before routing:
+
+```php
+// craft\web\Application::init() — runs before your controller exists
+if ($this->getRequest()->getHasInvalidToken()) {
+    throw new BadRequestHttpException('Invalid token');
+}
+```
+
+So a plugin that mints its own `?token=…` verification links gets a blanket **400 "Invalid token"** on every request. The failure is total (the flow simply never works) and invisible to service-layer tests, because nothing below the HTTP layer consults `tokenParam`. Only a real request reveals it.
+
+Use a name of your own: `?verify=`, `?vt=`, `?inviteCode=`. If you're consuming someone else's fixed `token` param and can't rename it, the escape hatch is renaming *Craft's* (`->tokenParam('craftToken')` in `config/general.php`) — but that changes preview and share URLs system-wide, so prefer renaming yours.
+
+Treat this as one instance of a general rule: **reserved param names are a runtime contract only an HTTP test can check.** Give every plugin-owned param a route test that asserts a real request returns what you expect. See the `craft-pest` skill's `patterns.md` (HTTP testing).
+
+## Response formats — `renderTemplate()` does not set `FORMAT_HTML`
+
+`Controller::renderTemplate()` sets a Craft-specific response format, not Yii's HTML format:
+
+```php
+$this->response->formatters[TemplateResponseFormatter::FORMAT] = TemplateResponseFormatter::class;
+$this->response->format = TemplateResponseFormatter::FORMAT;   // === 'template'
+```
+
+`TemplateResponseFormatter::FORMAT` is the string `'template'`. `Response::FORMAT_HTML` is `'html'`. They are different values, and normal CP/site page renders carry the **former**.
+
+This bites response-injection listeners — anything appending a banner, notice, or script to outgoing pages on `EVENT_AFTER_REQUEST` (or similar) by gating on the format:
+
+```php
+// WRONG — fires only on Craft's error pages
+if ($response->format === Response::FORMAT_HTML) {
+    $response->content .= $bannerHtml;
+}
+```
+
+The reason it appears to "work sometimes" is the error path: Craft's error-page bail-out resets the format to `FORMAT_HTML`, so the listener fires on 404s and exceptions and nowhere else. Debugging that from the symptom is miserable.
+
+Accept both formats, and explicitly leave everything else alone:
+
+```php
+use craft\web\TemplateResponseFormatter;
+use yii\web\Response;
+
+$format = $response->format;
+
+// Rendered pages arrive as 'template'; error pages as 'html'. Anything else
+// (JSON, raw, streams, file downloads) must not be touched — injecting into
+// a JSON body or a stream corrupts the response.
+if (!in_array($format, [TemplateResponseFormatter::FORMAT, Response::FORMAT_HTML], true)) {
+    return;
+}
+
+if ($request->getAcceptsJson() || $request->getIsAjax() || $response->stream !== null) {
+    return;
+}
+
+$response->content .= $bannerHtml;
+```
+
+## Edition gating
+
+`craft\errors\WrongEditionException` extends `yii\base\Exception` and carries **no HTTP status code**. Thrown from `requireEdition()` inside `beforeAction()` and left uncaught, it surfaces as a **500** — an error page where you meant an access decision.
+
+Catch it and rethrow as a 404. Returning "not found" rather than "wrong edition" also avoids advertising the existence of higher-edition surfaces:
+
+```php
+use craft\errors\WrongEditionException;
+use yii\web\NotFoundHttpException;
+
+public function beforeAction($action): bool
+{
+    if (!parent::beforeAction($action)) {
+        return false;
+    }
+
+    try {
+        MyPlugin::getInstance()->requireEdition(MyPlugin::EDITION_PRO);
+    } catch (WrongEditionException) {
+        // Hide the surface rather than advertising it — and don't 500.
+        throw new NotFoundHttpException();
+    }
+
+    return true;
+}
+```
+
+**Audit every controller individually.** Sibling controllers drift: a plugin adds the gate to three controllers and misses the fourth, and the ungated one becomes a working entry point on the wrong edition. Grep for your `requireEdition()` call and compare against the list of controllers, rather than assuming a shared base class covers it — and remember that gates in `beforeAction()` do nothing for templates reachable through CP template routing (see `cp.md`).
+
+## Project-config writes from controllers
+
+Project config is guarded by a mutex. `ProjectConfig::_acquireLock()` throws `BusyResourceException` when it can't acquire `MUTEX_NAME` (`'project-config'`), and `StaleResourceException` when the loaded config is out of date. Both are plain exceptions — uncaught in a controller action they're 500s.
+
+Under concurrency that isn't theoretical: 18 parallel delete requests against a project-config-writing action produced 14 uncaught 500s. Any action that writes project config (saving plugin settings, creating or deleting a plugin-managed entity whose config lives in YAML) needs to handle it:
+
+```php
+use craft\errors\BusyResourceException;
+use craft\errors\StaleResourceException;
+
+public function actionDelete(): Response
+{
+    $this->requirePostRequest();
+
+    try {
+        MyPlugin::getInstance()->getItems()->deleteItem($item);
+    } catch (BusyResourceException|StaleResourceException $e) {
+        Craft::warning("Project config busy: {$e->getMessage()}", __METHOD__);
+
+        // 409: the client can retry. Never let this reach the user as a 500.
+        return $this->asFailure(
+            Craft::t('my-plugin', 'The configuration is being updated. Please try again.'),
+        )->setStatusCode(409);
+    }
+
+    return $this->asSuccess();
+}
+```
+
+For internal AJAX callers, a bounded retry with a short backoff before surfacing the conflict is friendlier. Don't retry indefinitely — the mutex is signalling real contention.
+
+## Bounding synchronous exports
+
+Never buffer an unbounded query result into an in-memory renderer. A 4,136-row export rendered through dompdf consumed over 2.4 GB and 500'd — and the number of rows was user-controlled, so the limit was whatever the data happened to be.
+
+Three fixes, in order of preference:
+
+1. **Stream it.** For CSV and other row-oriented formats, use the callable-closure `$response->stream` form above — memory stays flat regardless of row count.
+2. **Hard-cap the synchronous path.** Count first; above a threshold, refuse and route through the queue:
+
+```php
+$count = $query->count();
+
+if ($count > self::MAX_SYNC_EXPORT_ROWS) {
+    Craft::$app->getQueue()->push(new GenerateExport([
+        'criteria' => $criteria,
+        'userId' => Craft::$app->getUser()->getId(),
+    ]));
+
+    return $this->asSuccess(
+        Craft::t('my-plugin', 'Your export is being generated. You will be notified when it is ready.'),
+    );
+}
+```
+
+3. **Chunk the renderer.** If the format genuinely needs a document model (PDF), build it in batches (`->offset()/->limit()`) and release each batch, rather than materializing every row first.
+
+The cap belongs on the **row count**, not on a memory limit — raising `memory_limit` moves the cliff without removing it, and the failure mode (a 500 mid-download) is the same.
 
 ## Authorization Summary
 

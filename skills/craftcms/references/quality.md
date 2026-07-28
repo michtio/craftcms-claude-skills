@@ -36,6 +36,8 @@ Static analysis, code style enforcement, and continuous integration patterns for
 - Not matching PHPStan level to team capability -- jumping to level 8 on a team unfamiliar with static analysis creates frustration. Start at 5 (recommended for Craft plugins), raise incrementally.
 - Using `@phpstan-ignore-next-line` without a comment explaining why -- makes it impossible to revisit later.
 - Not running `ddev composer check-cs` AND `ddev composer phpstan` before every commit.
+- Running `fix-cs` in CI instead of `check-cs` -- the auto-fix rewrites files inside the runner, the job exits `0`, and the violations are discarded with the runner. The step's whole purpose is to *fail*. Auto-fixing belongs on a developer machine or a pre-commit hook.
+- Shipping a workflow with no test job -- static analysis passing is not the same as the suite passing, and a suite that isn't CI-enforced decays unnoticed. Add a Pest step, invoked from the plugin's own root.
 - Pest test names that don't describe the behavior -- `it('works')` tells nothing.
 
 ## ECS Deep Dive
@@ -355,6 +357,8 @@ jobs:
 
 Notes:
 
+- **`check-cs`, never `fix-cs`.** In CI the auto-fix rewrites files in the runner and exits `0` — green job, discarded fixes, violations nobody sees. The step exists to fail.
+- **The Pest step is not optional.** A suite that isn't CI-enforced rots at the speed of the codebase; one real plugin carried a 74-test suite that nothing ever ran. Invoke it from the plugin's own root (for a plugin repo the checkout *is* that root, so plain `composer test` is correct — in a monorepo or host-project workflow add `working-directory:`). This matters beyond hygiene: craft-pest-core reads its DB pins from `getcwd()`, so a suite invoked from elsewhere runs against the wrong database. See the `craft-pest` skill's `ci.md` for the database service block and the full rationale.
 - **PHP matrix matters.** Craft 5 supports PHP 8.2–8.4. Test all three; 8.4 surfaces deprecation warnings that 8.2 doesn't, and 8.2 catches accidental use of features that only landed in 8.3/8.4.
 - **`--no-blocking` is the canonical flag.** Composer 2.5+ refuses to install packages flagged in the security-advisories registry by default. Craft 5.9.x transitively depends on `yiisoft/yii2 2.0.54` (CVE-2026-39850, fixed in 2.0.55) and `webonyx/graphql-php 14.11.10` (covered by advisories on `<=15.32.2`). Both are upstream concerns Craft will pick up on its next release; a downstream plugin can't fix them. The flag bypasses the block.
 - **Legacy flag name.** Older Composer versions used `--no-security-blocking`. Composer's own docs deprecated that in favour of `--no-blocking`. Existing workflows using the old name still work but should be updated.
@@ -448,19 +452,17 @@ For projects with a Node toolchain, use husky + lint-staged instead:
 
 ## Testing
 
-For comprehensive test patterns -- Pest setup, element factories, HTTP testing, queue assertions, database assertions, multi-site testing, mocking, console commands, and event testing -- see `testing.md`.
-
-Quick reference:
+Load the **`craft-pest`** skill for everything test-related — harness setup, database isolation, factories, HTTP/queue/DB assertions, mocking, console and event tests, and CI test jobs.
 
 ```json
 {
     "require-dev": {
-        "markhuot/craft-pest": "^3.0"
+        "markhuot/craft-pest-core": "^3.0"
     }
 }
 ```
 
-Run: `ddev craft pest/test`
+Run from the **plugin's own root**: `composer test` (or `ddev exec --dir /var/www/html/vendor/acme/my-plugin vendor/bin/pest`). Running a plugin suite from a shared project root with `--configuration=` silently discards the plugin's database pins — see the `craft-pest` skill's `isolation.md`.
 
 ## Code Review Checklist
 

@@ -24,11 +24,12 @@ CP templates, form macros, navigation, settings pages, permissions, and read-onl
 - Using `size` attribute with `type: 'number'` on `textField` — browsers ignore the HTML `size` attribute on `<input type="number">`. Craft's own Number field works around this by using `type: 'text'` with `inputmode: 'numeric'`. For number inputs, constrain width with `inputAttributes: { style: 'width: 6rem' }` or switch to a text input with `inputmode="numeric"` pattern.
 - Expensive `badgeCount` computation in `getCpNavItem()` — this method runs on **every CP page load** across the entire install, not just your plugin's pages. Badge counts must be extremely cheap: use a cached value (invalidated on relevant saves) or a simple indexed `COUNT(*)` query. Never run complex queries, N+1 patterns, or element queries with eager loading here.
 - Gating subnav entries on `allowAdminChanges` in `getCpNavItem()` — hides the settings link on production, making the page unreachable from the CP nav even though it should be viewable in read-only mode. Gate on permission (`can()`), not on admin changes. See Read-Only Mode section for the full three-node access path.
+- Leaving a plugin CP template without an underscore prefix when it isn't meant to be a direct route — Craft's CP template-routing fallback makes it reachable by URL, skipping your controller's `beforeAction()` gates entirely. See [CP template routing bypasses controllers](#cp-template-routing-bypasses-controllers).
 - Giving a plugin element one of Craft's reserved CP DOM IDs (`#notifications`, `#content`, `#tabs`, `#sidebar`, etc.) — Craft's CP JS caches chrome refs via `$('#foo')` during init and returns the first match in DOM order, so a plugin element with the same ID silently hijacks notification toasts, ARIA masking, or layout wiring. Pick feature-specific names (e.g. `notificationSettings`, not `notifications`) for tab keys, pane containers, slideout/HUD roots — anything you give an `id`. See [Reserved DOM IDs](#reserved-dom-ids) for the full list.
 
 ## Contents
 
-- [CP Templates](#cp-templates) — form macros, editable tables, tabbed settings, reserved DOM IDs, VueAdminTable
+- [CP Templates](#cp-templates) — form macros, editable tables, tabbed settings, reserved DOM IDs, template routing fallback, VueAdminTable
 - [CP Navigation](#cp-navigation)
 - [Settings Pages](#settings-pages) — settings model, env var support, keeping settings inside the plugin's CP section, split settings pages (savePluginSettings footgun)
 - [Form Macros Reference](#form-macros-reference) — lightswitch vs checkbox, copytext, money, buttons + modifier classes, inner sidebar nav (`_includes/nav.twig`)
@@ -412,6 +413,47 @@ Verified against `vendor/craftcms/cms/src/web/assets/cp/src/js/CP.js` and `vendo
 ```
 
 This also applies to Garnish's modal background masking: `Garnish.hideModalBackgroundLayers()` does `.not('#notifications')` against body children, so a plugin element with `id="notifications"` at body level stays visible to screen readers when a modal opens, breaking the modal's ARIA isolation. See `craft-garnish` skill `references/utilities.md` (ARIA & Focus Management).
+
+### CP template routing bypasses controllers
+
+A plugin's `templates/` directory is registered as a CP template root automatically (by handle). Craft's `UrlManager` then applies a **template-routing fallback** after its rule and element matching:
+
+```php
+// craft\web\UrlManager::_getTemplateRoute()
+$matches = $this->_isPublicTemplatePath($request);      // → View::doesTemplateExist($path, publicOnly: true)
+// ...
+return ['templates/render', ['template' => $path]];
+```
+
+In CP template mode the "private" trigger is a hardcoded underscore — `View::setTemplateMode()` sets `$this->_privateTemplateTrigger = '_'` for `TEMPLATE_MODE_CP`, and unlike the site-mode `privateTemplateTrigger` config setting, it is **not configurable**.
+
+Put together: **any non-underscore-prefixed template under your plugin's `templates/` is directly routable in the CP.** `templates/dashboard.twig` in a plugin handled `my-plugin` renders at `{cpTrigger}/my-plugin/dashboard` even if you never registered a route and even if the controller you *intended* to serve it has an edition check, a permission check, and an elevated-session requirement in `beforeAction()`. The fallback never touches your controller, so none of those gates run.
+
+This is a real edition-gate and permission-gate bypass, not a theoretical one. Two rules:
+
+**1. Underscore-prefix every template that isn't an intentional direct route.**
+
+```
+templates/
+  _dashboard.twig      ← rendered by a controller via renderTemplate('my-plugin/_dashboard')
+  _settings/
+    _index.twig
+    _edit.twig
+  public-status.twig   ← deliberately directly routable, gated in the template itself
+```
+
+`renderTemplate()` renders underscore-prefixed paths perfectly well — the prefix only affects *routability*.
+
+**2. If a template is deliberately directly routable, gate it in the template.** There's no controller to do it for you:
+
+```twig
+{% requirePermission 'my-plugin:viewOverview' %}
+{% if not craft.app.plugins.getPlugin('my-plugin').is(MyPlugin::EDITION_PRO) %}
+    {% exit 404 %}
+{% endif %}
+```
+
+**Audit rule:** `ls` the plugin's `templates/` tree and treat every path without a leading underscore as a public CP URL. Compare that list against your registered CP routes; anything in the first list and not the second is an unintended entry point.
 
 ### VueAdminTable
 

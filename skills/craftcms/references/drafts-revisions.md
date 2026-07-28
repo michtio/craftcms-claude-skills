@@ -14,6 +14,7 @@ Complete reference for Craft CMS 5's draft and revision system: draft types, pro
 - Not writing to the custom table for drafts — drafts need their data in `afterSave()`. Only skip side effects, not data persistence.
 - Assuming `hasRevisions()` is a static method — it's an instance method. It must return `true` for revision tracking, and `hasDrafts()` must also return `true`.
 - Setting `maxRevisions` to `0` without understanding the consequences — unlimited revisions means the `elements` table grows indefinitely.
+- Expecting `createRevision()` to always create one — it silently returns the existing revision when `elements.dateUpdated` hasn't changed, which is exactly what happens after a raw `Db::update()`. Pass `force: true`. See [createRevision() skips silently](#createrevision-skips-silently-when-dateupdated-didnt-move).
 
 ## Contents
 
@@ -171,6 +172,48 @@ Restoring a revision **copies** its content into the canonical element and creat
 $creatorId = Craft::$app->getUser()->getId();
 Craft::$app->getRevisions()->revertToRevision($revision, $creatorId);
 ```
+
+### `createRevision()` skips silently when `dateUpdated` didn't move
+
+`Revisions::createRevision()` has a change-detection guard. Unless `$force` is `true`, it looks up the most recent revision and returns its ID unchanged when the canonical element hasn't been touched since:
+
+```php
+public function createRevision(
+    ElementInterface $canonical,
+    ?int $creatorId = null,
+    ?string $notes = null,
+    array $newAttributes = [],
+    bool $force = false,
+): int {
+    // ...
+    if (
+        !$force &&
+        $lastRevisionInfo &&
+        DateTimeHelper::toDateTime($lastRevisionInfo['dateCreated'])->getTimestamp() === $canonical->dateUpdated->getTimestamp() &&
+        $canonical::find()->id($lastRevisionInfo['id'])->revisions()->status(null)->siteId($canonical->siteId)->exists()
+    ) {
+        // The canonical element hasn't been updated since the last revision's
+        // creation date, so there's no need to create a new one
+        return $lastRevisionInfo['id'];
+    }
+```
+
+The comparison is against `elements.dateUpdated`. That column is bumped by `saveElement()` — but **not** by a raw `Db::update()`. So a plugin that writes content directly (a restore routine, a bulk field fixer, a migration-style repair) and then asks for a revision gets back the *existing* revision ID, no new revision, and no error. The call returns a plausible int, so nothing looks wrong until someone needs the history.
+
+Pass `force: true` whenever a revision must exist regardless of change detection:
+
+```php
+Craft::$app->getRevisions()->createRevision(
+    $entry,
+    creatorId: Craft::$app->getUser()->getId(),
+    notes: Craft::t('my-plugin', 'Restored from snapshot'),
+    force: true,
+);
+```
+
+Use the named argument — `$force` is the fifth parameter, after `$newAttributes`.
+
+If you're writing content with raw SQL for performance, the alternative is to bump `dateUpdated` yourself so downstream change detection (revisions, search index, caches) behaves normally. Preferring `saveElement()` where you can afford it avoids the whole class of problem.
 
 ### Revision limits
 
