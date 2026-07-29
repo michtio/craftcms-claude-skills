@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.12.4 -- 2026-07-29
+
+Patch: trims the last two `description` fields that exceeded Claude Code's ~1,536-character routing window, so **every one of the 12 skills now fits**. Descriptions only — two lines changed, no body content touched.
+
+Same exercise as 1.9.2, which trimmed the six largest descriptions but left these two: `craft-garnish` (1,731) and `ddev` (1,635) had grown past the window in later releases, leaving their tails inert. Both were rewritten denser by collapsing the `Covers:` prose that duplicated the `Triggers on:` list, and a token-coverage check confirmed no distinctive trigger keyword was dropped (the one that initially was — the standalone `ARIA` — was restored, since "add ARIA attributes to a custom modal" is a task example in that skill).
+
+**Verified by measurement, not assumption**, since this edits triggering-critical text. Each borderline query was run three times against the old and new descriptions:
+
+- **`craft-garnish` improved.** "Add drag-to-reorder to a custom field type's input JS…" fired **1/3** on the old over-budget description and **3/3** on the trimmed one — direct evidence that the truncated tail was diluting it.
+- **`ddev` regressed and was fixed.** "I edited `PRIMARY_SITE_URL` in `.env` but after `ddev restart` Craft still resolves the old URL" went 3/3 → 2/3 on the first trim. The troubleshooting clause was reinforced with the specific failure class (`ddev-injected env vars silently overriding your .env or config/general.php`) using the available headroom, restoring 3/3.
+
+### Changed
+
+- **`skills/craft-garnish/SKILL.md`** — description 1,731 → 1,528. `Covers:` prose folded into the `ALWAYS load when…` sentence; widget, drag, and form-widget names now appear once in the trigger list instead of twice.
+- **`skills/ddev/SKILL.md`** — description 1,635 → 1,504. `Covers:` parentheticals dropped where the same tokens appear in `Triggers on:`, and the troubleshooting clause now names the ddev-injected-env-var failure explicitly.
+
+No skill body, reference file, or convention changed.
+
 ## 1.12.3 -- 2026-07-29
 
 Patch: permission handles are now documented as **kebab-case** throughout (`handle:manage-settings`), never camelCase. Convention change only — no new facts, no behavioural claims, no reformatting.
