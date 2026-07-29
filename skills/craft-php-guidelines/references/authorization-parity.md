@@ -162,7 +162,7 @@ So every self-referential rule is yours to implement. Three properties make them
 
 1. **Live in the shared gate**, not in the controller — otherwise the console path skips them, which is exactly the hole that separation of duties is meant to close.
 2. **Orthogonal to role checks.** A user can hold `APPROVE` and still be blocked on their own item. Don't fold the two into one permission; the resulting matrix can't express "approver who may self-approve in a break-glass case."
-3. **An explicit bypass permission** (`my-plugin:approveOwn`), so the exception is grantable, auditable, and visible in the CP permissions UI rather than implemented as a hardcoded admin escape hatch.
+3. **An explicit bypass permission** (`my-plugin:approve-own`), so the exception is grantable, auditable, and visible in the CP permissions UI rather than implemented as a hardcoded admin escape hatch.
 
 ```php
 /**

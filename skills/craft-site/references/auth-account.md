@@ -329,8 +329,10 @@ Redirects logged-in users away from pages they should not see (login, registrati
 
 Returns a 403 error if the current user does not have the specified permission. Works for both logged-in users without the permission and anonymous visitors.
 
+Custom permission handles are kebab-case (`handle:view-member-area`); never camelCase. Craft lowercases permission names in storage, so camelCase collapses to an unreadable run of letters. Craft core's own handles (`accessCp`, `editUsers`) are camelCase — that's core's convention, not one to copy for your own. See the `craftcms` skill's `permissions.md`.
+
 ```twig
-{% requirePermission 'accessSiteSection:memberArea' %}
+{% requirePermission 'my-module:view-member-area' %}
 {# Only users with this permission see this page #}
 ```
 
@@ -376,7 +378,7 @@ The logged-in user element, or `null` if anonymous. Available globally in all te
 
 ```twig
 {# Check a specific permission #}
-{% if currentUser and currentUser.can('accessSiteSection:memberArea') %}
+{% if currentUser and currentUser.can('my-module:view-member-area') %}
   <a href="{{ siteUrl('members') }}">Member Area</a>
 {% endif %}
 

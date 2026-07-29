@@ -447,7 +447,7 @@ templates/
 **2. If a template is deliberately directly routable, gate it in the template.** There's no controller to do it for you:
 
 ```twig
-{% requirePermission 'my-plugin:viewOverview' %}
+{% requirePermission 'my-plugin:view-overview' %}
 {% if not craft.app.plugins.getPlugin('my-plugin').is(MyPlugin::EDITION_PRO) %}
     {% exit 404 %}
 {% endif %}
@@ -1102,7 +1102,7 @@ Every CP plugin/module screen has three gates between the URL and the rendered p
 
 When making a screen read-only-accessible, **walk all three gates** before shipping. Don't fix gate 3 and leave gates 1 and 2 blocking.
 
-**Gate the screen by permission, not by admin.** For a plugin's own CP section, who-may-be-on-the-screen is a dedicated permission (`<handle>:manageSettings`); `allowAdminChanges` is a separate axis that governs only whether writes succeed. Gating with `requireAdmin()` conflates the two and locks the screen to admins even when a site wants to delegate it to a non-admin group. See `permissions.md` → "Settings and screen access are permission-gated, not admin-gated" for the full rationale; the gates below show the read-only write-axis mechanics that apply on top of the permission gate.
+**Gate the screen by permission, not by admin.** For a plugin's own CP section, who-may-be-on-the-screen is a dedicated permission (`<handle>:manage-settings` — permission handles are kebab-case, never camelCase); `allowAdminChanges` is a separate axis that governs only whether writes succeed. Gating with `requireAdmin()` conflates the two and locks the screen to admins even when a site wants to delegate it to a non-admin group. See `permissions.md` → "Settings and screen access are permission-gated, not admin-gated" for the full rationale; the gates below show the read-only write-axis mechanics that apply on top of the permission gate.
 
 ### Gate 1: CP nav (getCpNavItem)
 

@@ -127,7 +127,7 @@ Key facts about admin status:
 | `utility:find-replace` | Find and Replace |
 | `utility:migrations` | Migrations |
 
-A `utility:<id>` permission is registered automatically for **every** utility, including plugin-provided ones (`services/UserPermissions.php` builds one per registered utility class), and `Utilities::checkAuthorization()` enforces it on every visit (the Project Config utility is additionally admin-only). A plugin utility that also checks its own permission (e.g. `my-plugin:manageOps` inside its content or actions) stacks **on top of** the native gate — the user needs both. Keep both layers and document the pairing; never flatten the plugin check into the `utility:` gate or bypass Craft's layer.
+A `utility:<id>` permission is registered automatically for **every** utility, including plugin-provided ones (`services/UserPermissions.php` builds one per registered utility class), and `Utilities::checkAuthorization()` enforces it on every visit (the Project Config utility is additionally admin-only). A plugin utility that also checks its own permission (e.g. `my-plugin:manage-ops` inside its content or actions) stacks **on top of** the native gate — the user needs both. Keep both layers and document the pairing; never flatten the plugin check into the `utility:` gate or bypass Craft's layer.
 
 ## User Groups
 
@@ -293,11 +293,17 @@ Event::on(
 
 ### Convention
 
-Prefix all custom permission handles with your plugin handle and a colon: `my-plugin:action-name`. Use kebab-case for both the plugin prefix and the action name. This prevents collisions between plugins and matches the convention used by Craft core and first-party plugins.
+Prefix all custom permission handles with your plugin handle and a colon: `my-plugin:action-name`. The prefix prevents collisions between plugins.
+
+**Permission handles are kebab-case (`handle:manage-settings`); never camelCase.** Both halves — the plugin prefix and the action — are lowercase kebab: `savepoint:manage-settings`, `multiplayer:take-over-field`, not `savepoint:manageSettings`.
+
+The reason is storage. Craft lowercases permission names on the way into `userpermissions.name` (`doesUserHavePermission()` also `strtolower()`s the handle it's given — see [How doesUserHavePermission() resolves handles](#how-doesuserhavepermission-resolves-handles)). Case is therefore not preserved anywhere it matters, and camelCase collapses into an unreadable run of letters: `manageSettings` becomes `managesettings`, while `manage-settings` keeps its word boundaries. Anyone reading the database, a permissions export, or a debug dump can still parse it.
+
+**Craft core's own permissions are camelCase** (`accessCp`, `editUsers`, `administrateUsers`, `viewPeerEntries`). That is core's convention and this is a deliberate divergence for plugin-owned handles — don't "correct" plugin handles back to camelCase to match core, and don't rewrite core's handles to kebab. Core handles are what they are; yours are kebab.
 
 ### Settings and screen access are permission-gated, not admin-gated
 
-A plugin's own CP screens — settings, dashboards, management pages in the plugin's own section — are gated by a **dedicated permission** (`<handle>:manageSettings`, `<handle>:viewOverview`, …), **not** by `requireAdmin()`. Two orthogonal questions are easy to conflate:
+A plugin's own CP screens — settings, dashboards, management pages in the plugin's own section — are gated by a **dedicated permission** (`<handle>:manage-settings`, `<handle>:view-overview`, …), **not** by `requireAdmin()`. Two orthogonal questions are easy to conflate:
 
 - **Who may be on the screen?** → a permission (`requirePermission(...)` / `->can(...)`).
 - **Whether writes are possible?** → `allowAdminChanges` (see `cp.md` Read-Only Mode).
@@ -306,7 +312,7 @@ Gating a settings screen with `requireAdmin()` answers the first question with t
 
 `allowAdminChanges` is a separate axis and governs writability only: when it is `false`, a permission-holder still reaches the screen (read-only), fields render disabled, and the save action re-checks the flag server-side and fails closed with a 403 — it never silently persists. (Craft core's own Settings section stays admin-only by design; this doctrine is for a plugin's *own* CP section, not for editing Craft's structural config.)
 
-**Placement rule for screen-access permission constants:** define the handle as a `public const` on the **controller that enforces it** — `SettingsController::PERMISSION_MANAGE_SETTINGS = '<handle>:manageSettings'`, `OverviewController::PERMISSION_VIEW_OVERVIEW`. Registration (`EVENT_REGISTER_PERMISSIONS`), the controller gate (`requirePermission()`), and the nav check (`->can()`) all reference that one const. A permission handle is a contract string used from 3+ places; a bare literal drifts silently and PHPStan can't catch a typo. (A shared consts holder — see below — is still fine for *dynamic per-entity* permission bases referenced from many classes; the owning-controller rule is for a screen whose access one controller owns.)
+**Placement rule for screen-access permission constants:** define the handle as a `public const` on the **controller that enforces it** — `SettingsController::PERMISSION_MANAGE_SETTINGS = '<handle>:manage-settings'`, `OverviewController::PERMISSION_VIEW_OVERVIEW = '<handle>:view-overview'`. (The PHP constant name stays `SCREAMING_SNAKE_CASE`; it's the handle *string* that is kebab-case.) Registration (`EVENT_REGISTER_PERMISSIONS`), the controller gate (`requirePermission()`), and the nav check (`->can()`) all reference that one const. A permission handle is a contract string used from 3+ places; a bare literal drifts silently and PHPStan can't catch a typo. (A shared consts holder — see below — is still fine for *dynamic per-entity* permission bases referenced from many classes; the owning-controller rule is for a screen whose access one controller owns.)
 
 ### Permission handle constants
 
@@ -384,7 +390,9 @@ private function _buildPermissions(): array
 
 ### How doesUserHavePermission() resolves handles
 
-Permission handles are stored **lowercase** in the database. `doesUserHavePermission()` calls `strtolower()` on the handle before checking. This means `'My-Plugin:Manage'` and `'my-plugin:manage'` resolve to the same permission. Convention: always use lowercase kebab-case.
+Permission handles are stored **lowercase** in `userpermissions.name`. `doesUserHavePermission()` calls `strtolower()` on the handle before checking, so `'My-Plugin:Manage'` and `'my-plugin:manage'` resolve to the same permission.
+
+This is why handles are authored in **kebab-case** — case is discarded, so `manageSettings` is stored as `managesettings` while `manage-settings` survives readably. Write them lowercase-kebab from the start rather than relying on the `strtolower()`. See [Convention](#convention).
 
 Resolution order:
 1. If `$user->admin` is `true` → returns `true` immediately (no DB lookup)
@@ -505,7 +513,7 @@ Permission entries support these properties:
 
 ### Gating CP nav items based on permission
 
-**No dead nav items.** `getCpNavItem()` (plugin) or the `EVENT_REGISTER_CP_NAV_ITEMS` handler (module) must not surface a top-level nav item that leads only to screens the current user can't reach — a user with `accessPlugin-<handle>` but no screen permission would click through to a 403. Build the subnav per-permission (each entry keyed off its own permission — overview → `viewOverview`, settings → `manageSettings`), then **return `null`** when the resulting subnav is empty. Gate each entry on its own permission, never on `getIsAdmin()`.
+**No dead nav items.** `getCpNavItem()` (plugin) or the `EVENT_REGISTER_CP_NAV_ITEMS` handler (module) must not surface a top-level nav item that leads only to screens the current user can't reach — a user with `accessPlugin-<handle>` but no screen permission would click through to a 403. Build the subnav per-permission (each entry keyed off its own permission — overview → `view-overview`, settings → `manage-settings`), then **return `null`** when the resulting subnav is empty. Gate each entry on its own permission, never on `getIsAdmin()`.
 
 ```php
 public function getCpNavItem(): ?array

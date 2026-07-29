@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.12.3 -- 2026-07-29
+
+Patch: permission handles are now documented as **kebab-case** throughout (`handle:manage-settings`), never camelCase. Convention change only — no new facts, no behavioural claims, no reformatting.
+
+Most examples in the pack were already kebab (`my-plugin:manage-items`, `my-plugin:view-reports`); this converts the remaining camelCase ones and, more importantly, states the rule explicitly with its rationale so it stops drifting.
+
+**Rationale now encoded with the rule:** Craft lowercases permission names into `userpermissions.name`, and `doesUserHavePermission()` `strtolower()`s the handle before checking — so case is discarded before storage. `manageSettings` becomes `managesettings`, an unreadable run of letters in the database, in exports, and in debug output, while `manage-settings` keeps its word boundaries.
+
+**Craft core's own permissions are camelCase** (`accessCp`, `editUsers`, `administrateUsers`, `viewPeerEntries`) and are left untouched. The docs now say plainly that this is a deliberate divergence for plugin-owned handles, so neither side gets "corrected" toward the other. PHP constant *names* stay `SCREAMING_SNAKE_CASE`; only the handle string is kebab.
+
+### Changed
+
+- **`skills/craftcms/references/permissions.md`** — the Convention section is now the canonical statement of the rule, with the lowercased-storage rationale and the explicit core-diverges note. It previously claimed kebab "matches the convention used by Craft core", which is backwards; that sentence is corrected rather than left standing. Also: `<handle>:manage-settings` / `<handle>:view-overview` in the settings-doctrine section, the `PERMISSION_MANAGE_SETTINGS` placement-rule example (now showing both constants' values), the nav-subnav prose, the utility-permission example (`my-plugin:manage-ops`), and a kebab cross-reference from "How doesUserHavePermission() resolves handles".
+- **`skills/craft-php-guidelines/SKILL.md`** — new **Permission Handles** section carrying the rule, the rationale, the core-divergence note, and the constant-name clarification; the permission-handle example in the contract-constants pitfall is now kebab. Trigger description updated (`manage-settings`, "kebab-case permission handles never camelCase").
+- **`skills/craftcms/SKILL.md`** — trigger description now carries "kebab-case permission handles". Made room inside the ~1,536-character routing window by shortening the `['like']`-tuple phrase rather than dropping a trigger.
+- **`skills/craftcms/references/cp.md`** — `{% requirePermission 'my-plugin:view-overview' %}`, and the read-only-mode gate doctrine now names the convention inline.
+- **`skills/craft-php-guidelines/references/authorization-parity.md`** — the self-approval bypass permission is `my-plugin:approve-own`.
+- **`skills/craft-site/references/auth-account.md`** — the front-end permission examples used `accessSiteSection:memberArea`, which was both camelCase and a malformed shape (the prefix wasn't a handle). Now `my-module:view-member-area`, with a short convention note on the `{% requirePermission %}` tag.
+
+Craft core handle references, `utility:<id>` permissions, and all per-section/volume/group handles (`viewEntries:{uid}`, `assignUserGroup:{uid}`, …) are unchanged.
+
 ## 1.12.2 -- 2026-07-29
 
 Patch: two source-verified Craft-core runtime facts from the wave-2 tail, both added to existing sections rather than new ones. Verified against `craftcms/cms` 5.10.11 and `yiisoft/yii2`. No new skills or reference files.
