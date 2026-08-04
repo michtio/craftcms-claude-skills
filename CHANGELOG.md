@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.13.0 -- 2026-08-04
 
 Folds in a batch of release-engineering and remediation learnings (2026-08-03/04), plus the remaining unpromoted items from two per-project skill-gap registers. Every claim citing Craft core, Blitz, or Formie was re-verified against a current vendor tree before landing (`craftcms/cms` 5.x, `putyourlightson/craft-blitz` 5.12.9, `verbb/formie` 3.1.21, `yiisoft/yii2` console controller source).
 
