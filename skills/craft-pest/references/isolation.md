@@ -60,6 +60,19 @@ Why this file *and* the XML `<env>` entries: the bootstrap works regardless of h
 
 **Create the database first.** Nothing in this chain creates it: `ddev mysql -e 'CREATE DATABASE IF NOT EXISTS db_test'`.
 
+**Then make the guard fail closed.** Pins can be bypassed (a new invocation path, a CI runner with different env precedence, a refactored bootstrap), and the failure mode is silent writes to a live install — one real suite had been quietly writing to a development database *and running `migrate/up` through the tool under test*. Add a hard assertion to `tests/bootstrap.php` after the pins, before anything else runs:
+
+```php
+// Fail closed: refuse to run against anything but the test database.
+$db = App::env('CRAFT_DB_DATABASE');
+if ($db !== 'db_test') {
+    fwrite(STDERR, "ABORT: tests resolved database '{$db}', expected 'db_test'.\n");
+    exit(1);
+}
+```
+
+A wrong database is now a loud one-line failure instead of a polluted install discovered weeks later. Keep the check on the *resolved* value (`App::env()`), not on what you just pinned — the point is to catch the paths where the pin didn't take.
+
 ## Pin the process timezone *after* the app is created
 
 Creating the Craft app sets the PHP process timezone from the install's config, and on a fresh install that value is **not** UTC.
@@ -214,6 +227,20 @@ The unsafe rows still *run* — PHPUnit reads the config for discovery. They jus
     }
 }
 ```
+
+### `--filter` subsets can fail on `cookieValidationKey`
+
+A subset run (`vendor/bin/pest --filter=SomeTest`) can fail with a `cookieValidationKey` configuration error where the full suite passes — a craft-pest harness artefact of which tests boot which request machinery, not a bug in the plugin under test. Workaround: disable cookie validation in `beforeEach` for the affected files, with a comment saying why:
+
+```php
+beforeEach(function () {
+    // craft-pest artefact: --filter subset runs die on cookieValidationKey
+    // without this; the full suite passes either way.
+    Craft::$app->getRequest()->enableCookieValidation = false;
+});
+```
+
+Scope it to the files that need it — don't blanket it across the suite, where it could mask a real cookie-validation regression in code that touches cookies.
 
 ## Ambient state: what a shared install quietly supplies
 

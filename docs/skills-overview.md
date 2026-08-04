@@ -1,6 +1,6 @@
 # Skills Overview
 
-12 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), and managed hosting (Craft Cloud and Servd). Reference files spread across each skill's `references/` directory.
+13 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), plugin release mechanics, and managed hosting (Craft Cloud and Servd). Reference files spread across each skill's `references/` directory.
 
 ## How Skills Load
 
@@ -150,6 +150,26 @@ Also covers: pinning `CRAFT_DB_DATABASE` before Craft boots, installing the plug
 **Companion skills:** `craftcms` (when the code under test is also being changed), `craft-php-guidelines` (standards for the test files), `ddev` (the `ddev exec --dir` invocation).
 
 **Boundary:** Does NOT trigger for front-end/JS testing (Playwright, Vitest) or for PHP style/static analysis. Codeception basics stay in `craftcms` (`testing.md`), which now points here for everything Pest.
+
+---
+
+## craft-plugin-release
+
+**Track:** Plugin Development
+**Reference files:** 1
+**SKILL.md:** ~140 lines
+
+Release mechanics for Craft plugins. A release involves three independent systems — git tags, Packagist, and GitHub release objects — that drift from each other silently while every observable signal reports success. The skill is the checklist and risk model for keeping them in agreement.
+
+The centerpiece failure: a tag whose `composer.json` still carries the previous `version` is **silently skipped by Packagist** ("Skipped tag X, tag does not match version Y in composer.json") while the GitHub webhook returns `202 Accepted`. Rules: bump `version` in the same commit that dates the changelog, verify against the tag's own blob (`git show <tag>:composer.json`), and confirm what Packagist actually serves at `repo.packagist.org/p2/<name>.json` (never the staler `packagist.org/packages/<name>.json`).
+
+Also covers: the bump-or-omit trade-off on the `version` key, the tag recreation risk model (unserved tags are safe to recreate; served tags never), GitHub release objects drifting from tags, `gh release edit` vs the `gh api PATCH` footgun that unbinds a release from its tag, `releases/latest` 404ing when everything is a prerelease, draft releases minting their tag at publish time, two-way `origin...origin` branch comparison before promotion, and Composer path repositories for multi-plugin local development (canonical semantics, no `exclude`, `extra.branch-alias`, duplicate package names).
+
+**When it triggers:** Cutting, preparing, verifying, or debugging a plugin release; version bumps; tagging; Packagist not serving a version; `gh release` operations; promoting a dev branch to a release branch; path-repository resolution issues.
+
+**Companion skills:** `craft-php-guidelines` (composer hygiene, commit conventions), `craftcms` (CI workflows in `quality.md`), `craft-pest` (suite green before tagging).
+
+**Boundary:** Does NOT cover writing changelog entries, CI workflow YAML (that's `craftcms` `quality.md`), or plugin store listings.
 
 ---
 

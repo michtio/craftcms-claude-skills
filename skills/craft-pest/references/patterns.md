@@ -6,6 +6,7 @@ Factories, HTTP, queue, database assertions, multi-site, mocking, console comman
 
 - Common pitfalls
 - Setup and file conventions
+- Pin behaviour before refactoring
 - Pure unit tests (no Craft boot)
 - Element factories
 - HTTP testing
@@ -62,6 +63,41 @@ describe('item creation', function () {
     it('rejects duplicate handles', function () { /* ... */ });
 });
 ```
+
+### `uses()` rules: first match wins, most-specific first
+
+Pest walks the registered `uses()` rules in **registration order**, and the *first* rule whose path matches a test file sets that file's TestCase — a second matching rule throws `TestCaseAlreadyInUse`. So a blanket rule followed by an override never works:
+
+```php
+// FAILS — the blanket rule matches Integration/Migrations/* first,
+// then the "override" throws TestCaseAlreadyInUse.
+uses(BaseTestCase::class)->in('Integration');
+uses(MigrationTestCase::class)->in('Integration/Migrations');
+```
+
+Register the most-specific paths first, then enumerate the remaining sub-directories explicitly — no catch-all:
+
+```php
+uses(MigrationTestCase::class)->in('Integration/Migrations');
+uses(MultiSiteTestCase::class)->in('Integration/MultiSite');
+uses(BaseTestCase::class)->in(
+    'Integration/Services',
+    'Integration/Validators',
+    'Integration/Models',
+);
+```
+
+The enumeration is the price of per-directory TestCases; a new sub-directory that isn't listed simply gets no TestCase, which fails loudly enough to notice.
+
+## Pin behaviour before refactoring
+
+Before restructuring code that has no tests, write tests **against the unrefactored code first** and make them pass — then refactor against a green wall. This is where load-bearing accidents surface: behaviours nobody documented but callers (or authors' own templates) depend on. One 1,900-line controller refactor added 76 pin tests first, and they caught three real subtleties a "clean" rewrite would have broken:
+
+- A search haystack built by concatenating values (`$key . ' ' . $key2`) — a needle can span two columns, which is **not** equivalent to a per-column `OR LIKE`. The naive "improvement" changes match results.
+- `filters[x] = ''` meaning "no filter", not "match rows where x is empty" — an empty-string filter dropped during refactoring silently changes result sets.
+- Null branches reachable only via soft-deleted users and `SET NULL` foreign keys — dead-looking code that a data-state most dev installs don't have makes live.
+
+Pin tests assert what the code *does*, not what it should do — write them mechanically from observed behaviour, resist fixing oddities mid-pin (note them, pin them, fix after the refactor with an intentional test change that documents the behaviour change).
 
 ## Pure unit tests (no Craft boot)
 

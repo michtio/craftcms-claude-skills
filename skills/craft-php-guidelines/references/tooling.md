@@ -130,7 +130,11 @@ This resolves only where that relative layout happens to exist — your disk. An
 
 **Packagist dependencies need no `repositories` entry at all.** Adding one is noise that can shadow the real source.
 
-Path repos are still fine for **local development** — just keep them out of the committed manifest. Put them in a git-ignored `composer.local.json`, or use a globally configured path repo, or configure the *host project* (not the plugin) with the path repo. See the `ddev` skill for the volume-mount requirement that makes path repos work inside containers.
+Path repos are still fine for **local development** — just keep them out of the committed manifest. Put them in a git-ignored `composer.local.json`, or use a globally configured path repo, or configure the *host project* (not the plugin) with the path repo. See the `ddev` skill for the volume-mount requirement that makes path repos work inside containers. For path-repository *semantics* — canonical resolution (Packagist versions dropped from the pool), no `exclude` on wildcards, `extra.branch-alias`, duplicate package names masking unsatisfiable constraints — see the `craft-plugin-release` skill's `references/path-repositories.md`.
+
+### `suggest` is prose, not a dependency
+
+When auditing what a plugin actually depends on, only `require` and `require-dev` create resolution edges. A `suggest` entry is a display string — Composer never resolves, installs, or version-checks it. Don't count `suggest` entries as dependencies when scanning for real coupling, and don't rely on one to make a peer package present.
 
 ### `composer.lock` stays gitignored for plugins
 

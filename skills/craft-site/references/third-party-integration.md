@@ -199,6 +199,20 @@ Event::on(Entry::class, Entry::EVENT_AFTER_SAVE, function(ModelEvent $event) {
 });
 ```
 
+## Plugin CSS Loads After Yours
+
+Craft injects plugin-registered stylesheets at the `head()` marker, which it auto-inserts **immediately before `</head>`** — after your layout's own hardcoded `<link>`. So at equal specificity, your rule **loses on source order**, and adding "the same rule but in my stylesheet" changes nothing. When styling around a plugin's front-end widget:
+
+- **Check for a suppression switch first.** Well-designed plugins expose one — Formie's `renderCss: false` render option and template-level `outputCssLayout`/`outputCssTheme` lightswitches are the reference shape. Owning the styling entirely beats fighting the cascade.
+- **If the plugin's rules are in `@layer`**, any unlayered rule of yours already beats them — write the override normally.
+- **If the plugin's rules are unlayered**, you need to win on specificity (or `:where()`-proof source order can't help you) — bump specificity deliberately rather than sprinkling `!important`.
+
+The same applies in reverse if you're writing a plugin: see the craftcms skill's `architecture.md` (Plugin-registered CSS loads after the site's stylesheet).
+
+## Hand-Written Templates for Plugin Widgets
+
+If you replace a plugin's template with your own and the plugin ships JS that enhances the markup, the plugin's DOM hooks — classes, `data-` attributes, input names, element nesting — are the **contract your template must reproduce**. A hand-written template can render correctly and look right while the JS silently finds none of its hooks and never enhances. Before writing, find the plugin's documented "what your template must provide" list; if there isn't one, read the JS for the selectors and `data-` reads it depends on, and treat those as required markup.
+
 ## Blitz Compatibility Notes
 
 All client-side scripts (CMP, GTM, Fathom, Plausible) work with Blitz static caching — they load in the browser and don't interact with the PHP request cycle.

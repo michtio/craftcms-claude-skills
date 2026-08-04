@@ -6,6 +6,7 @@ Craft behaviors that are correct in production and surprising in a test process.
 
 - Permission-tree memoization (`UserPermissions::reset()`)
 - Simulating a login in a console-driven harness
+- CP-surface controller tests: three orthogonal pins
 - Fixture timestamps: MySQL session clock vs Craft's UTC
 - Muting audit/event surfaces — all of them
 - Site fixtures are per-test, never bootstrap-created
@@ -92,6 +93,16 @@ expect($service->getLoginRecordFor($user->id))->not->toBeNull();
 Then verify the *wiring* (that the listener is registered at all) with an HTTP test or code review — an event-trigger test proves the handler works, not that it's attached.
 
 Setting `requireUserAgentAndIpForSession => false` in the test config is a third option, but it changes the behavior under test and only helps if nothing else in the chain needs a real request. Prefer the two above.
+
+## CP-surface controller tests: three orthogonal pins
+
+Service-layer tests pass; then the first test that exercises a **CP controller action** fails with a cryptic error about sites, URLs, or asset directories. Under a console-bootstrap harness (custom Pest setups especially), three independent defaults are wrong for the CP surface, and any controller that (a) requires an elevated session, (b) calls `Cp::*` / `UrlHelper` CP URL helpers, or (c) triggers `View::registerJs()` (which auto-registers `JqueryAsset` at `POS_READY`) needs all three pinned:
+
+1. **User component `idParam`** — `Sites::getCurrentSite()` reads `User->idParam` directly, even on `craft\console\User`. Without a value the site lookup fails. In a User stub: expose a pinned `idParam` (e.g. `'__'`).
+2. **Request: CP flag + host info** — `UrlHelper::actionUrl()` / `Cp::cpUrl()` need `getIsCpRequest()` to answer *and* `getHostInfo()` to resolve. In a Request stub's `init()`: `$this->setHostInfo('https://test.test')`, wire up `generalConfig`, and expose a `getIsCpRequest()` override that **defaults to false** so front-end controller tests keep working, flipped per-test for CP ones.
+3. **`assetManager.basePath`** — registering JS at `POS_READY` publishes `JqueryAsset` to disk; without a writable base path it dies with "directory does not exist". In the test app config: `'assetManager' => ['basePath' => __DIR__ . '/../storage/runtime/assets']`, and create the directory.
+
+Each pin is one line; the cost is the chase. Keep the pins in the shared test-infrastructure files (`tests/Support/*Stub.php`, the test app config) — never in individual test files. (Under craft-pest-core the request builders handle much of this; the pins matter when you've built your own bootstrap or stubs.)
 
 ## Fixture timestamps: MySQL session clock vs Craft's UTC
 

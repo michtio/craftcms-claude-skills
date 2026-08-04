@@ -228,6 +228,8 @@ Craft::error('Always logged', 'my-plugin');
 
 Log files: `storage/logs/web-{date}.log`, `console-{date}.log`, `queue-{date}.log`. For containers: `CRAFT_STREAM_LOG=true`.
 
+**Forwarding logs over syslog-TLS: frame with octet counting.** RFC 5425 §4.3.1 requires octet-counted framing for syslog over TLS — each frame is `MSG-LEN SP SYSLOG-MSG`, where `MSG-LEN` is the message's byte length. Newline-delimited frames are RFC 6587 *non-transparent* framing, a different (legacy) scheme. The trap: rsyslog's `imtcp` accepts newline framing by default, so a newline-framed sender **appears to work** against the most common test receiver, then a strict RFC 5425 receiver (or a SIEM ingest endpoint) rejects or corrupts the stream. If a plugin ships a log-forwarding feature, emit octet-counted frames and say so in the docs.
+
 ## Profiling
 
 ```php

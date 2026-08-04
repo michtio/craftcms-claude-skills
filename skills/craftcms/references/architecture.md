@@ -852,6 +852,11 @@ Those prunes write to **project config**. They do not null the `MemoizableArray`
 
 Note also the guard: when `getIsApplyingExternalChanges()` is true the entire prune is skipped by design (the incoming YAML is authoritative) — so a `project-config/apply` path prunes nothing here.
 
+**Site deletion is a soft delete — FK CASCADE does not fire.** `craft\records\Site` uses `SoftDeleteTrait`, so `deleteSite()` sets `dateDeleted` on the `sites` row rather than removing it; the physical `DELETE` happens later in garbage collection (`Gc::run()` includes `Table::SITES` in its `hardDelete()` sweep — `src/services/Gc.php:171-173` in `craftcms/cms` 5.x), and only *then* do `ON DELETE CASCADE` constraints on plugin tables referencing `sites.id` fire. Consequences:
+
+- A plugin whose per-site rows should vanish **immediately** on site deletion must listen to `EVENT_AFTER_DELETE_SITE` and clean up itself — relying on the FK means the rows linger until GC runs.
+- A test that creates a site, saves per-site rows, calls `deleteSiteById()`, and asserts the rows are gone **fails** — the parent row still exists. To exercise the CASCADE itself, hard-delete directly (`Craft::$app->getDb()->createCommand()->delete(Table::SITES, ['id' => $siteId])->execute()`); to test the soft-delete contract, assert `dateDeleted` is set, the plugin rows are intact, and the event listener fired.
+
 **Ordering matters when both a site and a category group are changing.** `Categories::saveGroup()` validates that the group's site settings cover every site that currently exists:
 
 ```php
@@ -1244,13 +1249,33 @@ The command class goes in `src/console/controllers/`. For option parsing, prompt
 For a widget the plugin renders into a page, expose a fluent builder — `craft.<handle>.<thing>({...}).render()` — rather than a raw plugin-template include. Modeled on Password Policy's fluent tag:
 
 - A `BaseTag` subclass with a **config-array constructor whose keys MUST map to chainable setters**. `new OtpInput(['digits' => 6])` and `->digits(6)` take the same path. **An unknown key throws** — a mistyped option (`digitz`) fails loudly at render instead of being silently dropped.
+- **Validate option keys against a real allowlist, not `method_exists()`.** A `method_exists($this, $key)` guard accepts every public method as an "option" — `['render' => …]` passes the guard and then dies with `ArgumentCountError` deep in the call instead of "Unknown option: render". Keep an explicit list of settable option names (or derive it once from the settable properties) and reject everything else by name.
+- **Attribute setters must merge `class`, never replace it.** A plain `array_merge($defaults, $callerAttrs)` replaces the `class` key wholesale, so a caller passing `attrs: {class: 'my-input'}` silently deletes every class the widget's own CSS and JS depend on. Merge the class *lists* (Craft's `Html::normalizeTagAttributes()` + merging the `class` arrays, or `Html::modifyTagAttributes()`), and offer an explicit `resetClass: true` option for callers who genuinely want to start clean. If the docs say "merges", the code must actually merge — a shipped plugin was found doing the replacing version while its README claimed merging.
+- **Guard the attributes your own JS depends on.** If the rendered markup carries `data-` hooks a progressive-enhancement script reads, a caller passing `inputAttrs: {data: {…}}` wholesale can clobber them — the widget then renders fine and silently never enhances. Either merge `data` sub-keys the same way as `class`, or reserve the hook attributes and reject caller attempts to set them. (Those hooks are public API — see [The JS-to-markup contract is public API](#the-js-to-markup-contract-is-public-api).)
 - A public **`render(): \Twig\Markup`** wrapping a private `_renderHtml(): string`. Returning `\Twig\Markup` marks the HTML pre-escaped so Twig doesn't re-escape it.
 - Consumers must call `{{ tag.render() }}`, **never `{{ tag }}`** — a bare print goes through `__toString()`, which Twig auto-escapes, rendering the HTML as visible tags. `__toString()` is a debugging/logging fallback only. This is the double-escape trap documented in full in `events.md`.
 - **Lazy client-asset registration** — register the widget's vanilla-JS + neutral-CSS asset bundle the first time it renders on a page, not eagerly at bootstrap, so pages that don't use it pay nothing. For asset-bundle registration and the Vite bridge, see `plugin-vite.md`.
 
 The rendered control must be **progressively enhanced**: the server emits a fully functional plain control and JS upgrades it. The craft-site `example-templates.md` walks through the concrete discipline (the segmented-OTP carrier-input example) that front-end reviewers should apply.
 
-## Storing Personal Data
+### Plugin-registered CSS loads after the site's stylesheet
+
+Craft compiles site templates with a node visitor that inserts the `head()` event tag **immediately before `</head>`** when the template doesn't call it explicitly (`craft\web\twig\nodevisitors\EventTagAdder`, `src/web/twig/nodevisitors/EventTagAdder.php:93-97` in `craftcms/cms` 5.x). Registered CSS files render at that marker — so a plugin's `<link>` lands **after** the site's own hardcoded stylesheet link. At equal specificity, the site's rule **loses on source order**, and "just override it in your CSS" is wrong advice: the integrator's override has to win on specificity, not on position.
+
+Two design escapes, both worth shipping:
+
+- **Wrap cosmetic rules in `@layer`.** Any *unlayered* site rule beats a layered plugin rule regardless of source order or specificity — the cleanest fix, and it needs no opt-in from the integrator. But **keep behaviour-critical rules out of the layer**: a `display: none` that hides the raw carrier input once JS has enhanced the widget must stay unlayered, because a browser without cascade-layer support drops the whole `@layer` block and would show both the raw input and the enhanced widget.
+- **Offer a suppression switch** — a `renderCss: false` plugin setting plus a per-render override — so a developer can own the styling entirely. Formie is the reference design (verified in `verbb/formie` 3.1.21): per-render `renderCss`/`renderJs` options (`src/services/Rendering.php:105-106`), per-template lightswitches (`outputCssLayout`/`outputCssTheme`/`outputJsBase`/`outputJsTheme`, `src/models/FormTemplate.php:26-29`), and an `outputJsLocation` of `MANUAL` that skips auto-registration entirely (`Rendering.php:116-122`) for integrators who want to call `renderCss()`/`renderJs()` themselves. Three independent tiers — global setting, template config, per-render option — is the full shape; even just the first and last cover most needs.
+
+### The JS-to-markup contract is public API
+
+If a plugin ships front-end JS that always loads **and** supports user-supplied templates, the DOM hooks that JS reads — class names, `data-` attributes, element structure, input naming — **are public API and must be documented as such**. Otherwise a hand-written template renders correctly, looks right, and silently doesn't work: the JS finds none of its hooks and never enhances, with no error anywhere.
+
+The robust shape:
+
+- **PHP resolves the hook values and hands them to JS via `data-` attributes** on the rendered root (selector names, endpoint URLs, option flags) — so the plugin's own rendered markup and the JS always agree, even when settings change the values.
+- **The JS keeps the hardcoded literals only as `||` fallbacks** (`el.dataset.inputSelector || '.otp-input'`), so minimal hand-written markup that uses the documented defaults still functions without reproducing every attribute.
+- **The docs state the contract explicitly as "what your template must provide"**: required classes, required `data-` attributes, required input names, required nesting. Treat a change to any of them as a breaking change, because for template-owning integrators it is one.
 
 When a plugin persists IP addresses — or comparable personal data (email, precise location, device identifiers) — it takes on a data-handling responsibility, and integrators inherit it. Ship a **privacy story** so the plugin is deployable in privacy-sensitive contexts without the integrator reverse-engineering what it stores.
 

@@ -31,7 +31,7 @@ CP templates, form macros, navigation, settings pages, permissions, and read-onl
 
 - [CP Templates](#cp-templates) — form macros, editable tables, tabbed settings, reserved DOM IDs, template routing fallback, VueAdminTable
 - [CP Navigation](#cp-navigation)
-- [Settings Pages](#settings-pages) — settings model, env var support, keeping settings inside the plugin's CP section, split settings pages (savePluginSettings footgun)
+- [Settings Pages](#settings-pages) — settings model, env var support, config-file override warnings (configWarning pattern), keeping settings inside the plugin's CP section, split settings pages (savePluginSettings footgun)
 - [Form Macros Reference](#form-macros-reference) — lightswitch vs checkbox, copytext, money, buttons + modifier classes, inner sidebar nav (`_includes/nav.twig`)
 - [Permissions](#permissions)
 - [Read-Only Mode (allowAdminChanges)](#read-only-mode-allowadminchanges) — controller setup, template patterns, disabled fields
@@ -605,9 +605,53 @@ protected function settingsHtml(): ?string
 }) }}
 ```
 
-`disabled: not allowAdminChanges` on every field prevents editing in production. `suggestEnvVars: true` shows env var dropdown when user types `$`. At runtime, resolve with `App::parseEnv($settings->apiUrl)`.
+`disabled: not allowAdminChanges` on every field prevents editing in production. `suggestEnvVars: true` shows env var dropdown when user types `$`. At runtime, resolve with `App::parseEnv($settings->apiKey)`.
 
-### With tabs or custom actions: redirect to your own controller
+### Config-file overrides: warn on the field, don't disable it
+
+When a plugin supports a `config/<handle>.php` override file, a settings field whose value is overridden there renders as **editable while the config file silently wins on read** — the user edits, saves, sees a success flash, and nothing changes. Craft does **not** surface this automatically; `settingsHtml()` has no idea the override exists. The bug is the silence, and the fix is a per-field warning — the field stays editable (the DB value is still real; it's what applies wherever the config file doesn't set that key, and what returns if the override is removed). Don't render it `disabled`.
+
+The ecosystem idiom is Blitz's (verified in `putyourlightson/craft-blitz` 5.12.9). Three pieces:
+
+**1. The controller passes the raw file contents once** (`src/controllers/SettingsController.php:113`):
+
+```php
+'config' => Craft::$app->getConfig()->getConfigFromFile('my-plugin'),
+```
+
+`getConfigFromFile()` returns what the file sets — only keys present in the file are overriding anything.
+
+**2. A shared macro pair** (Blitz's `src/templates/_macros.twig:10` and `:14`):
+
+```twig
+{% macro configWarning(setting) -%}
+    {{ 'This is being overridden by the `{setting}` config setting.'|t('my-plugin', {setting: setting})|markdown(inlineOnly=true) }}
+{%- endmacro %}
+
+{% macro configFieldWarning(setting) -%}
+    <div class="field">
+        <p class="warning has-icon">
+            <span class="icon" aria-hidden="true"></span>
+            <span class="visually-hidden">{{ 'Warning:'|t('my-plugin') }} </span>
+            <span>{{ 'These settings are being overridden by the `{setting}` config setting.'|t('my-plugin', {setting: setting})|markdown(inlineOnly=true) }}</span>
+        </p>
+    </div>
+{%- endmacro %}
+```
+
+`configWarning` feeds a field macro's `warning` parameter; `configFieldWarning` is the standalone block for a group of settings rendered by custom markup that has no `warning` slot.
+
+**3. One clause per field** (Blitz's `src/templates/_settings.twig:90`, and ~20 more like it):
+
+```twig
+{{ forms.lightswitchField({
+    label: 'Enable Sync'|t('my-plugin'), name: 'enableSync',
+    on: settings.enableSync,
+    warning: config.enableSync is defined ? configWarning('enableSync'),
+}) }}
+```
+
+Cost is one line per field plus the shared macros. `warning:` accepting `null`/`false` means the ternary needs no `: null` branch. This composes with the `allowAdminChanges` handling above — a field can be read-only for one reason and warned-about for the other; they're independent axes.
 
 For tabs, multi-section layouts, or actions beyond save, override `getSettingsResponse()` to redirect to a route you own, register CP URL rules, render a template that extends `_layouts/cp` directly, and own the save flow in a controller.
 
@@ -882,6 +926,13 @@ Typing `$` shows environment variables, `@` shows Yii aliases (`@web`, `@webroot
 ```
 
 Server-side, the POST value is an array of element IDs: `$ids = $request->getBodyParam('relatedEntries');`. Use `modalStorageKey` to remember the user's last-selected source in the modal.
+
+**A cleared selection posts `''`, not an empty array.** The macro renders `{{ hiddenInput(name, '') }}` ahead of the per-element inputs (`src/templates/_includes/forms/elementSelect.twig:1-3`), so with nothing selected the param is an empty string — while an API client can legitimately post `relatedEntries[]` as an empty *array*. The trap is normalizing with `is_array($x) ? reset($x) : $x`: `reset([])` returns `false`, which survives a `!== null && !== ''` guard and then casts to `0` — a phantom element ID. Normalize with a falsy-coalescing guard instead:
+
+```php
+$value = $request->getBodyParam('subjectUserId');
+$id = (is_array($value) ? reset($value) : $value) ?: null;   // '' , [] , false → null
+```
 
 ### lightswitchField toggle
 
@@ -1247,18 +1298,15 @@ Pass `readOnly` to the template and use it to disable inputs and hide save butto
 
 ### Read-only notice
 
-Show a notice at the top of the page so admins understand why they can't edit:
+Show a notice at the top of the page so admins understand why they can't edit. Craft ships a helper for exactly this: the CP Twig function `readOnlyNotice()` (registered in `craft\web\twig\CpExtension`, backed by `Cp::readOnlyNoticeHtml()`), consumed via the `contentNotice` variable that `_layouts/cp` renders in the pane header. This is what core's own settings screens do (e.g. `src/templates/settings/plugins/_settings.twig`):
 
 ```twig
 {% if readOnly %}
-    {% set notice %}
-        {{ 'Settings are read-only because allowAdminChanges is disabled in this environment.'|t('my-plugin') }}
-    {% endset %}
-    <div class="readable">
-        <blockquote class="note">{{ notice }}</blockquote>
-    </div>
+    {% set contentNotice = readOnlyNotice() %}
 {% endif %}
 ```
+
+Use this instead of hand-rolling a blockquote — it renders Craft's standard styled notice and stays consistent with the native settings screens. `contentNotice` accepts any HTML, so a custom message is still possible when the standard wording doesn't fit.
 
 ### Verification
 

@@ -1,6 +1,6 @@
 ---
 name: craftcms
-description: "Craft CMS 5 plugin and module development — extending Craft with PHP. Covers elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types, native fields, events, behaviors, Twig extensions, widgets, filesystems, permissions, project config, GraphQL, testing, and debugging. Triggers on: beforePrepare()/afterSave()/defineSources()/defineTableAttributes()/attributeHtml(), MemoizableArray, BaseNativeField, EVENT_REGISTER_*/DEFINE_*/BEFORE_*/AFTER_*, CraftVariable, custom element or field type (normalizeValue/serializeValue/inputHtml), webhook, API endpoint, queue/batch job, CP section, dashboard widget, utility page, element action/exporter/condition, registerUserPermissions, requirePermission vs requireAdmin, kebab-case permission handles, allowAdminChanges, canView/canSave/canDelete, defineRules, elevated session, project-config/apply, drafts/revisions, element edit sidebar (EVENT_DEFINE_SIDEBAR_HTML) + toolbar buttons, metaFieldsHtml, VueAdminTable, GeneralConfig, getIsMultiSite/refreshSites stale after creating a site, deleteSite phantom sites, element query stops filtering by siteId, naive UTC datetime columns and strtotime drift, element-query ['like'] tuple matches nothing. Always use when writing, editing, or reviewing Craft plugin/module PHP — even when no API is named. For plugin-specific work also load craft-plugins. Do NOT trigger for front-end Twig (craft-site) or content modeling (craft-content-modeling)."
+description: "Craft CMS 5 plugin and module development — extending Craft with PHP. Covers elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types, native fields, events, behaviors, Twig extensions, widgets, filesystems, permissions, project config, GraphQL, testing, and debugging. Triggers on: beforePrepare()/afterSave()/defineSources()/defineTableAttributes()/attributeHtml(), MemoizableArray, BaseNativeField, EVENT_REGISTER_*/DEFINE_*/BEFORE_*/AFTER_*, CraftVariable, custom element or field type (normalizeValue/serializeValue/inputHtml), webhook, API endpoint, queue/batch job, CP section, dashboard widget, utility page, element action/exporter/condition, registerUserPermissions, requirePermission vs requireAdmin, kebab-case permission handles, allowAdminChanges, canView/canSave/canDelete, defineRules, elevated session, project-config/apply, drafts/revisions, element edit sidebar (EVENT_DEFINE_SIDEBAR_HTML) + toolbar buttons, metaFieldsHtml, VueAdminTable, GeneralConfig, getIsMultiSite/refreshSites stale after creating a site, deleteSite phantom sites, element query stops filtering by siteId, naive UTC datetime columns and strtotime drift, element-query ['like'] tuple matches nothing, configWarning config-file overrides. Always use when writing, editing, or reviewing Craft plugin/module PHP — even when no API is named. For plugin-specific work also load craft-plugins. Do NOT trigger for front-end Twig (craft-site) or content modeling (craft-content-modeling)."
 ---
 
 # Craft CMS 5 — Extending (Plugins & Modules)
@@ -88,6 +88,13 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Register custom permissions for my plugin" → read `permissions.md`
 - "Check user permissions in templates" → read `permissions.md`
 - "Set up plugin editions / feature gating" → read `architecture.md` (Plugin Editions section)
+- "Build a fluent render builder / craft.plugin.widget().render()" → read `architecture.md` (Render builders: attribute merging, option allowlists)
+- "Site can't override my plugin's front-end CSS / plugin styles win" → read `architecture.md` (Plugin-registered CSS loads after the site's stylesheet)
+- "Plugin JS works with shipped templates but not user-written ones" → read `architecture.md` (The JS-to-markup contract is public API)
+- "Generate docs/schemas/types from a registry / generator output differs per install or edition" → read `quality.md` (Generated Artifacts Must Not Read Runtime Registries)
+- "Cut a release / tag a version / Packagist isn't serving the new version" → load the `craft-plugin-release` skill
+- "Deleted a site but my plugin's per-site rows are still there" → read `architecture.md` (Site deletion is a soft delete)
+- "Cached false / cache returns false and I can't tell if it's a miss" → read `caching.md` (Data Caching → boolean sentinel idiom)
 - "Where should plugin/operational settings (thresholds, notification routing, workflow mappings) live — project config or DB?" → read `architecture.md` (Settings belong in project config)
 - "Should thresholds be DB-only to avoid cross-environment churn?" → read `architecture.md` (Settings belong in project config) — this is a misconception to correct
 - "Upgrade a plugin from Craft 4 to 5" → read `quality.md` (Rector section)
@@ -101,6 +108,8 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Build a custom condition rule for an element index" → read `cp-ui-patterns.md` (Condition Builders)
 - "Build a tri-state on/inherit/off control" → read `cp-ui-patterns.md` (Tri-State Inheritance Controls)
 - "Add tabbed settings page to a plugin" → read `cp.md` (Tabbed Settings Pages)
+- "Plugin supports a config/<handle>.php override — how should the settings screen behave?" → read `cp.md` (Settings Pages → Config-file overrides: warn on the field, don't disable it)
+- "Setting saves but nothing changes / config file silently wins" → read `cp.md` (Settings Pages → Config-file overrides)
 - "Why doesn't my URL tab navigate / tabs vs sidebar nav for separate pages?" → read `cp.md` (Tabs switch panes — they never navigate)
 - "Build a CP index/list screen: columns, copy chips, row actions" → read `cp-ui-patterns.md` (Index-screen column scheme) + `cp-components.md` (VueAdminTable)
 - "VueAdminTable clips headings / where do intro copy and the New button go?" → read `cp-components.md` (VueAdminTable → sole pane content)

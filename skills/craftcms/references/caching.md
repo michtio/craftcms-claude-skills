@@ -20,6 +20,7 @@ Complete reference for all caching strategies in Craft CMS 5 -- template caching
 - Not understanding invalidation boundaries -- Craft auto-invalidates template caches when elements referenced inside the block change, but custom data caches (`Craft::$app->getCache()`) need manual invalidation via `TagDependency` or explicit `delete()` calls.
 - Using the same Redis `database` index for cache and session -- flushing cache kills all active sessions. See `config-app.md` for the correct separation.
 - Prefixing data cache keys inconsistently -- without a plugin-handle prefix, keys from different plugins or modules can collide silently.
+- Caching a boolean and testing `get() !== false` -- Yii's `get()` returns `false` for a **missing** key, indistinguishable from a stored `false`. A cached negative result ("not breached", "feature off") reads as a cache miss and re-runs the expensive work on every call. Store string sentinels (`'clean'`/`'breached'`) for bool-domain values, or use `getOrSet()`/`exists()`, which disambiguate. See [Basic operations](#basic-operations).
 
 ## Contents
 
@@ -180,7 +181,7 @@ $cache = Craft::$app->getCache();
 // Set with TTL (seconds)
 $cache->set('my-plugin.api-data', $data, 3600);
 
-// Get (returns false on miss)
+// Get (returns false on miss -- identical to a stored `false`!)
 $data = $cache->get('my-plugin.api-data');
 
 // Get or set (cache-aside pattern -- preferred)
@@ -196,6 +197,27 @@ $exists = $cache->exists('my-plugin.api-data');
 
 // Set with no expiry (lives until manually deleted or cache flushed)
 $cache->set('my-plugin.static-config', $config, 0);
+```
+
+**Never cache a raw boolean and test with `!== false`.** `get()`'s miss value *is* `false`, so a stored `false` is indistinguishable from a miss and the negative-path cache never takes effect:
+
+```php
+// WRONG -- a cached `false` ("not breached") looks like a miss; re-queries every call
+$breached = $cache->get($key);
+if ($breached === false) {
+    $breached = $this->queryApi($password);
+    $cache->set($key, $breached, 3600);
+}
+
+// RIGHT -- string sentinels make the miss unambiguous
+$state = $cache->get($key);                       // 'breached' | 'clean' | false (miss)
+if ($state === false) {
+    $state = $this->queryApi($password) ? 'breached' : 'clean';
+    $cache->set($key, $state, 3600);
+}
+
+// Also right: getOrSet() never confuses payload with miss
+$state = $cache->getOrSet($key, fn() => $this->queryApi($password) ? 'breached' : 'clean', 3600);
 ```
 
 ### Tag-based invalidation

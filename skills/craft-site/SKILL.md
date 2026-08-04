@@ -62,6 +62,8 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Debug why assets aren't loading in production" → read `vite-buildchain.md`
 - "Look up a `craft.vite.*` Twig function (asset, register, critical CSS)" → read `plugins/vite.md`
 - "Install GTM/analytics/CMP in a Craft project" → read `third-party-integration.md`
+- "Can't override a plugin's front-end CSS / plugin styles beat mine" → read `third-party-integration.md` (Plugin CSS Loads After Yours)
+- "Replace a plugin's template with my own / plugin widget stopped enhancing" → read `third-party-integration.md` (Hand-Written Templates for Plugin Widgets)
 - "Configure SEOMatic for a section" → read `plugins/seomatic.md`
 - "Set up Blitz caching with Cloudflare" → read `plugins/blitz.md`
 - "Add a form to a page" → read `plugins/formie.md`
@@ -113,7 +115,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 | `references/image-presets.md` | Image handling: single atom with presets, srcset/sizes, ImageOptimize vs Craft Cloud, hosting strategies |
 | `references/javascript-boundaries.md` | JS decision tree: Twig → Alpine/DataStar → Vue, mount points, data handoff, coexistence rules |
 | `references/twig-collections.md` | `collect()` method reference: creating, accessing, transforming, filtering, sorting, slicing, arrow functions |
-| `references/third-party-integration.md` | Script loading order, CMP (UserCentrics/CookieBot), GTM/sGTM data layer, analytics (Fathom/Plausible), AWS SES transport, n8n webhooks, Blitz compatibility, full head template example |
+| `references/third-party-integration.md` | Script loading order, CMP (UserCentrics/CookieBot), GTM/sGTM data layer, analytics (Fathom/Plausible), AWS SES transport, n8n webhooks, plugin CSS cascade (loads after yours) + hand-written templates for plugin widgets, Blitz compatibility, full head template example |
 | `references/multi-site-patterns.md` | Language switchers, hreflang tags, site architectures (subfolder/domain/subdomain/multi-brand), cross-site queries, static translations, site-specific templates, multi-site forms, site detection |
 | `references/auth-flows.md` | Front-end authentication forms: login, registration, password reset, set new password |
 | `references/auth-account.md` | Account management: edit profile, email verification, navigation partial, access control tags, user session helpers, GeneralConfig auth settings |

@@ -62,7 +62,10 @@ The `Install.php` migration runs on plugin install. Numbered migrations run on `
 
 **Modules** don't have `Install.php` -- use content migrations created with `ddev craft migrate/create my_migration_name`. These go in the project's `migrations/` directory and share a global track.
 
-**Schema-change discipline.** Every change to plugin schema must land in BOTH `Install.php` (canonical fresh shape) AND a dated migration (idempotent upgrade path). Editing only `Install.php` leaves existing installs — including your `db_test` after the first test run — on the prior schema. See the `craft-pest` skill's `shared-state.md` → "Schema drift: `Install.php` vs migrations in the test database" for why this also bites your test suite even if you think there are "no users yet."
+**Schema-change discipline.** Every change to plugin schema must land in BOTH `Install.php` (canonical fresh shape) AND a dated migration (idempotent upgrade path). The two failure directions are symmetric:
+
+- Editing only `Install.php` leaves existing installs — including your `db_test` after the first test run — on the prior schema. See the `craft-pest` skill's `shared-state.md` → "Schema drift: `Install.php` vs migrations in the test database".
+- Editing only the dated migration leaves **fresh installs** without the change: on plugin install, Craft runs `Install.php` and then **marks every dated migration as applied without running it**. Anything a dated migration does that `Install.php` doesn't (a column, an index, a data seed) simply never happens on a new install — and nothing errors, because the migration is recorded as done.
 
 ## Safety Rules
 

@@ -26,6 +26,7 @@ Static analysis, code style enforcement, and continuous integration patterns for
 - [CI/CD Integration](#cicd-integration)
 - [Pre-Commit Hooks](#pre-commit-hooks)
 - [Testing](#testing)
+- [Generated Artifacts Must Not Read Runtime Registries](#generated-artifacts-must-not-read-runtime-registries)
 - [Code Review Checklist](#code-review-checklist)
 
 ## Common Pitfalls
@@ -463,6 +464,15 @@ Load the **`craft-pest`** skill for everything test-related — harness setup, d
 ```
 
 Run from the **plugin's own root**: `composer test` (or `ddev exec --dir /var/www/html/vendor/acme/my-plugin vendor/bin/pest`). Running a plugin suite from a shared project root with `--configuration=` silently discards the plugin's database pins — see the `craft-pest` skill's `isolation.md`.
+
+## Generated Artifacts Must Not Read Runtime Registries
+
+A generator that emits committed or published artifacts — reference docs, JSON schemas, TypeScript types, fixtures — by reading a live Craft install's registries produces output that depends on **which install ran it**. Two real failure modes, both shipped or nearly shipped:
+
+- **Edition-gated registries.** A generator read a registry whose contents are gated on the plugin edition, so the output differed depending on the edition the generator happened to run on. Fix: a generator-only accessor (e.g. `docsInputSchema()`) that defaults to the runtime registry and is overridden only where gating applies — runtime validation stays untouched, and the generated artifact is edition-independent.
+- **Registries that accumulate install state.** A generator read a registry whose second pass appends **user-authored content stored as elements**, so regenerating on a real install would have written that install's own content into the published artifact. Fix: a `getBundled()` that captures only what the plugin ships — and capture it **before any `EVENT_REGISTER_*` hook fires**, or third-party registrations leak in the same way.
+
+Additionally, a generated artifact whose content depends on a vendor tree should **state the resolved version it was generated against** (e.g. in a header comment), or its numbers churn per machine with no visible cause.
 
 ## Code Review Checklist
 

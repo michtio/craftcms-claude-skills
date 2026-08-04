@@ -285,5 +285,13 @@ The general discipline this illustrates:
 - Keep server-side validation regardless — the enhanced client control is UX, not a
   security or correctness boundary.
 
+One more consequence of enhancement: the classes, `data-` attributes, and input
+names the plugin's JS reads are a **markup contract**. A bundle page an integrator
+rewrites by hand must keep those hooks, or the widget renders fine and silently
+never enhances. Plugin authors: document the hooks as public API and resolve them
+via `data-` attributes with hardcoded fallbacks — see the craftcms skill's
+`architecture.md` (The JS-to-markup contract is public API). Integrators: see
+`third-party-integration.md` (Hand-Written Templates for Plugin Widgets).
+
 For where progressive-enhancement widgets sit relative to Alpine/Vue and the JS
 boundary decision tree, see `javascript-boundaries.md`.
