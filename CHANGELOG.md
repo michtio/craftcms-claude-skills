@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.13.1 -- TBD
+
+Patch: environment access convention in `craft-php-guidelines`.
+
+### Added
+
+- **`skills/craft-php-guidelines/SKILL.md`** — new **Environment Access** section (between Date Handling and Database Conventions): `craft\helpers\App::env('VAR')`, never `getenv()`, in plugin code and in every published config example (`getenv()` is not thread-safe, returns `string|false`, and misses values only present in `$_SERVER`; `App::env()` reads secrets → `$_SERVER` → `getenv()` and normalizes `'true'`/`'false'` to booleans — verified against `craft\helpers\App::env()` in `craftcms/cms` 5.x). Config examples carry the `use craft\helpers\App;` line. `App::parseEnv()` when a stored value may be a `$VAR` reference or alias (settings-model getters). Trigger description now carries `App::env() never getenv()` and `App::parseEnv() for $VAR settings`.
+
+Found in the wild: a documentation agent wrote `getenv()` into a published config example. This is Craft's own documented convention, not a house rule, which is why it lands in the shared pack.
+
 ## 1.13.0 -- 2026-08-04
 
 Folds in a batch of release-engineering and remediation learnings (2026-08-03/04), plus the remaining unpromoted items from two per-project skill-gap registers. Every claim citing Craft core, Blitz, or Formie was re-verified against a current vendor tree before landing (`craftcms/cms` 5.x, `putyourlightson/craft-blitz` 5.12.9, `verbb/formie` 3.1.21, `yiisoft/yii2` console controller source).
