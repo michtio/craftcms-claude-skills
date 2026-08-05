@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.13.1 -- TBD
+## 1.13.1 -- 2026-08-05
 
 Patch: environment access convention in `craft-php-guidelines`.
 
