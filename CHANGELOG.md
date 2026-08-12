@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.15.0 -- 2026-08-12
+
+Adds Warp (`craftpulse/craft-warp` 5.0.2, passwordless front-end member auth) as the pack's 24th plugin reference, with routing so passwordless intent surfaces it even when no plugin is named. All claims distilled from the plugin's own docs and verified against its source; released state confirmed on `repo.packagist.org/p2`.
+
+### Added
+
+- **`skills/craft-plugins/references/warp.md`** — new reference: magic-link and one-time-code sign-in, passkeys/WebAuthn, passwordless registration, and session/device management via the `craft.warp` variable and four fluent render builders. Leads with the pitfalls that cost real time: hand-built verify URLs must use **`mlToken`** (Craft reserves `token` and 400s it before Warp's controller is reached), `warp/auth/verify-code` reads a plain **`returnUrl`** and ignores `redirectInput()` (deliberate asymmetry with `warp/auth/request`), builders must terminate in `.render()` (bare `{{ ... }}` Twig-escapes via `__toString()`), enumeration-safe response copy, `digits` sizes the input while the server issues `otpDigits`-length codes, tri-state `session.isNewLocation` (`is same as(true)`), nullable session `uid`, Tailwind-preflight border resets vs the `@layer warp` baseline, and the 403 `reauthRequired` branch on the recent-auth-gated passkey routes. Also covers the attribute rules (class accumulation + `resetClass`, key-by-key `data` merge), the ten action routes with their conventions and rate limits, single-site `returnUrl` validation, the documented DOM contracts for hand-written markup, env-aware numeric settings read through typed getters, kebab-case permissions, and the fixed retention windows.
+- **`skills/craft-project-setup/SKILL.md`** — sites with a front-end member area now get a passwordless question in Step 2: detect `craftpulse/craft-warp` first (never ask about what's installed); otherwise ask "Should members sign in passwordless — magic links, email codes, passkeys — instead of passwords?" On yes, suggest Warp and write `Auth: passwordless via Warp (proposed)` into the generated CLAUDE.md for the planner — suggest only, never `composer require` without approval. On no, record password-based auth and route at `craft-site`'s `auth-flows.md`.
+
+### Changed
+
+- **`skills/craft-plugins/SKILL.md`** — Warp routing row; the description now also triggers on passwordless/magic-link intent with no plugin named. Trimmed description verbosity elsewhere to stay inside the ~1,536-char routing window.
+- **`skills/craft-site/references/auth-flows.md`** — header note: this file is password-based auth against core controllers; passwordless member areas route to `warp.md`, which replaces these login/registration forms and carries Warp-specific variants of this file's enumeration and `redirectInput()` pitfalls.
+- **`README.md` / `docs/skills-overview.md`** — 24 plugin references; corrected three stale per-skill reference counts (craft-php-guidelines 6, craft-content-modeling 7, craft-site 19) and the total (117).
+
 ## 1.14.0 -- 2026-08-08
 
 Folds in the addendum batch from the 2026-08-07 remediation session (sections L to R of the skills-update prompt). Every claim citing Craft core, Yii, or craft-pest-core was re-verified against a current vendor tree before landing (`craftcms/cms` 5.10.12, `markhuot/craft-pest-core` 3.2.2, `yiisoft/yii2` `MysqlMutex`).
