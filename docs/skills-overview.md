@@ -79,10 +79,10 @@ The plugin reference library now lives in the dedicated `craft-plugins` skill (s
 ## craft-plugins
 
 **Track:** Plugin References
-**Reference files:** 23 plugin references
+**Reference files:** 24 plugin references
 **SKILL.md:** routing index
 
-A name-routed index of third-party plugin guidance. Covers 23 Craft plugins with detailed configuration, Twig API, PHP/programmatic API, migrations, deployment, and common pitfalls: SEOmatic, Blitz, Formie, ImageOptimize, CKEditor, Sprig, Element API, Retour, Navigation, Hyper, Colour Swatches, Password Policy, Typogrify, Cache Igniter, Knock Knock, Elements Panel, Sherlock, Embedded Assets, Amazon SES, Timeloop, Feed Me, Imager-X, and Vite.
+A name-routed index of third-party plugin guidance. Covers 24 Craft plugins with detailed configuration, Twig API, PHP/programmatic API, migrations, deployment, and common pitfalls: SEOmatic, Blitz, Formie, ImageOptimize, CKEditor, Sprig, Element API, Retour, Navigation, Hyper, Colour Swatches, Password Policy, Typogrify, Cache Igniter, Knock Knock, Elements Panel, Sherlock, Embedded Assets, Amazon SES, Timeloop, Feed Me, Imager-X, Vite, and Warp (passwordless member auth: magic links, one-time codes, passkeys, sessions).
 
 This skill exists so plugin guidance is discoverable from **any** altitude. The references previously lived under `craft-site`, which meant a back-end task (a Formie form built in a content migration, a Feed Me import job, an Amazon SES transport swap) never surfaced them. The `craft-plugins` description triggers on plugin names in any context — front-end, PHP, migration, or deployment — and routes to the matching reference.
 

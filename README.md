@@ -112,10 +112,10 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | Skill | Track | Key Coverage |
 |-------|-------|--------------|
 | `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, settings, navigation), CP components (widgets, utilities, slideouts), CP UI patterns (tri-state, condition builders, asset bundles), console commands (80+ commands), debugging, identity protocols for SSO/SCIM plugins. 31 reference files. |
-| `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
-| `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 6 reference files. |
-| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files. |
-| `craft-plugins` | Plugin References | Name-routed index of third-party plugin guidance (config, Twig/PHP API, migrations, deployment, pitfalls), discoverable from any task altitude. 23 plugin references. |
+| `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 6 reference files. |
+| `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 7 reference files. |
+| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 19 reference files. |
+| `craft-plugins` | Plugin References | Name-routed index of third-party plugin guidance (config, Twig/PHP API, migrations, deployment, pitfalls), discoverable from any task altitude. 24 plugin references. |
 | `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
 | `craft-pest` | Plugin | Testing with Pest and `markhuot/craft-pest-core`: database isolation (rollback is opt-in, env overrides are cwd-bound), factories, HTTP/queue/DB assertions, Craft internals that bite in tests, shared-install hygiene, CI test jobs. 5 reference files. |
@@ -125,7 +125,7 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, self-hosted → Cloud migration. 12 reference files. |
 | `servd` | Shared | Servd managed hosting: git push-to-deploy + `servd.yaml`, local → staging → production sync, the `servd/craft-asset-storage` plugin (svdcdn CDN, off-server transforms), Servd static caching + Blitz reverse-proxy mode, MariaDB/MySQL over SSH, backups, Dedicated Queue Runner, ephemeral filesystem. 6 reference files. |
 
-13 skills, 111 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+13 skills, 117 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 
@@ -142,10 +142,10 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 
 ### Plugin Reference Library
 
-23 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls — indexed and name-routed by the `craft-plugins` skill, so they surface from front-end, PHP, migration, and deployment tasks alike:
+24 Craft plugins with detailed configuration, Twig/PHP API, and common pitfalls — indexed and name-routed by the `craft-plugins` skill, so they surface from front-end, PHP, migration, and deployment tasks alike:
 
 <details>
-<summary>View all 23 plugin references</summary>
+<summary>View all 24 plugin references</summary>
 
 | Plugin | Author | Key Surface |
 |--------|--------|-------------|
@@ -172,6 +172,7 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | Feed Me | craftcms | Data import from XML/JSON/CSV, CLI automation |
 | Imager-X | spacecatninja | Advanced image transforms, named presets, effects |
 | Vite | nystudio107 | Asset loading (`craft.vite.*`), critical CSS, dev server, manifest |
+| Warp | craftpulse | Passwordless auth: magic links, one-time codes, passkeys, sessions |
 
 </details>
 

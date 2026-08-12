@@ -2,6 +2,8 @@
 
 > Form templates for login, registration, and password reset on the front end of a Craft CMS 5 site. Every form is copy-pasteable with proper error handling. For account management (edit profile, email verification, access control tags, session helpers), see `auth-account.md`.
 
+Everything here is **password-based** auth against Craft's core controllers. For a **passwordless** member area — magic links, emailed one-time codes, passkeys, session/device management — see the `craft-plugins` skill's `warp.md` (Warp, `craftpulse/craft-warp`) instead of hand-building these forms; its endpoints and render builders replace the login and registration flows below, and several of this file's pitfalls (enumeration copy, `redirectInput()` habits) have Warp-specific variants documented there.
+
 ## Documentation
 
 - Controller actions: https://craftcms.com/docs/5.x/reference/controller-actions.html
