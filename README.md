@@ -111,7 +111,7 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 
 | Skill | Track | Key Coverage |
 |-------|-------|--------------|
-| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, settings, navigation), CP components (widgets, utilities, slideouts), CP UI patterns (tri-state, condition builders, asset bundles), console commands (80+ commands), debugging. 30 reference files. |
+| `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, settings, navigation), CP components (widgets, utilities, slideouts), CP UI patterns (tri-state, condition builders, asset bundles), console commands (80+ commands), debugging, identity protocols for SSO/SCIM plugins. 31 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 5 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 6 reference files. |
 | `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 18 reference files. |
@@ -119,7 +119,7 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |
 | `craft-pest` | Plugin | Testing with Pest and `markhuot/craft-pest-core`: database isolation (rollback is opt-in, env overrides are cwd-bound), factories, HTTP/queue/DB assertions, Craft internals that bite in tests, shared-install hygiene, CI test jobs. 5 reference files. |
-| `craft-plugin-release` | Plugin | Release mechanics: composer.json version key, Packagist verification via `repo.packagist.org/p2`, tag recreation risk model, GitHub release objects vs tags, `gh release` pitfalls, branch promotion hygiene, Composer path repositories. 1 reference file. |
+| `craft-plugin-release` | Plugin | Release mechanics: composer.json version key, Packagist verification via `repo.packagist.org/p2`, tag recreation risk model, GitHub release objects vs tags, `gh release` pitfalls, branch promotion hygiene, shared-library release ordering, Composer path repositories, `git filter-repo` purges. 2 reference files. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, site sharing, troubleshooting. |
 | `craft-project-setup` | Shared | Project scaffolding, upgrade, and audit. Generates CLAUDE.md, .claude/rules/, .claude/settings.local.json (permissions). Gap analysis for existing configs. |
 | `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, self-hosted → Cloud migration. 12 reference files. |

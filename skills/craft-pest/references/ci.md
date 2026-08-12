@@ -8,6 +8,7 @@ For the full `code-analysis.yaml` workflow (PHP matrix, Composer caching, `--no-
 
 - `check-cs`, never `fix-cs`
 - The test job itself
+- Find every job that runs the suite before changing anything
 - Invocation from the plugin's own root
 - Database service and the test database
 - Verifying against a fresh database
@@ -37,6 +38,18 @@ Static analysis first (seconds), tests last (minutes) — fail fast on cheap sig
 ```
 
 `composer test` (rather than a raw `vendor/bin/pest` with flags) is deliberate: it keeps the invocation identical between CI and a developer's machine, so a suite that passes locally is running the same way in CI.
+
+## Find every job that runs the suite before changing anything
+
+A repo can have a second, forgotten Pest job hiding in another workflow — a `code-analysis.yaml` that grew a test step alongside the obvious job in `tests.yaml`. Reading only the first job of the first matrix file is how that gets missed, and the consequences cut both ways: you conclude "this suite doesn't run in CI" when it does, or you fix the database service in one workflow while the other keeps failing (or keeps writing somewhere it shouldn't).
+
+Before asserting anything about a suite's CI status, sweep all workflows:
+
+```bash
+grep -rn 'composer test\|vendor/bin/pest' .github/workflows/
+```
+
+Every hit is a job whose env, services, and working directory need the same scrutiny as the primary one.
 
 ## Invocation from the plugin's own root
 

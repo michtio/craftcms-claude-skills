@@ -15,6 +15,7 @@ Complete reference for `config/app.php` component configuration in Craft CMS 5. 
 - Using the same Redis `database` index for cache and session -- flushing cache kills all active sessions.
 - Overriding the queue component with a Redis-backed queue -- loses the CP queue manager progress UI. The default database-backed queue works well for most projects.
 - Overriding mailer in `app.php` without using `App::mailerConfig()` as the base -- loses CP email settings (system address, sender name, transport adapter selected in Settings).
+- Trying to set the mail transport *type* per environment via an env variable -- adapter settings (host, port, username) are env-parseable, but the transport class itself is not, and project config syncs the CP choice across environments. The `app.php` mailer override is the only per-environment mechanism. See [Environment-Specific Transport](#environment-specific-transport).
 - Overriding session without using `App::sessionConfig()` as the base -- loses Craft's `SessionBehavior` which the CP depends on.
 - Not running `ddev craft db/search-indexes` after changing search component config -- existing entries are still indexed with the old settings.
 - Forgetting `CRAFT_APP_ID` when multiple Craft installs share a cache backend -- cache key collisions cause cross-site data leaks.
@@ -359,7 +360,7 @@ DDEV includes Mailpit out of the box. All outgoing mail is captured at `https://
 
 ### Environment-Specific Transport
 
-When you need different transports per environment (e.g., Mailpit in dev, SES in production), use a conditional override:
+When you need different transports per environment (e.g., Mailpit in dev, SES in production), a conditional override in `app.php` is the **only** mechanism — the transport *type* cannot reference an env variable. `App::mailerConfig()` passes `$settings->transportType` — the raw adapter class name stored in project config — straight into `MailerHelper::createTransportAdapter()` with no `parseEnv()` (`App.php:1116`, cms 5.10.12), even though the settings *inside* an adapter are env-parseable (`Smtp::defineTransport()` runs host/port/username/password through `App::parseEnv()`, `Smtp.php:151`). That asymmetry is the trap: every neighbouring field in Settings → Email accepts a `$VAR` reference, so the transport dropdown looks like it should too. And since the CP choice lives in project config, it syncs across environments by design — "configure it differently per env in the CP" is also a dead end.
 
 ```php
 // config/app.php
@@ -388,6 +389,8 @@ return [
 ```
 
 In production, this falls through to the CP-configured transport (e.g., AWS SES plugin). In dev, it overrides with Mailpit.
+
+Consider gating on an opt-in env flag as well as `devMode` — `if (Craft::$app->getConfig()->getGeneral()->devMode && App::env('FORCE_MAILPIT_IN_DEV'))` — so an individual developer can still test against a real SMTP service by flipping their `.env` instead of editing a shared `app.php`.
 
 ### Important notes
 

@@ -463,6 +463,8 @@ public function getStatus(): ?string
 }
 ```
 
+**`getStatus()` returns one value, so it hides co-existing states.** Craft's own `User` element is the canonical trap: its `getStatus()` checks `suspended` before the `active` flag, so a user who is both suspended *and* deactivated reports only `STATUS_SUSPENDED` (`craft\elements\User::getStatus()`, cms 5.10.12). Both states co-exist when an already-deactivated account is suspended (`Users::deactivateUser()` clears `suspended` along with `active`/`pending`, so only that order produces it). Any "restore access" flow that branches on `getStatus()` will unsuspend, stop, and leave the account still locked out. When more than one state matters, read the underlying flags (`$user->suspended`, `$user->active`, `$user->pending`) instead of the single computed status. The same applies to your own elements: `getStatus()` is a display priority, not a state model.
+
 ## Authorization
 
 Override these to control who can do what. Base implementations return `false` and fire authorization events. Always call `parent::` to preserve the event chain:

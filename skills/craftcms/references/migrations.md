@@ -389,6 +389,15 @@ Always null-check the site -- it may not exist in every environment (e.g., a sta
 
 When writing to project config inside a migration, always mute events. Without this, project config handlers fire immediately, potentially depending on database state that doesn't exist yet. See [Safety Rules](#safety-rules) for the code pattern.
 
+### Never call `ProjectConfig::flush()` inside a migration
+
+Two independent reasons:
+
+- `flush()` calls `saveModifiedConfigData()`, which **releases the shared project-config mutex when it finishes** (`craftcms/cms` 5.10.12, `src/services/ProjectConfig.php:873`) — including a lock the surrounding process (Craft's own migration apply, a test harness) acquired and still believes it holds. The lock state is desynced for the rest of the process; later project-config writes then fail with `BusyResourceException`/`StaleResourceException` in places far from the migration that caused it.
+- With automatic YAML writing enabled, `flush()` rewrites `config/project/*.yaml` — files the developer has **committed to VCS**. A plugin upgrade that mutates a project's tracked YAML out from under its owner is wrong on its own terms, independent of the lock problem.
+
+If a plugin stored a bad settings value that needs correcting, coerce it **at read time** (in the settings model or a getter) rather than rewriting stored config from a migration.
+
 ### Execution order in `craft up`
 
 `craft up` is not "migrations, then project config" — the content track runs *last*, after project config has been applied. The precise sequence, from `craftcms/cms` `UpController::actionIndex()`:
@@ -449,6 +458,17 @@ Migrations are named `m{YYMMDD}_{HHMMSS}_description.php` and execute in timesta
 ### Track isolation
 
 Each plugin has its own migration track, triggered when the plugin's `schemaVersion` changes. Plugin A's migrations never block Plugin B's. Content migrations (project root `migrations/`) have their own track, independent of all plugin tracks.
+
+### Modules and library-shipped modules have no CLI track
+
+`craft migrate/up --track=module:<handle>` fails with `Invalid migration track` — `MigrateController` resolves only `craft`, `content`, and `plugin:<handle>` (plus an `EVENT_REGISTER_MIGRATOR` escape hatch nothing registers for you; `craftcms/cms` 5.10.12, `src/console/controllers/MigrateController.php:467`). A project-level module uses content migrations instead (see above). A module shipped **inside a Composer library** is worse: its migrations run only when a consumer plugin calls the module's own migrator from a dated migration of its own —
+
+```php
+// In the consumer plugin's dated migration
+\acme\kit\Kit::getInstance()->getMigrator()->up();
+```
+
+— and that consumer must also bump its own `schemaVersion`, or the dated migration never runs. Bumping the library's version constraint alone applies nothing. See the `craft-plugin-release` skill for the release-ordering hazards this creates.
 
 ### Running all tracks
 

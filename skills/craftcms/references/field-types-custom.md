@@ -196,6 +196,12 @@ public bool $multiline = false;
 public string $placeholder = '';
 ```
 
+**What `settingsAttributes()` actually includes** (applies to every `ConfigurableComponent` — fields, widgets, filesystems): every public non-static property **whose declaring class is not abstract** (`craft\base\ConfigurableComponent::settingsAttributes()`, cms 5.10.12). Consequences that get reasoned about wrongly:
+
+- Properties declared on a concrete subclass are included automatically — **no override needed**. Don't add an explicit `settingsAttributes()` list "to register" them.
+- An **abstract** base class's own shared properties are excluded, which is the only legitimate reason for an explicit override: the abstract base lists them, merged with `parent::settingsAttributes()`.
+- A concrete subclass that *redeclares* an inherited property (to change its default) flips the declaring class to concrete, so the name appears **twice** in the merged array. Harmless at runtime, but if you're deduping, wrap in `array_unique()` — removing the redeclaration instead would silently change the default.
+
 ### Validating settings
 
 ```php

@@ -1,6 +1,6 @@
 # Database Isolation
 
-How to make a plugin's Pest suite run against its own database, install what it needs, and not depend on what happens to be lying around. Verified against `markhuot/craft-pest-core` 3.2.2 and `craftcms/cms` 5.10.11.
+How to make a plugin's Pest suite run against its own database, install what it needs, and not depend on what happens to be lying around. Verified against `markhuot/craft-pest-core` 3.2.2 and `craftcms/cms` 5.10.12.
 
 ## Contents
 
@@ -8,6 +8,7 @@ How to make a plugin's Pest suite run against its own database, install what it 
 - Pinning the test database (`tests/bootstrap.php`)
 - Pin the process timezone *after* the app is created
 - `phpunit.xml.dist` — the second half of the belt-and-braces (force the DB name, default the coordinates)
+- One MySQL server, many suites: pin `CRAFT_ENVIRONMENT` too
 - Installing the plugin under test
 - `RefreshesDatabase` — what rolls back and what doesn't
 - Invocation paths (safe and unsafe)
@@ -64,14 +65,18 @@ Why this file *and* the XML `<env>` entries: the bootstrap works regardless of h
 
 ```php
 // Fail closed: refuse to run against anything but the test database.
+// THROW — do not exit(1). See below.
 $db = App::env('CRAFT_DB_DATABASE');
 if ($db !== 'db_test') {
-    fwrite(STDERR, "ABORT: tests resolved database '{$db}', expected 'db_test'.\n");
-    exit(1);
+    throw new RuntimeException("Tests resolved database '{$db}', expected 'db_test'.");
 }
 ```
 
 A wrong database is now a loud one-line failure instead of a polluted install discovered weeks later. Keep the check on the *resolved* value (`App::env()`), not on what you just pinned — the point is to catch the paths where the pin didn't take.
+
+**The guard must throw, not `exit(1)`.** Under Pest, the process's exit status is decided by Pest's own shutdown handling — an `exit(1)` in the bootstrap prints the refusal and then hands the shell **0**. That is a guard that fails open exactly where it matters (CI), which is worse than no guard because it reads as protection. A thrown `RuntimeException` makes PHPUnit report "Error in bootstrap script" and exit non-zero.
+
+Then prove the guard isn't vacuous: point the pin at a bogus database name, run the suite, and check `echo $?` is non-zero. A guard nobody has watched fire is a comment, not a guard.
 
 ## Pin the process timezone *after* the app is created
 
@@ -170,6 +175,36 @@ Notes on the `<env>` entries:
 - `CRAFT_INSTALL_*` feed `craftInstall()` (`InstallsCraft::craftInstall()` reads `CRAFT_INSTALL_USERNAME` / `_EMAIL` / `_PASSWORD` / `_SITENAME` / `_SITEURL` / `_LANGUAGE`, each with a fallback) — set them so a fresh test database installs deterministically instead of with `user@example.com` / `secret`.
 - `QUEUE_DRIVER=sync` matters if you use craft-pest's queue assertions: its `Queues` trait runs the queue in `assertPostConditions()` **only** when the component is a `yii\queue\sync\Queue`. See `craft-state.md` for why you don't want the real queue either way.
 - PHPUnit's own `force="true"` attribute is **not** a substitute — it doesn't overwrite `$_SERVER`, and `App::env()` reads `$_SERVER` first. That's the trap the `tests/bootstrap.php` pins exist to close.
+
+## One MySQL server, many suites: pin `CRAFT_ENVIRONMENT` too
+
+Forcing the database name is **not sufficient** for isolation. Craft's project-config lock lives at the *server* level, so suites in separate databases still collide. The symptoms: two suites running at once fail with `BusyResourceException`, `1213 Deadlock`, or `1412 Table definition has changed` — and giving one suite its own fresh, empty, exclusively-owned database does **not** fix it. It still dies inside `craft\migrations\Install` with `BusyResourceException`, with no other connection visible in `information_schema.processlist`.
+
+The chain (verified in `craftcms/cms` 5.10.12):
+
+- Craft's DB mutex is `App::dbMutexConfig()` → `yii\mutex\MysqlMutex` with `'keyPrefix' => Craft::$app->getEnvId()` (`src/helpers/App.php:1141`).
+- `MysqlMutex` acquires `GET_LOCK(SUBSTRING(CONCAT(keyPrefix, sha1(name)), 1, 64), timeout)` — and **MySQL `GET_LOCK` names are scoped to the server, not the database.**
+- `getEnvId()` is `id--env` (`ApplicationTrait::getEnvId()`), and craft-pest-core's own bootstrap does `define('CRAFT_ENVIRONMENT', getenv('ENVIRONMENT') ?: 'production')` (`src/bootstrap/bootstrap.php:32`). So every unpinned suite on the machine shares the env id `CraftCMS--production` — and therefore the same lock names, e.g. for `\craft\services\ProjectConfig::MUTEX_NAME` (`'project-config'`).
+
+The fix is one more `<env>` pin, unique per plugin:
+
+```xml
+<env name="CRAFT_ENVIRONMENT" value="test-my-plugin"/>
+```
+
+Three details that each cost real time:
+
+- **The pin must be `CRAFT_ENVIRONMENT`, never `CRAFT_APP_ID`.** Core reads `CRAFT_ENVIRONMENT` in `bootstrap/bootstrap.php`; core's own `src/config/app.php` hard-codes `'id' => 'CraftCMS'`. The `App::env('CRAFT_APP_ID') ?: 'CraftCMS'` line you may remember belongs to the **craftcms/craft starter project's** `config/app.php` — a plugin repo doesn't have that file, so a `CRAFT_APP_ID` pin is inert.
+- **The `<env>` pin beats craft-pest's `define()`.** `InstallsCraft::loadPhpunitXmlEnvironmentVariables()` sets `$_SERVER` before craft-pest's bootstrap runs, and `App::env()` checks `$_SERVER` ahead of defined constants.
+- **Pinning it is safe.** `getEnvId()` has exactly three readers in core — the mutex key prefix and the session/web-user state key prefixes — all process-local.
+
+To verify which pin actually takes (or re-verify after a core bump), run the controlled experiment rather than reasoning about precedence: hold the lock by hand in one MySQL session —
+
+```sql
+SELECT GET_LOCK(SUBSTRING(CONCAT('CraftCMS--production', SHA1('project-config')), 1, 64), 0);
+```
+
+— then run the suite with each candidate pin. The pin that stops the suite from blocking on that held lock is the one that works; a pin the suite blocks *through* is inert.
 
 ## Installing the plugin under test
 

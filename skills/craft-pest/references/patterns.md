@@ -99,6 +99,22 @@ Before restructuring code that has no tests, write tests **against the unrefacto
 
 Pin tests assert what the code *does*, not what it should do — write them mechanically from observed behaviour, resist fixing oddities mid-pin (note them, pin them, fix after the refactor with an intentional test change that documents the behaviour change).
 
+## A test can encode the bug
+
+The flip side of pinning: a passing test is evidence the behaviour is *stable*, not that it's *correct*. A real prune test asserted the exact row-deletion behaviour that was dropping live sessions' data — the test was green because it pinned the bug.
+
+When a bug fix requires changing an existing test, that is not automatically a regression or a weakened suite — it can be the fix being pinned. But the two cases are indistinguishable in a diff, so **call it out explicitly in the PR/review**: name the test, state that its old assertion encoded the defect, and say what the new assertion pins instead. An unexplained assertion change in review correctly reads as a red flag; the explanation is what converts it into documentation.
+
+## Prove a fix or guard is not vacuous by breaking it
+
+A test that pins a subtle invariant — an ordering constraint, a fail-closed guard, a race fix — can pass for reasons unrelated to the thing it claims to protect. The standard is to watch it fail:
+
+- **Revert the fix** (locally, uncommitted) and confirm the test goes red. If it stays green, the test isn't exercising the fixed path.
+- **For ordering invariants**, swap the two calls and confirm the ordering test fails.
+- **For fail-closed guards**, force the bad condition (e.g. point the DB pin at a bogus name — see `isolation.md`) and confirm the process exits non-zero, not just that a message prints.
+
+Report that the step was done ("reverted the fix, test fails; restored, passes") — it's what makes the test trustworthy to the next reader, and it costs a minute.
+
 ## Pure unit tests (no Craft boot)
 
 For testing pure logic, skip craft-pest — booting Craft is the expensive, stateful part.
