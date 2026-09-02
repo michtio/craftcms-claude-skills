@@ -18,8 +18,10 @@ The first section is documented limitations from Pixel & Tonic. The plugin-compa
   - [Mail](#mail)
   - [Server access](#server-access)
   - [Force-enabled settings](#force-enabled-settings)
+  - [Inert settings and response quirks](#inert-settings-and-response-quirks)
   - [Strongly discouraged](#strongly-discouraged)
   - [Deploy](#deploy)
+  - [Environments](#environments)
   - [Runtime caps](#runtime-caps)
   - [Plan quotas](#plan-quotas-from-httpscraftcmscomdocscloudquotas)
 - [Authored-content gaps](#authored-content-gaps)
@@ -54,6 +56,11 @@ The first section is documented limitations from Pixel & Tonic. The plugin-compa
 ### Force-enabled settings
 - **`asyncCsrfInputs` is force-enabled.** Required for static caching to work. Plugins must use the `csrfInput()` Twig function — never raw token output. See `plugin-development.md` (CSRF).
 
+### Inert settings and response quirks
+- **`resourceBasePath` and `resourceBaseUrl` have no effect.** Asset bundles and everything in the webroot are published to the CDN — the corresponding `CRAFT_RESOURCE_BASE_*` env vars are reserved (see `deploy-pipeline.md`).
+- **Duplicate response headers are flattened** into a single comma-separated header by the infrastructure. `{% header %}` in templates or direct `HeaderCollection` manipulation produces slightly different (but HTTP-spec-equivalent) output on Cloud than elsewhere — don't assert on exact header multiplicity.
+- **PHP version must be `major.minor`** in `craft-cloud.yaml` (patch versions unsupported); Node.js 16+ is supported, and declaring only a major version (e.g. `20`) is recommended so security/stability updates land automatically.
+
 ### Strongly discouraged
 - **`devMode` and `allowAdminChanges` are technically possible** but Pixel & Tonic explicitly warns against enabling them on Cloud: "Making changes to your project's schema on Cloud can result in your database and Project Config files diverging, as well as data loss." Treat the prod environment as read-only at the schema level; make schema changes in code and deploy.
 
@@ -63,14 +70,26 @@ The first section is documented limitations from Pixel & Tonic. The plugin-compa
 - **No region change post-creation.** Pick the right region at project creation — see https://craftcms.com/docs/cloud/regions.
 - **No per-PR preview environments.** Cloud supports per-branch environments only — pull requests don't get an ephemeral environment automatically. Workaround: dedicate one of your environments to a `preview` branch and merge PR branches into it for staging review.
 
+### Environments
+
+Facts about environment behavior that bite when unknown (from https://craftcms.com/docs/cloud/environments):
+
+- **Non-production environments get an auto-injected `robots.txt`** with `User-agent: * / Disallow: /` — you cannot serve your own on those environments. Only the environment marked **Production** lets the application dictate `robots.txt` (via `templates/robots.txt.twig` or SEOmatic). Corollary: if your live site's robots.txt is blocking everything, check that the serving environment is actually marked Production in project Settings.
+- **Non-production functions sleep after ~15 minutes idle** — the first request after a quiet period takes an extra 1–2 seconds. Production is kept warm by periodic platform invocations that don't bootstrap Craft (invisible to your app). Don't benchmark staging cold starts as if they were production behavior.
+- **Env-var changes require a deployment to take effect.** See `deploy-pipeline.md`.
+- **All environments share one asset bucket**, separated by per-environment UUID top-level directories. Databases are fully separate per environment and never auto-cloned — moving content means restoring a backup.
+- **Deleting an environment is total and unrecoverable**: database, assets, all variables, settings, deploy/command history, logs, and its backups are destroyed, and domains pointed at it stop resolving. Capture and download a DB backup first. The recommended cutover is the reverse: create the new environment, repoint custom domains at it, and keep the old one around until confident — inactive environments aren't billed.
+
 ### Runtime caps
 | Limit | Value |
 |---|---|
 | Web request timeout | 60 seconds |
-| Web response size | 6MB (CP asset uploads exempt) |
+| Web response size | 6MB pre-compression, any `Content-Type` (CP asset uploads exempt — they go direct-to-bucket; **front-end asset uploads are subject to it** unless you build your own direct-to-bucket upload; build artifacts exempt — served from the CDN) |
+| Response headers | >16,000 bytes total **may be dropped** — avoid long identifiers and large cookie values; tie visitor data to the session by ID instead |
 | File upload | 200MB |
-| Build duration | 15 minutes |
-| CLI command duration | 15 minutes |
+| Single DB backup | 200GB (backups don't count against the storage quota) |
+| Build duration | 15 minutes (the Migrate phase doesn't count toward it, but is governed by the command cap) |
+| CLI command duration | 15 minutes (includes deploy-triggered migrations — test major upgrades locally to gauge time) |
 | Queue job duration | 15 minutes |
 | Console command argument length | 255 characters (after `craft`) |
 | Console command history retention | 6 months |
@@ -84,7 +103,11 @@ The first section is documented limitations from Pixel & Tonic. The plugin-compa
 | Team | 2 | 10 GB | 250 GB |
 | Pro | 3 | 20 GB | 500 GB |
 
-Additional environments are not purchasable. Additional root domains can be purchased — pricing in Console.
+Additional environments are not purchasable. One custom domain is included per project (unlimited subdomains); **additional root domains are $20/month each**, prorated and billed immediately when added.
+
+**Bandwidth counts origin egress only.** Anything served from the edge — statically-cached HTML, edge image transforms, previously-requested assets, and build artifacts — does **not** count toward the monthly quota, and edge/CDN-to-client transfer is free. The lever for staying inside quota is cache-hit ratio (see `caching-and-edge.md`) and thoughtful named transforms, not smaller plans. There are no limits on page views, DB size, inbound transfer, or content volume.
+
+(The docs are internally inconsistent on environment counts — quotas.md says a flat "three environments", environments.md says Team 2 / Pro 3. The table above follows environments.md.)
 
 ## Authored-content gaps
 
@@ -213,4 +236,4 @@ Cloud's troubleshooting page (https://craftcms.com/docs/cloud/troubleshooting) c
 3. **Compare with a working environment.** If staging works and production doesn't, diff the env vars in Console.
 4. **Reach out via the Craft Discord** (`#cloud` channel) — community and Pixel & Tonic staff respond to specific issues.
 
-Last verified against https://craftcms.com/docs/cloud/compatibility and https://craftcms.com/docs/cloud/quotas on 2026-05-28. Plugin-compatibility table is community knowledge and may drift faster than the official surface.
+Last verified against https://craftcms.com/docs/cloud/compatibility and https://craftcms.com/docs/cloud/quotas on 2026-05-28. Environments facts, header/upload caps, domain pricing, and bandwidth metering verified against `craftcms/docs@main` (environments.md, quotas.md, compatibility.md) on 2026-09-02. Plugin-compatibility table is community knowledge and may drift faster than the official surface.

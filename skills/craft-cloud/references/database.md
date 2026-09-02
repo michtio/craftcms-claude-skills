@@ -39,7 +39,13 @@ For local development you still need these — see `local-dev.md` for the recomm
 
 ## Backups
 
-Cloud takes automated nightly backups per environment and lets you trigger a manual backup on demand from Console. Retention period is not stated in the docs.
+Cloud captures automated nightly backups of the **production** environment's database (schedule fixed by project region, not configurable), and lets you capture a manual backup of **any** environment on demand from Console (with an optional description). Automated and manual backups are both **retained for 30 days**, unless deleted sooner. Any Cloud backup can be restored with `php craft db/restore` (Craft 4.10+), to any environment or a local install.
+
+Fine print (from https://craftcms.com/docs/cloud/backups):
+
+- Single backups are limited to **200GB**; backups do **not** count against the storage quota.
+- Deleting an environment or project deletes its backups with it — download before destroying an environment.
+- Console-visible backups are a convenience, **not part of Cloud's durability architecture** — Pixel & Tonic can't recover an environment for which no automated or manual backup exists. For anything you can't lose, download backups off-platform on a schedule.
 
 The CP's Database Backup utility is **disabled** on Cloud — backups happen at the platform level, not via the Craft application. Plugins that depend on the CP utility (rare) won't work; use Cloud's backup interface instead.
 

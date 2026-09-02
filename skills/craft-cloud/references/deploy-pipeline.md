@@ -14,7 +14,10 @@ How a Git push (or manual trigger) becomes a live deploy. The three-phase pipeli
 - Putting `composer install` or `npm run build` in a `.github/workflows/` action — Cloud runs both itself during the Build phase. Your action would be redundant and burn CI minutes.
 - Expecting build-time access to the production database. The Build phase runs in an isolated container with no DB connection. Anything that needs the DB (project config apply, migrations, asset publishing) runs in the Migrate phase via `php craft cloud/up`.
 - Setting custom env vars in `craft-cloud.yaml`. Custom env vars only exist in the Craft Console UI per environment — they are **not injected into the build container**. If your build needs a secret (e.g. a private NPM token), you'll need to handle it via build args from the Console UI's build-environment-variables section, not `craft-cloud.yaml`.
-- Letting build time approach the 15-minute cap. Cloud kills the build at 15 minutes. If you're close, split out the heavy work (image optimization, content sync) into queue jobs that run post-deploy.
+- Letting build time approach the 15-minute cap. Cloud kills the build at 15 minutes. If you're close, split out the heavy work (image optimization, content sync) into queue jobs that run post-deploy. (The Migrate phase does **not** count toward the build cap, but each command in it is bound by the separate 15-minute command cap.)
+- Changing an env var in the Console and expecting it to apply immediately. **Adding, updating, or removing a variable requires a deployment to take effect.** Batch related variable changes, then trigger one deploy.
+- Pointing `artifact-path` somewhere other than the webroot to "exclude source files". When `artifact-path` is not your web root, **files in your web root are no longer published or accessible.** The docs' guidance: only change `webroot`, and let Cloud keep the two synchronized.
+- Keeping filename-hash cache-busting (manifest.json workflows) pointed at local disk. Every build publishes to a unique URL, so hash-busting is unnecessary on Cloud — and a manifest written *during* the build lives on the CDN, not on the function's disk. See [Artifact URLs](#artifact-urls).
 - Assuming a failed migration rolls back the deploy. It doesn't — Cloud keeps the previous version serving traffic while the failed deploy stays in a failure state. You fix the migration, push again.
 - Calling `Craft::$app->getCache()->flush()` (or any broad cache wipe) from a migration. During the Migrate phase the old version is still serving live traffic against the same cache; a global flush can deadlock the DB cache table and blow the CLI cap. See [Never flush the whole cache from a migration](#never-flush-the-whole-cache-from-a-migration) below.
 - Pushing from a forked repository. Cloud can't deploy forks — the connected repository must be the upstream.
@@ -77,6 +80,47 @@ A migration that calls `Craft::$app->getCache()->flush()` — or any broad cache
 
 The new build is promoted to receive traffic. Edge caches are already purged in the Migrate phase, so the first request after release hits the new build cleanly.
 
+## Artifact URLs
+
+At the end of the Build phase, the contents of `artifact-path` (the webroot by default) are copied to the environment's storage bucket and served from the CDN at:
+
+```
+https://cdn.craft.cloud/{environment-uuid}/builds/{build-uuid}/artifacts
+```
+
+Relative paths inside `artifacts/` are preserved, so ES-module imports and CSS `@import` statements keep working. A stable hot-link URL — `builds/current/artifacts` in place of the build UUID — always points at the most recent successful build, for referencing artifacts from *outside* the site.
+
+**Linking build artifacts from templates.** If you've historically used `siteUrl()`/`url()` to link a stylesheet or script in the webroot, use the Cloud extension's helper instead:
+
+```twig
+{% js '@artifactBaseUrl/dist/js/app.js' %}
+{# equivalent: #}
+{% js cloud.artifactUrl('dist/js/app.js') %}
+```
+
+Off-Cloud, both fall back to the auto-determined `@web` alias, so webroot files resolve normally in local dev. If local dev serves assets from a different host (a Vite/webpack dev server on another port), set `CRAFT_CLOUD_ARTIFACT_BASE_URL` locally to override the base URL.
+
+**No filename cache-busting needed.** Every build publishes to a unique URL, so hash/digest filename schemes are unnecessary. If you keep a manifest workflow anyway, point it at the CDN copy — `file_get_contents()` + `craft\cloud\Helper::artifactUrl('path/to/manifest.json')` — because a manifest written *during* the build isn't on the function's disk. Twigpack caches the manifest (safe); Asset Rev only memoizes per request (re-fetches every request — watch the latency).
+
+**Reading artifacts at runtime costs a CDN round-trip.** Only files *created during a build* must be fetched from the CDN — anything committed to the repo inside `artifact-path` is on-disk at runtime. Craft's `svg()` function on a build-generated SVG fetches from the CDN on every call; pre-process SVGs in dev and commit them instead.
+
+**White-label CDN.** As an alternative to rewriting template references, proxy artifact paths (or a dedicated subdomain) to the CDN with a rewrite rule:
+
+```yaml
+rewrites:
+  - pattern:
+      hostname: 'static.mydomain.com'
+    destination: '{artifactBaseUrl}{request.uri}'
+```
+
+Your app is then responsible for generating those URLs — the extension's own helpers keep emitting canonical `cdn.craft.cloud` URLs, so you'll want your own alias.
+
+## Private Composer packages
+
+Credentials for private packages live in the project's **Settings → Composer Auth** screen in Craft Console — not in env vars (which aren't injected into the build container anyway) and not in a committed `auth.json`. Values are **write-only**: once saved they can't be retrieved, and they're decrypted only inside the build pipeline during `composer install`.
+
+Supported auth methods: GitHub Token, HTTP Basic, GitLab Token, GitLab OAuth, Bitbucket OAuth, HTTP Bearer.
+
 ## Trigger modes
 
 Deploys are triggered from the Craft Console UI per environment.
@@ -113,6 +157,8 @@ Available at runtime (PHP request handling). Set in the Craft Console UI per env
 - **Standard env vars** — your `MY_API_KEY`, `STRIPE_SECRET`, etc.
 - **Write-only env vars** — set once, decrypted into a secrets file at runtime, not exposed in process env or logs. Use for highly sensitive values.
 - **Cloud-managed runtime vars** — DB credentials, asset-storage credentials, and similar secrets are auto-injected by the Cloud extension; you should not override them and you generally shouldn't read them directly (use Craft's standard APIs).
+
+**Variable changes require a deployment to take effect.** Adding, updating, or removing a variable in the Console does nothing to the running environment until the next deploy — make related changes together, then trigger one deployment to keep dependent values in sync.
 
 Read them with `App::env('MY_VAR')` as you would on any Craft project. The `.env` file is not the source of truth on Cloud — the Console UI is.
 
@@ -161,4 +207,4 @@ There is no one-click rollback to a prior build in the documented surface. The s
 - **No build caching across deploys** — not documented. `vendor/` and `node_modules` are rebuilt every deploy. If your builds are slow because of dependency installs, the lever is `composer install --prefer-dist` (default) and a slim `package.json`, not a cache layer you can configure.
 - **No skipping phases.** Every deploy runs all three; you can't push a "config only" deploy that skips the Build phase.
 
-Last verified against https://craftcms.com/docs/cloud/deployment, https://craftcms.com/docs/cloud/builds, and `craftcms/cloud-extension-yii2` on 2026-05-28. The internal `craft up` order and the cache-during-Migrate hazard were verified against `craftcms/cms` `5.x` `UpController` and `craftcms/cloud-extension-yii2` `3.x` `AppConfig.php` on 2026-06-18.
+Last verified against https://craftcms.com/docs/cloud/deployment, https://craftcms.com/docs/cloud/builds, and `craftcms/cloud-extension-yii2` on 2026-05-28. The internal `craft up` order and the cache-during-Migrate hazard were verified against `craftcms/cms` `5.x` `UpController` and `craftcms/cloud-extension-yii2` `3.x` `AppConfig.php` on 2026-06-18. Artifact URLs, private Composer packages, and the variables-need-a-redeploy rule verified against `craftcms/docs@main` (builds.md, private-packages.md, environments.md) on 2026-09-02.

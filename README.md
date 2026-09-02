@@ -122,10 +122,10 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craft-plugin-release` | Plugin | Release mechanics: composer.json version key, Packagist verification via `repo.packagist.org/p2`, tag recreation risk model, GitHub release objects vs tags, `gh release` pitfalls, branch promotion hygiene, shared-library release ordering, Composer path repositories, `git filter-repo` purges. 2 reference files. |
 | `ddev` | Shared | Commands, services, configuration, Xdebug, site sharing, troubleshooting. |
 | `craft-project-setup` | Shared | Project scaffolding, upgrade, and audit. Generates CLAUDE.md, .claude/rules/, .claude/settings.local.json (permissions). Gap analysis for existing configs. |
-| `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, self-hosted → Cloud migration. 12 reference files. |
+| `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, headless apps + request signing, self-hosted → Cloud migration. 13 reference files. |
 | `servd` | Shared | Servd managed hosting: git push-to-deploy + `servd.yaml`, local → staging → production sync, the `servd/craft-asset-storage` plugin (svdcdn CDN, off-server transforms), Servd static caching + Blitz reverse-proxy mode, MariaDB/MySQL over SSH, backups, Dedicated Queue Runner, ephemeral filesystem. 6 reference files. |
 
-13 skills, 117 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+13 skills, 118 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 

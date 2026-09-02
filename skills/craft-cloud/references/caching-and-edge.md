@@ -17,12 +17,14 @@ Cloud's edge layer (Cloudflare) caches HTML responses based on `cache.rules` in 
 - [Static cache rules](#static-cache-rules)
   - [Required keys per rule](#required-keys-per-rule)
   - [`query-string` syntax](#query-string-syntax)
+    - [Default ignored params](#default-ignored-params)
   - [`cookies` syntax](#cookies-syntax)
     - [Serving fresh HTML to logged-in users](#serving-fresh-html-to-logged-in-users)
   - [Rule ordering](#rule-ordering)
   - [Setting cache duration](#setting-cache-duration)
   - [Automatic bypass — and the store-vs-serve trap](#automatic-bypass--and-the-store-vs-serve-trap)
   - [Opting out of caching](#opting-out-of-caching)
+  - [Keeping forms cacheable — the flash guard](#keeping-forms-cacheable--the-flash-guard)
   - [Cache invalidation](#cache-invalidation)
   - [Relationship to `{% cache %}`](#relationship-to--cache-)
 - [ESI — `cloud.esi(...)`](#esi--cloudesi)
@@ -38,6 +40,8 @@ Cloud's edge layer (Cloudflare) caches HTML responses based on `cache.rules` in 
 - Writing a flat `cache.rules:` key, or the cookie-vary key as `session:`. **The structure is nested `cache:` → `rules:`, and the cookie key is `cookies:`** (a plain list). Both mistakes fail *silently* — malformed rules are ignored and you get default caching with no error. See [Static cache rules](#static-cache-rules).
 - Assuming logged-in users automatically get fresh (uncached) HTML. **They don't** — once a URL's guest copy is cached, the edge serves it to logged-in requests too (`cf-cache-status: HIT`). `currentUser`-gated UI on a cacheable route silently vanishes for editors. Vary on the session cookie (`cookies: [CraftSessionId]`) to fix it. See [Serving fresh HTML to logged-in users](#serving-fresh-html-to-logged-in-users) and [Automatic bypass](#automatic-bypass--and-the-store-vs-serve-trap).
 - Setting `duration: "1h"` inside a cache rule. **`duration` is not a rule key.** Duration is set via the `{% expires %}` Twig tag in the response or via response headers in a controller. Cache rules control *what to cache* and *how to vary the key*, not *for how long*.
+- Writing a custom `query-string` rule and losing the built-in tracking-param exclusions. **A custom rule _replaces_ the default behavior and exclusion list** — your `mode: exclude, keys: [page]` rule means `?fbclid=…` now fragments the cache. Re-list the tracking params you care about, or use `mode: include` with only the params that genuinely change the response. See [Default ignored params](#default-ignored-params).
+- Rendering the cart in the site header via `craft.commerce.carts.cart`. Commerce reads or writes a cart number to the session on every access, which sends no-cache headers — dynamic cart data on *every* page makes the whole site uncacheable. Scope cart access to on-session pages (cart, checkout, account) and load the header badge via Ajax or ESI.
 - Using `path:` instead of `pattern:`. The actual key is `pattern`.
 - Listing rules from generic to specific. **First match wins.** Order rules from most specific to least specific (descending specificity).
 - Passing a non-scalar value to `cloud.esi(...)`. The docs are explicit: "Only scalar values can be passed to `cloud.esi()`." Pass IDs or handles, then re-fetch the object inside the included template.
@@ -131,6 +135,14 @@ query-string:
 - `mode: exclude` + `keys: [utm_source, utm_medium, ...]` — every param **except** the listed ones varies the cache. The classic "ignore UTM params" pattern.
 - `mode: exclude` + `keys: all` — no params participate in the cache key. The cleanest "ignore everything" setting.
 
+Params in the cache key are **alphabetized** — `?page=3&category=widgets` and `?category=widgets&page=3` share one entry.
+
+#### Default ignored params
+
+With **no** custom `query-string` rule, Cloud already excludes a long list of tracking params from cache keys: Google (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `gclid`, `gclsrc`, `dclid`, `wbraid`, `gbraid`), Facebook (`fbclid`, `fb_action_ids`, `fb_action_types`, `fb_source`), Microsoft (`msclkid`), Hubspot (`hsa_*`), Mailchimp (`mc_cid`, `mc_eid`), Klaviyo, and more — the full list is under "Ignored Params" at https://craftcms.com/docs/cloud/static-caching.
+
+**A custom `query-string` rule replaces this default list**, it does not extend it. If you add a rule to vary on `?page`, tracking params start fragmenting your cache again unless you re-exclude them yourself.
+
 ### `cookies` syntax
 
 ```yaml
@@ -208,6 +220,11 @@ $this->response->getHeaders()->set('Cache-Control', 'public, max-age=3600');
 
 The `{% expires %}` tag accepts human-readable durations (`1 hour`, `30 minutes`, `1 day`). Without arguments, it explicitly opts the response out of caching for the current request.
 
+Two element-date interactions, same as Craft's own template caches:
+
+- A page whose elements carry an **Expiry Date** sooner than `cacheDuration` is only cached until that content should stop being visible — the extension uses the same expiry information Craft does.
+- There is **no mechanism to invalidate a cached page when an element with a future Post Date goes live.** A cached listing won't pick up the newly-published entry until the cache expires or is purged — schedule a `clear-caches/craft-cloud-caches` run, or keep durations short on listing pages that use future Post Dates.
+
 ### Automatic bypass — and the store-vs-serve trap
 
 **Correction (2026-08-20):** an earlier version of this reference claimed Cloud auto-bypasses the cache "for any request carrying an authenticated Craft session cookie." That is **wrong**, and it's a dangerous thing to believe. Empirically, a logged-in front-end request to a warmed URL returns `cf-cache-status: HIT` — the edge serves the logged-in user the cached guest copy. The official static-caching docs describe no logged-in auto-bypass.
@@ -227,6 +244,28 @@ When a specific response should never be cached even though it matches a `cache.
 - PHP: `$this->response->setNoCacheHeaders();`.
 
 Both ultimately set `Expires`, `Pragma`, and `Cache-Control` headers that tell the edge layer not to cache this response.
+
+### Keeping forms cacheable — the flash guard
+
+Reading session flashes sends no-cache headers, so a form template that unconditionally renders flash messages is never cached — even on the initial GET, when there are no flashes to show. POST submissions are never cached anyway, so the trick is to only touch the session when a submission actually happened, flagged via the redirect URL:
+
+```twig
+{# Only read session data when the `success` query param is set: #}
+{% if craft.app.request.getQueryParam('success') %}
+  {% set flashes = craft.app.session.getAllFlashes(true) %}
+  {% for level, flash in flashes %}
+    <p>{{ flash }}</p>
+  {% endfor %}
+{% endif %}
+
+<form method="post">
+  {{ csrfInput() }}
+  {{ redirectInput(url(craft.app.request.url, { success: true })) }}
+  {# … #}
+</form>
+```
+
+The initial page (no `?success`) never reads the session and stays cacheable (with async CSRF inputs); the post-submit redirect carries `?success=true`, reads flashes, and correctly sends no-cache headers for that render only.
 
 ### Cache invalidation
 
@@ -287,9 +326,11 @@ The output at the edge looks identical to a non-ESI render — the user can't te
 
 ### When to use ESI
 
-- Per-user content (account name in header, cart badge count) inside a mostly-cacheable page.
+- Session-*starting* but not user-*specific* fragments — the canonical example is a newsletter form's CSRF token in an otherwise cacheable footer, so the rest of the page can cache. (For genuinely per-user content, see the Cookie forwarding constraint above — vary the page cache on the session cookie or fetch client-side instead.)
 - Time-sensitive widgets (live scores, stock prices, news ticker) embedded in stable layouts.
 - A/B test variants — render the test fragment fresh without invalidating the page cache.
+
+ESI is not a silver bullet: each include is a subrequest, and a dynamic fragment on *every* page still holds up every page. For low-traffic fragments (that footer form), an Ajax fetch triggered by interaction criteria (scroll distance) often beats ESI.
 
 ### When not to use ESI
 
@@ -303,4 +344,4 @@ The output at the edge looks identical to a non-ESI render — the user can't te
 
 The implementation lives in `craft\cloud\Esi` and `craft\cloud\controllers\EsiController` in the extension package. You don't write a controller — point `cloud.esi(...)` at a template and the controller handles dispatch.
 
-Last verified against https://craftcms.com/docs/cloud/static-caching, https://craftcms.com/docs/cloud/esi, and `craftcms/cloud-extension-yii2@main` on 2026-05-28. Corrected 2026-08-20 against the current docs and a live production deployment: the cache-rules structure is nested `cache:` → `rules:` (not flat `cache.rules:`), the cookie-vary key is `cookies:` (not `session:`), and there is **no** automatic cache bypass for logged-in users (they are served the cached guest copy unless the key varies on the session cookie).
+Last verified against https://craftcms.com/docs/cloud/static-caching, https://craftcms.com/docs/cloud/esi, and `craftcms/cloud-extension-yii2@main` on 2026-05-28. Corrected 2026-08-20 against the current docs and a live production deployment: the cache-rules structure is nested `cache:` → `rules:` (not flat `cache.rules:`), the cookie-vary key is `cookies:` (not `session:`), and there is **no** automatic cache bypass for logged-in users (they are served the cached guest copy unless the key varies on the session cookie). Default ignored params (and rule-replacement behavior), param alphabetization, expiry-date-bounded durations, the flash guard, and the Commerce cart caveat verified against `craftcms/docs@main` static-caching.md on 2026-09-02.

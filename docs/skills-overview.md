@@ -208,10 +208,10 @@ Interactive project scaffolding. Detects project type from `composer.json`, `.dd
 ## craft-cloud
 
 **Track:** Shared (both plugin and site development, when hosted on Cloud)
-**Reference files:** 12 (approximately 1,935 lines)
-**SKILL.md:** 114 lines
+**Reference files:** 13 (approximately 2,330 lines)
+**SKILL.md:** 131 lines
 
-Craft Cloud, Pixel & Tonic's serverless hosting platform. Covers the `craft-cloud.yaml` config file, the Build → Migrate → Release deploy pipeline, the `craftcms/cloud` extension package (with `App::isEphemeral()` patterns and the `cloud.esi(...)` Twig helper), edge image transforms via Cloudflare Images, edge static caching with `cache.rules`, MySQL 8 / Postgres 15 constraints (no MariaDB, no `tablePrefix`), Console-based command runner and scheduled cron (hourly minimum), auto-processed queue jobs (15-minute cap), plugin Cloud-compatibility requirements, and self-hosted → Cloud migration.
+Craft Cloud, Pixel & Tonic's serverless hosting platform. Covers the `craft-cloud.yaml` config file, the Build → Migrate → Release deploy pipeline, the `craftcms/cloud` extension package (with `App::isEphemeral()` patterns and the `cloud.esi(...)` Twig helper), edge image transforms via Cloudflare Images, edge static caching with nested `cache:` → `rules:`, MySQL 8 / Postgres 15 constraints (no MariaDB, no `tablePrefix`), Console-based command runner and scheduled cron (hourly minimum), auto-processed queue jobs (15-minute cap), headless apps and RFC 9421 request signing (bot-detection 429/503 mitigation), build-artifact URLs (`cloud.artifactUrl()`), plugin Cloud-compatibility requirements, and self-hosted → Cloud migration.
 
 **When it triggers:** Prompts like "deploy to Craft Cloud", "configure `craft-cloud.yaml`", "make this plugin Cloud-compatible", "migrate to Craft Cloud", or any mention of `App::isEphemeral()`, `cloud.esi()`, the `craftcms/cloud` package, or `CRAFT_CLOUD_*` env vars. Also auto-loaded as a companion to `craftcms` and `craft-site` when the project is detected as a Cloud project (`craft-cloud.yaml` at repo root, or `craftcms/cloud` in `composer.json`).
 
