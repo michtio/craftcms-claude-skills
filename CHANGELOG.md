@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.16.1 -- 2026-09-02
+
+Corrects three wrong claims in the craft-cloud edge-caching references, each verified against the current official docs and a live production Craft Cloud deployment (2026-08-20).
+
+### Fixed
+
+- **`skills/craft-cloud/references/caching-and-edge.md` / `references/config-file.md`** — the cache-rules structure is a **nested `cache:` → `rules:`** key in `craft-cloud.yaml`, not the flat `cache.rules:` this reference previously showed, and the cookie-vary key is **`cookies:`**, not `session:`. Both mistakes fail silently (malformed rules are ignored; you get default caching with no error), which is exactly why the wrong shapes survived. All YAML examples rewritten to the correct shape.
+- **`skills/craft-cloud/references/caching-and-edge.md`** — removed the false claim that Cloud auto-bypasses the static cache for requests carrying an authenticated session cookie. Empirically a logged-in request to a warmed URL returns `cf-cache-status: HIT` and is served the cached guest copy. New "Automatic bypass — and the store-vs-serve trap" section separates what no-cache headers actually do (prevent a response from being *stored*/leaked) from what they cannot do (stop the edge *serving* an already-stored guest copy), and a new "Serving fresh HTML to logged-in users" section documents the fix: vary the cache key on the session cookie via `cookies: [CraftSessionId]`. The ESI cookie-forwarding row now explains why ESI is the wrong tool for `currentUser`-gated fragments (the signed subrequest's cache key has no notion of who is asking, and `EsiController` strips the default no-cache headers).
+- **`skills/craft-cloud/SKILL.md`** — new cross-cutting pitfall for the logged-in-users-served-the-guest-copy trap, routing to the corrected reference.
+
 ## 1.16.0 -- 2026-09-02
 
 Rewrites the Imager X reference, contributed by the plugin's author André Elvan (#14). Every claim in the file is now checked against plugin source, and every Twig example was rendered against a real Craft 5 + Imager X 6.1 install before submission.
