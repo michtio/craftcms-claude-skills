@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.16.0 -- 2026-09-02
+
+Rewrites the Imager X reference, contributed by the plugin's author André Elvan (#14). Every claim in the file is now checked against plugin source, and every Twig example was rendered against a real Craft 5 + Imager X 6.1 install before submission.
+
+### Changed
+
+- **`skills/craft-plugins/references/imager-x.md`** — rewritten (199 → 374 lines). Corrects twelve factually wrong claims from the previous version: the nonexistent `imager-x/clear` command (real: `clear-caches/all`, `/transforms-cache`, `/runtime-cache`) and `generate --dry-run` flag; the inert `'optimizeType' => 'none'` override (only `'job'` and `'runtime'` are valid); `svgo` listed as an optimizer; the nonexistent `cloudflareConfig`/`awsConfig` settings and wrong `cloudflare`/`aws` transformer handles (real: `cloudflareimages`, `awsserverless`); `quality` silently remapped to `jpegQuality` and dropped for WebP/AVIF/JXL; the wrong multi-site mechanism (`imagerUrl` is the localizable setting, not `imgixConfig`); two 404 documentation URLs; and the price (Lite $49 / Pro $99, not a flat $99). Adds the features the old file omitted: quick syntax (`[400, 1600, 16/9]`) and its auto-filling, the Power Pack (`ppimg`/`pppicture`), automatic generation via `config/imager-x-generate.php`, the full transformer table with Pro/companion-plugin requirements, `|srcset` as a filter, `hasNamedTransform()`, nested named transforms, `generateFlags`, and the colour/contrast helpers. Product name corrected to Imager X (no hyphen) and "driver" to "transformer" throughout.
+- **`skills/craft-plugins/SKILL.md`** — refreshed the `imager-x.md` routing-table scope column and extended the description trigger terms with `quick syntax`, `named transforms`, `Power Pack`, `pppicture`, `ppimg` (#14). The description is then trimmed back inside the ~1,536-character routing window (1,597 → 1,496) by dropping a routing-prose sentence with no distinctive trigger keywords — past the window the tail goes inert, and the tail is the "Do NOT trigger" guard.
+
 ## 1.15.0 -- 2026-08-12
 
 Adds Warp (`craftpulse/craft-warp` 5.0.2, passwordless front-end member auth) as the pack's 24th plugin reference, with routing so passwordless intent surfaces it even when no plugin is named. All claims distilled from the plugin's own docs and verified against its source; released state confirmed on `repo.packagist.org/p2`.
