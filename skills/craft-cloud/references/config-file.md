@@ -36,7 +36,7 @@ That's it. Everything else is optional with sensible defaults.
 | `artifact-path` | string | Inherits the value of `webroot` | Path or paths to upload as the deploy artifact after the build phase. Useful for excluding `node_modules` or source files. |
 | `app-path` | string | repo root | Where Craft's PHP application lives if not at the repo root. |
 | `webroot` | string | `web` | The public document root, relative to `app-path`. Update if you've renamed `web/` to `public/`. |
-| `cache.rules` | list | (no rules) | Edge static caching rules — see [Static Cache Rules](#static-cache-rules) below. |
+| `cache` › `rules` | list | (no rules) | Edge static caching rules — a `rules` list nested under a top-level `cache:` key (not a flat `cache.rules:`). See [Static Cache Rules](#static-cache-rules) below. |
 | `redirects` | list | (none) | URL redirects — see [Redirects](#redirects) below. |
 | `rewrites` | list | (none) | URL rewrites — see [Rewrites](#rewrites) below. |
 
@@ -52,22 +52,23 @@ npm-script: build
 
 webroot: web
 
-cache.rules:
-  - pattern: "/account/*"
-    query-string:
-      mode: include
-      keys: all
-  - pattern: "/blog/*"
-    query-string:
-      mode: exclude
-      keys:
-        - utm_source
-        - utm_medium
-        - utm_campaign
-  - pattern: "/*"
-    query-string:
-      mode: exclude
-      keys: all
+cache:
+  rules:
+    - pattern: "/account/*"
+      query-string:
+        mode: include
+        keys: all
+    - pattern: "/blog/*"
+      query-string:
+        mode: exclude
+        keys:
+          - utm_source
+          - utm_medium
+          - utm_campaign
+    - pattern: "/*?"
+      query-string:
+        mode: exclude
+        keys: all
 
 redirects:
   - from: "/old-blog/(.*)"
@@ -81,35 +82,36 @@ rewrites:
 
 ## Static cache rules
 
-The `cache.rules` list controls how the edge layer keys cached responses. Each rule needs a `pattern` plus at least one of `query-string` or `session`.
+Cache rules live under a **nested `cache:` → `rules:`** key (not a flat `cache.rules:` key), and control how the edge layer keys cached responses. Each rule needs a `pattern` plus at least one of `query-string` or `cookies` (the cookie-vary key is `cookies:`, **not** `session:`). A wrong key name or the flat shape is ignored silently — you get default caching with no error.
 
-**Important — duration is not a `cache.rules` key.** How long to cache is set in the response itself, via the `{% expires %}` Twig tag or `$this->response->getHeaders()->set('Cache-Control', ...)` in a controller. `cache.rules` controls *what to cache*, not *for how long*.
+**Important — duration is not a cache-rule key.** How long to cache is set in the response itself, via the `{% expires %}` Twig tag or `$this->response->getHeaders()->set('Cache-Control', ...)` in a controller. Cache rules control *what to cache* and *how to vary the key*, not *for how long*.
 
 **Order matters — first match wins.** List rules from most specific to least specific.
 
 ```yaml
-cache.rules:
-  - pattern: "/search"
-    query-string:
-      mode: include
-      keys:
-        - q
-        - category
-  - pattern: "/blog/*"
-    query-string:
-      mode: exclude
-      keys:
-        - utm_source
-        - utm_medium
-    session:
-      - AD_SOURCE
-  - pattern: "/*"
-    query-string:
-      mode: exclude
-      keys: all
+cache:
+  rules:
+    - pattern: "/search"
+      query-string:
+        mode: include
+        keys:
+          - q
+          - category
+    - pattern: "/blog/*"
+      query-string:
+        mode: exclude
+        keys:
+          - utm_source
+          - utm_medium
+      cookies:
+        - AD_SOURCE
+    - pattern: "/*?"
+      query-string:
+        mode: exclude
+        keys: all
 ```
 
-For the full cache-rules surface (every `mode` value, session-cookie semantics, opt-out mechanisms, ESI), see `caching-and-edge.md`.
+For the full cache-rules surface (every `mode` value, cookie-vary semantics including serving fresh HTML to logged-in users, opt-out mechanisms, ESI), see `caching-and-edge.md`.
 
 ## Redirects
 
