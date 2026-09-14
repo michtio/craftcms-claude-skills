@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.18.0 -- 2026-09-14
+
+Folds in Craft CMS 5.10.13 through 5.11.1 (released 2026-08-04 to 2026-09-02). The pack was last verified against 5.10.12; every claim below was checked against the `craftcms/cms` `5.x` source and the linked PRs/issues on 2026-09-14. Security-only entries (the RCE, authorization-bypass, and information-disclosure advisories in 5.10.13, 5.10.14, and 5.11.0) carry no skill impact beyond "be on 5.11.1"; nothing in the `Unreleased` section of Craft's changelog has shipped yet, so it is not folded in.
+
+### Added
+
+- **`skills/craftcms/references/graphql.md`** -- new "Craft 5.11 Additions" section: user-data fields (`author`, `authorId`, `authors`, `authorIds`, `draftCreator`, `revisionCreator`, `uploader`, `uploaderId`) are now absent from any schema without the **Query for users** scope (`usergroups.everyone`), so a 5.10-era front-end query fails validation after the upgrade; `Gql::canQueryAllUsers()` for custom types exposing user data; cached GraphQL responses now register cache tags and expiry (5.11.0 fix). Pitfall bullet and an annotation on the `author { … }` consumer example.
+- **`skills/craft-site/references/headless.md`** -- the same "Query for users" gate from the front-end side: pitfall bullet plus a note in Authentication and Schema Resolution that scopes decide which fields *exist*, not just which return data.
+- **`skills/craftcms/references/config-app.md`** -- new Database Session subsection: `ddev craft setup/php-session-table` (the `phpsessions` table is not created on install), the `app.web.php` closure using `craft\web\DbSession` (5.11.0+, `yii\web\DbSession` before) with `sessionTable => Table::PHPSESSIONS`, and why the Craft class exists (the "headers already sent" guard `craft\web\Session` has, craftcms/cms#19139). Pitfall bullet added.
+- **`skills/craft-twig-guidelines/SKILL.md`** -- `url(absoluteUrl, false)` (Craft 5.11+) strips every query param for canonical/share/clear-filter links; PHP equivalents `UrlHelper::url($url, false)`, `removeParams()`, `removeAllParams()`; pre-5.11 fallback.
+- **`skills/craft-php-guidelines/SKILL.md`** -- `App::parseEnv()` resolution rule (whole-string `$VAR` or slash-delimited segment only) and the 5.11.0 behaviour change: a `$` inside free text is now left intact where 5.0–5.10 stripped the unresolved token (craftcms/cms#19522). `Config::doesEnvVarExist()` (5.11.0+) for "declared in `.env`" checks, distinguished from `App::env()`.
+- **`skills/craft-content-modeling/references/infrastructure.md`** -- asset alt text now honours `altTranslationMethod` from the first save (5.11.0; previously the first value propagated to every site), the `assets.alt` → `assets_sites.alt` backfill migration, and the rule to read alt through the element because the global column is ignored and removed in Craft 6 (craftcms/cms#19067).
+- **`skills/craft-content-modeling/references/field-types.md`** -- `LinkData` serialisation keys since 5.11.0 (`type`, `value`, `url`, `label`, `filename`, `link`, `attributes`, `defaultLabel`, `elementType`, `elementId`, `elementSiteId`, `elementTitle`) versus the sparse 5.3–5.10 array; per-usage entry type handle overrides now drive element partial lookup (5.10.14+).
+- **`skills/craft-plugins/references/element-api.md`** -- pitfall: return Link field values through explicit getters so the payload shape doesn't change with the Craft minor.
+- **`skills/craftcms/references/elements.md`** -- pitfall: reordering nested elements by saving each sibling; `Elements::reorderNestedElements()` (5.11.0) renumbers `elements_owners.sortOrder` directly and invalidates the owner's caches, with authorization left to the caller (craftcms/cms#19321).
+- **`skills/craftcms/references/config-general.md`** -- Craft 5.11.0 answers `.well-known/passkey-endpoints` with `{}`; nothing to configure.
+- **`skills/craftcms/SKILL.md`** -- two task-example routes: database-backed PHP sessions, and GraphQL author/uploader fields missing after a 5.11 upgrade.
+
+### Changed
+
+- **`skills/craft-site/references/element-partials.md`** -- Template Lookup Path rewritten as the three-candidate list core actually builds (`partialTemplatePathCandidates()`, lowest priority number wins): overridden entry type handle (priority 1, 5.10.14+, craftcms/cms#18968), original entry type handle (priority 2), generic `_partials/{refHandle}.twig` (priority 10). Notes that `Element::EVENT_RENDER` (5.8.0+) can add or reorder candidates. Pitfall bullet for the pre-5.10.14 behaviour.
+
+### Fixed
+
+- **`skills/craftcms/references/config-app.md`** -- the Session Component section claimed Craft "uses database-backed sessions by default". It doesn't: `craft\web\Session` sits on PHP's native handler (files, per server), and `sessions-and-auth.md` already said so. Heading and paragraph corrected.
+- **`skills/craftcms/references/sessions-and-auth.md`** -- Database row of the PHP-session backend table now names the class per Craft version and how the table gets created.
+- **`README.md`** -- "latest minor (currently 5.10)" → 5.11.
+
 ## 1.17.0 -- 2026-09-02
 
 Folds the 2026-09-02 Craft Cloud docs gap scan into the craft-cloud skill: the official docs now span 35 pages, and this release covers the developer-relevant material the skill was missing — headless apps and request signing chief among it. Every claim verified against `craftcms/docs@main` (fetched 2026-09-02).
