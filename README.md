@@ -203,7 +203,7 @@ This package follows its own [semantic versioning](https://semver.org), driven b
 - **Minor** (e.g. 1.5.x → 1.6.0) — new skills, new plugin references, significant content additions
 - **Major** (1.x → 2.x) — Craft's next major (5.x → 6.x, where APIs break) or a major reorganization of the pack
 
-The pack targets **Craft CMS 5, latest minor** (currently 5.10). Behaviour specific to a Craft minor is annotated inline in the content (e.g. "since 5.10.0"), so a single line serves projects on any Craft 5 minor — the minors are additive and backward-compatible. New content like a hosting skill or plugin reference is a feature of the pack, independent of which Craft minor is current.
+The pack targets **Craft CMS 5, latest minor** (currently 5.11). Behaviour specific to a Craft minor is annotated inline in the content (e.g. "since 5.10.0"), so a single line serves projects on any Craft 5 minor — the minors are additive and backward-compatible. New content like a hosting skill or plugin reference is a feature of the pack, independent of which Craft minor is current.
 
 Development happens on `main`. The `1.4.x` branch is a **frozen snapshot targeting Craft 5.9** — it received a final quality release and no longer takes new work; all new development lands on `main`. The `release-validation` workflow enforces that manifest versions match the release tag.
 

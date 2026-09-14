@@ -16,6 +16,7 @@
 - Setting `maxGraphqlComplexity`, `maxGraphqlDepth`, or `maxGraphqlResults` to `0` in production — zero means unlimited, which is a denial-of-service vector.
 - Not sending the `X-Craft-Site` header for multi-site API consumers — Craft defaults to the primary site, silently returning wrong-language content.
 - Leaving the public GraphQL schema enabled without auditing its scope — it exposes content to unauthenticated requests.
+- Selecting `author`, `authors`, or `uploader` from a schema without **Query for users** — since Craft 5.11.0 those fields (plus `authorId`, `authorIds`, `draftCreator`, `revisionCreator`, `uploaderId`) only exist in schemas with the Users → "Query for users" scope. A front end that worked on 5.10 fails query validation after the upgrade. Grant the scope on the private schema the front end uses (not the public one, unless author accounts are meant to be public) or stop selecting author data.
 - Assuming `allowedGraphqlOrigins` still works on Craft 5.3+ — it is deprecated since 4.11.0. Use the `craft\filters\Cors` filter instead.
 
 ## Contents
@@ -73,6 +74,8 @@ Authorization: Bearer abc123def456
 ```
 
 Private tokens are created in the CP under Settings > GraphQL > Tokens. Each token is scoped to one schema.
+
+Schema scopes decide which fields *exist*, not just which return data. From Craft 5.11 the user-related fields (`author`, `authors`, `uploader`, and their id variants) are absent from any schema without **Query for users**, so selecting them is a validation error, not an empty result. The `craftcms` skill's `graphql.md` (Craft 5.11 Additions) has the full list.
 
 ### Rate Limiting
 

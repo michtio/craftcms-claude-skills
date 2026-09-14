@@ -20,6 +20,7 @@ When unsure about a config option, `WebFetch` the GitHub README — it's the can
 - Not scoping criteria tightly — an open `craft\elements\Entry::class` without section/type criteria exposes all entries across all sections. Always filter.
 - Forgetting the endpoint is cached by default — responses cache automatically and invalidate when relevant elements change. If you're hitting stale data, check whether cache invalidation is working or add explicit cache config.
 - Exposing draft/revision data — Element API respects Craft's default query behavior, but misconfigured criteria can leak drafts. Don't override status/draft params unless intentional.
+- Returning a Link field value raw — on Craft 5.11+ a `LinkData` object serialises to a full array (`type`, `url`, `label`, `elementId`, … see the `craft-content-modeling` skill's `field-types.md`); on 5.3–5.10 it was sparse. Pick the fields explicitly (`'url' => $entry->cta?->getUrl()`, `'label' => $entry->cta?->getLabel()`) so the payload shape doesn't change with the Craft minor.
 
 ## Config File
 

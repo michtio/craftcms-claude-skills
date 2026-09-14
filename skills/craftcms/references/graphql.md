@@ -16,11 +16,18 @@
 - Mutation resolvers that don't validate before saving — elements silently fail or throw unstructured exceptions instead of returning `userErrors`.
 - Using `!empty()` for optional integer arguments like `limit` — `0` is a valid value but `!empty(0)` is `true`. Use `isset()` for nullable integers.
 - Tokens are stored in the database only, not project config — forgetting to create tokens per environment leaves staging/production with no API access.
+- Expecting `author`/`uploader` data from a schema without **Query for users** (Craft 5.11+) — the fields are absent from the schema, so the query fails at validation (`Cannot query field "author" on type …`) rather than returning `null`. See Craft 5.11 Additions.
 
 ## Craft 5.10 Additions
 
 - **`hardDelete` argument on `delete*` mutations** — every built-in delete mutation now accepts `hardDelete: Boolean` (default `false`). When `true`, bypasses soft-delete and removes the element immediately. Custom delete mutations should mirror this argument shape for consistency.
 - **Assets' `url` field `immediately` argument is no longer deprecated** — earlier docs said to avoid `immediately: true` on `url` queries; that deprecation was reversed in 5.10. The argument forces synchronous transform generation instead of returning a queued URL.
+
+## Craft 5.11 Additions
+
+- **User-data fields are gated on "Query for users"** — `author`, `authorId`, `authors`, `authorIds`, `draftCreator`, `revisionCreator`, `uploader`, and `uploaderId` only exist in a schema that has **Query for users** enabled (Settings → GraphQL → Schemas → Users; the `usergroups.everyone` scope). Through 5.10 any schema that could read the entry also exposed its author. After upgrading, a front end that selects `author { fullName }` from a content-only schema fails query validation. Audit every schema's Users scope before deploying 5.11: grant it on the private schema the front end uses, or stop selecting author data. Leave the public schema without it unless exposing author accounts is intentional.
+- **`Gql::canQueryAllUsers(?GqlSchema $schema = null)`** — the helper core uses for that gate (`canSchema('usergroups.everyone')`). Custom types that expose user data (a `createdBy` field on a plugin element, say) should condition the field definition on it so they follow the same rule instead of leaking user data through a side door.
+- **Cached queries now carry cache tags and expiry** — 5.11.0 fixed cached GraphQL responses not registering the original query's element cache tags or expiration date, so results depending on Post/Expiry Dates could stay stale until a manual cache clear. Projects that worked around it with `enableGraphqlCaching => false` can re-enable caching after upgrading.
 
 ## Table of Contents
 
@@ -477,7 +484,7 @@ Inline fragments are required. Type name pattern: `{sectionHandle}_{entryTypeHan
   entry(slug: "my-post") {
     ... on blog_article_Entry {
       relatedArticles { title, url }
-      author { fullName, photo { url } }
+      author { fullName, photo { url } }   # 5.11+: schema needs "Query for users"
     }
   }
 }

@@ -293,7 +293,7 @@ When `setPasswordPath` is set, you must also set `invalidUserTokenPath` to handl
 
 `activateAccountSuccessPath` and `verifyEmailSuccessPath` are often confused. `activateAccountSuccessPath` is for brand-new users activating their account for the first time. `verifyEmailSuccessPath` is for existing users verifying a changed email address. Both can be set to the same page, but distinguishing them allows for different messaging.
 
-`setPasswordRequestPath` is used by `.well-known/change-password` -- a standard that password managers use to direct users to your site's password change page. Without this setting, the `.well-known/change-password` redirect does not work.
+`setPasswordRequestPath` is used by `.well-known/change-password` -- a standard that password managers use to direct users to your site's password change page. Without this setting, the `.well-known/change-password` redirect does not work. Craft 5.11.0 also answers `.well-known/passkey-endpoints` with an empty `{}` -- it advertises passkey support to browsers and password managers without revealing the control panel URL, and there is nothing to configure.
 
 Complete front-end auth flow configuration:
 

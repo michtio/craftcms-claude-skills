@@ -262,6 +262,23 @@ For adding content to an element string:
 Combine with `|attr` for classes and aria attributes. Use `|append` for
 accessible labels inside the SVG.
 
+### `url()` with `false` Params (Craft 5.11+)
+
+Passing `false` as the second argument strips every query-string param from
+an absolute URL. Canonical links, share URLs, and "clear filters" links:
+
+```twig
+<link rel="canonical" href="{{ url(craft.app.request.absoluteUrl, false) }}">
+<a href="{{ url(craft.app.request.absoluteUrl, false) }}">Clear filters</a>
+```
+
+An array still merges params in; `false` removes them all. The stripping
+only applies when the passed-in URL is absolute, so feed it a full URL, not a
+path. PHP has the same call as `UrlHelper::url($url, false)`, plus
+`UrlHelper::removeParams($url, [...])` and `UrlHelper::removeAllParams($url)`
+for finer control. Before 5.11, rebuild the clean URL with
+`siteUrl(craft.app.request.pathInfo)` instead.
+
 ### `heading()` / `h()` / `h1()`…`h6()` — Programmatic Headings (Craft 5.10+)
 
 Build heading tags from a dynamic level without string-concatenation. Useful in

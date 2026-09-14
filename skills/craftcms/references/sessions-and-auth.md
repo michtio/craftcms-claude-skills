@@ -41,7 +41,7 @@ The standard PHP session mechanism, stored via whatever backend is configured:
 | Files (default) | No config needed | `craft\web\Session` handles it |
 | Redis | `config/app.web.php` | Requires `yii2-redis` package |
 | Memcached | `config/app.web.php` | Requires `yii2-memcached` package |
-| Database | `config/app.web.php` | Uses `Table::PHPSESSIONS` (`{{%phpsessions}}`) |
+| Database | `config/app.web.php` | `craft\web\DbSession` (5.11+; `yii\web\DbSession` before, which logs "headers already sent" warnings). `Table::PHPSESSIONS` (`{{%phpsessions}}`) is created by `craft setup/php-session-table`, not on install. See `config-app.md`. |
 
 PHP sessions hold transient data: flash messages, return URLs, CSRF tokens, form data. They are tied to the browser's session cookie (`CraftSessionId` by default).
 

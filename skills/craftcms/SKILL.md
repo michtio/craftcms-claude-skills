@@ -74,6 +74,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "My element query with ['like', ...] returns nothing" → read `architecture.md` (Element-query param setters don't take Yii operator tuples)
 - "Match elements by title/slug prefix" → read `architecture.md` (Element-query param setters don't take Yii operator tuples)
 - "Configure Redis for caching and sessions" → read `config-app.md`
+- "Store PHP sessions in the database (load balancer, no Redis)" → read `config-app.md` (Session Component — `craft\web\DbSession`, `setup/php-session-table`)
 - "Set up environment variables for production" → read `config-bootstrap.md`
 - "Find a GeneralConfig setting" → read `config-general.md`
 - "Read a config value in plugin code (App::env, parseEnv, GeneralConfig)" → read `config-bootstrap.md` + `config-general.md`
@@ -84,6 +85,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up custom URL routes" → read `config-bootstrap.md`
 - "Configure search to find short words" → read `config-app.md`
 - "Set up GraphQL tokens and schemas" → read `graphql.md` + `config-general.md`
+- "GraphQL `author`/`uploader` fields disappeared after upgrading to Craft 5.11" → read `graphql.md` (Craft 5.11 Additions — "Query for users" scope)
 - "Set up caching for a high-traffic site" → read `caching.md`
 - "Register custom permissions for my plugin" → read `permissions.md`
 - "Check user permissions in templates" → read `permissions.md`

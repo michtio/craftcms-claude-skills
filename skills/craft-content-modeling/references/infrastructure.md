@@ -177,7 +177,7 @@ ASSETS_PATH=/var/www/html/web/uploads
 
 Each volume has its own **field layout** — this is where you add custom metadata fields for assets. Common patterns:
 
-- **Alternative Text** (native field layout element) — always include for accessibility. Has its own translation method (`altTranslationMethod`) for multi-site.
+- **Alternative Text** (native field layout element) — always include for accessibility. Has its own translation method (`altTranslationMethod`) for multi-site. Since Craft 5.11.0 that method is honoured from the **first** save: before 5.11 the first alt text entered was copied to every site regardless of the setting, and only edits from the second save on were scoped (craftcms/cms#19067). The 5.11 migration backfills `assets_sites.alt` from the old global `assets.alt` column, which is now ignored and is removed in Craft 6 — read alt through the element (`asset.alt`, `alt` in GraphQL), never by joining `assets.alt` in a query.
 - **Title translation** — `titleTranslationMethod` controls whether asset titles differ per site (default: per site).
 - **Custom fields** — photographer credit, copyright notice, focal point, usage rights, expiry date.
 - **Reserved handles** on volumes: `alt`, `extension`, `filename`, `folder`, `height`, `kind`, `size`, `volume`, `width`.

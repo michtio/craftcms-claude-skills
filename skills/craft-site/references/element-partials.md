@@ -12,6 +12,7 @@ How to use `entry.render()` and the `_partials/` template directory in Craft CMS
 - N+1 queries inside partials — use `.eagerly()` for any related element queries. Each partial renders independently, so without eager loading, every card in a grid fires separate queries.
 - Assuming `render()` works in the CP — it's front-end only (`TEMPLATE_MODE_SITE`).
 - Hardcoding the partial path instead of using the convention — the lookup path is automatic. Don't `{% include %}` the partial manually when `entry.render()` works.
+- Overriding an entry type's handle per field and expecting the partial to follow — it does, but only on Craft 5.10.14+. On older versions the override is ignored for lookup, so the partial must live under the original handle.
 
 ## Contents
 
@@ -43,16 +44,24 @@ If no matching template exists, `render()` falls back to a `<p>` tag containing 
 
 ## Template Lookup Path
 
-`render()` searches for templates in priority order:
+`render()` builds a list of candidate templates and renders the first one that exists (lowest priority number wins). Since 5.8.0 plugins can add or reorder candidates through `Element::EVENT_RENDER`.
 
-### Priority 1: Type-specific partial
+### Priority 1: Overridden entry type handle (5.10.14+)
+
+```
+_partials/{refHandle}/{overriddenHandle}.twig
+```
+
+Entries only, and only when the entry type's handle is overridden for the field or section it's used in (per-usage overrides, 5.6.0+). Before 5.10.14 this candidate didn't exist: a `cta` type renamed to `richTextCta` inside a CKEditor field still rendered `_partials/entry/cta.twig` (craftcms/cms#18968).
+
+### Priority 2: Type-specific partial
 
 ```
 _partials/{refHandle}/{providerHandle}.twig
 ```
 
 - `{refHandle}` — the element's reference handle: `entry`, `asset`, `user`, `address`
-- `{providerHandle}` — the field layout provider's handle: for entries, this is the **entry type handle**
+- `{providerHandle}` — the field layout provider's handle: for entries, this is the **original entry type handle**
 
 Examples:
 ```
@@ -62,7 +71,7 @@ _partials/asset/image.twig         ← (if assets had type-specific layouts)
 _partials/user.twig                ← user fallback (no type handle)
 ```
 
-### Priority 2: Generic fallback
+### Priority 3: Generic fallback
 
 ```
 _partials/{refHandle}.twig
@@ -74,7 +83,7 @@ _partials/entry.twig               ← fallback for all entry types
 _partials/asset.twig               ← fallback for all assets
 ```
 
-The type-specific template takes priority when it exists. The generic fallback catches everything else.
+The most specific existing template wins. The generic fallback catches everything else.
 
 ## Available Variables
 

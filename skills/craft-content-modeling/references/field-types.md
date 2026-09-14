@@ -45,6 +45,8 @@ Returns `string|null`. Validates email format automatically.
 
 Returns `LinkData|null`. Supports URL, Asset, Category, Email, Entry, Phone, SMS link types. Settings: allowed link types, custom label, target/rel/ARIA attributes (5.6.0+).
 
+Serialising a `LinkData` value (`toArray()`, an Element API transformer that returns the raw value, `|json_encode`) yields a full array since 5.11.0: `type`, `value`, `url`, `label`, `filename`, `link`, `attributes`, `defaultLabel`, `elementType`, `elementId`, `elementSiteId`, `elementTitle`. On 5.3–5.10 the array was sparse, so API code had to call `getUrl()`/`getLabel()`/`getElement()` itself — keep doing that when the project must run on both.
+
 The Url field is deprecated since 5.3.0 and is now an alias for Link.
 
 Extensible via `EVENT_REGISTER_LINK_TYPES` — plugins can register custom link types (e.g., internal route links, tel with extensions).
@@ -338,6 +340,8 @@ Select from globally-defined entry types or create new ones. Entry types can be 
 ### Entry Type Per-Usage Overrides (5.6.0+)
 
 When an entry type is used in a section or Matrix field, its name, handle, and description can be overridden for that specific context. The original entry type is unchanged — the override only applies in that section/field. This allows one entry type to serve different semantic roles in different contexts.
+
+An overridden handle also changes which element partial renders: `entry.render()` checks `_partials/entry/{overriddenHandle}.twig` before `_partials/entry/{originalHandle}.twig` on Craft 5.10.14+. Earlier versions ignored the override and only looked up the original handle (craftcms/cms#18968). See the `craft-site` skill's `element-partials.md`.
 
 ### View Modes
 

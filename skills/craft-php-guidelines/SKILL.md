@@ -117,7 +117,8 @@ Only include sections that have content. Blank line after the separator, before 
 ## Environment Access
 
 - **`craft\helpers\App::env('VAR')`, never `getenv()`** — in plugin code AND in every config-file example that appears in docs. `getenv()` is not thread-safe, returns `string|false`, and skips values only present in `$_SERVER`; `App::env()` is Craft's own convention, normalizes `'true'`/`'false'` to booleans, and is what core docs show. A config example gets the `use craft\helpers\App;` line.
-- `App::parseEnv()` when the stored value may be a `$VAR` reference or an alias (settings-model getters resolving env-able fields).
+- `App::parseEnv()` when the stored value may be a `$VAR` reference or an alias (settings-model getters resolving env-able fields). It resolves a whole-string `$VAR` or a slash-delimited `…/$VAR/…` segment only. Since 5.11.0 a `$` inside free text (`"$58 million"`) is left untouched; 5.0–5.10 stripped the unresolved token out of the string (craftcms/cms#19522), so don't route arbitrary user copy through it on a pre-5.11 install.
+- `Craft::$app->getConfig()->doesEnvVarExist('NAME')` (5.11.0+) before offering to write a variable to the project's `.env`. It greps the file, so it answers "declared in `.env`", not "set in the environment"; use `App::env()` for the latter.
 
 ## Database Conventions
 

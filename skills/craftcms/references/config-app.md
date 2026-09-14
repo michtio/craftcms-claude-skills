@@ -17,6 +17,7 @@ Complete reference for `config/app.php` component configuration in Craft CMS 5. 
 - Overriding mailer in `app.php` without using `App::mailerConfig()` as the base -- loses CP email settings (system address, sender name, transport adapter selected in Settings).
 - Trying to set the mail transport *type* per environment via an env variable -- adapter settings (host, port, username) are env-parseable, but the transport class itself is not, and project config syncs the CP choice across environments. The `app.php` mailer override is the only per-environment mechanism. See [Environment-Specific Transport](#environment-specific-transport).
 - Overriding session without using `App::sessionConfig()` as the base -- loses Craft's `SessionBehavior` which the CP depends on.
+- Database sessions via `yii\web\DbSession` on Craft 5.11+ -- use `craft\web\DbSession`, which adds the "headers already sent" guard. Either way the `phpsessions` table is not created on install: run `craft setup/php-session-table` first.
 - Not running `ddev craft db/search-indexes` after changing search component config -- existing entries are still indexed with the old settings.
 - Forgetting `CRAFT_APP_ID` when multiple Craft installs share a cache backend -- cache key collisions cause cross-site data leaks.
 
@@ -171,9 +172,36 @@ return [
 
 Session MUST be configured in `config/app.web.php` -- not `app.php`. Console commands have no HTTP session, and defining a session component in the shared config will cause CLI crashes.
 
-### Database Session (default)
+### Default: PHP Native Sessions
 
-Craft uses database-backed sessions by default via `craft\web\Session`. No config needed.
+Out of the box the `session` component is `craft\web\Session`, which sits on PHP's native session handler (files on disk, per server). No config needed on a single server. Load-balanced or ephemeral hosting needs shared storage: Redis (below) or the database.
+
+### Database Session
+
+Craft ships the `phpsessions` table migration but does not run it on install. Create the table first (idempotent), then point the session at it:
+
+```bash
+ddev craft setup/php-session-table   # creates {{%phpsessions}}
+```
+
+```php
+// config/app.web.php
+use craft\db\Table;
+use craft\helpers\App;
+
+return [
+    'components' => [
+        'session' => function() {
+            $config = App::sessionConfig();
+            $config['class'] = craft\web\DbSession::class; // 5.11+; yii\web\DbSession::class before
+            $config['sessionTable'] = Table::PHPSESSIONS;
+            return Craft::createObject($config);
+        },
+    ],
+];
+```
+
+`craft\web\DbSession` (Craft 5.11.0+) extends `yii\web\DbSession` with the same guard `craft\web\Session` has: `has()` reads `$_SESSION` directly instead of opening a session once output has started. With plain `yii\web\DbSession` that path logs a *Headers already sent* warning on every affected request (craftcms/cms#19139). Swap the class when you upgrade; the table and the rest of the config are unchanged.
 
 ### Redis Session
 
