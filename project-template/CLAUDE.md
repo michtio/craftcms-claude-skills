@@ -28,7 +28,7 @@ Use `gh` for all GitHub operations.
 ddev composer check-cs               # ECS code style
 ddev composer fix-cs                 # ECS auto-fix
 ddev composer phpstan                # PHPStan analysis
-ddev craft pest/test                 # Pest tests
+ddev exec --dir /var/www/html/vendor/acme/my-plugin vendor/bin/pest   # Pest, from the plugin's own root
 ddev craft up                        # Migrations + project config
 ddev composer install                # Install deps (auto-runs craft up)
 ```

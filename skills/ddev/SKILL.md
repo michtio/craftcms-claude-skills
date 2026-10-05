@@ -11,7 +11,7 @@ when_to_use: "Triggers on: ddev start/stop/restart, ddev craft, ddev composer, d
 When this skill triggers, also load:
 
 - **`craftcms`** — Plugin/module development. Required when DDEV commands involve Craft CLI (`ddev craft make`, `ddev craft migrate`, `ddev craft project-config`).
-- **`craft-php-guidelines`** — PHP coding standards. Required when DDEV commands involve code quality tooling (`ddev composer check-cs`, `ddev composer phpstan`, `ddev craft pest/test`).
+- **`craft-php-guidelines`** — PHP coding standards. Required when DDEV commands involve code quality tooling (`ddev composer check-cs`, `ddev composer phpstan`, `ddev exec --dir … vendor/bin/pest`).
 
 ## Documentation
 

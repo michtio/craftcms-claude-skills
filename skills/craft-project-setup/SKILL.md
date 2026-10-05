@@ -126,7 +126,7 @@ Confirm the detected type and gather project-specific details. Keep it short —
 
 Generate `CLAUDE.md` and `.claude/rules/` files. Two sources:
 
-1. **From templates** — files in `templates/{type}/` are starting points. Replace placeholders (`{{pluginHandle}}`, `{{vendorNamespace}}`, `{{pluginName}}`), customize based on detection results. These exist and are ready to use.
+1. **From templates** — files in `templates/{type}/` are starting points. Replace placeholders (`{{pluginHandle}}`, `{{vendorNamespace}}`, `{{pluginName}}`, `{{composerName}}` = the composer.json `name`, e.g. `acme/my-plugin`), customize based on detection results. These exist and are ready to use.
 2. **Generated from context** — files not in `templates/` must be written from scratch based on the project's actual setup. Use the skill references, detection results, and user answers to produce these. Don't skip a file just because no template exists.
 
 Before generating, **verify which templates exist** for the detected project type:

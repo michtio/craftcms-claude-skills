@@ -93,7 +93,7 @@ grep -rln 'vendor\\forum\\Plugin' src/ tests/ docs/
 # 4. Verify
 ddev composer dump-autoload
 ddev composer phpstan        # Catches any missed references
-ddev craft pest/test
+ddev exec --dir /var/www/html/vendor/vendor/forum vendor/bin/pest   # plugin suite, from its own root
 ```
 
 PHPStan is the safety net — unresolved class names surface immediately if any reference was missed.
