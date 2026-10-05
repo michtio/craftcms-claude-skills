@@ -4,13 +4,40 @@
 
 Makes every skill's frontmatter conform to the [Agent Skills specification](https://agentskills.io/specification), so spec-strict clients such as PhpStorm can import the pack ([#16](https://github.com/michtio/craftcms-claude-skills/issues/16)).
 
+Also folds in Craft CMS 5.11.2 through 5.11.4 (released 2026-09-17 to 2026-10-01), CKEditor 5.8.0 and the Cloud extension 3.12.0, each claim verified against the tagged source on 2026-10-05, and fixes the six agents, which could not load skills on demand. Craft 6.0.0-alpha.19 and Craft's own `## Unreleased` entries are not folded in.
+
 ### Changed
 
 - **All 13 `skills/*/SKILL.md`** -- `description` is now at most 1024 characters, the spec limit. Every description had been written to Claude Code's 1,536-character listing cap (1334 to 1551 characters), which spec-strict clients reject as "description format". Each one is split in two: `description` keeps the scope, and the trigger-phrase list plus the "Do NOT trigger" boundaries move to Claude Code's `when_to_use` field. Claude Code appends `when_to_use` to `description` in the skill listing, so the text Claude sees keeps its original order. A forced-choice routing test across all 13 skills (460 calls per condition, repeated) scored the split within run-to-run noise of the original descriptions (408-409 vs 410-420 of 460). `craft-plugins` (which had no separate trigger list) and `craft-plugin-release` were trimmed by hand; `craft-plugin-release` previously exceeded the 1,536 cap and was truncated in the listing.
+- **All six `agents/*.md`** -- every agent's `tools` allowlist now includes `Skill`. Without it a subagent cannot invoke skills, so every "load X when Y" routing line in the agents was inert ([sub-agents docs](https://code.claude.com/docs/en/sub-agents)). Agents with browser-debugging steps also allow `ToolSearch` and `mcp__chrome-devtools`, since a `tools` allowlist excludes MCP tools. Descriptions now say when to delegate; per-agent `effort` and `color`; no hard-coded model versions (the deep reviewer said "Opus 4.8"); prompts revised against Anthropic's Opus 5.5, Opus 5 and Sonnet 5 prompting guides (calmer emphasis, explicit scope, parallel reads, a concrete reporting bar for the reviewer).
+- **`agents/craft-code-reviewer.md`** -- preloads only `craftcms` and `craft-php-guidelines`, loading Twig, Garnish, Pest and Cloud skills on demand by diff type (startup context 104k to 64k characters).
+- **`agents/craft-feature-builder.md`**, **`craft-debugger.md`**, **`craft-code-reviewer-deep.md`** -- preload `craft-pest`.
+- **`skills/craft-plugins/references/ckeditor.md`** -- CKEditor 5.8.0 package loading (toolbar-gated imports, `registerCkeditorPackageBundles()`, namespace imports, late registration); 5.7.0 `<img>` alt text synced from the asset.
+- **`project-template/`** -- matches the current generated plugin output again (General and Tools sections, current git-workflow, migrations and testing rules wired in, the unused site-only `templates.md` removed).
+- **`bin/release.sh`** -- recomputes the skill, reference-file and agent counts in the setup banner on every release, keeping the box aligned.
 
 ### Added
 
+- **`skills/craftcms/references/sessions-and-auth.md`** -- `Users::destroyOtherSessions()` (Craft 5.11.4+) replaces hand-rolled `Table::SESSIONS` deletes; two-step verification setup now ends other sessions; deleting a passkey requires an elevated session.
+- **`skills/craftcms/references/events.md`** -- auth methods get the activation session wipe through `Auth::verify()`; Twig extension rule to refuse risky functions in string/object templates via `View::getIsRenderingStringTemplate()` (5.11.4+).
+- **`skills/craft-content-modeling/references/object-templates.md`** -- pitfall: `create()` throws in title/URI/subpath formats from 5.11.4.
+- **`skills/craftcms/references/email.md`**, **`config-general.md`** -- sandboxed `attribute()` enforced from 5.11.4; `config/twig-sandbox.php` merges over core defaults.
+- **`skills/craftcms/references/element-index.md`** -- `'restricted-modal'` source context (5.11.2+); narrow it like `'index'` in `defineSources()`.
+- **`skills/craft-cloud/references/limitations.md`** -- extension-level `resourceBaseUrl` / `CRAFT_CLOUD_RESOURCE_BASE_URL` (`craftcms/cloud` 3.12.0+).
+- **`evals/`** -- `measure_tokens.py` reports the always-loaded listing cost (4,364 tokens across 13 skills) separately from on-demand content, per-agent preload cost, load scenarios for the five skills added since May, and `--compare` against an older snapshot (`snapshot-2026-10-05.json`: 251,863 to 470,781 tokens since May). Trigger sets for all 13 skills now live in `evals/trigger-sets/`, plus `route.py` (forced-choice routing A/B across all skills, isolated from the installed plugin) and `trigger_check.py`, documented in `evals/README.md`.
+- **`docs/contributing.md`** -- skill frontmatter limits, the validator, the release flow and the token-budget check.
 - **`bin/validate-skills.sh`** -- validates every SKILL.md frontmatter: strict YAML parse, known keys only, name format, `description` at most 1024 characters, `description` + `when_to_use` at most 1,536 characters. `bin/release.sh` runs it before bumping anything, and the new `skills-validation` workflow runs it on every push and pull request that touches a SKILL.md.
+
+### Fixed
+
+- **README.md**, **`docs/getting-started.md`** -- the install command used `craftcms-claude-skills@michtio/craftcms-claude-skills`; the part after `@` is the marketplace name, so it is `craftcms-claude-skills@craftcms-claude-skills`.
+- **`agents/craft-feature-builder.md`**, **plugin templates**, **`project-template/`**, **`skills/craftcms/references/architecture.md`** -- plugin Pest suites run with `ddev exec --dir /var/www/html/vendor/{vendor}/{plugin}`. `ddev exec vendor/bin/pest` and `ddev craft pest/test` from a host project root never load the plugin's `phpunit.xml.dist` `<env>` pins, so Craft boots against the development database.
+- **`agents/craft-feature-builder.md`**, **`craft-site-builder.md`** -- the mandatory todo list now works in background runs (`TodoWrite` alongside the Task tools, which background subagents drop).
+- **`agents/craft-planner.md`** -- no longer told to write a plan file it has no tool for; it returns the plan.
+- **`skills/craft-plugins/references/ckeditor.md`** -- custom-plugin registration cited a non-existent `CkeditorConfig::registerPackageAsset()` and called `Plugin::registerCkeditorPackage()` legacy; it is the current API (with `$pluginNames`/`$toolbarItems`).
+- **`skills/craftcms/references/sessions-and-auth.md`** -- password-change invalidation spares the current token only when the saved user is the logged-in user.
+- **`skills/craftcms/references/config-app.md`**, **`caching.md`** -- default cache is `FileCache`, not `DbCache`; added `craft\cache\DbCache` + `setup/db-cache-table`.
+- **Setup banner**, **`docs/getting-started.md`**, **`docs/skills-overview.md`**, **manifests**, **`reference/CLAUDE.md`** -- stale counts (11 skills / 105 references in the banner, per-skill reference counts, 23 plugin references, five agents).
 
 ## 1.18.1 -- 2026-10-05
 
