@@ -31,7 +31,7 @@ Authoritative sources used to write this skill:
 - Headless apps: https://craftcms.com/docs/cloud/headless-apps
 - Request signing: https://craftcms.com/docs/cloud/request-signing
 - Plugin development: https://craftcms.com/docs/cloud/plugin-development
-- Cloud extension source: https://github.com/craftcms/cloud-extension-yii2
+- Cloud extension source: https://github.com/craftcms/cloud
 
 Per-claim URLs appear in each reference file. Last verified against the docs and `craftcms/cloud-extension-yii2@main` on 2026-05-28; headless/request-signing, artifact URLs, environments, quotas, and backups content verified against `craftcms/docs@main` on 2026-09-02.
 

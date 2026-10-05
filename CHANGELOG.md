@@ -37,6 +37,7 @@ Also folds in Craft CMS 5.11.2 through 5.11.4 (released 2026-09-17 to 2026-10-01
 - **`skills/craft-plugins/references/ckeditor.md`** -- custom-plugin registration cited a non-existent `CkeditorConfig::registerPackageAsset()` and called `Plugin::registerCkeditorPackage()` legacy; it is the current API (with `$pluginNames`/`$toolbarItems`).
 - **`skills/craftcms/references/sessions-and-auth.md`** -- password-change invalidation spares the current token only when the saved user is the logged-in user.
 - **`skills/craftcms/references/config-app.md`**, **`caching.md`** -- default cache is `FileCache`, not `DbCache`; added `craft\cache\DbCache` + `setup/db-cache-table`.
+- **`skills/craft-cloud/`** -- source links pointed at `craftcms/cloud-extension-yii2/blob/main/...`, which now return 404: the repo is `craftcms/cloud` and its default branch is `3.x`. Links updated; the dated "last verified against" notes keep the name used at the time.
 - **Setup banner**, **`docs/getting-started.md`**, **`docs/skills-overview.md`**, **manifests**, **`reference/CLAUDE.md`** -- stale counts (11 skills / 105 references in the banner, per-skill reference counts, 23 plugin references, five agents).
 
 ## 1.18.1 -- 2026-10-05

@@ -7,7 +7,7 @@ How a Git push (or manual trigger) becomes a live deploy. The three-phase pipeli
 - Deployment: https://craftcms.com/docs/cloud/deployment
 - Builds: https://craftcms.com/docs/cloud/builds
 - Environments: https://craftcms.com/docs/cloud/environments
-- Cloud extension source (cloud/up command): https://github.com/craftcms/cloud-extension-yii2/blob/main/src/cli/controllers/UpController.php
+- Cloud extension source (cloud/up command): https://github.com/craftcms/cloud/blob/3.x/src/cli/controllers/UpController.php
 
 ## Common Pitfalls
 

@@ -6,8 +6,8 @@ Cloud's edge layer (Cloudflare) caches HTML responses based on `cache.rules` in 
 
 - Static caching: https://craftcms.com/docs/cloud/static-caching
 - ESI: https://craftcms.com/docs/cloud/esi
-- Cache implementation source: https://github.com/craftcms/cloud-extension-yii2/blob/main/src/StaticCache.php
-- ESI implementation source: https://github.com/craftcms/cloud-extension-yii2/blob/main/src/Esi.php
+- Cache implementation source: https://github.com/craftcms/cloud/blob/3.x/src/StaticCache.php
+- ESI implementation source: https://github.com/craftcms/cloud/blob/3.x/src/Esi.php
 
 ## Table of contents
 

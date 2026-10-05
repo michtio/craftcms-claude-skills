@@ -4,7 +4,7 @@ The Yii2 module that adapts Craft to run on Cloud's serverless infrastructure. I
 
 ## Source & docs
 
-- Source: https://github.com/craftcms/cloud-extension-yii2
+- Source: https://github.com/craftcms/cloud
 - Composer: `craftcms/cloud` (type `yii2-extension`)
 - Docs: https://craftcms.com/docs/cloud/extension
 - Plugin development guidance: https://craftcms.com/docs/cloud/plugin-development

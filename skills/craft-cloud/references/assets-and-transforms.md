@@ -5,8 +5,8 @@ Cloud replaces local asset filesystems and Craft's native image transformer with
 ## Documentation
 
 - Assets reference: https://craftcms.com/docs/cloud/assets
-- Cloud filesystem source: https://github.com/craftcms/cloud-extension-yii2/blob/main/src/fs/AssetsFs.php
-- Image transformer source: https://github.com/craftcms/cloud-extension-yii2/tree/main/src/imagetransforms
+- Cloud filesystem source: https://github.com/craftcms/cloud/blob/3.x/src/fs/AssetsFs.php
+- Image transformer source: https://github.com/craftcms/cloud/tree/3.x/src/imagetransforms
 
 ## Common Pitfalls
 
