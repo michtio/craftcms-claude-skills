@@ -144,7 +144,15 @@ before. Expect several minutes for ~20-30 queries at the default 5 workers.
   skill boundary. `--runs 1` is fine for a quick sanity check; treat a
   single-run regression in an A/B comparison as a hypothesis, not a verdict
   — rerun with `--runs 2` or more before concluding a description rewrite
-  actually hurt.
+  actually hurt. Measured on 2026-10-05: two identical runs of `main` at
+  `--runs 2` (460 calls each) scored 420 and 410, so a gap of about 10/460
+  overall, or 3 to 5 within one skill, is noise. Repeat both conditions at
+  least twice before acting on a difference that size, and treat queries
+  that flip "consistently" across only two runs as noise too.
+- **Usage limits mid-run.** A long run can hit a usage limit partway, and
+  every later call then fails. `route.py` counts those as errors (excluded
+  from scores, with a warning above 5%) rather than wrong picks, but a
+  condition that ran into the limit is still a smaller sample: rerun it.
 - **The ddev → craft-pest crossover item.** "I need to write a GitHub Actions
   workflow that runs PHPStan and Pest tests on every pull request" is a
   correct negative for `ddev` (it's not a local-dev question) and was added
