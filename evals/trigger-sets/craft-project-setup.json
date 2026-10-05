@@ -1,0 +1,17 @@
+[
+  {"query": "I just started working on a new Craft CMS plugin project and I need to set up Claude Code for it. Can you generate a CLAUDE.md and the rules files?", "should_trigger": true},
+  {"query": "We have a Craft site project with custom modules alongside it. Help me bootstrap the Claude configuration so the AI knows about our coding standards and project structure", "should_trigger": true},
+  {"query": "I'm onboarding a new developer to our Craft CMS site project. Can you scaffold the Claude Code config so they have all the right context when working with our codebase?", "should_trigger": true},
+  {"query": "set up claude for this craft project — it's a plugin with custom element types, we use Pest for testing and have ECS + PHPStan configured", "should_trigger": true},
+  {"query": "initialize CLAUDE.md for our Craft CMS site — we're using atomic design, Tailwind v4, DDEV, and have a custom module in modules/", "should_trigger": true},
+  {"query": "I want to configure Claude Code for our Craft project. We have a monorepo with the site in packages/site/ and a plugin in packages/plugin/. How should the CLAUDE.md be structured?", "should_trigger": true},
+  {"query": "I need to build a custom element type for our Craft plugin that tracks customer orders with status workflows", "should_trigger": false},
+  {"query": "How do I configure a Matrix field with nested entry types and set up the front-end rendering with chunk iteration?", "should_trigger": false},
+  {"query": "Our Craft site is slow — LCP is over 4 seconds. Help me diagnose and fix the performance issues", "should_trigger": false},
+  {"query": "I need to write PHPDocs for all the classes in my plugin. What are the conventions for @author, @since, and section headers?", "should_trigger": false},
+  {"query": "Help me plan a content migration from WordPress to Craft CMS — we have about 500 blog posts with categories and featured images", "should_trigger": false},
+  {"query": "I'm trying to set up Blitz caching for our multi-site Craft installation with 3 language variants", "should_trigger": false},
+  {"query": "Can you create a .claude directory with rules for our next.js project? We use TypeScript, Tailwind, and Prisma", "should_trigger": false},
+  {"query": "scaffold project config for our new Craft site — we need DDEV with PHP 8.3, MySQL 8, and Node 20. Also set up the Vite buildchain", "should_trigger": true},
+  {"query": "Does this project have a CLAUDE.md? If not, can you create one that covers our Craft plugin development workflow?", "should_trigger": true}
+]

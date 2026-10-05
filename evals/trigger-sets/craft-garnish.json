@@ -1,0 +1,18 @@
+[
+  {"query": "I need to add a modal dialog to my Craft plugin's CP page. When the user clicks 'Add Item', a modal should open with a form, and closing it should return focus to the trigger button", "should_trigger": true},
+  {"query": "I'm building a custom field type that needs drag-to-reorder on a list of items in the CP. How do I use Garnish.DragSort to make the items sortable?", "should_trigger": true},
+  {"query": "My plugin's CP JavaScript is leaking memory — every time the user opens and closes the slideout editor, the event listeners accumulate. I'm using jQuery .on() for click handlers", "should_trigger": true},
+  {"query": "How do I create a disclosure menu (the ... kebab menu pattern) in the Craft CP? I need it on each row of a custom table with options like Edit, Duplicate, Delete", "should_trigger": true},
+  {"query": "I want to handle keyboard shortcuts in my plugin's CP interface — ESC to close my panel, Enter to confirm. But I need it to work correctly when a modal is open on top of my panel", "should_trigger": true},
+  {"query": "I'm trying to extend Garnish.Base for a custom CP widget class. How does the init/settings/destroy lifecycle work? And what's this.base() for?", "should_trigger": true},
+  {"query": "Our plugin's webpack config bundles Garnish which adds 134KB to our JS output. How do I configure it to use the global Garnish that Craft already loads?", "should_trigger": true},
+  {"query": "I need a HUD (heads-up display) popover that shows inline editing fields when the user clicks on an element in our CP table. Similar to how Craft's inline editing works", "should_trigger": true},
+  {"query": "How do I build a Twig card component with 3 visual variants using the extends/block pattern?", "should_trigger": false},
+  {"query": "I need to write a migration that adds a new database column to our custom element type's table", "should_trigger": false},
+  {"query": "Can you help me configure Blitz caching with Cloudflare for our high-traffic Craft site?", "should_trigger": false},
+  {"query": "We need to set up PHPStan at level 8 for our Craft plugin and fix all the type errors in the service layer", "should_trigger": false},
+  {"query": "I'm building a front-end search feature with Alpine.js that filters entries as the user types. It calls an Element API endpoint", "should_trigger": false},
+  {"query": "Help me plan the content model for a multi-language e-commerce site with products, categories, and a checkout flow", "should_trigger": false},
+  {"query": "I need to add a Select widget to my CP page where users can click to select multiple items from a grid, like how Craft's asset manager works", "should_trigger": true},
+  {"query": "What's the difference between Garnish.DisclosureMenu and Garnish.MenuBtn? I see both used in Craft's source and I'm not sure which to use for a dropdown button with options", "should_trigger": true}
+]

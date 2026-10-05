@@ -1,0 +1,1179 @@
+{
+  "encoding": "cl100k_base",
+  "skills": [
+    {
+      "name": "craft-cloud",
+      "skill_md": {
+        "path": "skills/craft-cloud/SKILL.md",
+        "lines": 132,
+        "tokens": 4660,
+        "tokens_per_line": 35.3
+      },
+      "references": [
+        {
+          "path": "skills/craft-cloud/references/assets-and-transforms.md",
+          "lines": 87,
+          "tokens": 1268,
+          "tokens_per_line": 14.6
+        },
+        {
+          "path": "skills/craft-cloud/references/caching-and-edge.md",
+          "lines": 347,
+          "tokens": 5744,
+          "tokens_per_line": 16.6
+        },
+        {
+          "path": "skills/craft-cloud/references/commands-and-cron.md",
+          "lines": 141,
+          "tokens": 1600,
+          "tokens_per_line": 11.3
+        },
+        {
+          "path": "skills/craft-cloud/references/config-file.md",
+          "lines": 156,
+          "tokens": 1785,
+          "tokens_per_line": 11.4
+        },
+        {
+          "path": "skills/craft-cloud/references/database.md",
+          "lines": 111,
+          "tokens": 1413,
+          "tokens_per_line": 12.7
+        },
+        {
+          "path": "skills/craft-cloud/references/deploy-pipeline.md",
+          "lines": 210,
+          "tokens": 3946,
+          "tokens_per_line": 18.8
+        },
+        {
+          "path": "skills/craft-cloud/references/domains.md",
+          "lines": 104,
+          "tokens": 1234,
+          "tokens_per_line": 11.9
+        },
+        {
+          "path": "skills/craft-cloud/references/extension.md",
+          "lines": 252,
+          "tokens": 3797,
+          "tokens_per_line": 15.1
+        },
+        {
+          "path": "skills/craft-cloud/references/headless.md",
+          "lines": 107,
+          "tokens": 1918,
+          "tokens_per_line": 17.9
+        },
+        {
+          "path": "skills/craft-cloud/references/limitations.md",
+          "lines": 239,
+          "tokens": 4004,
+          "tokens_per_line": 16.8
+        },
+        {
+          "path": "skills/craft-cloud/references/local-dev.md",
+          "lines": 145,
+          "tokens": 1651,
+          "tokens_per_line": 11.4
+        },
+        {
+          "path": "skills/craft-cloud/references/migration.md",
+          "lines": 132,
+          "tokens": 2090,
+          "tokens_per_line": 15.8
+        },
+        {
+          "path": "skills/craft-cloud/references/plugin-development.md",
+          "lines": 302,
+          "tokens": 3519,
+          "tokens_per_line": 11.7
+        }
+      ],
+      "total_tokens": 38629,
+      "always_loaded": {
+        "description_chars": 888,
+        "when_to_use_chars": 626,
+        "listing_chars": 1517,
+        "listing_tokens": 353
+      }
+    },
+    {
+      "name": "craft-content-modeling",
+      "skill_md": {
+        "path": "skills/craft-content-modeling/SKILL.md",
+        "lines": 327,
+        "tokens": 6453,
+        "tokens_per_line": 19.7
+      },
+      "references": [
+        {
+          "path": "skills/craft-content-modeling/references/content-patterns.md",
+          "lines": 232,
+          "tokens": 2087,
+          "tokens_per_line": 9.0
+        },
+        {
+          "path": "skills/craft-content-modeling/references/element-index-sources.md",
+          "lines": 198,
+          "tokens": 2304,
+          "tokens_per_line": 11.6
+        },
+        {
+          "path": "skills/craft-content-modeling/references/field-types.md",
+          "lines": 392,
+          "tokens": 3434,
+          "tokens_per_line": 8.8
+        },
+        {
+          "path": "skills/craft-content-modeling/references/infrastructure.md",
+          "lines": 213,
+          "tokens": 3505,
+          "tokens_per_line": 16.5
+        },
+        {
+          "path": "skills/craft-content-modeling/references/object-templates.md",
+          "lines": 335,
+          "tokens": 3278,
+          "tokens_per_line": 9.8
+        },
+        {
+          "path": "skills/craft-content-modeling/references/relations-and-eager-loading.md",
+          "lines": 216,
+          "tokens": 1571,
+          "tokens_per_line": 7.3
+        },
+        {
+          "path": "skills/craft-content-modeling/references/users-and-permissions.md",
+          "lines": 154,
+          "tokens": 1593,
+          "tokens_per_line": 10.3
+        }
+      ],
+      "total_tokens": 24225,
+      "always_loaded": {
+        "description_chars": 427,
+        "when_to_use_chars": 1101,
+        "listing_chars": 1531,
+        "listing_tokens": 300
+      }
+    },
+    {
+      "name": "craft-garnish",
+      "skill_md": {
+        "path": "skills/craft-garnish/SKILL.md",
+        "lines": 69,
+        "tokens": 1853,
+        "tokens_per_line": 26.9
+      },
+      "references": [
+        {
+          "path": "skills/craft-garnish/references/class-system.md",
+          "lines": 348,
+          "tokens": 2740,
+          "tokens_per_line": 7.9
+        },
+        {
+          "path": "skills/craft-garnish/references/drag-system.md",
+          "lines": 298,
+          "tokens": 2791,
+          "tokens_per_line": 9.4
+        },
+        {
+          "path": "skills/craft-garnish/references/integration.md",
+          "lines": 653,
+          "tokens": 6046,
+          "tokens_per_line": 9.3
+        },
+        {
+          "path": "skills/craft-garnish/references/ui-widgets.md",
+          "lines": 561,
+          "tokens": 5302,
+          "tokens_per_line": 9.5
+        },
+        {
+          "path": "skills/craft-garnish/references/utilities.md",
+          "lines": 474,
+          "tokens": 4269,
+          "tokens_per_line": 9.0
+        }
+      ],
+      "total_tokens": 23001,
+      "always_loaded": {
+        "description_chars": 475,
+        "when_to_use_chars": 1052,
+        "listing_chars": 1530,
+        "listing_tokens": 349
+      }
+    },
+    {
+      "name": "craft-pest",
+      "skill_md": {
+        "path": "skills/craft-pest/SKILL.md",
+        "lines": 165,
+        "tokens": 3253,
+        "tokens_per_line": 19.7
+      },
+      "references": [
+        {
+          "path": "skills/craft-pest/references/ci.md",
+          "lines": 124,
+          "tokens": 1441,
+          "tokens_per_line": 11.6
+        },
+        {
+          "path": "skills/craft-pest/references/craft-state.md",
+          "lines": 360,
+          "tokens": 4555,
+          "tokens_per_line": 12.7
+        },
+        {
+          "path": "skills/craft-pest/references/isolation.md",
+          "lines": 316,
+          "tokens": 5016,
+          "tokens_per_line": 15.9
+        },
+        {
+          "path": "skills/craft-pest/references/patterns.md",
+          "lines": 400,
+          "tokens": 3772,
+          "tokens_per_line": 9.4
+        },
+        {
+          "path": "skills/craft-pest/references/shared-state.md",
+          "lines": 177,
+          "tokens": 2375,
+          "tokens_per_line": 13.4
+        }
+      ],
+      "total_tokens": 20412,
+      "always_loaded": {
+        "description_chars": 864,
+        "when_to_use_chars": 662,
+        "listing_chars": 1529,
+        "listing_tokens": 347
+      }
+    },
+    {
+      "name": "craft-php-guidelines",
+      "skill_md": {
+        "path": "skills/craft-php-guidelines/SKILL.md",
+        "lines": 181,
+        "tokens": 4286,
+        "tokens_per_line": 23.7
+      },
+      "references": [
+        {
+          "path": "skills/craft-php-guidelines/references/authorization-parity.md",
+          "lines": 246,
+          "tokens": 2593,
+          "tokens_per_line": 10.5
+        },
+        {
+          "path": "skills/craft-php-guidelines/references/class-organization.md",
+          "lines": 201,
+          "tokens": 1575,
+          "tokens_per_line": 7.8
+        },
+        {
+          "path": "skills/craft-php-guidelines/references/naming-conventions.md",
+          "lines": 67,
+          "tokens": 872,
+          "tokens_per_line": 13.0
+        },
+        {
+          "path": "skills/craft-php-guidelines/references/phpdoc-standards.md",
+          "lines": 83,
+          "tokens": 613,
+          "tokens_per_line": 7.4
+        },
+        {
+          "path": "skills/craft-php-guidelines/references/templates-and-patterns.md",
+          "lines": 171,
+          "tokens": 1159,
+          "tokens_per_line": 6.8
+        },
+        {
+          "path": "skills/craft-php-guidelines/references/tooling.md",
+          "lines": 184,
+          "tokens": 1878,
+          "tokens_per_line": 10.2
+        }
+      ],
+      "total_tokens": 12976,
+      "always_loaded": {
+        "description_chars": 1000,
+        "when_to_use_chars": 532,
+        "listing_chars": 1535,
+        "listing_tokens": 328
+      }
+    },
+    {
+      "name": "craft-plugin-release",
+      "skill_md": {
+        "path": "skills/craft-plugin-release/SKILL.md",
+        "lines": 161,
+        "tokens": 3139,
+        "tokens_per_line": 19.5
+      },
+      "references": [
+        {
+          "path": "skills/craft-plugin-release/references/history-rewrites.md",
+          "lines": 52,
+          "tokens": 886,
+          "tokens_per_line": 17.0
+        },
+        {
+          "path": "skills/craft-plugin-release/references/path-repositories.md",
+          "lines": 53,
+          "tokens": 770,
+          "tokens_per_line": 14.5
+        }
+      ],
+      "total_tokens": 4795,
+      "always_loaded": {
+        "description_chars": 423,
+        "when_to_use_chars": 1094,
+        "listing_chars": 1520,
+        "listing_tokens": 333
+      }
+    },
+    {
+      "name": "craft-plugins",
+      "skill_md": {
+        "path": "skills/craft-plugins/SKILL.md",
+        "lines": 60,
+        "tokens": 2042,
+        "tokens_per_line": 34.0
+      },
+      "references": [
+        {
+          "path": "skills/craft-plugins/references/amazon-ses.md",
+          "lines": 63,
+          "tokens": 667,
+          "tokens_per_line": 10.6
+        },
+        {
+          "path": "skills/craft-plugins/references/blitz.md",
+          "lines": 173,
+          "tokens": 2266,
+          "tokens_per_line": 13.1
+        },
+        {
+          "path": "skills/craft-plugins/references/cache-igniter.md",
+          "lines": 73,
+          "tokens": 678,
+          "tokens_per_line": 9.3
+        },
+        {
+          "path": "skills/craft-plugins/references/ckeditor.md",
+          "lines": 322,
+          "tokens": 4439,
+          "tokens_per_line": 13.8
+        },
+        {
+          "path": "skills/craft-plugins/references/colour-swatches.md",
+          "lines": 198,
+          "tokens": 1676,
+          "tokens_per_line": 8.5
+        },
+        {
+          "path": "skills/craft-plugins/references/element-api.md",
+          "lines": 185,
+          "tokens": 1648,
+          "tokens_per_line": 8.9
+        },
+        {
+          "path": "skills/craft-plugins/references/elements-panel.md",
+          "lines": 48,
+          "tokens": 529,
+          "tokens_per_line": 11.0
+        },
+        {
+          "path": "skills/craft-plugins/references/embedded-assets.md",
+          "lines": 150,
+          "tokens": 1317,
+          "tokens_per_line": 8.8
+        },
+        {
+          "path": "skills/craft-plugins/references/feed-me.md",
+          "lines": 151,
+          "tokens": 1742,
+          "tokens_per_line": 11.5
+        },
+        {
+          "path": "skills/craft-plugins/references/formie.md",
+          "lines": 455,
+          "tokens": 6355,
+          "tokens_per_line": 14.0
+        },
+        {
+          "path": "skills/craft-plugins/references/hyper.md",
+          "lines": 155,
+          "tokens": 1343,
+          "tokens_per_line": 8.7
+        },
+        {
+          "path": "skills/craft-plugins/references/image-optimize.md",
+          "lines": 226,
+          "tokens": 1571,
+          "tokens_per_line": 7.0
+        },
+        {
+          "path": "skills/craft-plugins/references/imager-x.md",
+          "lines": 374,
+          "tokens": 4013,
+          "tokens_per_line": 10.7
+        },
+        {
+          "path": "skills/craft-plugins/references/knock-knock.md",
+          "lines": 68,
+          "tokens": 488,
+          "tokens_per_line": 7.2
+        },
+        {
+          "path": "skills/craft-plugins/references/navigation.md",
+          "lines": 205,
+          "tokens": 1505,
+          "tokens_per_line": 7.3
+        },
+        {
+          "path": "skills/craft-plugins/references/password-policy.md",
+          "lines": 138,
+          "tokens": 1170,
+          "tokens_per_line": 8.5
+        },
+        {
+          "path": "skills/craft-plugins/references/retour.md",
+          "lines": 129,
+          "tokens": 970,
+          "tokens_per_line": 7.5
+        },
+        {
+          "path": "skills/craft-plugins/references/seomatic.md",
+          "lines": 487,
+          "tokens": 5702,
+          "tokens_per_line": 11.7
+        },
+        {
+          "path": "skills/craft-plugins/references/sherlock.md",
+          "lines": 88,
+          "tokens": 796,
+          "tokens_per_line": 9.0
+        },
+        {
+          "path": "skills/craft-plugins/references/sprig.md",
+          "lines": 229,
+          "tokens": 2475,
+          "tokens_per_line": 10.8
+        },
+        {
+          "path": "skills/craft-plugins/references/timeloop.md",
+          "lines": 173,
+          "tokens": 1799,
+          "tokens_per_line": 10.4
+        },
+        {
+          "path": "skills/craft-plugins/references/typogrify.md",
+          "lines": 75,
+          "tokens": 802,
+          "tokens_per_line": 10.7
+        },
+        {
+          "path": "skills/craft-plugins/references/vite.md",
+          "lines": 109,
+          "tokens": 1627,
+          "tokens_per_line": 14.9
+        },
+        {
+          "path": "skills/craft-plugins/references/warp.md",
+          "lines": 122,
+          "tokens": 3070,
+          "tokens_per_line": 25.2
+        }
+      ],
+      "total_tokens": 50690,
+      "always_loaded": {
+        "description_chars": 466,
+        "when_to_use_chars": 1021,
+        "listing_chars": 1490,
+        "listing_tokens": 361
+      }
+    },
+    {
+      "name": "craft-project-setup",
+      "skill_md": {
+        "path": "skills/craft-project-setup/SKILL.md",
+        "lines": 417,
+        "tokens": 7001,
+        "tokens_per_line": 16.8
+      },
+      "references": [],
+      "total_tokens": 7001,
+      "always_loaded": {
+        "description_chars": 518,
+        "when_to_use_chars": 815,
+        "listing_chars": 1336,
+        "listing_tokens": 306
+      }
+    },
+    {
+      "name": "craft-site",
+      "skill_md": {
+        "path": "skills/craft-site/SKILL.md",
+        "lines": 168,
+        "tokens": 3516,
+        "tokens_per_line": 20.9
+      },
+      "references": [
+        {
+          "path": "skills/craft-site/references/atomic-design.md",
+          "lines": 246,
+          "tokens": 2391,
+          "tokens_per_line": 9.7
+        },
+        {
+          "path": "skills/craft-site/references/atomic-patterns.md",
+          "lines": 367,
+          "tokens": 2964,
+          "tokens_per_line": 8.1
+        },
+        {
+          "path": "skills/craft-site/references/auth-account.md",
+          "lines": 454,
+          "tokens": 3872,
+          "tokens_per_line": 8.5
+        },
+        {
+          "path": "skills/craft-site/references/auth-flows.md",
+          "lines": 512,
+          "tokens": 4732,
+          "tokens_per_line": 9.2
+        },
+        {
+          "path": "skills/craft-site/references/boilerplate-routing.md",
+          "lines": 464,
+          "tokens": 3672,
+          "tokens_per_line": 7.9
+        },
+        {
+          "path": "skills/craft-site/references/component-inventory.md",
+          "lines": 268,
+          "tokens": 2875,
+          "tokens_per_line": 10.7
+        },
+        {
+          "path": "skills/craft-site/references/composition-patterns.md",
+          "lines": 382,
+          "tokens": 3396,
+          "tokens_per_line": 8.9
+        },
+        {
+          "path": "skills/craft-site/references/element-partials.md",
+          "lines": 226,
+          "tokens": 1908,
+          "tokens_per_line": 8.4
+        },
+        {
+          "path": "skills/craft-site/references/example-templates.md",
+          "lines": 297,
+          "tokens": 3473,
+          "tokens_per_line": 11.7
+        },
+        {
+          "path": "skills/craft-site/references/feeds.md",
+          "lines": 265,
+          "tokens": 2112,
+          "tokens_per_line": 8.0
+        },
+        {
+          "path": "skills/craft-site/references/headless.md",
+          "lines": 316,
+          "tokens": 3559,
+          "tokens_per_line": 11.3
+        },
+        {
+          "path": "skills/craft-site/references/image-presets.md",
+          "lines": 247,
+          "tokens": 2138,
+          "tokens_per_line": 8.7
+        },
+        {
+          "path": "skills/craft-site/references/javascript-boundaries.md",
+          "lines": 327,
+          "tokens": 3004,
+          "tokens_per_line": 9.2
+        },
+        {
+          "path": "skills/craft-site/references/multi-site-patterns.md",
+          "lines": 397,
+          "tokens": 3322,
+          "tokens_per_line": 8.4
+        },
+        {
+          "path": "skills/craft-site/references/search.md",
+          "lines": 275,
+          "tokens": 2539,
+          "tokens_per_line": 9.2
+        },
+        {
+          "path": "skills/craft-site/references/tailwind-conventions.md",
+          "lines": 192,
+          "tokens": 1750,
+          "tokens_per_line": 9.1
+        },
+        {
+          "path": "skills/craft-site/references/third-party-integration.md",
+          "lines": 268,
+          "tokens": 2245,
+          "tokens_per_line": 8.4
+        },
+        {
+          "path": "skills/craft-site/references/twig-collections.md",
+          "lines": 242,
+          "tokens": 2176,
+          "tokens_per_line": 9.0
+        },
+        {
+          "path": "skills/craft-site/references/vite-buildchain.md",
+          "lines": 282,
+          "tokens": 2426,
+          "tokens_per_line": 8.6
+        }
+      ],
+      "total_tokens": 58070,
+      "always_loaded": {
+        "description_chars": 546,
+        "when_to_use_chars": 987,
+        "listing_chars": 1536,
+        "listing_tokens": 347
+      }
+    },
+    {
+      "name": "craft-twig-guidelines",
+      "skill_md": {
+        "path": "skills/craft-twig-guidelines/SKILL.md",
+        "lines": 391,
+        "tokens": 4684,
+        "tokens_per_line": 12.0
+      },
+      "references": [],
+      "total_tokens": 4684,
+      "always_loaded": {
+        "description_chars": 897,
+        "when_to_use_chars": 587,
+        "listing_chars": 1487,
+        "listing_tokens": 324
+      }
+    },
+    {
+      "name": "craftcms",
+      "skill_md": {
+        "path": "skills/craftcms/SKILL.md",
+        "lines": 273,
+        "tokens": 6437,
+        "tokens_per_line": 23.6
+      },
+      "references": [
+        {
+          "path": "skills/craftcms/references/architecture.md",
+          "lines": 1339,
+          "tokens": 16208,
+          "tokens_per_line": 12.1
+        },
+        {
+          "path": "skills/craftcms/references/caching.md",
+          "lines": 539,
+          "tokens": 5629,
+          "tokens_per_line": 10.4
+        },
+        {
+          "path": "skills/craftcms/references/conditions.md",
+          "lines": 290,
+          "tokens": 2313,
+          "tokens_per_line": 8.0
+        },
+        {
+          "path": "skills/craftcms/references/config-app.md",
+          "lines": 718,
+          "tokens": 6591,
+          "tokens_per_line": 9.2
+        },
+        {
+          "path": "skills/craftcms/references/config-bootstrap.md",
+          "lines": 357,
+          "tokens": 3699,
+          "tokens_per_line": 10.4
+        },
+        {
+          "path": "skills/craftcms/references/config-general-extended.md",
+          "lines": 433,
+          "tokens": 7181,
+          "tokens_per_line": 16.6
+        },
+        {
+          "path": "skills/craftcms/references/config-general.md",
+          "lines": 452,
+          "tokens": 8625,
+          "tokens_per_line": 19.1
+        },
+        {
+          "path": "skills/craftcms/references/console-commands.md",
+          "lines": 566,
+          "tokens": 6101,
+          "tokens_per_line": 10.8
+        },
+        {
+          "path": "skills/craftcms/references/controllers.md",
+          "lines": 621,
+          "tokens": 7024,
+          "tokens_per_line": 11.3
+        },
+        {
+          "path": "skills/craftcms/references/cp-components.md",
+          "lines": 438,
+          "tokens": 4505,
+          "tokens_per_line": 10.3
+        },
+        {
+          "path": "skills/craftcms/references/cp-ui-patterns.md",
+          "lines": 620,
+          "tokens": 9044,
+          "tokens_per_line": 14.6
+        },
+        {
+          "path": "skills/craftcms/references/cp.md",
+          "lines": 1320,
+          "tokens": 16665,
+          "tokens_per_line": 12.6
+        },
+        {
+          "path": "skills/craftcms/references/debugging.md",
+          "lines": 551,
+          "tokens": 4789,
+          "tokens_per_line": 8.7
+        },
+        {
+          "path": "skills/craftcms/references/deployment.md",
+          "lines": 273,
+          "tokens": 2589,
+          "tokens_per_line": 9.5
+        },
+        {
+          "path": "skills/craftcms/references/drafts-revisions.md",
+          "lines": 372,
+          "tokens": 3890,
+          "tokens_per_line": 10.5
+        },
+        {
+          "path": "skills/craftcms/references/element-authorization.md",
+          "lines": 490,
+          "tokens": 4647,
+          "tokens_per_line": 9.5
+        },
+        {
+          "path": "skills/craftcms/references/element-index.md",
+          "lines": 879,
+          "tokens": 7191,
+          "tokens_per_line": 8.2
+        },
+        {
+          "path": "skills/craftcms/references/elements.md",
+          "lines": 1085,
+          "tokens": 12368,
+          "tokens_per_line": 11.4
+        },
+        {
+          "path": "skills/craftcms/references/email.md",
+          "lines": 325,
+          "tokens": 3224,
+          "tokens_per_line": 9.9
+        },
+        {
+          "path": "skills/craftcms/references/events.md",
+          "lines": 644,
+          "tokens": 6620,
+          "tokens_per_line": 10.3
+        },
+        {
+          "path": "skills/craftcms/references/field-types-custom.md",
+          "lines": 579,
+          "tokens": 4963,
+          "tokens_per_line": 8.6
+        },
+        {
+          "path": "skills/craftcms/references/fields.md",
+          "lines": 476,
+          "tokens": 4253,
+          "tokens_per_line": 8.9
+        },
+        {
+          "path": "skills/craftcms/references/graphql.md",
+          "lines": 556,
+          "tokens": 5305,
+          "tokens_per_line": 9.5
+        },
+        {
+          "path": "skills/craftcms/references/identity-protocols.md",
+          "lines": 47,
+          "tokens": 1037,
+          "tokens_per_line": 22.1
+        },
+        {
+          "path": "skills/craftcms/references/migrations.md",
+          "lines": 501,
+          "tokens": 6185,
+          "tokens_per_line": 12.3
+        },
+        {
+          "path": "skills/craftcms/references/permissions.md",
+          "lines": 647,
+          "tokens": 6936,
+          "tokens_per_line": 10.7
+        },
+        {
+          "path": "skills/craftcms/references/plugin-vite.md",
+          "lines": 301,
+          "tokens": 2829,
+          "tokens_per_line": 9.4
+        },
+        {
+          "path": "skills/craftcms/references/quality.md",
+          "lines": 494,
+          "tokens": 5980,
+          "tokens_per_line": 12.1
+        },
+        {
+          "path": "skills/craftcms/references/queue-jobs.md",
+          "lines": 499,
+          "tokens": 4661,
+          "tokens_per_line": 9.3
+        },
+        {
+          "path": "skills/craftcms/references/sessions-and-auth.md",
+          "lines": 381,
+          "tokens": 4073,
+          "tokens_per_line": 10.7
+        },
+        {
+          "path": "skills/craftcms/references/testing.md",
+          "lines": 51,
+          "tokens": 654,
+          "tokens_per_line": 12.8
+        }
+      ],
+      "total_tokens": 192216,
+      "always_loaded": {
+        "description_chars": 426,
+        "when_to_use_chars": 1105,
+        "listing_chars": 1534,
+        "listing_tokens": 322
+      }
+    },
+    {
+      "name": "ddev",
+      "skill_md": {
+        "path": "skills/ddev/SKILL.md",
+        "lines": 284,
+        "tokens": 3680,
+        "tokens_per_line": 13.0
+      },
+      "references": [],
+      "total_tokens": 3680,
+      "always_loaded": {
+        "description_chars": 685,
+        "when_to_use_chars": 818,
+        "listing_chars": 1506,
+        "listing_tokens": 348
+      }
+    },
+    {
+      "name": "servd",
+      "skill_md": {
+        "path": "skills/servd/SKILL.md",
+        "lines": 118,
+        "tokens": 2895,
+        "tokens_per_line": 24.5
+      },
+      "references": [
+        {
+          "path": "skills/servd/references/asset-storage.md",
+          "lines": 102,
+          "tokens": 1464,
+          "tokens_per_line": 14.4
+        },
+        {
+          "path": "skills/servd/references/caching.md",
+          "lines": 95,
+          "tokens": 1827,
+          "tokens_per_line": 19.2
+        },
+        {
+          "path": "skills/servd/references/database-and-queue.md",
+          "lines": 83,
+          "tokens": 1403,
+          "tokens_per_line": 16.9
+        },
+        {
+          "path": "skills/servd/references/deploy-and-environments.md",
+          "lines": 101,
+          "tokens": 1827,
+          "tokens_per_line": 18.1
+        },
+        {
+          "path": "skills/servd/references/limitations.md",
+          "lines": 93,
+          "tokens": 1981,
+          "tokens_per_line": 21.3
+        },
+        {
+          "path": "skills/servd/references/local-dev.md",
+          "lines": 77,
+          "tokens": 1383,
+          "tokens_per_line": 18.0
+        }
+      ],
+      "total_tokens": 12780,
+      "always_loaded": {
+        "description_chars": 1009,
+        "when_to_use_chars": 467,
+        "listing_chars": 1479,
+        "listing_tokens": 346
+      }
+    }
+  ],
+  "agents": [
+    {
+      "path": "agents/craft-code-reviewer-deep.md",
+      "lines": 51,
+      "tokens": 1264,
+      "tokens_per_line": 24.8
+    },
+    {
+      "path": "agents/craft-code-reviewer.md",
+      "lines": 177,
+      "tokens": 4149,
+      "tokens_per_line": 23.4
+    },
+    {
+      "path": "agents/craft-debugger.md",
+      "lines": 79,
+      "tokens": 1672,
+      "tokens_per_line": 21.2
+    },
+    {
+      "path": "agents/craft-feature-builder.md",
+      "lines": 167,
+      "tokens": 3956,
+      "tokens_per_line": 23.7
+    },
+    {
+      "path": "agents/craft-planner.md",
+      "lines": 90,
+      "tokens": 1985,
+      "tokens_per_line": 22.1
+    },
+    {
+      "path": "agents/craft-site-builder.md",
+      "lines": 89,
+      "tokens": 1843,
+      "tokens_per_line": 20.7
+    }
+  ],
+  "agent_preload": [
+    {
+      "name": "craft-code-reviewer-deep",
+      "body_tokens": 1264,
+      "skills": [
+        "craftcms",
+        "craft-php-guidelines",
+        "craft-garnish",
+        "craft-twig-guidelines",
+        "craft-site",
+        "craft-pest"
+      ],
+      "skills_preload_tokens": 24029,
+      "total_preload_tokens": 25293,
+      "missing_skills": []
+    },
+    {
+      "name": "craft-code-reviewer",
+      "body_tokens": 4149,
+      "skills": [
+        "craftcms",
+        "craft-php-guidelines"
+      ],
+      "skills_preload_tokens": 10723,
+      "total_preload_tokens": 14872,
+      "missing_skills": []
+    },
+    {
+      "name": "craft-debugger",
+      "body_tokens": 1672,
+      "skills": [
+        "craftcms",
+        "craft-php-guidelines",
+        "craft-pest"
+      ],
+      "skills_preload_tokens": 13976,
+      "total_preload_tokens": 15648,
+      "missing_skills": []
+    },
+    {
+      "name": "craft-feature-builder",
+      "body_tokens": 3956,
+      "skills": [
+        "craftcms",
+        "craft-php-guidelines",
+        "craft-pest"
+      ],
+      "skills_preload_tokens": 13976,
+      "total_preload_tokens": 17932,
+      "missing_skills": []
+    },
+    {
+      "name": "craft-planner",
+      "body_tokens": 1985,
+      "skills": [
+        "craftcms"
+      ],
+      "skills_preload_tokens": 6437,
+      "total_preload_tokens": 8422,
+      "missing_skills": []
+    },
+    {
+      "name": "craft-site-builder",
+      "body_tokens": 1843,
+      "skills": [
+        "craft-site",
+        "craft-twig-guidelines",
+        "craft-content-modeling"
+      ],
+      "skills_preload_tokens": 14653,
+      "total_preload_tokens": 16496,
+      "missing_skills": []
+    }
+  ],
+  "templates": [
+    {
+      "path": "project-template/.claude/rules/architecture.md",
+      "lines": 13,
+      "tokens": 344,
+      "tokens_per_line": 26.5
+    },
+    {
+      "path": "project-template/.claude/rules/coding-style.md",
+      "lines": 12,
+      "tokens": 179,
+      "tokens_per_line": 14.9
+    },
+    {
+      "path": "project-template/.claude/rules/git-workflow.md",
+      "lines": 11,
+      "tokens": 294,
+      "tokens_per_line": 26.7
+    },
+    {
+      "path": "project-template/.claude/rules/migrations.md",
+      "lines": 11,
+      "tokens": 221,
+      "tokens_per_line": 20.1
+    },
+    {
+      "path": "project-template/.claude/rules/scaffolding.md",
+      "lines": 10,
+      "tokens": 511,
+      "tokens_per_line": 51.1
+    },
+    {
+      "path": "project-template/.claude/rules/security.md",
+      "lines": 10,
+      "tokens": 154,
+      "tokens_per_line": 15.4
+    },
+    {
+      "path": "project-template/.claude/rules/testing.md",
+      "lines": 12,
+      "tokens": 290,
+      "tokens_per_line": 24.2
+    },
+    {
+      "path": "project-template/CLAUDE.md",
+      "lines": 84,
+      "tokens": 760,
+      "tokens_per_line": 9.0
+    }
+  ],
+  "scenarios": {
+    "Build custom element type": {
+      "files": 6,
+      "tokens": 53099
+    },
+    "Add webhook endpoint": {
+      "files": 3,
+      "tokens": 20081
+    },
+    "Build settings page": {
+      "files": 4,
+      "tokens": 46334
+    },
+    "Write Twig templates": {
+      "files": 2,
+      "tokens": 8200
+    },
+    "Create queue job + element sync": {
+      "files": 4,
+      "tokens": 28255
+    },
+    "Custom field type": {
+      "files": 4,
+      "tokens": 22273
+    },
+    "Configure Redis + caching": {
+      "files": 3,
+      "tokens": 18657
+    },
+    "Element authorization": {
+      "files": 3,
+      "tokens": 18020
+    },
+    "Write Pest tests for a new element type": {
+      "files": 7,
+      "tokens": 36055
+    },
+    "Cut a plugin release": {
+      "files": 3,
+      "tokens": 4795
+    },
+    "Deploy to Craft Cloud": {
+      "files": 5,
+      "tokens": 13404
+    },
+    "Configure Servd hosting": {
+      "files": 4,
+      "tokens": 7589
+    },
+    "Configure Formie + Blitz": {
+      "files": 3,
+      "tokens": 10663
+    },
+    "CP JS modal (Garnish)": {
+      "files": 4,
+      "tokens": 14164
+    },
+    "Headless GraphQL + session auth + console command": {
+      "files": 4,
+      "tokens": 21916
+    }
+  },
+  "budget_summary": {
+    "always_loaded_total_tokens": 4364,
+    "on_demand_skill_md_total_tokens": 53899,
+    "on_demand_references_total_tokens": 399260,
+    "on_demand_total_tokens": 453159
+  },
+  "grand_total": {
+    "files": 145,
+    "tokens": 470781,
+    "lines": 40221
+  }
+}

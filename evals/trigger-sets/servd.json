@@ -1,0 +1,18 @@
+[
+  {"query": "We're deploying our Craft site to Servd — what goes in servd.yaml for the Node build step?", "should_trigger": true},
+  {"query": "Our uploaded assets keep disappearing after each deploy on Servd", "should_trigger": true},
+  {"query": "How do I install the servd/craft-asset-storage plugin and point it at the right CDN?", "should_trigger": true},
+  {"query": "We want to run Blitz alongside Servd's static caching — does that work, and how?", "should_trigger": true},
+  {"query": "How do I connect to our Servd database locally? I think it needs an SSH tunnel", "should_trigger": true},
+  {"query": "What's the difference between Servd's Dedicated Queue Runner and just letting queue jobs run on AJAX?", "should_trigger": true},
+  {"query": "Our Project Config changes made directly on Servd staging aren't syncing back to production", "should_trigger": true},
+  {"query": "How do I pull the production database and assets down to my local DDEV environment from Servd?", "should_trigger": true},
+  {"query": "Should we host this Craft project on Servd or Craft Cloud? We need SSH access for one-off scripts", "should_trigger": true},
+  {"query": "I need a dynamicInclude island in a page that's being statically cached on Servd", "should_trigger": true},
+  {"query": "We're deploying to Craft Cloud and need to configure craft-cloud.yaml's cache rules", "should_trigger": false},
+  {"query": "Set up DDEV locally with Redis caching for our Craft project", "should_trigger": false},
+  {"query": "How do I configure native Imager-X transforms with Power Pack markup for a self-hosted site?", "should_trigger": false},
+  {"query": "Write a migration that adds a new column and backfills existing rows", "should_trigger": false},
+  {"query": "What's the right PHPDoc style for a new queue job class in our plugin?", "should_trigger": false},
+  {"query": "Help me build a multi-brand Tailwind token system for our front-end components", "should_trigger": false}
+]

@@ -1,0 +1,18 @@
+[
+  {"query": "I'm setting up craft-cloud.yaml for a new project — what php-version and node-version keys do I need, and how do redirects work?", "should_trigger": true},
+  {"query": "My plugin writes a cache file to storage/runtime and it's gone on the next request after we deployed to Craft Cloud. What's happening?", "should_trigger": true},
+  {"query": "We're getting 429s from our Next.js build pulling GraphQL data from our Craft Cloud backend. How do I fix that?", "should_trigger": true},
+  {"query": "What happens during the Build, Migrate, Release pipeline on Craft Cloud, and can I set env vars that only apply at build time?", "should_trigger": true},
+  {"query": "I need to add an ESI island inside a page we're statically caching at the edge on Craft Cloud", "should_trigger": true},
+  {"query": "We migrated our self-hosted Craft site to Craft Cloud but our table prefix broke everything during the Migrate phase", "should_trigger": true},
+  {"query": "How do I schedule a recurring command on Craft Cloud? I need it to run every 15 minutes", "should_trigger": true},
+  {"query": "Our custom domain on Craft Cloud won't issue an SSL cert — what DNS records does it need?", "should_trigger": true},
+  {"query": "I'm making our plugin Cloud-compatible — what do I need to check for the ephemeral filesystem?", "should_trigger": true},
+  {"query": "Craft Cloud keeps giving my preview environment a robots.txt that blocks everything, is that expected?", "should_trigger": true},
+  {"query": "I need to deploy our Craft site to Servd — how do I set up the asset storage plugin?", "should_trigger": false},
+  {"query": "We're on DDEV locally and want to match the PHP and MySQL versions production uses on our own Forge server", "should_trigger": false},
+  {"query": "Set up Blitz static caching with Cloudflare purging for our self-hosted Craft site", "should_trigger": false},
+  {"query": "How do I configure an SMTP mail adapter in config/app.php for a generic Craft install?", "should_trigger": false},
+  {"query": "I want to add a GitHub Actions workflow that runs PHPStan and Pest on every pull request for our plugin", "should_trigger": false},
+  {"query": "Help me plan the content model for a multi-language news site — sections, entry types, and propagation", "should_trigger": false}
+]

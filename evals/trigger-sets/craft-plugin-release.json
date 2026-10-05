@@ -1,0 +1,18 @@
+[
+  {"query": "I need to cut a new release for our Craft plugin — bump composer.json version, tag it, and make sure Packagist actually serves it", "should_trigger": true},
+  {"query": "Packagist isn't showing our new 2.3.0 tag even though we pushed it and the webhook returned 202", "should_trigger": true},
+  {"query": "I accidentally moved an existing git tag that Packagist had already served — what's the blast radius?", "should_trigger": true},
+  {"query": "Our create-release.yml workflow failed with a 422 already_exists when the Plugin Store tried to create the GitHub release", "should_trigger": true},
+  {"query": "I need to promote develop to main for a plugin release — how do I check if it's safe without trusting my local refs?", "should_trigger": true},
+  {"query": "We have a shared SDK library that several of our plugins depend on — what order should I release them in?", "should_trigger": true},
+  {"query": "gh release edit wiped out the tag_name on our release and now it shows as untagged-<hash>", "should_trigger": true},
+  {"query": "I need to purge an accidentally committed API key from our plugin's git history before releasing", "should_trigger": true},
+  {"query": "We use path repositories for local development across three plugins that share a library — one of them keeps resolving to dev-main instead of a real version", "should_trigger": true},
+  {"query": "How do I verify a plugin release's tag actually matches what's in composer.json, not just what's on the branch?", "should_trigger": true},
+  {"query": "Can you write a changelog entry for this bug fix — what's the right phrasing and format for the Unreleased section?", "should_trigger": false},
+  {"query": "Set up a GitHub Actions workflow that runs PHPStan and ECS on every pull request for our plugin", "should_trigger": false},
+  {"query": "What's the right section header format and PHPDoc conventions for a new service class in our plugin?", "should_trigger": false},
+  {"query": "We want to list our plugin in the Craft Plugin Store for the first time — what does the submission need?", "should_trigger": false},
+  {"query": "Our plugin's Pest suite fails in CI but works locally — what's wrong with our database isolation?", "should_trigger": false},
+  {"query": "I need to write a migration that adds a new column to our plugin's items table", "should_trigger": false}
+]

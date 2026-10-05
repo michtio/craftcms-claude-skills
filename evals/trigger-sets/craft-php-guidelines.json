@@ -1,0 +1,18 @@
+[
+  {"query": "I'm writing a new service class for our Craft plugin — can you review the PHPDoc blocks and make sure they follow the right conventions? I need to know what goes in @author, @since, and @throws", "should_trigger": true},
+  {"query": "Our ECS is failing on a bunch of files after I refactored the plugin. I'm getting errors about trailing commas, constant visibility, and nullable notation. How do I configure it correctly for Craft 5?", "should_trigger": true},
+  {"query": "What's the naming convention for queue jobs in Craft? Should it be SyncProductsJob or SyncProducts? And what about the file structure — does it go in src/jobs/ or src/queue/?", "should_trigger": true},
+  {"query": "I keep forgetting the section header order for Craft plugin classes — traits, constants, properties, methods. Can you show me the full template with the ========= separators?", "should_trigger": true},
+  {"query": "Should I use DateTimeHelper or Carbon in my element query class? I have a custom date range filter and I'm doing date arithmetic to calculate 'last 30 days'", "should_trigger": true},
+  {"query": "I'm scaffolding a new controller with ddev craft make controller but the generated file is missing PHPDocs. What's the standard for documenting action methods in Craft plugins?", "should_trigger": true},
+  {"query": "We need to add a beforePrepare() method to our element query. Should I use addSelect() or select()? And how do I handle the column quoting for Yii2 join conditions?", "should_trigger": true},
+  {"query": "I need to set up PHPStan for our Craft plugin. What level should I use, and how do I create a baseline for existing violations? Also, do I need the craftcms/phpstan package?", "should_trigger": true},
+  {"query": "Help me plan the content model for a recipe website — sections for recipes, ingredients, and cuisines with proper relations between them", "should_trigger": false},
+  {"query": "I'm building a card component in Twig with atomic design patterns. How should I structure the props file and the variant files?", "should_trigger": false},
+  {"query": "Our Craft site is slow — pages take 3+ seconds to load. How do I set up Blitz caching with Cloudflare purging?", "should_trigger": false},
+  {"query": "Can you write a Python script that processes our product images, resizes them to 3 sizes, and converts to WebP format?", "should_trigger": false},
+  {"query": "How do I set up DDEV with Redis caching for our Craft site? I need to configure the cache component in config/app.php", "should_trigger": false},
+  {"query": "I want to add a custom JavaScript widget to the Craft CP that shows a sortable table with drag-to-reorder. How do I use Garnish.DragSort?", "should_trigger": false},
+  {"query": "what's the correct way to use declare strict_types in a Craft plugin? I've been adding it to every file but someone said that's wrong", "should_trigger": true},
+  {"query": "I need to document the exceptions my service method can throw — it calls Craft::$app->elements->saveElement() which can throw various exceptions. How deep should the @throws chain go?", "should_trigger": true}
+]

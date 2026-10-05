@@ -1,0 +1,18 @@
+[
+  {"query": "We're building a corporate website with about 30 pages. I need help planning the content model — which sections should be singles vs channels vs structures, and how should I handle the team page where each member has a bio, photo, role, and social links?", "should_trigger": true},
+  {"query": "I want to add a Matrix field to our blog posts for flexible content — text blocks, image galleries, pull quotes, and embedded videos. How should I configure the entry types and what view mode works best for editors?", "should_trigger": true},
+  {"query": "We need to migrate our existing category groups to entries before upgrading to Craft 6. We have 'Topics' (hierarchical, ~50 items) and 'Tags' (flat, ~200 items). What's the entrification process?", "should_trigger": true},
+  {"query": "I'm trying to set up eager loading for a listing page that shows entries with their hero image, category, and author. I keep getting N+1 queries even though I'm using .with(). The template loops through entries and accesses entry.heroImage.one(), entry.topics.all(), and entry.author", "should_trigger": true},
+  {"query": "What field type should I use for a color picker that lets editors choose from our 6 brand colors? I don't want them entering arbitrary hex values, just selecting from predefined options", "should_trigger": true},
+  {"query": "We need to plan a multi-language site with English and French. How does propagation work for entries — can some fields be translated while others stay the same across sites? And what happens with Matrix blocks?", "should_trigger": true},
+  {"query": "I want to add a 'relatedArticles' field to our blog entry type. Should I use an Entries field with sources limited to the blog section, or is there a better pattern for manual content curation?", "should_trigger": true},
+  {"query": "Help me decide between CKEditor with nested entries vs Matrix for a page builder. Our editors want to write flowing text with occasional callouts, image blocks, and CTAs mixed in — not a strict block-by-block layout", "should_trigger": true},
+  {"query": "I need to build a Twig component for rendering cards with different layouts — image on top, horizontal, and text-only. Using atomic design pattern with extends/block", "should_trigger": false},
+  {"query": "How do I configure the Vite dev server to work with DDEV and hot module replacement? I keep getting connection refused errors", "should_trigger": false},
+  {"query": "I'm writing a custom field type plugin that stores JSON data and renders a custom input in the CP. How do I extend craft\\base\\Field and register it?", "should_trigger": false},
+  {"query": "Can you set up a GitHub Actions workflow that runs ECS and PHPStan on pull requests for our Craft plugin?", "should_trigger": false},
+  {"query": "We need to add custom permissions to our Craft plugin so that only editors in the 'Content Managers' group can access our plugin's CP section", "should_trigger": false},
+  {"query": "Help me optimize our Craft site for Core Web Vitals — our LCP is 4.2 seconds and CLS is 0.15. Most of the delay seems to be from images loading above the fold", "should_trigger": false},
+  {"query": "I need to plan the field layout for our 'Event' entry type. Each event has a date range (start and end), a venue (related entry from Venues section), a ticket price with currency, capacity, and a registration URL. Some of these feel like they might collide with reserved handles", "should_trigger": true},
+  {"query": "Should I use globals or singles for site-wide settings like footer content, social media links, and the company address? We're starting a new Craft 5 project", "should_trigger": true}
+]

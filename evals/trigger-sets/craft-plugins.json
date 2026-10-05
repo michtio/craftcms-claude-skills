@@ -1,0 +1,18 @@
+[
+  {"query": "How do I set up a Formie form inside a content migration so it ships with the plugin install?", "should_trigger": true},
+  {"query": "I need SEOmatic to pull OpenGraph images from our hero field and generate JSON-LD for articles", "should_trigger": true},
+  {"query": "What's the right Blitz refresh mode for a site with Sprig components that shouldn't be cached?", "should_trigger": true},
+  {"query": "I'm importing a CSV of 10,000 products with Feed Me — how do I map a relation field during import?", "should_trigger": true},
+  {"query": "How do I use Imager-X's ppimg Power Pack markup to generate a responsive picture tag?", "should_trigger": true},
+  {"query": "We need to add Retour redirects in bulk from a CSV of old URLs", "should_trigger": true},
+  {"query": "How do I register a Warp passwordless login flow with magic links for our members area?", "should_trigger": true},
+  {"query": "Our Navigation plugin nodes aren't rendering custom fields in GraphQL — what am I missing?", "should_trigger": true},
+  {"query": "I need to configure Knock Knock to password-protect our staging environment", "should_trigger": true},
+  {"query": "How do I set up Amazon SES as the mail transport with SNS bounce tracking?", "should_trigger": true},
+  {"query": "I need to write a custom element type from scratch for our plugin, no third-party plugin involved", "should_trigger": false},
+  {"query": "Help me plan the content model for sections, entry types, and Matrix fields for a new site", "should_trigger": false},
+  {"query": "Build a card component with atomic design and Tailwind utility classes", "should_trigger": false},
+  {"query": "I want to deploy our Craft install to Craft Cloud — what does craft-cloud.yaml need?", "should_trigger": false},
+  {"query": "What's the PHPDoc convention for @throws chains in a service method?", "should_trigger": false},
+  {"query": "How do I set up DDEV with PHP 8.3 and MySQL 8 for a new Craft project?", "should_trigger": false}
+]

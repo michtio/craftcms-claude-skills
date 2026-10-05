@@ -1,0 +1,150 @@
+[
+  {
+    "query": "ok so this is bad. i just noticed our shared dev craft install has like 8000 entries in a section called 'Test Blog' that nobody created manually. pretty sure it's coming from the plugin test suite in cms/vendor/acme/craft-warden. how do i figure out what's happening and stop it",
+    "should_trigger": true
+  },
+  {
+    "query": "setting up a test suite for a craft 5 plugin i'm building (handle is share-links). want pest, and i want it to run against its own database not the ddev one. what do i need in tests/ and phpunit.xml.dist?",
+    "should_trigger": true
+  },
+  {
+    "query": "my tests/Pest.php has uses(TestCase::class)->in(__DIR__) \u2014 is that enough or am I missing something? using markhuot/craft-pest-core 3.2",
+    "should_trigger": true
+  },
+  {
+    "query": "I have a test that grants a section-scoped permission to a user group and asserts the user can view entries. it passes when I run it alone with --filter but fails when the whole suite runs. the permission just isn't there after saveGroupPermissions. any idea?",
+    "should_trigger": true
+  },
+  {
+    "query": "our compliance plugin writes audit rows and I keep finding rows in the audit table with test-looking data. I already call Audit::setSinks([]) in beforeEach so I don't get it",
+    "should_trigger": true
+  },
+  {
+    "query": "reviewing a PR for one of our craft plugins. code-analysis.yaml runs phpstan and fix-cs, there are 74 tests in tests/ but I don't see them running anywhere in the workflow. what should this look like",
+    "should_trigger": true
+  },
+  {
+    "query": "how do I create a bunch of entries with specific field values in a craft plugin test, and then assert a row landed in my plugin's own table? using Entry::factory() but not sure about the db assertion side",
+    "should_trigger": true
+  },
+  {
+    "query": "the plugin is symlinked into cms/vendor/acme/craft-ledger in my ddev project. what's the right command to run just that plugin's suite from inside the container",
+    "should_trigger": true
+  },
+  {
+    "query": "wrote a fixture with a raw insert using NOW() for dateExpired and my 'rejects expired tokens' test says the token is still valid. the row is definitely in the past?",
+    "should_trigger": true
+  },
+  {
+    "query": "our suite passes locally every time and fails on github actions with an integrity constraint violation on myplugin_items.categoryId. only on CI",
+    "should_trigger": true
+  },
+  {
+    "query": "need to add a Playwright end-to-end test that logs into the control panel and checks that our plugin's settings page saves correctly. we already have the CI runner set up for node",
+    "should_trigger": false
+  },
+  {
+    "query": "phpstan is throwing 'Call to an undefined method yii\\console\\Application::getConfig()' all over our plugin src. level 5. what's the correct fix, I don't want to litter the code with ignore comments",
+    "should_trigger": false
+  },
+  {
+    "query": "I'm contributing a patch to craft core itself (craftcms/cms) for a bug in the Assets service. there's an existing codeception suite in tests/. how do I add a unit test in the style core already uses",
+    "should_trigger": false
+  },
+  {
+    "query": "how do I test that my email actually sends? want to see the rendered html of the order confirmation before we go live. we're on ddev",
+    "should_trigger": false
+  },
+  {
+    "query": "ddev import-db keeps failing halfway through with a 2006 MySQL server has gone away on a 4GB dump. project is craftcms type, mysql 8.0",
+    "should_trigger": false
+  },
+  {
+    "query": "we want to A/B test two versions of the pricing page copy on our craft site and measure signups. what's a sane way to split traffic in twig without wrecking blitz caching",
+    "should_trigger": false
+  },
+  {
+    "query": "write the service class for bulk-approving submissions in our workflow plugin. it needs a permission check, should fire before/after events, and push a queue job per submission",
+    "should_trigger": false
+  },
+  {
+    "query": "our github actions workflow for the plugin only runs ecs right now. I want to add the php 8.2/8.3/8.4 matrix and composer caching to it",
+    "should_trigger": false
+  },
+  {
+    "query": "I need a staging environment where the client can test content changes before they go live, with a password prompt so google doesn't index it. craft 5, hosted on servd",
+    "should_trigger": false
+  },
+  {
+    "query": "in a craft plugin, is there any way to make my integration tests not need a real database at all? most of what I'm testing is a scoring algorithm that takes an array in and gives a number out",
+    "should_trigger": true
+  },
+  {
+    "query": "our token expiry tests fail maybe 1 in 3 runs. a token we seed as already-expired comes back as still valid. plugin is craft 5, suite is pest with a tests/bootstrap.php we wrote ourselves. dateExpired is a datetime column",
+    "should_trigger": true
+  },
+  {
+    "query": "the plugin suite connects fine when I run it in ddev but on github actions it can't reach mysql at all. phpunit.xml.dist has CRAFT_DB_SERVER set to db. someone suggested adding an /etc/hosts entry on the runner?",
+    "should_trigger": true
+  },
+  {
+    "query": "installing our plugin now fails with 'Too many keys specified; max 64 keys allowed' on myplugin_items. it worked last week. Install.php has createIndex and addForeignKey calls in safeUp",
+    "should_trigger": true
+  },
+  {
+    "query": "I need two extra sites for the multi-site tests in our craft plugin. should I create them once in the bootstrap so every test can use them, or per test? and how do I clean them up",
+    "should_trigger": true
+  },
+  {
+    "query": "test file passes when I run it with --filter on its own but fails when the whole suite runs. our service caches rows in a MemoizableArray and it looks like it's returning data from an earlier test",
+    "should_trigger": true
+  },
+  {
+    "query": "writing a console command for our plugin that provisions a new site plus its sections from a config file. after it creates the site, entry queries in the same command are returning entries from every site, not the one I asked for",
+    "should_trigger": false
+  },
+  {
+    "query": "our importer deletes a site when a market is decommissioned. after deleteSite() runs, getSectionByHandle still comes back with siteSettings pointing at the site I just removed, and saving a category group throws 'missing site settings'",
+    "should_trigger": false
+  },
+  {
+    "query": "what's the right way to set the default timezone for a craft 5 site so entry postDates display in Brussels local time for editors but stay UTC in the database",
+    "should_trigger": false
+  },
+  {
+    "query": "our plugin's Install.php creates three tables. I want to add a new column to one of them and ship it to existing installs. do I edit Install.php, write a migration, or both",
+    "should_trigger": false
+  },
+  {
+    "query": "add a php 8.4 leg to the plugin's code-analysis workflow and cache composer between runs. also bump actions/checkout to v5",
+    "should_trigger": false
+  },
+  {
+    "query": "our plugin has a 'records changed since your last export' filter. it reads dateUpdated straight off the ActiveRecord and does strtotime() on it, then compares to the cutoff. works on my machine, but on the client's server (they're in Los Angeles) it's picking up rows 7 hours out. craft 5",
+    "should_trigger": false
+  },
+  {
+    "query": "in a craft plugin service, what's the correct way to turn myplugin_items.dateUpdated (raw ActiveRecord value) into something I can compare against a Carbon instance? the column is a datetime",
+    "should_trigger": false
+  },
+  {
+    "query": "Entry::find()->title(['like', 'draft-%'])->all() returns an empty array every time, but I can see entries with those titles in the CP. craft 5, no exception thrown",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to find all entries whose slug starts with a given prefix in a craft 5 maintenance command. what's the right query syntax",
+    "should_trigger": false
+  },
+  {
+    "query": "our pest suite has an afterEach that sweeps up fixture entries by title prefix and deletes them, but the shared test install has hundreds of leftover 'test-' entries so clearly it never matched anything. the suite is green",
+    "should_trigger": true
+  },
+  {
+    "query": "what timezone should I configure for a craft site whose editors are in Brussels but whose readers are worldwide, and does it affect how postDate is stored",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to write a GitHub Actions workflow that runs PHPStan and Pest tests on every pull request",
+    "should_trigger": true
+  }
+]

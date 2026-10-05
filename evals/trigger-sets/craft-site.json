@@ -1,0 +1,18 @@
+[
+  {"query": "I need to build a card component with 3 variants — default with image on top, horizontal with image on the left, and a minimal text-only version. We're using Tailwind and the atomic design pattern from our other pages", "should_trigger": true},
+  {"query": "Our content builder template needs to handle 8 different Matrix block types — hero, text, image gallery, CTA, testimonial, stats, FAQ accordion, and video embed. How should I structure the _builders/ directory and handle the rendering loop?", "should_trigger": true},
+  {"query": "I'm setting up Vite + Tailwind v4 for a new Craft CMS project running in DDEV. The dev server works but the production build isn't generating the CSS. My vite.config.ts uses the nystudio107 plugin but I think the paths are wrong", "should_trigger": true},
+  {"query": "How should I handle responsive images in our Craft site? We have hero banners (full-width), content images (max 800px), and card thumbnails (fixed 400x300). I want srcset with WebP fallbacks and lazy loading", "should_trigger": true},
+  {"query": "We need a language switcher component for our multi-site Craft setup — 3 languages (EN, FR, DE), subdomain-based (en.example.com, fr.example.com, de.example.com). It should show the current language and link to the same entry in other languages, falling back to the homepage if no translation exists", "should_trigger": true},
+  {"query": "I want to add Blitz static caching to our Craft site but we have a few pages with Sprig components (live search, filtering). How do I make the cached pages work with the dynamic parts?", "should_trigger": true},
+  {"query": "Need to set up front-end user authentication for our membership site — login form, registration, password reset, and an edit profile page. Using Craft 5 with email as username", "should_trigger": true},
+  {"query": "Can you help me configure SEOmatic for our blog section? I need custom meta titles using the entry title + site name, OpenGraph images from the hero image field, and JSON-LD Article markup", "should_trigger": true},
+  {"query": "I need to build a custom element type for tracking support tickets in our Craft plugin — with statuses, custom fields, and a CP index page with filtering", "should_trigger": false},
+  {"query": "We're getting PHPStan errors in our plugin's service class — something about MemoizableArray return types not matching the interface. Level 8 analysis", "should_trigger": false},
+  {"query": "How do I write a Craft migration that adds a new column to our custom element's database table and updates all existing records?", "should_trigger": false},
+  {"query": "I need a Python script that scrapes product data from a website and exports it to a CSV file for importing into Craft via Feed Me", "should_trigger": false},
+  {"query": "Can you help me plan the content model for a recipe website? I need sections for recipes, ingredients, cuisines, and dietary tags. Recipes should have prep time, cook time, servings, and step-by-step instructions with photos", "should_trigger": false},
+  {"query": "We need to register a custom EVENT_BEFORE_SAVE handler in our module that validates entries before they're saved and prevents saving if certain business rules aren't met", "should_trigger": false},
+  {"query": "Help me set up Formie with Tailwind styling for a contact form — I need custom theme config that outputs our utility classes instead of the default Formie markup", "should_trigger": true},
+  {"query": "I'm building a tabs component that switches content panels — should I use Alpine.js, DataStar, or vanilla JS? The content is static (no API calls), just showing/hiding panels", "should_trigger": true}
+]

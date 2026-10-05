@@ -1,0 +1,18 @@
+[
+  {"query": "I just cloned a Craft CMS project and need to get the local environment running. There's a .ddev folder already. How do I start, import the database, and get everything running?", "should_trigger": true},
+  {"query": "The Vite dev server keeps failing in my DDEV container — I think I need to expose port 5173 but I'm not sure if I should use web_extra_exposed_ports or ports in the config", "should_trigger": true},
+  {"query": "I need to add Redis to my DDEV-based Craft project for caching. How do I install the add-on and what do I put in config/app.php?", "should_trigger": true},
+  {"query": "How do I switch my DDEV project to PHP 8.3 and MySQL 8.0? Also need Node 20 for our build tools", "should_trigger": true},
+  {"query": "I'm getting 'Class not found' errors after pulling from git. I think I need to run composer install and migrations but I always forget the right commands", "should_trigger": true},
+  {"query": "How do I create a custom ddev command that runs our ECS check? I want to type 'ddev check-cs' instead of the full composer command", "should_trigger": true},
+  {"query": "My DDEV project won't start — says port 443 is already in use. How do I debug this and is there a way to stop all other DDEV projects?", "should_trigger": true},
+  {"query": "I need to enable Xdebug for debugging a tricky issue in my Craft plugin. How do I turn it on in DDEV and connect it to VS Code?", "should_trigger": true},
+  {"query": "I need to build a card component with 3 visual variants using Twig extends/block pattern", "should_trigger": false},
+  {"query": "How do I write a custom element type for our Craft plugin? I need it to have its own database table and CP index page", "should_trigger": false},
+  {"query": "Can you help me set up eager loading for a listing page that queries blog posts with their featured images and categories?", "should_trigger": false},
+  {"query": "We need to deploy our Craft site to a DigitalOcean droplet with Nginx and Let's Encrypt SSL", "should_trigger": false},
+  {"query": "Help me configure SEOmatic meta tags for our blog section with custom OpenGraph images", "should_trigger": false},
+  {"query": "I need to write a GitHub Actions workflow that runs PHPStan and Pest tests on every pull request", "should_trigger": false},
+  {"query": "Our DDEV site works locally but I need to share it with a client for review. Is there a way to create a temporary public URL?", "should_trigger": true},
+  {"query": "I accidentally ran npm install on my host machine instead of through ddev npm. Now there's a node_modules with the wrong architecture. What do I do?", "should_trigger": true}
+]

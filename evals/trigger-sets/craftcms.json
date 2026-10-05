@@ -1,0 +1,20 @@
+[
+  {"query": "I need to build a custom element type for our plugin that tracks customer orders — each order has a status workflow (pending, processing, shipped, delivered) and needs to appear in the CP with sortable columns and bulk actions", "should_trigger": true},
+  {"query": "We're getting a weird error in our plugin's afterSave handler — the nested entries aren't propagating to the other site and I'm not sure if I need to use EVENT_AFTER_PROPAGATE or EVENT_AFTER_SAVE for cross-site updates", "should_trigger": true},
+  {"query": "How do I register a custom dashboard widget for our Craft plugin? I want it to show a chart of recent submissions from our custom element type", "should_trigger": true},
+  {"query": "I need to write a migration that creates a new section called 'Resources' with two entry types and a Matrix field — is it better to do this in Install.php or a content migration?", "should_trigger": true},
+  {"query": "our plugin needs a webhook endpoint that stripe can POST to for payment confirmations. how do I set up a controller action that bypasses CSRF and handles the JSON payload?", "should_trigger": true},
+  {"query": "We need to add PHPStan to our Craft plugin's CI pipeline and I'm not sure what level to use or how to set up the baseline. Also need ECS configured with the Craft preset", "should_trigger": true},
+  {"query": "I want to register a custom Twig extension from my plugin that adds a |currency filter and a {% priceTable %} tag pair", "should_trigger": true},
+  {"query": "Setting up Pest tests for a Craft plugin — how do I test a controller action that requires a logged-in admin user and verify it creates the right database records?", "should_trigger": true},
+  {"query": "Can you help me model a blog with categories, tags, and a featured posts section? I want the homepage to show the 3 most recent featured posts and the sidebar to show category counts", "should_trigger": false},
+  {"query": "I need to set up the Twig templates for our new portfolio site — we're using atomic design with a card component that has 3 variants (default, featured, minimal) and a content builder for Matrix blocks", "should_trigger": false},
+  {"query": "How do I configure the Vite buildchain with Tailwind v4 in my Craft project? I keep getting HMR errors in the DDEV container", "should_trigger": false},
+  {"query": "We need to add SEOmatic meta tags to our blog section and configure the sitemap to exclude draft entries. Also want to add JSON-LD for articles", "should_trigger": false},
+  {"query": "Help me plan the content model for a multi-language corporate site — we have 3 languages, about 40 pages organized hierarchically, plus a news section and team member profiles", "should_trigger": false},
+  {"query": "I'm trying to optimize my Craft site's image loading — should I use ImageOptimize or Imager-X? We have about 2000 product images that need srcset with WebP", "should_trigger": false},
+  {"query": "Can you write a Python script that reads a CSV file and generates a bar chart showing monthly sales totals? The CSV has columns date, product, quantity, price", "should_trigger": false},
+  {"query": "how do I set up a Sprig component for live search that filters entries as the user types? I want it to debounce and show a loading indicator", "should_trigger": false},
+  {"query": "I need to create a queue job that syncs product data from our ERP system every night — it should process items in batches of 50 and report progress, and I need a console command to trigger it manually", "should_trigger": true},
+  {"query": "What's the right way to add a custom permission for our plugin so that only certain user groups can access the settings page? And how do I check that permission in the controller?", "should_trigger": true}
+]

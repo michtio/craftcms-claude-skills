@@ -13,6 +13,10 @@ Thumbs.db
 node_modules/
 npm-debug.log*
 
+# Python
+__pycache__/
+*.pyc
+
 # IDE
 .idea/
 .vscode/
@@ -21,6 +25,13 @@ npm-debug.log*
 
 # Eval workspaces (skill-creator test artifacts)
 *-workspace/
+
+# Eval run artifacts (evals/** fixtures and tooling are tracked; run
+# output from measure_tokens.py/route.py/trigger_check.py is not)
+evals/results*.json
+evals/route-results*.json
+evals/baseline.txt
+evals/*.log
 
 # Local tasks
 TASKS.md

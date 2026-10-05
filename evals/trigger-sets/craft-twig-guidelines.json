@@ -1,0 +1,18 @@
+[
+  {"query": "I'm writing a Twig include for a hero component and I keep getting variables leaking from the parent template. How do I properly isolate includes in Craft?", "should_trigger": true},
+  {"query": "What's the correct way to handle null values in Twig templates? I've been using {% if entry.heading is defined and entry.heading is not null %} but that feels verbose", "should_trigger": true},
+  {"query": "Should I use camelCase or snake_case for Twig variable names? And what about abbreviations — is 'el' ok for element or should I spell it out?", "should_trigger": true},
+  {"query": "How do I use the {% tag %} helper in Craft 5? I want to render a polymorphic element that's an <a> when it has a URL and a <span> otherwise", "should_trigger": true},
+  {"query": "What's the collect() function in Craft Twig? I need to build a class string from multiple named concerns (layout, color, hover, utilities) without conflicts", "should_trigger": true},
+  {"query": "I'm using the ??? operator in my templates but getting an error. Do I need a plugin for that? I have SEOmatic installed", "should_trigger": true},
+  {"query": "Can I use {% macro %} for reusable UI components in Craft? I have a button that appears in 5 different templates and I want to avoid duplication", "should_trigger": true},
+  {"query": "How do I add classes and aria attributes to an inline SVG in Craft Twig? I'm using svg() to load the file but need to add styling", "should_trigger": true},
+  {"query": "I need to build a custom element type for our Craft plugin that tracks inventory items with quantities and locations", "should_trigger": false},
+  {"query": "How do I configure a Matrix field with 5 entry types and set it to cards view mode? I want editors to drag and reorder blocks", "should_trigger": false},
+  {"query": "We need to set up front-end auth — login, registration, password reset forms with proper CSRF handling", "should_trigger": false},
+  {"query": "Help me plan the template architecture for our new Craft site — we're using atomic design with atoms, molecules, and organisms in a specific directory structure", "should_trigger": false},
+  {"query": "I'm getting PHPStan errors in my plugin's service class about nullable return types. How do I fix the type annotations?", "should_trigger": false},
+  {"query": "Can you help me configure DDEV with a custom Node version and expose the Vite dev server port for HMR?", "should_trigger": false},
+  {"query": "I need whitespace control in my Twig templates — the output has tons of blank lines between elements. What's the best approach? I've seen people use minify tags", "should_trigger": true},
+  {"query": "How do I render a comment header at the top of each Twig component file? I want a consistent format with the ========= separator style we use in PHP", "should_trigger": true}
+]
