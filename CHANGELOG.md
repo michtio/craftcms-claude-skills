@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.18.1 -- 2026-10-05
+
+Fixes the `craft-twig-guidelines` frontmatter, which failed to parse as YAML ([#16](https://github.com/michtio/craftcms-claude-skills/issues/16)).
+
+### Fixed
+
+- **`skills/craft-twig-guidelines/SKILL.md`** -- the description contained `\uXXXX` inside a double-quoted YAML string, which strict parsers read as an invalid unicode escape. Claude Code fell back to the skill's first heading as its description, so the trigger text never reached the skill listing, and stricter clients (PhpStorm) rejected the skill as "invalid frontmatter". Escaped as `\\uXXXX`. Present since 1.8.0.
+
 ## 1.18.0 -- 2026-09-14
 
 Folds in Craft CMS 5.10.13 through 5.11.1 (released 2026-08-04 to 2026-09-02). The pack was last verified against 5.10.12; every claim below was checked against the `craftcms/cms` `5.x` source and the linked PRs/issues on 2026-09-14. Security-only entries (the RCE, authorization-bypass, and information-disclosure advisories in 5.10.13, 5.10.14, and 5.11.0) carry no skill impact beyond "be on 5.11.1"; nothing in the `Unreleased` section of Craft's changelog has shipped yet, so it is not folded in.
