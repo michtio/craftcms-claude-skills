@@ -204,13 +204,25 @@ def ask(claude_bin: str, root: Path, settings_path: Path, model: str, query: str
         return "ERR"
 
     result = (data.get("result") or "").strip()
+    if proc.returncode != 0 or data.get("is_error"):
+        return "ERR"
     if not result:
         return ""
-    token = result.split()[0].strip("`*/.,").lower()
-    return token
+    # A routing answer is one token ("craft-site-x" or "NONE"). Anything
+    # longer is not an answer -- most often a usage-limit or API error
+    # message -- and must not be scored as a wrong pick.
+    words = result.split()
+    if len(words) > 3:
+        return "ERR"
+    return words[0].strip("`*/.,").lower()
+
+
+ERROR_ANSWERS = ("ERR", "TIMEOUT", "")
 
 
 def score(item: dict, answer: str) -> dict:
+    if answer in ERROR_ANSWERS:
+        return {**item, "answer": answer, "chosen": None, "fired": None, "pass": None}
     chosen = answer[:-2] if answer.endswith("-x") else answer
     fired = chosen == item["skill"]
     passed = fired == item["should_trigger"]
@@ -242,15 +254,20 @@ def run_condition(
 
 
 def summarize(results: list[dict]) -> dict:
+    # Errored calls (ERR/TIMEOUT/empty) are excluded from pass rates and
+    # reported separately, so a mid-run usage limit can't masquerade as
+    # a routing regression.
     by_skill = defaultdict(lambda: {"pass": 0, "total": 0})
-    for r in results:
+    scored = [r for r in results if r["pass"] is not None]
+    for r in scored:
         by_skill[r["skill"]]["total"] += 1
         by_skill[r["skill"]]["pass"] += 1 if r["pass"] else 0
-    overall_pass = sum(1 for r in results if r["pass"])
+    overall_pass = sum(1 for r in scored if r["pass"])
     return {
         "overall_pass": overall_pass,
-        "overall_total": len(results),
-        "overall": f"{overall_pass}/{len(results)}",
+        "overall_total": len(scored),
+        "errors": len(results) - len(scored),
+        "overall": f"{overall_pass}/{len(scored)}",
         "by_skill": {k: f"{v['pass']}/{v['total']}" for k, v in sorted(by_skill.items())},
     }
 
@@ -363,9 +380,11 @@ def main():
         summaries[cond] = summarize(results)
         print_summary(cond, summaries[cond])
 
-        errs = sum(1 for r in results if r["answer"] in ("ERR", "TIMEOUT", ""))
+        errs = sum(1 for r in results if r["answer"] in ERROR_ANSWERS)
         if errs:
-            print(f"  ({errs} empty/error/timeout responses out of {len(results)})", file=sys.stderr)
+            print(f"  ({errs} empty/error/timeout responses out of {len(results)}, excluded from scores)", file=sys.stderr)
+        if errs > 0.05 * len(results):
+            print(f"  WARNING: {errs}/{len(results)} calls errored (usage limit?); this condition's scores are unreliable -- rerun it.", file=sys.stderr)
 
     if len(conditions) == 2:
         print_ab_delta(conditions[0], conditions[1], summaries[conditions[0]], summaries[conditions[1]])
