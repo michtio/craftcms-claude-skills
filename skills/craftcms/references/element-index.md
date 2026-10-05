@@ -71,7 +71,7 @@ protected static function defineSources(string $context): array
 
 Source key `'*'` = all elements. Use prefix patterns like `'category:{uid}'` — consistent with Craft core (`section:{uid}`, `folder:{uid}`).
 
-Context values: `'index'` (element index page), `'modal'` (selection modal), `'field'` (relation field), `'settings'` (admin).
+Context values: `'index'` (element index page), `'modal'` (selection modal), `'restricted-modal'` (`ElementSources::CONTEXT_RESTRICTED_MODAL`, Craft 5.11.2+: a selection modal that must only offer what the user may access, e.g. the "transfer content to" picker when deleting elements), `'field'` (relation field), `'settings'` (admin). If `defineSources()` narrows `'index'` to editable/viewable sources, narrow `'restricted-modal'` the same way, as core's `Entry` and `Asset` do; otherwise the restricted picker shows sources the user can't open.
 
 ## Table Attributes
 

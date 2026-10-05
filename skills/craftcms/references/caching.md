@@ -165,7 +165,7 @@ Craft::$app->getTemplateCaches()->invalidateCachesByElementId($elementId);
 
 ### Performance notes
 
-- Template caches are stored in the configured cache backend (database by default, Redis if configured in `app.php`).
+- Template caches are stored in the configured cache backend (files under `storage/runtime/cache/` by default, Redis or the database if configured in `app.php`).
 - Each `{% cache %}` block adds one cache read on hit, or one cache write on miss. Keep blocks coarse-grained -- one block wrapping 5 queries is better than 5 blocks wrapping 1 query each.
 - Nested `{% cache %}` blocks work but add complexity. The inner block caches independently from the outer block. Usually unnecessary.
 

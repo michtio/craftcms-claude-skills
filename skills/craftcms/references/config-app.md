@@ -97,9 +97,13 @@ See [Complete Production Example](#complete-production-example) for fully fleshe
 
 ## Cache Component
 
-### Database Cache (default)
+### File Cache (default)
 
-Craft uses `yii\caching\DbCache` by default. No config needed -- it works out of the box using the `cache` database table.
+The default `cache` component is `yii\caching\FileCache` writing to `storage/runtime/cache/` (`App::cacheConfig()`). No config needed on a single server; it is per-server, so load-balanced or ephemeral hosting needs Redis or the database.
+
+### Database Cache
+
+Use `craft\cache\DbCache` (Craft's subclass of Yii's) with `'cacheTable' => Table::CACHE`. The `{{%cache}}` table is not created on install: run `ddev craft setup/db-cache-table` first. Before Craft 5.11.4, with `DbCache` already configured and schema caching on, `setup/php-session-table` could roll back because invalidating the schema cache hit the not-yet-created cache table (craftcms/cms#19742) -- run `setup/db-cache-table` first, or be on 5.11.4+.
 
 ### Redis Cache
 

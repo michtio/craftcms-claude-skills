@@ -228,7 +228,10 @@ Per-site template overrides are available since Craft 5.6.
 
 ### Twig sandbox
 
-When `enableTwigSandbox` is enabled in general config, system messages render in a restricted Twig environment. Customizable via `config/twig-sandbox.php`.
+When `enableTwigSandbox` is enabled in general config, system messages render in a restricted Twig environment. Customizable via `config/twig-sandbox.php`, which is `ArrayHelper::merge()`d over core's `src/config/twig-sandbox.php`, so a list like `'allowedFunctions' => ['attribute']` appends to the defaults rather than replacing them.
+
+- **`attribute()` is enforced from Craft 5.11.4.** Earlier versions let `attribute()` through even though it isn't in the default `allowedFunctions`; a sandboxed message using it now throws until you add it.
+- **`create()` is refused in every string template** (system messages included) from 5.11.4, sandbox or not.
 
 ## Testing Email
 

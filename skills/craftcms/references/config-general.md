@@ -190,7 +190,7 @@ If you change `cpTrigger` mid-project, update bookmarks, external integrations, 
 
 `enableCsrfProtection` + `enableCsrfCookie` interact: the cookie is the storage mechanism for the CSRF token. If you set `enableCsrfCookie(false)`, every page that needs a CSRF token will start a PHP session, which can impact performance and cacheability.
 
-`enableTwigSandbox` restricts what Twig code can do in user-defined templates (e.g., templates entered in CMS fields). It does not affect templates in the `templates/` directory.
+`enableTwigSandbox` restricts what Twig code can do in user-defined templates (e.g., templates entered in CMS fields). It does not affect templates in the `templates/` directory. Extend the allowlists in `config/twig-sandbox.php` (merged over core's defaults). Craft 5.11.4 closed a gap where `attribute()` bypassed `allowedFunctions`: sandboxed content that relied on it needs `'allowedFunctions' => ['attribute']` there. See `email.md` (Twig sandbox).
 
 `preventUserEnumeration` makes the forgot-password and login responses identical whether the email/username exists or not. Without it, an attacker can probe which emails have accounts by observing different error messages. Enable this on public-facing sites.
 

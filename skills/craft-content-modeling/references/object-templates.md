@@ -14,6 +14,7 @@ How Craft CMS 5's mini-template system works in CP settings fields: URI formats,
 - Using `{id}` in asset subpaths — `{id}` changes per draft. Use `{canonicalId}` for stable paths that survive draft/revision cycles.
 - Thinking changing an asset subpath format moves existing files — it does not. Existing assets remain at their original filesystem path and become orphaned from the new subpath logic. Migration is manual.
 - Expecting errors at save time — object templates are validated at **render time** (when an element is saved or asset is uploaded), not when the CP settings form is saved.
+- Calling `create()` in a title format, URI format, subpath, or anything they `include` — Craft 5.11.4+ throws `create() cannot be used in string or object templates.` (`View::getIsRenderingStringTemplate()`), so a format that worked on 5.11.3 fails on the next save. Move the logic into a generated field, a Twig extension function, or a template partial rendered from the filesystem.
 
 ## Contents
 

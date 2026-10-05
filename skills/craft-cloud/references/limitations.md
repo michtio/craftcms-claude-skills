@@ -57,7 +57,7 @@ The first section is documented limitations from Pixel & Tonic. The plugin-compa
 - **`asyncCsrfInputs` is force-enabled.** Required for static caching to work. Plugins must use the `csrfInput()` Twig function — never raw token output. See `plugin-development.md` (CSRF).
 
 ### Inert settings and response quirks
-- **`resourceBasePath` and `resourceBaseUrl` have no effect.** Asset bundles and everything in the webroot are published to the CDN — the corresponding `CRAFT_RESOURCE_BASE_*` env vars are reserved (see `deploy-pipeline.md`).
+- **`resourceBasePath` and `resourceBaseUrl` have no effect.** Asset bundles and everything in the webroot are published to the CDN — the corresponding `CRAFT_RESOURCE_BASE_*` env vars are reserved (see `deploy-pipeline.md`). To change where CP resource URLs point, use the **extension's** own `resourceBaseUrl` option instead (`craftcms/cloud` 3.12.0+, env override `CRAFT_CLOUD_RESOURCE_BASE_URL`, e.g. `@web/cpresources`); unset or empty keeps the Cloud CDN. Craft's general-config setting stays inert.
 - **Duplicate response headers are flattened** into a single comma-separated header by the infrastructure. `{% header %}` in templates or direct `HeaderCollection` manipulation produces slightly different (but HTTP-spec-equivalent) output on Cloud than elsewhere — don't assert on exact header multiplicity.
 - **PHP version must be `major.minor`** in `craft-cloud.yaml` (patch versions unsupported); Node.js 16+ is supported, and declaring only a major version (e.g. `20`) is recommended so security/stability updates land automatically.
 

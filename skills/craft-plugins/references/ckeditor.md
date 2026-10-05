@@ -21,6 +21,7 @@ When unsure about CKEditor options, `WebFetch` the GitHub readme.
 - Configuring heading levels in both the field's `$headingLevels` setting and the config options' `heading.options` — the field setting takes precedence. Don't set `heading.options` in config unless you need fine-grained control beyond what the field exposes.
 - Images as `<img>` vs nested entries — CKEditor supports both via `$imageMode`. Using nested entries gives editors more control (alt text fields, captions, transforms) but adds rendering complexity. See Image Mode below.
 - Pre-5.0 custom plugin asset bundles silently break — plugin 5.0.0 changed third-party CKEditor plugin registration to ES modules. Asset bundles built against the 4.x pattern load but their plugins never register. See Extending with Custom Plugins.
+- Custom plugin missing from a field after upgrading to CKEditor 5.8.0 — packages now load per field only when one of their `$toolbarItems` is in that field's toolbar, and custom pages that create their own editors must call `Plugin::registerCkeditorPackageBundles($view)`. See Extending with Custom Plugins.
 - Pre-5.0 CKEditor Config records carrying toolbar/heading settings — these have moved to field-level settings (`$toolbar`, `$headingLevels`). The v5 upgrade migrates them; double-check fields after upgrade.
 
 ## Configuration
@@ -115,7 +116,7 @@ Ensure HTML Purifier permits the corresponding classes and elements on save.
 
 CKEditor fields can render images two ways:
 
-- **`$imageMode = 'img'`** (default) — images are inserted as `<img>` tags directly in the content. Simplest, but no per-image alt text or caption fields beyond what the image upload dialog captures.
+- **`$imageMode = 'img'`** (default) — images are inserted as `<img>` tags directly in the content. Simplest, but no caption or extra per-image fields. Since 5.7.0 the `alt` attribute is filled from the asset's Alternative Text and stays in sync with it until an editor changes it in the alt-text modal (which also has a "Sync from asset" button); before 5.7.0 it was not populated from the asset.
 - **`$imageMode = 'entries'`** — each image is inserted as a nested entry of a configured type. The image entry type carries an Assets field plus any other fields you want (alt text, caption, focal point overrides). Editors interact with images as element chips.
 
 To use entries mode, configure `$imageEntryTypeUid` (the entry type UID) and `$imageFieldUid` (the Assets field UID inside that entry type). The entry type's field layout determines what editors can configure per-image.
@@ -271,35 +272,47 @@ Before 5.6.0, custom `removePlugins` config values were silently ignored. As of 
 
 ## Extending with Custom Plugins (5.0.0+ — Breaking)
 
-Third-party CKEditor plugins ship as **ES modules** as of plugin 5.0.0 — the asset-bundle-only registration from 4.x is gone. The new pattern:
+Third-party CKEditor plugins ship as **ES modules** loaded through the CP import map as of plugin 5.0.0 (craftcms/ckeditor#363); the 4.x DLL-style bundles no longer work. The pattern (verified against `craftcms/ckeditor` 5.8.0 `README.md` and `src/Plugin.php`):
 
-1. **Asset bundle** extending `craft\ckeditor\web\assets\BaseCkeditorPackageAsset` and declaring `$namespace` (matches the ES module's exported namespace):
+1. **Asset bundle** extending `craft\ckeditor\web\assets\BaseCkeditorPackageAsset`, declaring the import-map `$namespace` (recommended form `@{vendor}/ckeditor5-{handle}`), the entry file as a **module**, and what the package provides:
 
     ```php
-    namespace mycompany\myplugin\web\assets;
+    namespace mycompany\myplugin\web\assets\tokens;
 
     use craft\ckeditor\web\assets\BaseCkeditorPackageAsset;
 
-    class MyCkeditorPackageAsset extends BaseCkeditorPackageAsset
+    class TokensAsset extends BaseCkeditorPackageAsset
     {
-        public string $namespace = 'MyCkeditorPlugin';
+        public $sourcePath = __DIR__ . '/build';
 
-        public $sourcePath = '@mycompany/myplugin/web/assets/dist';
-        public $js = ['my-ckeditor-plugin.js'];
+        public string $namespace = '@mycompany/ckeditor5-tokens';
+
+        public $js = [
+            ['tokens.js', 'type' => 'module'],
+        ];
+
+        public array $pluginNames = ['Tokens'];
+        public array $toolbarItems = ['tokens'];
     }
     ```
 
-2. **Plugin source** built as an ES module that exports the plugin class on the declared namespace. Bundle via Vite/Rollup/Webpack — the build output must be a single JS file that registers the plugin on `window.MyCkeditorPlugin`.
+2. **Plugin source** built as an ES module (CKEditor's package generator, then their "migrating custom plugins" guide) that imports from `ckeditor5` and exports the plugin classes.
 
-3. **Register the asset bundle** via the `CkeditorConfig` helper or by adding to the plugin's component config:
+3. **Register it** from your plugin's or module's `init()`, passing the entry file:
 
     ```php
-    use craft\ckeditor\helpers\CkeditorConfig;
-
-    CkeditorConfig::registerPackageAsset(MyCkeditorPackageAsset::class);
+    \craft\ckeditor\Plugin::registerCkeditorPackage(TokensAsset::class, 'tokens.js');
     ```
 
-The pre-5.0 pattern (`\craft\ckeditor\Plugin::registerCkeditorPackage()` with a plain asset bundle) still loads but won't activate plugins built without the ES module wrapper. Audit any custom packages during the 4.x → 5.x upgrade.
+    The second argument was added in 5.0.0; a 4.x-era call without it falls back to `index.js`. There is no `CkeditorConfig::registerPackageAsset()`. For CKEditor's own first-party packages that Craft doesn't bundle, use `CkeditorConfig::registerFirstPartyPackage(['SpecialCharacters', 'SpecialCharactersEssentials'], ['specialCharacters'])` instead.
+
+**Loading rules since 5.8.0:**
+
+- A field imports your package, and registers its asset bundle, **only when one of `$toolbarItems` is in that field's toolbar**. Empty `$toolbarItems` means the plugins load for every field; empty `$pluginNames` too means the bundle is registered everywhere and its JS runs for side effects. Plugins that must always load alongside a toolbar-gated one go in a `registerPackage()` override that calls `CkeditorConfig::registerPackage($this->namespace, ['plugins' => [...]])` after `parent::registerPackage()`.
+- Package bundles are **no longer registered just because `CkeditorAsset` is**. A custom page that builds its own CKEditor instances must call `\craft\ckeditor\Plugin::registerCkeditorPackageBundles($view)` (5.8.0+).
+- Packages are resolved when the page is finalized, so registering from a `Craft::$app->onInit()` callback or from a plugin that loads after CKEditor works (5.8.0; earlier versions could miss late registrations, craftcms/ckeditor#621).
+- Plugins are imported through a **namespace import**, so two packages can each ship a plugin called `Tokens`. Custom config JS can still say `extraPlugins: [Tokens]` as long as the name is unique across packages.
+- `CkeditorConfig::getImportStatements()` is deprecated in 5.8.0.
 
 The `BaseCkeditorPackageAsset::getImportCompliantLanguage()` helper (5.2.0+) returns the user's CKEditor language code in a form compatible with `import()` statements — useful when your plugin needs to load a language file on demand.
 

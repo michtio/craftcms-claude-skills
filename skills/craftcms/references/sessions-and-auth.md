@@ -11,7 +11,7 @@ How Craft CMS 5's session and authentication system works under the hood: the du
 
 - Assuming `passwordResetRequired = true` forces immediate logout — it does not. The flag is only checked during authentication (login flow), not on every request. A user with an active session continues normally until the session expires.
 - Thinking Redis/Memcached session storage replaces DB tokens — Craft maintains auth tokens in `Table::SESSIONS` (database) regardless of the PHP session backend. Deleting DB rows invalidates sessions even when PHP sessions live in Redis.
-- Calling `Craft::$app->getUser()->logout()` to invalidate other sessions — this only logs out the current user. To invalidate all sessions for a specific user, delete their rows from `Table::SESSIONS`.
+- Calling `Craft::$app->getUser()->logout()` to invalidate other sessions — this only logs out the current user. On Craft 5.11.4+ call `Craft::$app->getUsers()->destroyOtherSessions($user)` (spares the current request's session only when `$user` is the logged-in user); to kill every session including the current one, or on earlier 5.x, delete their rows from `Table::SESSIONS`.
 - Setting `elevatedSessionDuration` to `0` in production — this disables the password re-entry requirement for sensitive operations entirely. `getHasElevatedSession()` always returns `true`.
 - Not understanding that `securityKey` change invalidates everything — changing `CRAFT_SECURITY_KEY` invalidates all sessions, password reset tokens, and encrypted field values across all users.
 - Reading `$user->lastPasswordChangeDate` from an element query and getting `null` — `UserQuery::beforePrepare()` intentionally excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, `lastLoginAttemptIp`). Query `Table::USERS` directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`.
@@ -108,9 +108,9 @@ Craft checks the `dateUpdated` column against `userSessionDuration` (or `remembe
 
 When a user's password changes (either self-service or admin-initiated), Craft automatically invalidates all other sessions for that user:
 
-1. During `User::afterSave()`, Craft detects `$this->newPassword` is set
-2. Queries `Table::SESSIONS` for all rows matching the user's ID
-3. Deletes all rows **except** the current session's token: `['not', ['token' => $currentToken]]`
+1. During `User::afterSave()`, Craft detects the password changed (and the user isn't new)
+2. Deletes that user's rows from `Table::SESSIONS` — since 5.11.4 by calling `Users::destroyOtherSessions($user)`, before that inline with the same condition
+3. The current request's token is spared **only when the saved user is the logged-in user** (`$user->getIsCurrent()`). An admin changing someone else's password deletes *all* of that user's sessions
 4. Result: every other browser/device is immediately logged out on next request
 
 This is automatic — no plugin code needed for password-change invalidation.
@@ -121,6 +121,7 @@ This is automatic — no plugin code needed for password-change invalidation.
 - Admin changes a user's password via their edit screen
 - Password reset flow (user clicks reset link, enters new password)
 - Programmatic: setting `$user->newPassword` and saving
+- Setting up a two-step verification method (Craft 5.11.4+): `Auth::verify()` calls `destroyOtherSessions()` when a method goes from inactive to active, because sessions established before the stronger factor can't be trusted
 
 ### What does NOT trigger this
 
@@ -193,6 +194,7 @@ Built-in operations that call `requireElevatedSession()`:
 - Managing user groups and permissions
 - Editing GraphQL schemas and tokens
 - Plugin settings changes (when `$requireAdmin` is true)
+- Deleting a passkey (`auth/delete-passkey`, Craft 5.11.4+; before that it needed only a logged-in CP session)
 
 Plugins should call `$this->requireElevatedSession()` in controller actions that modify authentication state, security settings, or access controls.
 
@@ -292,6 +294,8 @@ public function invalidateAllSessions(int $userId): void
 ```
 
 ### Invalidating all sessions except current
+
+On Craft 5.11.4+ use core: `Craft::$app->getUsers()->destroyOtherSessions($user)`. It takes the `User` element, not an ID, and leaves the current request's session alone only when `$user` is the logged-in user on a web request. Call it after any security-sensitive account change your plugin makes (new auth factor, recovery email swap, API credential rotation). The hand-rolled version below is the pre-5.11.4 equivalent:
 
 ```php
 use craft\db\Table;
