@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+Makes every skill's frontmatter conform to the [Agent Skills specification](https://agentskills.io/specification), so spec-strict clients such as PhpStorm can import the pack ([#16](https://github.com/michtio/craftcms-claude-skills/issues/16)).
+
+### Changed
+
+- **All 13 `skills/*/SKILL.md`** -- `description` is now at most 1024 characters, the spec limit. Every description had been written to Claude Code's 1,536-character listing cap (1334 to 1551 characters), which spec-strict clients reject as "description format". Each one is split in two: `description` keeps the scope and the "Do NOT trigger" boundaries, and the trigger-phrase list moves to Claude Code's `when_to_use` field. Claude Code appends `when_to_use` to `description` in the skill listing, so the text Claude sees is unchanged apart from order. `craft-plugins` (which had no separate trigger list) and `craft-plugin-release` were trimmed by hand; `craft-plugin-release` previously exceeded the 1,536 cap and was truncated in the listing.
+
+### Added
+
+- **`bin/validate-skills.sh`** -- validates every SKILL.md frontmatter: strict YAML parse, known keys only, name format, `description` at most 1024 characters, `description` + `when_to_use` at most 1,536 characters. `bin/release.sh` runs it before bumping anything, and the new `skills-validation` workflow runs it on every push and pull request that touches a SKILL.md.
+
 ## 1.18.1 -- 2026-10-05
 
 Fixes the `craft-twig-guidelines` frontmatter, which failed to parse as YAML ([#16](https://github.com/michtio/craftcms-claude-skills/issues/16)).

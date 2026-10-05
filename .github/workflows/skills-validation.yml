@@ -1,0 +1,29 @@
+name: skills-validation
+
+# Validates every skills/*/SKILL.md frontmatter on each push and pull request
+# that touches a skill: strict YAML parse, known keys only, the spec's
+# 1024-character description limit, and Claude Code's 1536-character listing
+# cap for description + when_to_use. See bin/validate-skills.sh.
+
+on:
+  push:
+    paths:
+      - 'skills/*/SKILL.md'
+      - 'bin/validate-skills.sh'
+  pull_request:
+    paths:
+      - 'skills/*/SKILL.md'
+      - 'bin/validate-skills.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-frontmatter:
+    name: SKILL.md frontmatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate frontmatter
+        run: bash bin/validate-skills.sh

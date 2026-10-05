@@ -58,6 +58,16 @@ if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
 fi
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Refuse to bump anything while a SKILL.md frontmatter is invalid or over the
+# spec/listing limits — a broken frontmatter ships silently otherwise.
+echo "Validating SKILL.md frontmatter"
+if ! bash "$REPO_ROOT/bin/validate-skills.sh"; then
+  echo "error: fix the SKILL.md frontmatter above before releasing." >&2
+  exit 65
+fi
+echo
+
 PLUGIN_JSON="$REPO_ROOT/.claude-plugin/plugin.json"
 MARKETPLACE_JSON="$REPO_ROOT/.claude-plugin/marketplace.json"
 SETUP_SKILL="$REPO_ROOT/skills/craft-project-setup/SKILL.md"
