@@ -13,7 +13,7 @@ Every skill has explicit "NOT for" boundaries to prevent cross-skill misfires. F
 ## craftcms
 
 **Track:** Plugin Development
-**Reference files:** 30 (approximately 14,900 lines)
+**Reference files:** 31 (approximately 14,900 lines)
 **SKILL.md:** 219 lines
 
 The largest skill in the pack. Covers the entire surface for extending Craft CMS 5 through plugins and modules: elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types (built-in and custom), events, behaviors, Twig extensions, utilities, widgets, filesystems, permissions, debugging, testing, GraphQL, and all configuration (general.php, app.php, bootstrap, caching, deployment, drafts/revisions, email, sessions, conditions).
@@ -29,7 +29,7 @@ The largest skill in the pack. Covers the entire surface for extending Craft CMS
 ## craft-php-guidelines
 
 **Track:** Plugin Development
-**Reference files:** 5 (approximately 630 lines)
+**Reference files:** 6 (approximately 630 lines)
 **SKILL.md:** 141 lines
 
 PHP coding standards and conventions for Craft CMS 5. PHPDoc requirements (every class, method, property), section headers with `=========` separators, class organization, naming conventions (services, queue jobs, records, events, enums), control flow patterns (early returns, match over switch), ECS and PHPStan configuration, and the verification checklist.
@@ -45,7 +45,7 @@ PHP coding standards and conventions for Craft CMS 5. PHPDoc requirements (every
 ## craft-content-modeling
 
 **Track:** Site Development
-**Reference files:** 6 (approximately 1,525 lines)
+**Reference files:** 7 (approximately 1,525 lines)
 **SKILL.md:** 303 lines
 
 Content architecture for Craft CMS 5. Covers section types (Single, Channel, Structure), entry types (global, visual identity, reserved handles), field types and field instances, Matrix configuration (CKEditor vs Matrix vs Content Block decision guide), relations and eager loading, multi-site propagation, entrification (migrating categories/tags/globals to entries), CMS editions, and the reuse-first field workflow that audits existing fields before proposing new ones.
@@ -61,7 +61,7 @@ Content architecture for Craft CMS 5. Covers section types (Single, Channel, Str
 ## craft-site
 
 **Track:** Site Development
-**Reference files:** 18 core references (plugin references moved to the `craft-plugins` skill)
+**Reference files:** 19 core references (plugin references moved to the `craft-plugins` skill)
 **SKILL.md:** 186 lines
 
 Front-end Twig development with atomic design patterns. Covers the full site template surface: atoms, molecules, organisms, the props/extends/block pattern, layout chains, view routing, content builders, image presets, Tailwind CSS conventions (named-key collections, brand tokens, utilities prop), JavaScript boundaries (Alpine/DataStar/Vue decision tree), Vite build chain, multi-site patterns (language switchers, hreflang), front-end authentication (login, registration, password reset, profile editing), search, feeds (RSS, Atom, JSON Feed, XML sitemap), headless/hybrid patterns (GraphQL API, preview tokens, Next.js/Nuxt/Astro), and third-party integration (GTM, analytics, CMP).
@@ -156,7 +156,7 @@ Also covers: pinning `CRAFT_DB_DATABASE` before Craft boots, installing the plug
 ## craft-plugin-release
 
 **Track:** Plugin Development
-**Reference files:** 1
+**Reference files:** 2
 **SKILL.md:** ~140 lines
 
 Release mechanics for Craft plugins. A release involves three independent systems — git tags, Packagist, and GitHub release objects — that drift from each other silently while every observable signal reports success. The skill is the checklist and risk model for keeping them in agreement.

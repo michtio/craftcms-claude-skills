@@ -29,13 +29,14 @@ Use `WebFetch` to read documentation URLs directly when skills don't cover a spe
 
 ## Agents
 
-Five specialized agents, each with a dedicated model and tool scope:
+Six specialized agents, each with a dedicated model and tool scope:
 
 - **craft-planner** (Opus) — Architecture planning, investigation. Read-only tools.
 - **craft-feature-builder** (Opus) — Full implementation of new features with layered build-verify gates and a final simplification pass. All tools.
 - **craft-site-builder** (Opus) — Site templates, content architecture, components with layered build-verify gates. All tools.
 - **craft-debugger** (Sonnet) — Focused bug investigation and fixes. All tools.
 - **craft-code-reviewer** (Sonnet) — Code review and feedback. Read-only tools.
+- **craft-code-reviewer-deep** (Opus) — Deep review for high-stakes PRs (release branches, security-sensitive code, large architectural changes, migrations, multi-service flows). Read-only tools. Use only when explicitly asked.
 
 Use Opus agents for complex, multi-file work. Sonnet agents for focused, single-concern tasks.
 

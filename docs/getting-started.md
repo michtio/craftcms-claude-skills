@@ -15,7 +15,7 @@ The plugin system handles versioning and updates automatically.
 /plugin marketplace add michtio/craftcms-claude-skills
 
 # Install the skill pack
-/plugin install craftcms-claude-skills@michtio/craftcms-claude-skills
+/plugin install craftcms-claude-skills@craftcms-claude-skills
 ```
 
 After installation, skills are available in every Claude Code session. Updates arrive via `/plugin update`.
@@ -28,7 +28,7 @@ If you use the Vercel Skills CLI for managing skills across projects:
 npx skills add michtio/craftcms-claude-skills --all
 ```
 
-This installs all 11 skills and 6 agents. You can also install individual skills by name if you only need a subset.
+This installs all 13 skills and 6 agents. You can also install individual skills by name if you only need a subset.
 
 ### Manual (git clone)
 

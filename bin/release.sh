@@ -20,12 +20,21 @@
 #                                                 (sponsorship box, attribution example,
 #                                                  HTML-comment example, drift example,
 #                                                  diff-table example)
+#   - skills/craft-project-setup/SKILL.md       → sponsorship box skill/reference-file/agent
+#                                                 counts, recomputed from disk every run
+#                                                 (not just bumped — these drift independently
+#                                                 of the version number)
 #   - CHANGELOG.md                              → date stamp on the matching ## X.Y.Z heading
 #
 # Note on the sponsorship ASCII box: trailing whitespace pads the right border to a
 # fixed width. Patch/minor bumps that stay the same character width (e.g. 1.4.6 → 1.4.7)
 # preserve alignment. A bump that changes width (e.g. 1.4.9 → 1.4.10) will push the right
 # border by one character — fix manually after release if it crosses a width boundary.
+# The skill/reference/agent counts line is rewritten and re-padded to the box's own
+# width on every run (measured in Unicode characters via `perl -CSD`, not bytes, since
+# the border uses multi-byte box-drawing characters) — see the "Rewrite the banner
+# counts" step below. If that line's text ever grows wider than the box itself, the
+# script errors out rather than silently breaking the box.
 #
 # Versioning policy:
 #   This package follows its own semantic versioning, driven by the pack's own
@@ -39,7 +48,7 @@
 #   (e.g. `1.4.x` for a v1.4.x tag, `main` for the latest line). See README →
 #   Versioning for the full policy.
 #
-# Requires: jq (every dev box, every CI runner has it).
+# Requires: jq, perl (every dev box, every CI runner has both).
 
 set -euo pipefail
 
@@ -121,6 +130,67 @@ if [ -f "$SETUP_SKILL" ]; then
   fi
 else
   echo "  warn: $SETUP_SKILL not found — skipping" >&2
+fi
+
+# Recompute the "N skills · N reference files · N agents" banner line in the
+# same sponsorship box. These counts drift independently of the version number
+# — a skill or reference file can be added/removed without a version bump
+# touching this line, and a version bump shouldn't require remembering to
+# update it by hand. Always recompute from disk rather than trusting the old
+# numbers.
+if [ -f "$SETUP_SKILL" ]; then
+  SKILL_COUNT="$(find "$REPO_ROOT/skills" -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
+  REF_COUNT="$(find "$REPO_ROOT/skills" -type f -name '*.md' -path '*/references/*' | wc -l | tr -d '[:space:]')"
+  AGENT_COUNT="$(find "$REPO_ROOT/agents" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
+
+  echo "Recomputing craft-project-setup/SKILL.md banner counts → ${SKILL_COUNT} skills · ${REF_COUNT} reference files · ${AGENT_COUNT} agents"
+
+  PERL_SCRIPT="$(mktemp)"
+  cat > "$PERL_SCRIPT" <<'PERL_EOF'
+use utf8;
+use strict;
+use warnings;
+
+# Width and content are measured in Unicode characters (via -CSD), not bytes —
+# the box border and the │ sides are multi-byte UTF-8 box-drawing characters,
+# and a byte count would misjudge the padding needed to keep the right border
+# aligned.
+my $file = shift @ARGV;
+
+open(my $fh, "<:encoding(UTF-8)", $file) or die "release.sh: cannot open $file: $!\n";
+local $/;
+my $content = <$fh>;
+close $fh;
+
+my ($border) = $content =~ /^(\x{250C}\x{2500}+\x{2510})$/m;
+die "release.sh: could not find the banner box's top border in $file — skipping count rewrite, fix manually\n"
+    unless defined $border;
+my $inner_width = length($border) - 2; # minus the two corner characters
+
+my $skills = $ENV{SKILL_COUNT};
+my $refs   = $ENV{REF_COUNT};
+my $agents = $ENV{AGENT_COUNT};
+
+my $text = "   ${skills} skills \x{B7} ${refs} reference files \x{B7} ${agents} agents";
+die "release.sh: new banner text ($skills skills / $refs reference files / $agents agents) is wider "
+  . "than the box (inner width $inner_width) — widen the box manually in $file\n"
+    if length($text) > $inner_width;
+$text .= (" " x ($inner_width - length($text)));
+my $new_line = "\x{2502}${text}\x{2502}";
+
+my $replacements = ($content =~
+    s/^\x{2502}\s*\d+\s+skills?\s+\x{B7}\s+\d+\s+reference\s+files?\s+\x{B7}\s+\d+\s+agents?\s*\x{2502}$/$new_line/m);
+die "release.sh: could not find the skills/reference-files/agents banner line in $file — add it back manually\n"
+    unless $replacements;
+
+open(my $out, ">:encoding(UTF-8)", $file) or die "release.sh: cannot write $file: $!\n";
+print $out $content;
+close $out;
+PERL_EOF
+
+  SKILL_COUNT="$SKILL_COUNT" REF_COUNT="$REF_COUNT" AGENT_COUNT="$AGENT_COUNT" \
+    perl -CSD "$PERL_SCRIPT" "$SETUP_SKILL"
+  rm -f "$PERL_SCRIPT"
 fi
 
 echo "Stamping CHANGELOG.md heading for $VERSION → $TODAY"

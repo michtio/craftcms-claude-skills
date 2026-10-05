@@ -70,11 +70,11 @@ Claude uses them to avoid known issues proactively.
 
 ### Updating the SKILL.md after adding a reference
 
-After adding a new plugin reference, update `skills/craft-site/SKILL.md`:
+After adding a new plugin reference, update `skills/craft-plugins/SKILL.md`:
 
-1. Add a row to the plugin references table with the reference path, plugin name, author, and key surface area
-2. Add a task example line for the plugin (e.g., "Configure Plugin X" -> read `plugins/plugin-x.md`)
-3. Update the README.md plugin count if it changed
+1. Add a row to the plugin references table with the reference path (`references/plugin-x.md`), plugin name, author, and key surface area
+2. Add its trigger name to the skill's `description` frontmatter so prompts naming the plugin route to it
+3. Update the README.md and `docs/skills-overview.md` plugin reference counts if they changed
 
 ## Improving an Existing Skill
 
@@ -125,6 +125,54 @@ If you add, remove, or rename a reference file:
 2. Update any task routing examples that reference the file
 3. If the line count changed significantly, update the README's skill description
 
+## Skill Frontmatter
+
+Every `skills/*/SKILL.md` opens with a YAML frontmatter block, and it's checked before every release:
+
+- **`description`** -- required, 1-1024 characters (the [Agent Skills spec](https://agentskills.io/specification) limit).
+- **`when_to_use`** -- optional. It's a Claude Code field, appended to the description in the skill listing. The combined text (`description + " - " + when_to_use`) must stay at or under 1536 characters, or Claude Code truncates it in the listing.
+- **YAML string escaping** -- double-quoted frontmatter strings follow strict YAML escaping rules. A bare backslash escape that isn't valid YAML (e.g. `\u` outside a proper `\uXXXX` sequence) fails to parse even though it looks harmless in a plain-text editor.
+
+Run the validator before opening a PR:
+
+```bash
+bash bin/validate-skills.sh
+```
+
+It parses every skill's frontmatter as strict YAML, rejects unknown keys, confirms `name` matches the skill's directory, and enforces both length limits above. `bin/release.sh` runs it automatically and refuses to release on failure.
+
+## Release Process
+
+Releases are cut with `bin/release.sh <version>`, e.g. `bin/release.sh 1.19.0`. It:
+
+1. Runs `bash bin/validate-skills.sh` and aborts if any SKILL.md frontmatter fails.
+2. Bumps the version in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`.
+3. Bumps the user-facing version strings and the skill/reference-file/agent counts in the `craft-project-setup` sponsorship banner.
+4. Stamps the matching CHANGELOG heading with today's date.
+
+Before running it, write the CHANGELOG entry under a heading of the exact form `## X.Y.Z -- ` (two hyphens and a trailing space, no date yet) -- the stamping step only matches a heading written that way.
+
+The script only edits files -- it does not commit, tag, or push. Review the diff, then:
+
+```bash
+git add .claude-plugin/ CHANGELOG.md
+git commit -m "chore(release): v1.19.0"
+git tag -a v1.19.0 -m "v1.19.0"
+git push origin main v1.19.0
+```
+
+The `release-validation` GitHub Actions workflow fires on the tag push, confirms the manifest versions match the tag, and publishes the GitHub Release itself from the CHANGELOG section. **Never create the GitHub Release by hand** -- let the workflow do it, or the release notes will drift from what's actually tagged.
+
+## Token Budget
+
+Skill content loads into context whenever it triggers, so size is a real cost. Measure before and after a content change:
+
+```bash
+uv run --with tiktoken python3 evals/measure_tokens.py
+```
+
+It reports per-file and per-skill token counts (via tiktoken's `cl100k_base` encoding, the closest public approximation to Claude's tokenizer), separating the always-loaded listing cost (description + `when_to_use`, paid every session regardless of whether the skill triggers) from the on-demand cost (SKILL.md body plus references), and also covers agent preload costs. Run it before and after your change and compare against the latest `evals/snapshot-*.json` to see whether the change grew the budget meaningfully.
+
 ## Reporting Issues
 
 > **Security issues don't go here.** If a skill would lead an agent to do something destructive or leak data, or a code example carries a real vulnerability, use [private vulnerability reporting](https://github.com/michtio/craftcms-claude-skills/security/advisories/new) instead. See the [Security Policy](../SECURITY.md) for scope.
@@ -174,6 +222,7 @@ Before submitting a PR that modifies reference files:
 - [ ] Line count is reasonable (under 500 lines per file; split if larger)
 - [ ] SKILL.md reference table updated if files changed
 - [ ] README.md updated if skill-level changes were made
+- [ ] `bash bin/validate-skills.sh` passes if any SKILL.md frontmatter changed
 
 ### What makes a good PR
 

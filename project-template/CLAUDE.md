@@ -5,6 +5,22 @@
 @.claude/rules/git-workflow.md
 @.claude/rules/scaffolding.md
 @.claude/rules/security.md
+@.claude/rules/migrations.md
+@.claude/rules/testing.md
+
+## General
+
+Be critical. We're equals — push back when something doesn't make sense.
+
+Do not excessively use emojis. Do not include AI attribution in commits, PRs, issues, or comments.
+
+Do not include "Test plan" sections in PR descriptions.
+
+## Tools
+
+Use `ddev` shorthand commands: `ddev composer`, `ddev craft`, `ddev npm`. Never run `php`, `composer`, or `npm` on the host — everything goes through DDEV.
+
+Use `gh` for all GitHub operations.
 
 ## Environment
 
@@ -53,15 +69,6 @@ src/
 ├── web/                     # Twig extensions, asset bundles
 └── widgets/                 # Dashboard widgets
 ```
-
-## Architecture
-
-- **Work with Craft, not against it.** Follow core patterns: project config, element lifecycle, soft delete, GC, events.
-- **Abstract base classes** for shared controller structure. **Traits** for cross-cutting concerns.
-- **Element operations in services**, not controllers or helpers.
-- **DateTimeHelper** in elements/queries, **Carbon** in services.
-- **Project config** for settings that sync. Dedicated paths for managed entities.
-- **`Craft::$app->onInit()`** for deferred initialization needing a fully-booted app.
 
 ## Documentation
 
