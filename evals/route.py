@@ -2,9 +2,8 @@
 """
 Forced-choice skill routing harness.
 
-Productionized from the working prototype at
-/private/tmp/claude-501/-Users-michtio-dev-craftcms-claude-skills/<session>/scratchpad/route.py
-(191/258 vs 192/258 on a before/after description-opt comparison).
+First used to A/B the 1.18.x description/when_to_use split
+(191/258 vs 192/258 before/after).
 
 What it does
 ------------
