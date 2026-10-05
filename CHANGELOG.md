@@ -6,7 +6,7 @@ Makes every skill's frontmatter conform to the [Agent Skills specification](http
 
 ### Changed
 
-- **All 13 `skills/*/SKILL.md`** -- `description` is now at most 1024 characters, the spec limit. Every description had been written to Claude Code's 1,536-character listing cap (1334 to 1551 characters), which spec-strict clients reject as "description format". Each one is split in two: `description` keeps the scope and the "Do NOT trigger" boundaries, and the trigger-phrase list moves to Claude Code's `when_to_use` field. Claude Code appends `when_to_use` to `description` in the skill listing, so the text Claude sees is unchanged apart from order. `craft-plugins` (which had no separate trigger list) and `craft-plugin-release` were trimmed by hand; `craft-plugin-release` previously exceeded the 1,536 cap and was truncated in the listing.
+- **All 13 `skills/*/SKILL.md`** -- `description` is now at most 1024 characters, the spec limit. Every description had been written to Claude Code's 1,536-character listing cap (1334 to 1551 characters), which spec-strict clients reject as "description format". Each one is split in two: `description` keeps the scope, and the trigger-phrase list plus the "Do NOT trigger" boundaries move to Claude Code's `when_to_use` field. Claude Code appends `when_to_use` to `description` in the skill listing, so the text Claude sees keeps its original order (an A/B routing test showed that putting the boundaries ahead of the triggers cost about 2% routing accuracy). `craft-plugins` (which had no separate trigger list) and `craft-plugin-release` were trimmed by hand; `craft-plugin-release` previously exceeded the 1,536 cap and was truncated in the listing.
 
 ### Added
 
