@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.19.0 -- 2026-10-07
 
 Makes every skill's frontmatter conform to the [Agent Skills specification](https://agentskills.io/specification), so spec-strict clients such as PhpStorm can import the pack ([#16](https://github.com/michtio/craftcms-claude-skills/issues/16)).
 
