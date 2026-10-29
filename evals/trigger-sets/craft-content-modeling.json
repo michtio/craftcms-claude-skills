@@ -14,5 +14,7 @@
   {"query": "We need to add custom permissions to our Craft plugin so that only editors in the 'Content Managers' group can access our plugin's CP section", "should_trigger": false},
   {"query": "Help me optimize our Craft site for Core Web Vitals — our LCP is 4.2 seconds and CLS is 0.15. Most of the delay seems to be from images loading above the fold", "should_trigger": false},
   {"query": "I need to plan the field layout for our 'Event' entry type. Each event has a date range (start and end), a venue (related entry from Venues section), a ticket price with currency, capacity, and a registration URL. Some of these feel like they might collide with reserved handles", "should_trigger": true},
-  {"query": "Should I use globals or singles for site-wide settings like footer content, social media links, and the company address? We're starting a new Craft 5 project", "should_trigger": true}
+  {"query": "Should I use globals or singles for site-wide settings like footer content, social media links, and the company address? We're starting a new Craft 5 project", "should_trigger": true},
+  {"query": "I'm about to run ddev craft project-config/write and commit config/project. Anything I should check first?", "should_trigger": true},
+  {"query": "After I restored the production database locally, git status shows a bunch of deleted files under config/project. What happened and how do I get them back safely?", "should_trigger": true}
 ]

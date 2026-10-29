@@ -11,6 +11,7 @@ tooling for whoever edits `skills/*/SKILL.md` or `agents/*.md`.
 | `measure_tokens.py` | How many tokens does each skill cost — split into the always-loaded listing (paid every session) vs the on-demand SKILL.md/references (paid only when triggered)? What does each agent preload? | No |
 | `trigger-sets/*.json` | Fixtures: realistic queries per skill, each labeled `should_trigger: true/false`. Not a tool by itself — input to the two below. | No |
 | `route.py` | Forced-choice routing: given ONLY a skill's listing text (description + when_to_use), isolated from the real installed skill set, which skill does the model pick for each query? A/B-able across two git refs. | **Yes** |
+| `behavior_check.py` | Answer content: with the real installed skill set, does the answer to a prompt contain what the skill teaches (regex assertions from `behavior-sets/*.json`)? Run before and after an edit, since the skills are symlinked from the working tree. | **Yes** |
 | `trigger_check.py` | Real-world recall/precision: with the actual installed production skill set (all plugins, no isolation), does a given skill's `Skill` tool call actually fire for each query? | **Yes** |
 
 `route.py` and `trigger_check.py` answer related but different questions.
@@ -86,6 +87,16 @@ python3 evals/trigger_check.py evals/trigger-sets/craft-pest.json --target craft
 
 Run in the **foreground** — backgrounding it has produced empty output
 before. Expect several minutes for ~20-30 queries at the default 5 workers.
+
+### Answer-content check (behavior_check.py)
+
+```bash
+python3 evals/behavior_check.py evals/behavior-sets/craftcms.json --runs 2 > before.json
+# ...edit the skill...
+python3 evals/behavior_check.py evals/behavior-sets/craftcms.json --runs 2 > after.json
+```
+
+Each case is a full read-only agentic answer (`Skill,Read,Grep,Glob`), so a case costs a minute or two. The stderr summary lists the skills each run loaded. A case that fails with no skill loaded is a routing problem, not a content problem. Ordering assertions (`must_appear_before`) look only inside fenced code blocks, and they pass when the later step never appears in code.
 
 ## How to read results
 
@@ -168,6 +179,7 @@ before. Expect several minutes for ~20-30 queries at the default 5 workers.
 - `measure_tokens.py` — token budget measurement (see above)
 - `route.py` — forced-choice routing harness, A/B-able across git refs
 - `trigger_check.py` — single-skill recall/precision check against the real installed skill set
+- `behavior_check.py` + `behavior-sets/*.json` — answer-content check against the real installed skill set
 - `trigger-sets/*.json` — fixtures, one file per skill, `[{query, should_trigger}, ...]`
 - `snapshot-2026-05-04.json`, `snapshot-2026-05-04-post.json` — historical token snapshots (8 skills, pre-expansion)
 - `snapshot-2026-10-05.json` — current token snapshot (13 skills); May→Oct total grew 251,863 → 466,944 tokens (+85%), roughly half from 5 new skills (craft-cloud, craft-pest, craft-plugin-release, craft-plugins, servd) and half from growth in the original 8

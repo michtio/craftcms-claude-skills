@@ -103,7 +103,7 @@ def skills_invoked(claude_bin: str, query: str, timeout: int) -> tuple[set[str],
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("eval_set", help="Path to a trigger-set JSON file: [{query, should_trigger}, ...]")
-    parser.add_argument("--target", required=True, help="Skill name to check for (e.g. craft-pest, craft-cloud)")
+    parser.add_argument("--target", required=True, help="Skill name to check for (e.g. craft-pest); comma-separate to accept any of several")
     parser.add_argument("--workers", type=int, default=5, help="Concurrent claude -p invocations (default: 5)")
     parser.add_argument("--timeout", type=int, default=240, help="Per-query subprocess timeout in seconds (default: 240)")
     parser.add_argument("--claude-bin", default=None, help="Path to the claude binary (default: autodetect via PATH)")
@@ -116,7 +116,8 @@ def main() -> int:
         idx, item = idx_item
         found, err = skills_invoked(claude_bin, item["query"], args.timeout)
         # A skill may be namespaced (craftcms-claude-skills:craft-pest).
-        hit = any(s.split(":")[-1] == args.target for s in found)
+        targets = set(args.target.split(","))
+        hit = any(s.split(":")[-1] in targets for s in found)
 
         return {
             "idx": idx,

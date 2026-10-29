@@ -1,7 +1,7 @@
 ---
 name: craftcms
 description: "Craft CMS 5 plugin and module development — extending Craft with PHP. Covers elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types, native fields, events, behaviors, Twig extensions, widgets, filesystems, permissions, project config, GraphQL, testing, and debugging."
-when_to_use: "Triggers on: beforePrepare()/afterSave()/defineSources()/defineTableAttributes()/attributeHtml(), MemoizableArray, BaseNativeField, EVENT_REGISTER_*/DEFINE_*/BEFORE_*/AFTER_*, CraftVariable, custom element or field type (normalizeValue/serializeValue/inputHtml), webhook, API endpoint, queue/batch job, CP section, dashboard widget, utility page, element action/exporter/condition, registerUserPermissions, requirePermission vs requireAdmin, kebab-case permission handles, allowAdminChanges, canView/canSave/canDelete, defineRules, elevated session, project-config/apply, drafts/revisions, element edit sidebar (EVENT_DEFINE_SIDEBAR_HTML) + toolbar buttons, metaFieldsHtml, VueAdminTable, GeneralConfig, getIsMultiSite/refreshSites stale after creating a site, deleteSite phantom sites, element query stops filtering by siteId, naive UTC datetime columns and strtotime drift, element-query ['like'] tuple matches nothing, configWarning config-file overrides. Always use when writing, editing, or reviewing Craft plugin/module PHP — even when no API is named. Plugin-specific work: also load craft-plugins. Do NOT trigger for front-end Twig (craft-site) or content modeling (craft-content-modeling)."
+when_to_use: "Triggers on: beforePrepare()/afterSave()/defineSources()/defineTableAttributes()/attributeHtml(), MemoizableArray, BaseNativeField, EVENT_REGISTER_*/DEFINE_*/BEFORE_*/AFTER_*, CraftVariable, custom element or field type (normalizeValue/serializeValue/inputHtml), webhook, API endpoint, queue/batch job, CP section, dashboard widget, utility page, element action/exporter/condition, registerUserPermissions, requirePermission vs requireAdmin, kebab-case permissions, allowAdminChanges, canView/canSave/canDelete, defineRules/EVENT_DEFINE_RULES on Entry (fieldId + ownerId must be set), elevated session, project-config/apply/write, drafts/revisions, edit sidebar (EVENT_DEFINE_SIDEBAR_HTML)/toolbar buttons, metaFieldsHtml, VueAdminTable, GeneralConfig, getIsMultiSite/refreshSites stale after new site, deleteSite phantom sites, siteId filter lost, UTC datetime/strtotime drift, ['like'] tuple matches nothing, configWarning. Always use when writing, editing, or reviewing Craft plugin/module PHP (even when no API is named) or saveField()/saveEntryType() from scripts. Plugin work: also load craft-plugins. Do NOT trigger for front-end Twig (craft-site) or content modeling (craft-content-modeling)."
 ---
 
 # Craft CMS 5 — Extending (Plugins & Modules)
@@ -39,6 +39,8 @@ Use `WebFetch` on specific doc pages when a reference file doesn't cover enough 
 - Hardcoding `/admin` in CP URLs — `cpTrigger` is configurable. Use `UrlHelper::cpUrl()` in PHP, `cpUrl()` in Twig.
 - Passing `$request->getBodyParams()` directly to `savePluginSettings()` on split-settings pages — only submitted keys persist, other settings are silently dropped. Load the full settings model first, update properties, then save.
 - **Naming a route or query param `token`** — it collides with Craft's reserved `tokenParam` and the request is rejected with a 400 before your controller runs. See `controllers.md` (Reserved request params).
+- **`EVENT_DEFINE_RULES` on `Entry::class` runs for every entry**, including nested entries the CP builds before `fieldId`/`ownerId` exist. `getType()`/`typeId` throws `Either \`sectionId\` or \`fieldId\` + \`ownerId\` must be set on the entry.` there, which breaks adding any nested entry. Always add the rule, decide in `'when'` behind an `isset($entry->fieldId) || isset($entry->sectionId)` guard, and validate with a `Validator` subclass. See `events.md` (Validation Rules on Core Elements From a Module).
+- **`project-config/write` empties `config/project/` and rewrites it from the DB.** On a stale local DB it deletes teammates' YAML. Run `craft up` first, require a clean `project-config/diff`, and check `git diff -- config/project` afterwards. Schema saves from PHP belong in a migration or console command, never a bare bootstrap script (YAML is only flushed on `EVENT_AFTER_REQUEST`). See `deployment.md` (project-config/write safely) and `migrations.md` (Project config writes outside a request).
 - Any non-underscore-prefixed template in a plugin's `templates/` dir is **directly routable in the CP**, bypassing your controller's `beforeAction()` gates. Underscore-prefix every template that isn't an intentional direct route. See `cp.md` (CP template routing bypasses controllers).
 
 ## Reference Files
@@ -52,6 +54,10 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Create a queue job that syncs elements" → read `queue-jobs.md` + `elements.md` + `debugging.md`
 - "Add a settings page with form fields" → read `controllers.md` + `cp.md` + `architecture.md`
 - "Register a custom field type" → read `fields.md` + `events.md`
+- "Require a field only on one entry type from a module / add a rule to Entry" → read `events.md` (Validation Rules on Core Elements From a Module)
+- "Adding a nested entry fails: Either `sectionId` or `fieldId` + `ownerId` must be set" → read `events.md` (Validation Rules on Core Elements From a Module)
+- "Write project config to YAML after a local change / project-config/write deleted YAML" → read `deployment.md` (project-config/write safely)
+- "saveField()/saveEntryType() from a script changed nothing in YAML" → read `migrations.md` (Project config writes outside a request)
 - "Fix PHPStan errors" → read `quality.md`
 - "Add a dashboard widget" → read `cp-components.md` (Dashboard Widgets) + `events.md` (Widget Types section)
 - "Expose template variables for plugin users" → read `events.md` (Twig Extensions section)
@@ -194,7 +200,7 @@ Load only the reference files your task needs — each file costs input tokens o
 | PHPStan, ECS, code review checklist | `references/quality.md` | 3.5K |
 | Testing: pointer to the `craft-pest` skill (Pest/craft-pest-core lives there) + Codeception basics | `references/testing.md` | 0.6K |
 | Field types, native fields, BaseNativeField, field layout elements (built-in Tip/Heading/LineBreak/HorizontalRule reference), FieldLayoutBehavior | `references/fields.md` | 3.6K |
-| Events: registration, lifecycle, naming conventions, custom events, behaviors, Twig extensions, utilities, widgets, filesystems | `references/events.md` | 4.4K |
+| Events: registration, lifecycle, naming conventions, validation rules on core elements (EVENT_DEFINE_RULES), custom events, behaviors, Twig extensions, utilities, widgets, filesystems | `references/events.md` | 4.4K |
 | GraphQL types, queries, mutations, directives, schema components, resolvers | `references/graphql.md` | 4.6K |
 | Plugin Vite: VitePluginService, CP asset bundles, HMR, TypeScript, Vue in CP | `references/plugin-vite.md` | 2.7K |
 | Headless & hybrid: headlessMode, GraphQL API, CORS, preview tokens, front-end frameworks | craft-site skill `references/headless.md` | 3.4K |
@@ -210,7 +216,7 @@ Load only the reference files your task needs — each file costs input tokens o
 | Custom field types: build pattern, value lifecycle, settings, input HTML, validation, search, GraphQL | `references/field-types-custom.md` | 3.5K |
 | Conditions framework: BaseCondition, ElementCondition, custom condition rules, registering rules | `references/conditions.md` | 2.3K |
 | Email system: system messages, custom messages, programmatic sending, templates, events, testing | `references/email.md` | 2.4K |
-| Deployment: standard pipeline, project config deploy, zero-downtime, CI/CD, rollback | `references/deployment.md` | 2.5K |
+| Deployment: standard pipeline, project config deploy, project-config/write safely, zero-downtime, CI/CD, rollback | `references/deployment.md` | 2.5K |
 | Drafts & revisions: draft types, provisional drafts, autosave, applying, merge, revisions | `references/drafts-revisions.md` | 2.5K |
 
 ## Plugin vs Module Differences

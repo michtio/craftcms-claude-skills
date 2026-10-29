@@ -1,0 +1,29 @@
+[
+  {
+    "id": "define-rules-nested-guard",
+    "prompt": "Craft 5 site module: I want the `summary` field to be required, but only on entries of the `mitDocument` entry type, and only when they're saved live. Add it from the module with Event::on(Entry::class, Element::EVENT_DEFINE_RULES, ...). Write the module code in your reply; don't create or edit files.",
+    "must_match": [
+      ["isset\\(\\s*\\$\\w+->(fieldId|sectionId)\\s*\\)", "'when'\\s*=>"],
+      ["extends\\s+\\\\?(yii\\\\validators\\\\)?Validator\\b", "'when'\\s*=>"],
+      ["'field:"]
+    ],
+    "must_not_match": [
+      "static\\s+(fn|function)\\s*\\(\\s*(string\\s+)?\\$attribute",
+      "->typeId\\s*[!=]==?\\s*null",
+      "\\[\\s*'summary'\\s*\\]\\s*,\\s*'required'"
+    ]
+  },
+  {
+    "id": "project-config-write-gate",
+    "prompt": "Craft 5 project, local DDEV. My local database was restored from yesterday's production dump, then I changed a field's settings in the local CP. I want to run `craft project-config/write` so the YAML matches and then commit. Give me the exact command sequence and anything I should check.",
+    "must_match": [
+      ["craft up", "project-config/apply"],
+      ["project-config/diff"],
+      ["git diff"]
+    ],
+    "must_appear_before": [
+      ["craft up|project-config/apply", "project-config/write"],
+      ["project-config/diff", "project-config/write"]
+    ]
+  }
+]

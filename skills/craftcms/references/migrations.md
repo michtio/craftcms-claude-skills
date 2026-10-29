@@ -389,6 +389,28 @@ Always null-check the site -- it may not exist in every environment (e.g., a sta
 
 When writing to project config inside a migration, always mute events. Without this, project config handlers fire immediately, potentially depending on database state that doesn't exist yet. See [Safety Rules](#safety-rules) for the code pattern.
 
+### Project config writes outside a request
+
+`Fields::saveField()`, `Entries::saveEntryType()` and the other schema services call `ProjectConfig::set()`. That applies the change to the component tables right away, because `ProjectConfigData::commitChanges()` fires the add/update/remove handlers, but it **defers** writing the stored config and the YAML. `set()` calls `_saveConfigAfterRequest()`, which only marks the YAML dirty, unless the app is already past `STATE_AFTER_REQUEST`. The actual write is `ProjectConfig::flush()` (`saveModifiedConfigData()`, then `writeYamlFiles()` when `writeYamlAutomatically` is on). `init()` registers it on `Application::EVENT_AFTER_REQUEST`.
+
+So a schema change from PHP has to run inside a request that ends normally:
+
+- **A migration** (`craft up`, `craft migrate/up`). `UpController` also flushes after applying project config. This is the right home for a change that ships with a deploy.
+- **A console command** in your module or plugin (`craft my-module/schema/…`). The `craft` entry script calls `$app->run()`, which fires `EVENT_AFTER_REQUEST`.
+
+**Not** an ad-hoc script that requires `bootstrap/console.php` (`php -r`, a scratch file, a REPL) and calls the services without `$app->run()`. The app never reaches `EVENT_AFTER_REQUEST`, so the stored config and YAML are never written, and the save still returns `true`. The DB tables and the stored config then disagree, which is the drift `project-config/diff` and the next `craft up` trip over. Separately, `set()` returns early when the new value equals the working config (`_setInternal()`, lines 546-549). An edit that doesn't change the layout's or field's `getConfig()` output, such as a property that isn't serialized or a change made to a different layout object than the one you save, is dropped without an error.
+
+Whichever route you use, verify the result instead of trusting the return value:
+
+```bash
+git diff --stat -- config/project    # the YAML you expected changed, nothing else
+ddev craft project-config/diff       # "No pending project config YAML changes."
+```
+
+For small settings changes (a required flag, instructions, a dropdown option), editing the YAML directly and running `craft up` is simpler. See `deployment.md` → "project-config/write safely".
+
+Source: `craftcms/cms` 5.11.5.1 -- https://github.com/craftcms/cms/blob/5.11.5.1/src/services/ProjectConfig.php (`init()` 403-412, `flush()` 415-424, `set()` 527-535, `_saveConfigAfterRequest()` 1567-1575).
+
 ### Never call `ProjectConfig::flush()` inside a migration
 
 Two independent reasons:

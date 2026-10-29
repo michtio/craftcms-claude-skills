@@ -16,5 +16,8 @@
   {"query": "Can you write a Python script that reads a CSV file and generates a bar chart showing monthly sales totals? The CSV has columns date, product, quantity, price", "should_trigger": false},
   {"query": "how do I set up a Sprig component for live search that filters entries as the user types? I want it to debounce and show a loading indicator", "should_trigger": false},
   {"query": "I need to create a queue job that syncs product data from our ERP system every night — it should process items in batches of 50 and report progress, and I need a console command to trigger it manually", "should_trigger": true},
-  {"query": "What's the right way to add a custom permission for our plugin so that only certain user groups can access the settings page? And how do I check that permission in the controller?", "should_trigger": true}
+  {"query": "What's the right way to add a custom permission for our plugin so that only certain user groups can access the settings page? And how do I check that permission in the controller?", "should_trigger": true},
+  {"query": "Our site module adds a required rule to one entry type with Event::on(Entry::class, Element::EVENT_DEFINE_RULES), and since then adding any nested entry in the CP fails with \"Either `sectionId` or `fieldId` + `ownerId` must be set on the entry.\" How should the handler be written?", "should_trigger": true},
+  {"query": "My local Craft DB is a restore of last night's production dump and I edited a field in the CP. Is it safe to run craft project-config/write before I commit, or will it overwrite something?", "should_trigger": true},
+  {"query": "I ran a quick php -r script that bootstraps Craft and calls Craft::$app->getFields()->saveField() with an updated layout. It returned true but nothing changed in config/project. Why?", "should_trigger": true}
 ]

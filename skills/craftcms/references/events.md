@@ -8,6 +8,7 @@
 - Event Naming Conventions — REGISTER, DEFINE, BEFORE, AFTER, SET, AUTHORIZE
 - Key Event Sources — Element, Elements service, Fields, FieldLayout, UrlManager, View, Permissions, Plugins, ProjectConfig, Gql, Dashboard, Console, CP nav
 - Other Registerable Component Types — Utilities, Filesystems, Image Transformers, Auth Methods, Mail Transports
+- Validation Rules on Core Elements From a Module — `EVENT_DEFINE_RULES` on `Entry::class`, the nested-entry guard, `'when'` vs filtering in the handler, `Validator` subclasses, `field:<handle>` errors, test checklist
 - Behaviors
 - Twig Extensions
 - Registration Pattern — full plugin init example; registration scope (never gate element/field type registration by request context)
@@ -27,6 +28,7 @@
 - Setting `$event->handled = true` unnecessarily — this stops all subsequent handlers from running, breaking other plugins that listen for the same event.
 - Not type-hinting the event object — without the correct type hint (e.g., `ModelEvent`, `RegisterComponentTypesEvent`), you miss event-specific properties like `$event->isNew` or `$event->types`.
 - Using string event names instead of class constants — no IDE autocomplete, no deprecation warnings when Craft renames events, and typos fail silently.
+- Calling `$entry->getType()` (or reading `typeId`/`type`) in an `Entry::class` `EVENT_DEFINE_RULES` handler without a guard -- the handler runs for every entry, including the nested entries the CP builds before `fieldId`/`ownerId` are set, and `getType()` throws `Either \`sectionId\` or \`fieldId\` + \`ownerId\` must be set on the entry.` there. Adding any nested entry in the CP then fails. See [Validation Rules on Core Elements From a Module](#validation-rules-on-core-elements-from-a-module).
 - Confusing `CancelableEvent->isValid` with model validation — `isValid = false` tells the sender to halt the operation (e.g., cancel a save), it doesn't add validation errors.
 - Listening for element events on `Element::class` when you only want entries — your handler fires for every element type (assets, users, categories). Use `Entry::class` to scope.
 - Consuming another plugin's open-vocabulary event with a closed `enum` and dropping unknown values — the emitter succeeds, the consumer logs a warning at most, and the data is gone. See [Cross-Plugin Event Contracts](#cross-plugin-event-contracts).
@@ -309,6 +311,127 @@ Event::on(MailerHelper::class, MailerHelper::EVENT_REGISTER_MAILER_TRANSPORTS,
     }
 );
 ```
+
+## Validation Rules on Core Elements From a Module
+
+A plugin's own element adds rules in `defineRules()`, and a custom field type adds them in `getElementValidationRules()` (see `fields.md`). To add a rule to a **core** element (Entry, Asset, User) from a module or plugin, listen to `craft\base\Model::EVENT_DEFINE_RULES` on the element class and append to `$event->rules`.
+
+Verified against `craftcms/cms` 5.11.5.1 and `yiisoft/yii2` 2.0.55:
+
+- `Model::rules()` -- https://github.com/craftcms/cms/blob/5.11.5.1/src/base/Model.php (lines 120-133)
+- `Entry::getAvailableEntryTypes()`, `getType()`, `getTypeId()` -- https://github.com/craftcms/cms/blob/5.11.5.1/src/elements/Entry.php (lines 1685-1688, 1711-1734, 1755-1781)
+- `Element::addError()`, `isFieldEmpty()`, `afterValidate()` -- https://github.com/craftcms/cms/blob/5.11.5.1/src/base/Element.php (lines 3091-3135, 3227-3249)
+- Nested-entry errors on the owner -- https://github.com/craftcms/cms/blob/5.11.5.1/src/fields/Matrix.php (lines 1351-1386), `Model::addModelErrors()` in `src/base/Model.php` (lines 290-301)
+- Yii validator lifecycle -- https://github.com/yiisoft/yii2/blob/2.0.55/framework/base/Model.php (`scenarios()` 201, `getValidators()` 434-441, `__clone()` 1080-1086), https://github.com/yiisoft/yii2/blob/2.0.55/framework/validators/InlineValidator.php (lines 64-77), https://github.com/yiisoft/yii2/blob/2.0.55/framework/validators/Validator.php (`skipOnEmpty` 138, `createValidator()` 207-231, `validateAttributes()` 251-264)
+- Docs: https://craftcms.com/docs/5.x/extend/events.html and https://www.yiiframework.com/doc/guide/2.0/en/input-validation
+
+### When the handler runs
+
+An `Event::on(Entry::class, Model::EVENT_DEFINE_RULES, ...)` handler runs for **every entry**: every section, every entry type, and every nested entry in every Matrix field. It runs when that instance first builds its validators, which happens early. `setAttributes()` calls `safeAttributes()`, which calls `scenarios()`, which calls `getValidators()`, which calls `rules()`. So the handler can run while the CP is still constructing a nested entry, before `fieldId` and `ownerId` are set.
+
+The validators are then cached on that instance (`Model::$_validators`) and are not rebuilt when its properties change later. Only a clone starts over (`__clone()` resets them).
+
+### The nested-entry trap
+
+`Entry::getType()` resolves through `getAvailableEntryTypes()`, which reads the field's entry types when `fieldId` is set, the section's when `sectionId` is set, and otherwise throws:
+
+```
+yii\base\InvalidConfigException: Either `sectionId` or `fieldId` + `ownerId` must be set on the entry.
+```
+
+It throws even when `typeId` is already set: `getType()` checks the type against `getAvailableEntryTypes(false)` first. `getTypeId()` and the `typeId` magic property call `getType()`, so `$entry->typeId === null` is not a safe guard either. A handler that filters on `$event->sender->getType()->handle` therefore breaks adding **any** nested entry in the CP, for every entry type, not just the one the rule is for.
+
+Two consequences:
+
+1. Guard before resolving the type: `isset($entry->fieldId) || isset($entry->sectionId)`.
+2. Do not decide inside the handler whether to add the rule. An instance whose rules were built before it had a field or section never gets the rule, because its validators are cached. Add the rule to every entry and decide in a `'when'` callback, which runs at validation time, when the entry has its field or section.
+
+### Pattern: always add, decide in `'when'`, validate with a `Validator` subclass
+
+```php
+use craft\base\Element;
+use craft\base\Model;
+use craft\elements\Entry;
+use craft\events\DefineRulesEvent;
+use modules\site\validators\FieldRequiredValidator;
+use yii\base\Event;
+
+Event::on(
+    Entry::class,
+    Model::EVENT_DEFINE_RULES,
+    function(DefineRulesEvent $event): void {
+        $event->rules[] = [
+            ['field:summary'],
+            FieldRequiredValidator::class,
+            'on' => [Element::SCENARIO_LIVE],
+            'when' => fn(Entry $entry): bool => self::isEntryType($entry, 'mitDocument'),
+        ];
+    },
+);
+
+// In the module class:
+public static function isEntryType(Entry $entry, string $handle): bool
+{
+    // getType() throws until the entry has a section or a field
+    if (!isset($entry->fieldId) && !isset($entry->sectionId)) {
+        return false;
+    }
+
+    return $entry->getType()->handle === $handle;
+}
+```
+
+```php
+namespace modules\site\validators;
+
+use Craft;
+use craft\base\ElementInterface;
+use yii\validators\Validator;
+
+class FieldRequiredValidator extends Validator
+{
+    /**
+     * Run on empty values too, or a required check never fires
+     */
+    public $skipOnEmpty = false;
+
+    public function validateAttribute($model, $attribute): void
+    {
+        /** @var ElementInterface $model */
+        $handle = str_starts_with($attribute, 'field:') ? substr($attribute, 6) : $attribute;
+
+        if ($model->isFieldEmpty($handle)) {
+            $this->addError($model, $attribute, Craft::t('yii', '{attribute} cannot be blank.'));
+        }
+    }
+}
+```
+
+Why each piece:
+
+- **`'when'` receives the model.** `Validator::validateAttributes()` calls `call_user_func($this->when, $model, $attribute)` at validation time, so the type check sees the instance being validated, after the CP has set its field or section.
+- **`skipOnEmpty = false`.** `Validator::$skipOnEmpty` defaults to `true`, and the skip is checked before `'when'` and before `validateAttribute()`. A required-style validator that leaves it on never runs on the empty values it exists to catch. With it off, the attribute isn't read until `'when'` has passed, so entries whose layout has no `summary` field aren't touched.
+- **`isFieldEmpty()`, not the built-in `required` rule.** Yii's `RequiredValidator` counts only `null`, `''` and `[]` as empty. Relation fields return an element query and CKEditor returns an `HtmlFieldData` object, so `['field:summary', 'required']` passes when they are empty. `Element::isFieldEmpty()` asks the field type, which is what Craft's own layout-required check does (`afterValidate()`, via `isValueEmpty()`). For a plain text field, `'required'` also works.
+- **A `Validator` subclass, not a closure.** A closure rule becomes an `InlineValidator`, which calls `$method->bindTo($model)` before running it. Inside the closure, `$this` is the entry, not your module. It is called as `($attribute, $params, $validator, $current)` and is not passed the model. A `static` closure can't be bound to an object, so the rule fails at validation time. A closure that captures `$event->sender` from the handler validates the captured object. That only works because validators are built per instance. A `Validator` subclass gets `$model` as an argument and avoids all of this.
+
+The same applies to other core elements with context-dependent getters: decide in `'when'`, not in the handler.
+
+What this rule does not do: Craft's own required check skips fields that a layout condition hides (`getEditableCustomFieldElements()`), but this rule does not. If a condition can hide the field, check `$entry->getFieldLayout()->getEditableCustomFieldElements($entry)` in `'when'`. Saves with `runValidation: false` (resave jobs, many imports) skip it like every other rule.
+
+### Where the error shows up
+
+- Use the `field:<handle>` attribute for custom fields. `Element::addError()` strips the `field:` prefix, so the error is stored under the handle, and the CP shows it inline on that field. `getAttributeLabel()` strips it too, so `{attribute}` in the message is the field's label.
+- Errors on a nested entry reach the owner through `Matrix::validateEntries()`. Each invalid nested entry is validated in the owner's scenario (or `essentials` if the entry is disabled). In blocks view mode, its errors are copied with `addModelErrors()` under `<matrixHandle>[<entry uid, or newN>].<handle>`. Deeper nesting adds another prefix per level, for example `contentBlocks[<uid>].buttons[<uid>].label`. In cards and index view modes, the owner gets one error on the Matrix field instead: "Validation errors found in one nested entry within the *{field}* field".
+
+### Test checklist for any `EVENT_DEFINE_RULES` handler on a core element
+
+1. `(new Entry())->getValidators()` does not throw.
+2. `(new Entry(['typeId' => $otherType->id]))->getValidators()` does not throw. This simulates the CP building a nested entry with no `fieldId`/`ownerId`.
+3. In the CP, add a nested entry of a **different** type to a Matrix field on any owner. It renders and saves.
+4. A live save of the target type with the field empty fails, with the error under the field handle.
+5. A live save of another type with the field empty passes.
+6. A draft save or a disabled entry (non-live scenario) of the target type passes.
+7. A new nested entry of the target type, validated live through its owner, gets the error at the `<matrixHandle>[…].<handle>` path.
 
 ## Behaviors
 

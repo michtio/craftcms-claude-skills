@@ -14,6 +14,7 @@ How to deploy Craft CMS 5 to production: the standard pipeline, project config d
 - Varying `disabledPlugins` per environment — causes schema version mismatches that break `craft up` on deploy. Disabled plugins must be consistent across all environments.
 - Not stopping the queue worker before migrations — in-flight jobs may use outdated schema. Stop the listener, run migrations, restart.
 - Setting `allowAdminChanges(true)` in production — allows CP users to modify sections, fields, and plugins, causing project config drift that conflicts with the next deploy.
+- Running `project-config/write` on a local DB restored from an older dump -- it empties `config/project/` and rewrites it from the DB, deleting YAML committed since the dump. Gate it with `craft up` and a clean `project-config/diff`. See [project-config/write safely](#project-configwrite-safely).
 - Running `project-config/rebuild` to fix drift — rebuilds YAML from DB, overwriting your Git-tracked config. Only use when you intentionally want the DB to be the source of truth.
 
 ## Contents
@@ -67,11 +68,43 @@ return GeneralConfig::create()
 |---------|---------|-------------|
 | `craft up` | Runs all migrations + applies project config | **Every deploy** |
 | `craft project-config/apply` | Applies YAML to DB (no migrations) | Emergency re-sync when you know no migrations are pending |
-| `craft project-config/apply --force` | Forces apply even if `dateModified` matches | Stubborn drift that `apply` alone doesn't fix |
-| `craft project-config/touch` | Updates `dateModified` to force re-apply | After Git pulls, merge conflict resolution, manual YAML edits |
-| `craft project-config/diff` | Shows divergence between YAML and DB | Diagnosing drift |
-| `craft project-config/rebuild` | Regenerates YAML from DB | When DB is the source of truth (destructive to YAML) |
-| `craft project-config/write` | Writes current DB state to YAML files | After manual DB changes (rare) |
+| `craft project-config/apply --force` | Treats every YAML value as changed and re-applies all of it | Stubborn drift that `apply` alone doesn't fix |
+| `craft project-config/touch` | Sets `dateModified` in `project.yaml` to now | After manual YAML edits, merge conflict resolution |
+| `craft project-config/diff` | Shows YAML changes that are not yet in the DB (`--invert` for the other direction) | Before `write`, diagnosing drift |
+| `craft project-config/rebuild` | Rebuilds the config from the DB's component tables (sections, fields, …) | When DB is the source of truth (destructive to YAML) |
+| `craft project-config/write` | Empties `config/project/` and rewrites it from the DB's stored config | Rarely; behind the gate in [project-config/write safely](#project-configwrite-safely) |
+
+### project-config/write safely
+
+`write` is `ProjectConfig::regenerateExternalConfig()`, which ends in `writeYamlFiles(true)`. That method **clears the `config/project/` directory** (everything except dotfiles) and rewrites it from the config stored in the DB. Any YAML the DB doesn't know about is deleted, and any YAML value the DB has older is reverted.
+
+On a local DB restored from a production dump, the DB is behind the branch. Running `write` there deletes teammates' new fields, their layout elements, and anything else committed since the dump. Nothing warns you.
+
+Gate it:
+
+```bash
+ddev craft up                        # bring the DB up to the branch's YAML first
+ddev craft project-config/diff       # must print "No pending project config YAML changes."
+ddev craft project-config/write
+git diff --stat -- config/project    # only the files you meant to change
+```
+
+If `diff` shows anything after `craft up`, stop: the YAML is ahead of the DB and `write` would undo it. If `git diff` touches files you didn't mean to change, `git restore` them before committing.
+
+You rarely need `write` at all. With `allowAdminChanges` on and `writeYamlAutomatically` at its default (`true`), the CP already writes YAML when you save. Run `git diff -- config/project` first.
+
+**Small settings changes:** a layout element's required flag, a tip or instructions string, a dropdown option. These are safest as a direct edit to the YAML file, then:
+
+```bash
+ddev craft up                        # applies the edit; a YAML error fails here
+ddev craft project-config/diff       # "No pending project config YAML changes." proves it was applied
+```
+
+`craft up` decides whether to apply by comparing content: it calls `areChangesPending(force: true)`. So a hand edit is picked up without bumping `dateModified`. The bump (`project-config/touch`) still matters for the CP's "pending changes" alert. That check skips the content comparison when `project.yaml`'s mtime matches the cached one, so an edit to a file under `config/project/` alone won't raise it.
+
+Code-driven schema changes (saving a field or entry type from PHP) belong in a migration or a console command; see `migrations.md` → "Project config writes outside a request".
+
+Source: `craftcms/cms` 5.11.5.1 -- https://github.com/craftcms/cms/blob/5.11.5.1/src/services/ProjectConfig.php (`regenerateExternalConfig()` 594-606, `areChangesPending()` 690-735, `writeYamlFiles()` 1631-1650), https://github.com/craftcms/cms/blob/5.11.5.1/src/console/controllers/UpController.php (line 60), https://github.com/craftcms/cms/blob/5.11.5.1/src/console/controllers/ProjectConfigController.php (`actionWrite()` 421-427), https://github.com/craftcms/cms/blob/5.11.5.1/src/helpers/Cp.php (lines 204-213). Docs: https://craftcms.com/docs/5.x/system/project-config.html and https://craftcms.com/docs/5.x/reference/cli.html
 
 ### rebuild vs apply --force — know the direction
 

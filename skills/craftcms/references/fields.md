@@ -308,6 +308,8 @@ public function getElementValidationRules(): array
 }
 ```
 
+To add a rule to a core element (for example, require a field only on one entry type) from a module rather than from a field type, use `EVENT_DEFINE_RULES` on the element class. A handler on `Entry::class` runs for nested entries before they have a field, so `getType()` throws there. See `events.md` → "Validation Rules on Core Elements From a Module".
+
 ### Field Settings Validation
 
 `defineRules()` validates the **field's own settings** (configured in Settings > Fields), not the element value. Always call `parent::defineRules()` -- skipping it silently drops validation for `handle`, `name`, and other core settings.
