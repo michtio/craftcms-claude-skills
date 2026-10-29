@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.22.0 -- 2026-10-29
+
+Closes two gaps behind real bugs on a Craft 5 site: a module's `EVENT_DEFINE_RULES` handler on `Entry` that broke adding nested entries in the CP, and `project-config/write` deleting teammates' YAML from a stale local DB. Verified on 2026-10-29 against `craftcms/cms` 5.11.5.1 and `yiisoft/yii2` 2.0.55, with tag-pinned source links in each section.
+
+### Added
+
+- **`skills/craftcms/references/events.md`** -- new "Validation Rules on Core Elements From a Module" section.
+  - A handler on `Entry::class` runs for every entry, including nested entries the CP builds before `fieldId`/`ownerId` are set. Rules are built early (`setAttributes()` → `safeAttributes()` → `scenarios()` → `rules()`) and cached per instance.
+  - `getType()`, `getTypeId()` and the `typeId` property throw "Either `sectionId` or `fieldId` + `ownerId` must be set on the entry." there, even when `typeId` is set.
+  - The pattern: always add the rule, decide in `'when'` behind an `isset($entry->fieldId) || isset($entry->sectionId)` guard, and validate with a `Validator` subclass. `skipOnEmpty` must be `false`. `isFieldEmpty()` replaces the built-in `required` rule, which passes on empty relation and CKEditor values.
+  - Why not a closure: `InlineValidator` rebinds it with `bindTo($model)`, and a `static` closure can't be bound.
+  - Also covers `field:<handle>` error placement, nested error paths on the owner (`<matrix>[<uid>].<handle>` in blocks view, one field-level error in cards/index view), and a 7-step test checklist.
+  - Cross-linked from `fields.md` → "Element Validation Rules".
+- **`skills/craftcms/references/deployment.md`** -- new "project-config/write safely" section. `write` clears `config/project/` and rewrites it from the DB (`writeYamlFiles(true)`). The gate is `craft up`, a clean `project-config/diff`, then `write`, then `git diff -- config/project`. Small settings changes are safest as a direct YAML edit plus `craft up` and a clean diff. `craft up` compares content (`areChangesPending(force: true)`), so it does not need a `dateModified` bump; the CP's pending-changes alert does.
+- **`skills/craftcms/references/migrations.md`** -- new "Project config writes outside a request" section. `ProjectConfig::set()` defers the stored config and YAML to `flush()` on `EVENT_AFTER_REQUEST`, so schema saves belong in a migration or console command, not a script that bootstraps Craft without `$app->run()`. `set()` also drops changes that leave the working config unchanged.
+- **`skills/craftcms/SKILL.md`** -- two cross-cutting pitfalls, four task examples, reference-table keywords, and triggers for `EVENT_DEFINE_RULES` on Entry, the `fieldId + ownerId` error and `project-config/write`. The listing is at 1,532 of 1,536 characters.
+- **Routing for `project-config` questions** -- before this change, a question about running `project-config/write` loaded no skill at all. Forced-choice routing already picked `craftcms`, but in production the model answered without calling a skill. craft-content-modeling's `when_to_use` now names `project-config/write/diff/apply/touch`, YAML vs DB drift and a restored prod DB dump, and its "Always use when" clause adds "running project-config commands". A new task row routes these to `infrastructure.md` and `deployment.md`. craftcms's "Always use when" clause adds `saveField()`/`saveEntryType()` from scripts. The craftcms listing is at exactly 1,536 characters after trims; content-modeling is at 1,520. A/B with `trigger_check.py` on six phrasings: 1/6 loaded craftcms or craft-content-modeling before, 4/6 after the content-modeling change, 5/6 after the craftcms change (twice). `route.py` on the craftcms, craft-content-modeling, ddev and craft-project-setup sets (2 runs each): 105/132 before, 107/134 after, within noise.
+- **`evals/behavior_check.py`** and **`evals/behavior-sets/craftcms.json`** -- a check on what the answer contains, run against the real installed skills, with regex assertions. It has one case per gap. Final run on the shipped text: 4/4 (rule on one entry type 2/2, was 1/2; project-config/write gate 2/2, was 1/2). Also new positives in `evals/trigger-sets/craftcms.json` (3) and `craft-content-modeling.json` (2), and `trigger_check.py --target` accepts a comma-separated list.
+
+### Fixed
+
+- **`skills/craft-content-modeling/SKILL.md`** -- the pitfall "Editing project config YAML manually ... use `project-config/rebuild` to regenerate from DB" pointed at the same failure: rebuild and write both treat the DB as the source of truth. It now warns against regenerating YAML from a DB that is behind the branch and allows direct YAML edits for small settings, gated by `craft up` and a clean diff.
+- **`skills/craftcms/references/deployment.md`** -- the project-config command table: `apply --force` re-applies every value (it has nothing to do with `dateModified`), `rebuild` reads the DB's component tables, and `write` empties the YAML directory.
+- **`skills/craft-content-modeling/references/infrastructure.md`** -- "without `project-config/touch`, `craft up` on other environments won't detect the change" is wrong for Craft 5. `craft up` compares content. The touch still matters for the CP alert, and the rule to do both stays. Added the `project-config/write` warning and the request-lifecycle caveat for schema authored from code.
+
 ## 1.21.0 -- 2026-10-27
 
 Closes three gaps found while planning a performance change on a Craft 5 site: what may go inside `{% cache %}` (CSP nonces and per-page state), when Craft generates image transforms, and what ImageOptimize costs at request time. Verified on 2026-10-27 against the Craft 5 docs, `craftcms/cms` 5.11.5.1, `nystudio107/craft-imageoptimize` 5.0.8 and the 5.0.0 imgix, Sharp and Thumbor transform packages. Every source claim is cited with a tag-pinned URL.
