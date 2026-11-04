@@ -7,6 +7,7 @@ How a git push becomes a deployment on fortrabbit, what the Craft CMS software t
 - Craft setup: https://docs.fortrabbit.com/guides/craft-cms/setup
 - Craft deployment: https://docs.fortrabbit.com/guides/craft-cms/deployment
 - Craft ENV vars: https://docs.fortrabbit.com/guides/craft-cms/env-vars
+- Craft domain setup: https://docs.fortrabbit.com/guides/craft-cms/domain-setup
 - Craft production settings: https://docs.fortrabbit.com/guides/craft-cms/production-settings
 - Updating Craft: https://docs.fortrabbit.com/guides/craft-cms/updating
 - Software templates: https://docs.fortrabbit.com/platform/concepts/software-templates
@@ -123,6 +124,7 @@ CRAFT_ALLOW_ADMIN_CHANGES=false
 CRAFT_ALLOW_UPDATES=false
 CRAFT_SECURITY_KEY=…                # random, generated at creation
 CRAFT_STREAM_LOG=true
+PRIMARY_SITE_URL=https://${FORTRABBIT_MAIN_DOMAIN}
 CRAFT_DB_DRIVER=mysql
 CRAFT_DB_SERVER=${FORTRABBIT_DB_HOST}
 CRAFT_DB_DSN=mysql:host=${FORTRABBIT_DB_HOST};port=3306;dbname=${FORTRABBIT_DB_NAME}
@@ -138,11 +140,7 @@ CRAFT_DB_PASSWORD=${FORTRABBIT_DB_PASSWORD}
 - Names starting with `FORTRABBIT` are reserved.
 - ENV var changes reach PHP after a restart or the next deployment.
 
-Site URL: Craft's starter project sets the site base URL to `$PRIMARY_SITE_URL` in project config. The template doesn't set that var; add it on each environment. `FORTRABBIT_MAIN_DOMAIN` holds the main domain without scheme:
-
-```sh
-PRIMARY_SITE_URL=https://${FORTRABBIT_MAIN_DOMAIN}
-```
+- `PRIMARY_SITE_URL` is the var Craft's installer writes to `.env` and saves as `$PRIMARY_SITE_URL`, the primary site's base URL in project config. The template points it at the main domain. Apps created before the template set it need the line added by hand. For multi-site, give each site its own var (e.g. `SITE_URL_EN`), use it as that site's base URL, and set it per environment.
 
 ## Production settings
 
