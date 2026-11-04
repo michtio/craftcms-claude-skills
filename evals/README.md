@@ -1,6 +1,6 @@
 # evals/
 
-Token-budget and trigger-quality tooling for this plugin's 13 skills and 6
+Token-budget and trigger-quality tooling for this plugin's 14 skills and 6
 agents. Nothing in here ships to users — it's measurement and regression
 tooling for whoever edits `skills/*/SKILL.md` or `agents/*.md`.
 
@@ -73,7 +73,7 @@ python3 evals/route.py --compare-ref main --runs 2 --workers 10
 python3 evals/route.py --sets evals/trigger-sets --out evals/route-results.json
 ```
 
-Cost note: 13 skills x ~16-18 queries/skill x `--runs` x (1 or 2 conditions)
+Cost note: 14 skills x ~16-18 queries/skill x `--runs` x (1 or 2 conditions)
 `claude -p` calls. At the default `--runs 1`, single-condition that's ~230
 calls; `--compare-ref` doubles it. Budget accordingly, and prefer `--runs 1`
 for a quick check, `--runs 2`+ only when you need to smooth model noise (see

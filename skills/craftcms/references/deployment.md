@@ -302,5 +302,6 @@ Every `GeneralConfig` property maps to `CRAFT_UPPER_SNAKE_CASE` automatically.
 | **Laravel Forge** | Git push + deploy script | Daemon via supervisor | Add `craft up` to deploy script manually |
 | **Ploi** | Git push + deploy hook | Built-in daemon | Native zero-downtime support |
 | **Servd** | Git push | Managed | Handles `craft up` automatically |
+| **fortrabbit** | Git push (GitHub App) | Worker job in the jobs component | Craft software template sets root `web`, `composer install` build, and post-deploy `migrate/all` → `project-config/apply` → `clear-caches/all`. Merge strategy keeps local volumes on the persistent storage. Optional deploy file `.fortrabbit/deploy.yml`. Full surface in the **`fortrabbit`** skill. |
 | **Docker/K8s** | Container image | Sidecar or init container | Run `craft up` as init container. Shared storage (S3, Redis) mandatory. |
 | **Craft Cloud** | Git push | Managed (auto-processed) | Build → Migrate → Release pipeline, Cloudflare Images for transforms, edge static caching, MySQL 8 / Postgres 15 only. Full surface in the **`craft-cloud`** skill — different enough from generic Craft deployment that none of the patterns in this file apply directly. |

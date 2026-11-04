@@ -1,6 +1,6 @@
 # Skills Overview
 
-13 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), plugin release mechanics, and managed hosting (Craft Cloud and Servd). Reference files spread across each skill's `references/` directory.
+14 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), plugin release mechanics, and managed hosting (Craft Cloud, Servd and fortrabbit). Reference files spread across each skill's `references/` directory.
 
 ## How Skills Load
 
@@ -234,6 +234,22 @@ Servd (servd.host), a Craft-specialised managed hosting platform. Covers git pus
 **Companion skills:** `craftcms` (for plugin/ephemeral-filesystem work), `craft-site` (for static caching / `{% dynamicInclude %}` in templates), `ddev` (for local dev), `craft-php-guidelines` (for plugin PHP edits).
 
 **Boundary:** Does NOT cover Craft Cloud (use the `craft-cloud` skill) or generic Craft deployment (Forge, bare metal — see `craftcms/deployment.md`).
+
+---
+
+## fortrabbit
+
+**Track:** Shared (both plugin and site development, when hosted on fortrabbit)
+**Reference files:** 5 (approximately 530 lines)
+**SKILL.md:** 100 lines
+
+fortrabbit (fortrabbit.com), managed PHP hosting with a Craft CMS software template. Covers git push-to-deploy through the fortrabbit GitHub App, the template's build and post-deploy commands (`migrate/all`, `project-config/apply`, `clear-caches/all`), the merge deployment strategy with the `/config/project` replace pattern, the `.fortrabbit/deploy.yml` deploy file and its replace-by-default behaviour, the `CRAFT_*` ENV vars mapped from `FORTRABBIT_DB_*` platform variables, production settings, the persistent storage for local asset volumes and rsync sync, MySQL over SSH and an SSH tunnel, the Craft queue and image transforms in a worker job, crons, platform limits (no root, no sendmail, heavy binaries in jobs only), and DDEV local development.
+
+**When it triggers:** Prompts like "deploy Craft to fortrabbit", "host Craft on fortrabbit", "pull the fortrabbit database into DDEV", "run the Craft queue in a fortrabbit worker", or any mention of `.fortrabbit/deploy.yml`, `FORTRABBIT_DB_*` variables, `*.frbit.app` / `*.frbit.cloud` hostnames, `ssh.<region>.frbit.app`, or an `en-xxxxxx` environment ID. Also auto-loaded as a companion to `craftcms` and `craft-site` when the project is detected as a fortrabbit project (a `.fortrabbit/` deploy file or `FORTRABBIT_*` references).
+
+**Companion skills:** `craftcms` (for queue jobs and filesystem code), `craft-site` (for transforms and `{% cache %}` in templates), `ddev` (for local dev), `craft-plugins` (for Blitz, Imager-X and other plugin config).
+
+**Boundary:** Does NOT cover Craft Cloud (`craft-cloud`), Servd (`servd`), or generic Craft deployment (Forge, bare metal — see `craftcms/deployment.md`). Platform operations that are not Craft-specific (creating apps, the fortrabbit MCP server) live in fortrabbit's own agent plugin, `fortrabbit/agent-skills`.
 
 ---
 
