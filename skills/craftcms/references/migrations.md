@@ -514,7 +514,7 @@ Each plugin has its own migration track, triggered when the plugin's `schemaVers
 
 ## Deployment
 
-These apply to every Craft deployment -- Craft Cloud, Servd, Forge, bare metal, or any CI/CD pipeline. (On Craft Cloud specifically, migrations run automatically during the Migrate phase via `php craft cloud/up` — see the `craft-cloud` skill's `deploy-pipeline.md` for the full sequence.)
+These apply to every Craft deployment -- Craft Cloud, Servd, fortrabbit, Forge, bare metal, or any CI/CD pipeline. (On Craft Cloud specifically, migrations run automatically during the Migrate phase via `php craft cloud/up` — see the `craft-cloud` skill's `deploy-pipeline.md` for the full sequence.)
 
 - Always run `ddev craft up` locally before deploying -- this runs pending migrations and applies project config changes in one command.
 - Migrations should run before the application serves traffic. Most hosting platforms and CI/CD pipelines handle this as a separate deploy step.

@@ -88,7 +88,7 @@ This skill exists so plugin guidance is discoverable from **any** altitude. The 
 
 **When it triggers:** Any prompt that names a covered plugin, regardless of whether the work is Twig, PHP, content modeling, or deployment.
 
-**Companion skills:** `craftcms` (for plugin PHP/migration work), `craft-site` (for plugin rendering/styling), `craft-content-modeling` (for fields/volumes/multi-site), `craft-cloud` / `servd` (for deployment and edge caching).
+**Companion skills:** `craftcms` (for plugin PHP/migration work), `craft-site` (for plugin rendering/styling), `craft-content-modeling` (for fields/volumes/multi-site), `craft-cloud` / `servd` / `craft-fortrabbit` (for deployment and edge caching).
 
 **Boundary:** Does NOT trigger for Craft core APIs with no plugin named (`craftcms`), front-end template architecture in general (`craft-site`), or content modeling in general (`craft-content-modeling`).
 
@@ -217,7 +217,7 @@ Craft Cloud, Pixel & Tonic's serverless hosting platform. Covers the `craft-clou
 
 **Companion skills:** `craftcms` (for plugin Cloud-compat work), `craft-site` (for edge caching / ESI in templates), `ddev` (for local-dev parity), `craft-php-guidelines` (for plugin PHP edits).
 
-**Boundary:** Does NOT cover Servd (see the `servd` skill) or generic Craft deployment (Forge, bare metal — see `craftcms/deployment.md`). Does NOT cover general DDEV usage unrelated to Cloud parity.
+**Boundary:** Does NOT cover Servd (see the `servd` skill), fortrabbit (see the `craft-fortrabbit` skill), or generic Craft deployment (Forge, bare metal — see `craftcms/deployment.md`). Does NOT cover general DDEV usage unrelated to Cloud parity.
 
 ---
 
@@ -233,7 +233,7 @@ Servd (servd.host), a Craft-specialised managed hosting platform. Covers git pus
 
 **Companion skills:** `craftcms` (for plugin/ephemeral-filesystem work), `craft-site` (for static caching / `{% dynamicInclude %}` in templates), `ddev` (for local dev), `craft-php-guidelines` (for plugin PHP edits).
 
-**Boundary:** Does NOT cover Craft Cloud (use the `craft-cloud` skill) or generic Craft deployment (Forge, bare metal — see `craftcms/deployment.md`).
+**Boundary:** Does NOT cover Craft Cloud (use the `craft-cloud` skill), fortrabbit (use the `craft-fortrabbit` skill), or generic Craft deployment (Forge, bare metal — see `craftcms/deployment.md`).
 
 ---
 
@@ -241,7 +241,7 @@ Servd (servd.host), a Craft-specialised managed hosting platform. Covers git pus
 
 **Track:** Shared (both plugin and site development, when hosted on fortrabbit)
 **Reference files:** 5 (approximately 530 lines)
-**SKILL.md:** 100 lines
+**SKILL.md:** 119 lines
 
 fortrabbit (fortrabbit.com), managed PHP hosting with a Craft CMS software template. Covers git push-to-deploy through the fortrabbit GitHub App, the template's build and post-deploy commands (`migrate/all`, `project-config/apply`, `clear-caches/all`), the merge deployment strategy with the `/config/project` replace pattern, the `.fortrabbit/deploy.yml` deploy file and its replace-by-default behaviour, the `CRAFT_*` ENV vars mapped from `FORTRABBIT_DB_*` platform variables, production settings, the persistent storage for local asset volumes and rsync sync, MySQL over SSH and an SSH tunnel, the Craft queue and image transforms in a worker job, crons, platform limits (no root, no sendmail, heavy binaries in jobs only), and DDEV local development.
 

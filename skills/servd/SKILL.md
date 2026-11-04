@@ -1,14 +1,14 @@
 ---
 name: servd
 description: "Servd (servd.host) — Craft-specialised managed hosting for Craft CMS. Covers git push-to-deploy with the optional servd.yaml build config, local → staging → production environments with uni-directional Project Config sync, the servd/craft-asset-storage plugin (S3-backed Flysystem volumes on the svdcdn.com CDN, off-server image transforms, Imager-X/ImageOptimize integrations), Servd's static caching (full vs tag-based purge, {% dynamicInclude %}, CSRF injection, cache-busting) and running Blitz alongside it in reverse-proxy mode, MariaDB/MySQL databases over an SSH tunnel, automatic + manual backups, the Dedicated Queue Runner, environment variables and secrets, the ephemeral load-balanced filesystem (Redis + remote volumes for runtime files), plugin/feature constraints, and Servd-vs-Craft-Cloud differences."
-when_to_use: "Triggers on: servd.yaml, servd/craft-asset-storage, servd-asset-storage plugin handle, SERVD_PROJECT_SLUG, SERVD_SECURITY_KEY, SERVD_BUNDLE_HASH, files.svdcdn.com, Servd static caching, {% dynamicInclude %} (Servd), servd-asset-storage/clone, servd-asset-storage/local/pull-database, push-assets, clear-caches/servd-static-cache, clear-caches/servd-edge-caches, Dedicated Queue Runner, Servd Asset Platform, deploy to Servd, host Craft on Servd, Servd vs Craft Cloud. Do NOT trigger for Craft Cloud (use the craft-cloud skill), generic Craft deployment on Forge/bare metal (craftcms/deployment.md), or general DDEV local dev unrelated to Servd parity (ddev)."
+when_to_use: "Triggers on: servd.yaml, servd/craft-asset-storage, servd-asset-storage plugin handle, SERVD_PROJECT_SLUG, SERVD_SECURITY_KEY, SERVD_BUNDLE_HASH, files.svdcdn.com, Servd static caching, {% dynamicInclude %} (Servd), servd-asset-storage/clone, servd-asset-storage/local/pull-database, push-assets, clear-caches/servd-static-cache, clear-caches/servd-edge-caches, Dedicated Queue Runner, Servd Asset Platform, deploy to Servd, host Craft on Servd, Servd vs Craft Cloud. Do NOT trigger for Craft Cloud (use the craft-cloud skill), fortrabbit (use the craft-fortrabbit skill), generic Craft deployment on Forge/bare metal (craftcms/deployment.md), or general DDEV local dev unrelated to Servd parity (ddev)."
 ---
 
 # Servd — Managed Hosting for Craft CMS
 
 Reference for Servd (servd.host), a Craft-specialised managed hosting platform. Covers git push-to-deploy and the `servd.yaml` build config, the local → staging → production workflow, the `servd/craft-asset-storage` plugin, Servd's static caching (and running Blitz alongside it), databases over SSH, backups, the queue runner, the ephemeral filesystem, and how Servd differs from Craft Cloud.
 
-This skill is scoped to **Servd specifically** — what's different on Servd vs running Craft yourself on Forge or bare metal, and vs Pixel & Tonic's Craft Cloud. For generic Craft deployment, see the `craftcms` skill's `deployment.md`. For Craft Cloud, see the `craft-cloud` skill.
+This skill is scoped to **Servd specifically** — what's different on Servd vs running Craft yourself on Forge or bare metal, and vs Pixel & Tonic's Craft Cloud. For generic Craft deployment, see the `craftcms` skill's `deployment.md`. For Craft Cloud, see the `craft-cloud` skill. For fortrabbit, see the `craft-fortrabbit` skill.
 
 ## Companion Skills — Load When Needed
 

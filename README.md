@@ -99,6 +99,12 @@ runner. Document the constraints in CLAUDE.md.
 ```
 
 ```
+This project deploys to fortrabbit. Add a deploy file that keeps our
+asset volumes, move the queue into a worker job, and pull the
+production database into DDEV.
+```
+
+```
 Configure Redis for cache, sessions, and mutex in our Craft project.
 We're running DDEV locally and deploying to a VPS with Redis installed.
 ```

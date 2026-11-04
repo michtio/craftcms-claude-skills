@@ -15,6 +15,8 @@ How a git push becomes a deployment on fortrabbit, what the Craft CMS software t
 - Replace patterns: https://docs.fortrabbit.com/platform/deployment/replace-patterns
 - Deploy file: https://docs.fortrabbit.com/platform/deployment/deploy-file
 - Deploy hook: https://docs.fortrabbit.com/platform/deployment/deploy-hook
+- CLI: https://docs.fortrabbit.com/platform/automation/cli
+- MCP server: https://docs.fortrabbit.com/platform/automation/mcp
 - ENV vars: https://docs.fortrabbit.com/platform/settings/env-vars
 
 ## Contents
@@ -45,6 +47,8 @@ Staging and production are separate environments with separate databases and sto
 3. **Build commands** run first. Composer runs here: don't commit `vendor/` and don't run Composer in a CI action as well.
 4. The build result goes into the environment's storage according to the **deployment strategy**.
 5. **Post-deploy commands** run once the new code is live. A failing post-deploy command does not roll back: the new code is already serving. Fix and push again, or run the command over SSH.
+
+Follow a deployment with `frbit deployments list --environment <env>` and read a failed one with `frbit deployments logs <dp>` (MCP: `get_deployment`, `get_deployment_logs`). `frbit environments deploy <env>` deploys the latest commit again, e.g. from CI with `FRBIT_TOKEN` set, as an alternative to the deploy hook.
 
 Only pushed commits deploy. Uncommitted or unpushed local work never reaches the environment. An older commit is deployed by reverting in git and pushing.
 
@@ -138,7 +142,7 @@ CRAFT_DB_PASSWORD=${FORTRABBIT_DB_PASSWORD}
 - A local table prefix needs `CRAFT_DB_TABLE_PREFIX` on the environment too.
 - The editor takes dotenv syntax. A `$` is only allowed inside a `${…}` reference: encode a value containing `$` with the Base64 helper, which adds an `fr+base64:` prefix the platform decodes at runtime.
 - Names starting with `FORTRABBIT` are reserved.
-- ENV var changes reach PHP after a restart or the next deployment.
+- Change ENV vars in the dashboard, with `frbit environments variables update`, or MCP `update_environment`. They reach PHP after `frbit environments restart <env>` or the next deployment.
 
 - `PRIMARY_SITE_URL` is the var Craft's installer writes to `.env` and saves as `$PRIMARY_SITE_URL`, the primary site's base URL in project config. The template points it at the main domain. Apps created before the template set it need the line added by hand. For multi-site, give each site its own var (e.g. `SITE_URL_EN`), use it as that site's base URL, and set it per environment.
 

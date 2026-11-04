@@ -10,6 +10,7 @@
   {"query": "Should we host this Craft project on Servd or Craft Cloud? We need SSH access for one-off scripts", "should_trigger": true},
   {"query": "I need a dynamicInclude island in a page that's being statically cached on Servd", "should_trigger": true},
   {"query": "We're deploying to Craft Cloud and need to configure craft-cloud.yaml's cache rules", "should_trigger": false},
+  {"query": "How do I run the Craft queue in a fortrabbit worker job instead of web requests?", "should_trigger": false},
   {"query": "Set up DDEV locally with Redis caching for our Craft project", "should_trigger": false},
   {"query": "How do I configure native Imager-X transforms with Power Pack markup for a self-hosted site?", "should_trigger": false},
   {"query": "Write a migration that adds a new column and backfills existing rows", "should_trigger": false},

@@ -258,7 +258,7 @@ Many SEOMatic settings are **DB-backed, not project config** — they live in th
 
 Because they're not in project config, the reproducible way to change them — version-controlled, repeatable across every environment, no manual CP clicking — is a **content migration** that edits the JSON columns with MySQL `JSON_SET`, then clears SEOMatic's caches with `Seomatic::$plugin->clearAllCaches()`.
 
-This is **host-independent**: the migration is identical on self-hosted, shared hosting, Servd, Craft Cloud, and locally — SEOMatic stores these settings in the database the same way everywhere. It's simply the *only* option on a host that gives you no production CP access (e.g. Craft Cloud), and the right approach everywhere else for the same reasons you'd migrate any other configuration rather than hand-editing prod.
+This is **host-independent**: the migration is identical on self-hosted, shared hosting, Servd, fortrabbit, Craft Cloud, and locally — SEOMatic stores these settings in the database the same way everywhere. It's simply the *only* option on a host that gives you no production CP access (e.g. Craft Cloud), and the right approach everywhere else for the same reasons you'd migrate any other configuration rather than hand-editing prod.
 
 > Project-config-backed settings (`config/seomatic.php` and the `seomatic-config/` bundle files above) deploy normally. This section is only about the settings that *aren't* in project config.
 
@@ -291,7 +291,7 @@ use nystudio107\seomatic\Seomatic;
 /**
  * Updates DB-backed SEOMatic settings (the seomatic_metabundles table) via a
  * migration, then clears caches so the change is reproducible across every
- * environment. Host-independent — same on self-hosted, Servd, Cloud, and local.
+ * environment. Host-independent — same on self-hosted, Servd, fortrabbit, Cloud, and local.
  *
  * @author Acme
  */

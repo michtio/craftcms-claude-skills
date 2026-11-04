@@ -25,7 +25,7 @@ For complex work (more than 3 steps), always plan first, then build. The planner
 
 **Model:** Opus (`high` effort)
 **Tools:** Read, Grep, Glob, Bash, WebFetch, Skill (read-only on the project — Bash for `git`/`gh` research and clones into the research folder)
-**Skills preloaded:** `craftcms` (others on demand: `craft-pest`, `craft-content-modeling`, `craft-garnish`, `craft-plugins`, `craft-cloud`, `servd`)
+**Skills preloaded:** `craftcms` (others on demand: `craft-pest`, `craft-content-modeling`, `craft-garnish`, `craft-plugins`, `craft-cloud`, `servd`, `craft-fortrabbit`)
 
 Breaks large tasks into scoped implementation steps that can each be completed in a single session.
 
@@ -145,7 +145,7 @@ Build the Job Listings element type following the plan in docs/plans/job-listing
 
 **Model:** Opus (`high` effort)
 **Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, `mcp__chrome-devtools`
-**Skills preloaded:** `craft-site`, `craft-twig-guidelines`, `craft-content-modeling` (on demand: `craft-plugins`, `craft-cloud`, `servd`, `ddev`)
+**Skills preloaded:** `craft-site`, `craft-twig-guidelines`, `craft-content-modeling` (on demand: `craft-plugins`, `craft-cloud`, `servd`, `craft-fortrabbit`, `ddev`)
 
 Builds site templates, content architecture, and component systems following atomic design principles.
 
@@ -195,7 +195,7 @@ topic filtering, and pagination.
 
 **Model:** Sonnet (`high` effort)
 **Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, ToolSearch, `mcp__chrome-devtools`
-**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-pest` (on demand: `craft-garnish`, `craft-site`, `craft-twig-guidelines`, `ddev`, `craft-cloud`, `servd`, `craft-plugins`)
+**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-pest` (on demand: `craft-garnish`, `craft-site`, `craft-twig-guidelines`, `ddev`, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-plugins`)
 
 Systematic bug investigation with a hypothesis-driven approach.
 
@@ -315,7 +315,7 @@ Review the changes in the job-listings branch before I open a PR.
 
 **Model:** Opus (`xhigh` effort)
 **Tools:** Read, Grep, Glob, Bash, Skill (read-only — Bash for `git diff`/`log`/`show`/`blame` only)
-**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-garnish`, `craft-twig-guidelines`, `craft-site`, `craft-pest` (on demand: `craft-plugin-release` when the branch bumps a version or touches tags/changelog dating, `craft-cloud`, `servd`, `craft-plugins`)
+**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-garnish`, `craft-twig-guidelines`, `craft-site`, `craft-pest` (on demand: `craft-plugin-release` when the branch bumps a version or touches tags/changelog dating, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-plugins`)
 
 The deep-review counterpart to `craft-code-reviewer`. The standard reviewer (Sonnet) catches checklist violations per file; this one (Opus, xhigh) catches what surface pattern-matching misses. Use it when the extra scrutiny is worth the token cost — release branches, security-sensitive code, large architectural changes, migrations, multi-service flows. Use the standard reviewer for daily review.
 

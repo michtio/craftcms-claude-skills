@@ -57,4 +57,4 @@ matching reference **before** implementing anything plugin-specific.
 - **`craftcms`** — for the Craft core APIs a plugin task builds on: element saving, events, migrations, queue jobs, field-value storage. Load alongside this skill for any plugin **PHP/migration** work.
 - **`craft-site`** — for front-end template architecture the plugin output slots into (components, layouts, image presets). Load alongside this skill for plugin **rendering/styling** work.
 - **`craft-content-modeling`** — when the plugin interacts with sections, fields, volumes, or multi-site propagation.
-- **`craft-cloud` / `servd`** — when the plugin task involves deployment, edge caching, or ephemeral-filesystem constraints.
+- **`craft-cloud` / `servd` / `craft-fortrabbit`** — when the plugin task involves deployment, edge caching, or ephemeral-filesystem constraints.
