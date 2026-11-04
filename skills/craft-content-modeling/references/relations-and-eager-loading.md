@@ -232,8 +232,8 @@ works in partials without upstream coordination.
 ### .eagerly() Limitations
 
 1. **Native attributes** — `.eagerly()` doesn't work for `author`, `uploader`, `photo`; they return the element, not a query. Use `.with()`. Exception: since Craft 5.8.0, `entry.author` and `entry.authors` batch themselves. The first access on an entry that came from a multi-result query eager-loads `authors` for every entry in that result (`Entry::getAuthors()`), so a plain `entry.author` inside a loop is one query, with or without `.with(['author'])`. Nothing further down is batched: `entry.author.photo` is still one query per author, so keep `.with(['author.photo'])` when you render author photos.
-2. **Custom criteria on relations** — `.eagerly()` loads all related elements. Use `.with()` to filter/limit.
-3. **Entry-type scoping in Matrix** — `.eagerly()` can't scope by entry type. Use `.with()` with type-prefixed paths.
+2. **`limit`, `offset`, `orderBy` before Craft 5.12** — filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`|slice(0, 3)`). Craft 5.12 applies all three to `.eagerly()` (#19994).
+3. **One result per field handle** — every `.eagerly()` call on the same field shares the alias `eagerly:<handle>`. `block.children.eagerly().type('cta').all()` followed by `block.children.eagerly().type('quote').all()` returns the CTA set both times. Name each variant: `.eagerly('ctaChildren')`, `.eagerly('quoteChildren')`.
 4. **Transform preloading** — No `withTransforms` equivalent. Use `.with()`.
 5. **Auto-injected single entries** — `preloadSingles` entries aren't part of the query chain.
 6. **Link fields** — no eager loading at all, lazy or upfront (see above).

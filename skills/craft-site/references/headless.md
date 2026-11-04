@@ -62,11 +62,14 @@ The default endpoint is `actions/graphql/api`. When using the `verbs` route patt
 
 ### Authentication and Schema Resolution
 
-Craft resolves which GraphQL schema to use in this order:
+Craft resolves which GraphQL schema to use in this order (`GraphqlController::_schema()`, `Request::getBearerToken()`):
 
-1. **`Authorization` header** — `Authorization: Bearer <token>` resolves to the schema assigned to that token.
-2. **`X-Craft-Authorization` header** — same as above, for environments where the web server strips `Authorization`.
-3. **Public schema** — if no token is provided and the public schema is enabled, Craft uses it.
+1. **`X-Craft-Gql-Schema` header** — admin sessions only (`requireAdmin`); a schema UID, or `*` for the full schema. This is what the CP GraphiQL playground uses.
+2. **`X-Craft-Authorization: Bearer <token>`** — checked *before* `Authorization`. Use it where the web server or a proxy strips `Authorization`.
+3. **`Authorization: Bearer <token>`** — only read when `X-Craft-Authorization` is absent.
+4. **Public schema** — used when no token is sent and the public schema is enabled.
+
+A bearer token Craft doesn't recognise is not an error: Craft silently falls back to the public schema, so a typo'd token returns public data instead of failing. With no public schema, the response is `Missing Authorization header`, even though a header was sent. An expired or disabled token fails with `Invalid Authorization header`.
 
 ```
 GET /api

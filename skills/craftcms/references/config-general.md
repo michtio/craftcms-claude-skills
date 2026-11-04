@@ -356,7 +356,7 @@ Note: These defaults only apply when no explicit search options are provided in 
 | Setting | Type | Default | Purpose |
 |---------|------|---------|---------|
 | `maxUploadFileSize` | `int\|string` | `16777216` (16 MB) | Max upload size. Accepts int (bytes) or string (`'64M'`). |
-| `allowedFileExtensions` | `string[]` | (87 extensions) | File extensions allowed for upload. Replaces the entire default list when set. |
+| `allowedFileExtensions` | `string[]` | (~100 extensions; 97 in 5.11, 100 in 5.12) | File extensions allowed for upload. Replaces the entire default list when set. |
 | `extraAllowedFileExtensions` | `string[]` | `[]` | Additional extensions beyond the default set. Preferred over overriding `allowedFileExtensions`. |
 | `extraFileKinds` | `array` | `[]` | Define custom file categories. Must pair with `extraAllowedFileExtensions`. (Since 3.0.37) |
 | `filenameWordSeparator` | `string\|false` | `'-'` | Separator for words in uploaded filenames. `false` = leave spaces. |
@@ -367,7 +367,7 @@ Note: These defaults only apply when no explicit search options are provided in 
 
 `maxUploadFileSize` is also constrained by PHP's `upload_max_filesize` and `post_max_size` ini settings. The effective limit is the lowest of all three. In DDEV, these PHP settings are configured via `.ddev/php/my-php.ini`.
 
-`extraAllowedFileExtensions` is additive -- it appends to the default 87 extensions. Prefer this over `allowedFileExtensions` which replaces the entire list and requires you to maintain the full set.
+`extraAllowedFileExtensions` is additive -- it appends to the default list. Prefer this over `allowedFileExtensions` which replaces the entire list and requires you to maintain the full set.
 
 `extraFileKinds` defines custom file groups for use in asset field restrictions:
 

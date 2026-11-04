@@ -433,7 +433,7 @@ Tokens can be created in the CP (GraphQL -> Tokens) or via CLI:
 ddev craft graphql/list-schemas
 
 # Create a token for a specific schema
-ddev craft graphql/create-token --schema=<schema-uid> --name="My API Token"
+ddev craft graphql/create-token <schema-uid> --name="My API Token" --expiry="2027-12-31"
 # The token is printed to stdout — save it immediately
 ```
 
@@ -443,13 +443,14 @@ ddev craft graphql/create-token --schema=<schema-uid> --name="My API Token"
 Authorization: Bearer {your-token-here}
 ```
 
-Or as a query parameter (less secure, avoid in production): `https://mysite.com/api?token={token}`
+`X-Craft-Authorization: Bearer {token}` is read first and wins over `Authorization` (`Request::getBearerToken()`); use it when a proxy strips `Authorization`. There is no query-parameter form: `?token=` is Craft's preview-token param, not GraphQL auth.
 
 ### Important notes
 
 - Tokens are DB-only — NOT in project config. Must be created per environment. Store values in env vars.
 - **Public schema** — unauthenticated, no token. Disabled by default. Enable in CP: GraphQL -> Schemas.
-- **Admin "full" schema** — CP GraphiQL only. No API access, by design.
+- **Unknown tokens fall back silently** — a bearer token Craft can't find resolves to the public schema, not an error. With no public schema the error is `Missing Authorization header`. Expired or disabled tokens give `Invalid Authorization header`.
+- **Admin "full" schema** — `X-Craft-Gql-Schema: *` (or a schema UID) works only for a logged-in admin session (`requireAdmin`), which is how CP GraphiQL works. Never token-based.
 
 ## Consumer Query Patterns
 
