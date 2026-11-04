@@ -86,4 +86,4 @@ ssh <env>@ssh.<region>.frbit.app 'du -sh ./* | sort -h'
 2. **Committing uploads to git** — bloats the repo and every build, and committed copies overwrite same-named files on the environment. Keep volumes in `.gitignore`.
 3. **Expecting uploads to reach local through git** — git deployment only goes up. Pull them with rsync.
 4. **rsync with mismatched trailing slashes** — creates `uploads/uploads/`. Use `dir/` on both sides.
-5. **Volume base URL hardcoded to the local domain** — use `@web/uploads` or an ENV var so it resolves per environment.
+5. **Volume base URL hardcoded to the local domain** — build it from an ENV var so it resolves per environment, e.g. `$PRIMARY_SITE_URL/uploads` (Craft 5.5+) or an alias defined from `App::env()`. Avoid `@web`: Craft derives it from the request.

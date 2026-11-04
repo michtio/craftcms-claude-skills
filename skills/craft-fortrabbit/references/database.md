@@ -12,7 +12,7 @@ Each fortrabbit environment can book one MySQL database. It is reachable only fr
 
 ## Facts
 
-- MySQL is the only database fortrabbit offers. No Postgres, no MariaDB.
+- MySQL 8 is the only database fortrabbit offers. No Postgres, no MariaDB.
 - One database per environment. Database name and user are the environment ID (`en-xxxxxx`).
 - The password is in the dashboard (environment → MySQL → Access) and in `FORTRABBIT_DB_PASSWORD` on the environment. Don't commit it or paste it into a chat.
 - After the first deployment the database is empty. Import the local database to bring content and structure up.
@@ -20,12 +20,12 @@ Each fortrabbit environment can book one MySQL database. It is reachable only fr
 
 ## Dump over SSH (down)
 
-The dump runs on the environment, where the credentials are already set, so no password crosses the network:
+The dump runs on the environment, where the credentials are set, so no password crosses the network:
 
 ```sh
 ssh <env>@ssh.<region>.frbit.app \
   'mysqldump --single-transaction --set-gtid-purged=OFF --no-tablespaces "$FORTRABBIT_DB_NAME"' \
-  | gzip > ~/Downloads/<env>.sql.gz
+  | gzip > /tmp/<env>.sql.gz
 ```
 
 The single quotes make `$FORTRABBIT_DB_NAME` expand on the environment, not locally. Check the file isn't tiny before importing: a failed connection leaves an empty dump.
@@ -33,7 +33,7 @@ The single quotes make `$FORTRABBIT_DB_NAME` expand on the environment, not loca
 Import into DDEV:
 
 ```sh
-ddev import-db --file=~/Downloads/<env>.sql.gz
+ddev import-db --file=/tmp/<env>.sql.gz
 ddev craft clear-caches/all
 ```
 

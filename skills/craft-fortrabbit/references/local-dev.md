@@ -14,11 +14,11 @@ Local is where code, schema and plugin changes happen. They reach fortrabbit wit
 ## DDEV setup
 
 ```sh
-ddev config --project-type=craftcms --docroot=web
+ddev config --project-type=craftcms --docroot=web --database=mysql:8.0
 ddev start
 ```
 
-Match the PHP version to the environment's PHP version in the dashboard (`php_version` in `.ddev/config.yaml`). The database is MySQL on fortrabbit: use a MySQL image locally (`database: type: mysql`), not MariaDB, so dumps import cleanly in both directions.
+fortrabbit runs MySQL 8: use MySQL locally, not DDEV's MariaDB default, so dumps import cleanly in both directions. Match the PHP version to the environment's PHP version in the dashboard (`--php-version`, or `php_version` in `.ddev/config.yaml`).
 
 SSH from inside the container (for `ddev exec rsync` or Composer over SSH) needs the local keys:
 
