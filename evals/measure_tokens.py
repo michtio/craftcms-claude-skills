@@ -295,10 +295,10 @@ LOAD_SCENARIOS = {
         "skills/servd/references/database-and-queue.md",
     ],
     "Deploy to fortrabbit": [
-        "skills/fortrabbit/SKILL.md",
-        "skills/fortrabbit/references/deploy-and-environments.md",
-        "skills/fortrabbit/references/database.md",
-        "skills/fortrabbit/references/asset-storage.md",
+        "skills/craft-fortrabbit/SKILL.md",
+        "skills/craft-fortrabbit/references/deploy-and-environments.md",
+        "skills/craft-fortrabbit/references/database.md",
+        "skills/craft-fortrabbit/references/asset-storage.md",
     ],
     "Configure Formie + Blitz": [
         "skills/craft-plugins/SKILL.md",

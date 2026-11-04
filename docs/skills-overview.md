@@ -237,7 +237,7 @@ Servd (servd.host), a Craft-specialised managed hosting platform. Covers git pus
 
 ---
 
-## fortrabbit
+## craft-fortrabbit
 
 **Track:** Shared (both plugin and site development, when hosted on fortrabbit)
 **Reference files:** 5 (approximately 530 lines)

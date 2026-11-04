@@ -36,7 +36,7 @@
     "./skills/craft-garnish",
     "./skills/craft-cloud",
     "./skills/servd",
-    "./skills/fortrabbit"
+    "./skills/craft-fortrabbit"
   ],
   "agents": [
     "./agents/craft-planner.md",
