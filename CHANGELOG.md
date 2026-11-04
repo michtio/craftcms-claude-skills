@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.22.1 -- 2026-11-04
+
+Corrects statements that were wrong on every Craft 5 version, found while researching Craft 5.12. Verified on 2026-11-04 against `craftcms/cms` 5.11.1 and 5.12.0.1.
+
+### Fixed
+
+- **GraphQL header order** (`skills/craft-site/references/headless.md`, `skills/craftcms/references/graphql.md`) -- `X-Craft-Authorization` is read before `Authorization`, not after it ([`Request::getBearerToken()`](https://github.com/craftcms/cms/blob/5.12.0.1/src/web/Request.php)). The schema resolution order now starts with the admin-only `X-Craft-Gql-Schema` header ([`GraphqlController::_schema()`](https://github.com/craftcms/cms/blob/5.12.0.1/src/controllers/GraphqlController.php)). Added: an unknown bearer token silently falls back to the public schema, and with no public schema the error says `Missing Authorization header`.
+- **`?token=` is not GraphQL auth** (`skills/craftcms/references/graphql.md`) -- removed the claim that a GraphQL token works as a query parameter. `token` is Craft's preview-token param.
+- **`graphql/create-token`** (`skills/craftcms/references/graphql.md`) -- the schema UID is a positional argument, not `--schema=` ([console `GraphqlController::actionCreateToken()`](https://github.com/craftcms/cms/blob/5.12.0.1/src/console/controllers/GraphqlController.php)). Added `--expiry`.
+- **Admin "full" schema** (`skills/craftcms/references/graphql.md`) -- not "CP GraphiQL only": `X-Craft-Gql-Schema` works on the API endpoint for a logged-in admin session, never with a token.
+- **`.eagerly()` limitations** (`skills/craft-content-modeling/references/relations-and-eager-loading.md`) -- "`.eagerly()` loads all related elements" and "can't scope by entry type" were wrong. Filters such as `.type()` are passed through. Before Craft 5.12, `limit`, `offset` and `orderBy` are dropped inside loops, because `ElementQuery::getCriteria()` only returns properties declared on element query classes ([`ElementQuery::eagerLoad()`](https://github.com/craftcms/cms/blob/5.12.0.1/src/elements/db/ElementQuery.php)). 5.12 applies them (#19994). Added the shared `eagerly:<handle>` alias trap and named aliases as the fix.
+- **Default upload extensions** (`skills/craftcms/references/config-general.md`) -- "87 extensions" was stale: 97 in 5.11, 100 in 5.12.
+
 ## 1.22.0 -- 2026-10-29
 
 Closes two gaps behind real bugs on a Craft 5 site: a module's `EVENT_DEFINE_RULES` handler on `Entry` that broke adding nested entries in the CP, and `project-config/write` deleting teammates' YAML from a stale local DB. Verified on 2026-10-29 against `craftcms/cms` 5.11.5.1 and `yiisoft/yii2` 2.0.55, with tag-pinned source links in each section.
