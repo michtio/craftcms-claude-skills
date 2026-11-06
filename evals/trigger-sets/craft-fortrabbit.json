@@ -1,0 +1,18 @@
+[
+  {"query": "We're deploying our Craft site to fortrabbit — which post-deploy commands should run after a git push?", "should_trigger": true},
+  {"query": "I added a .fortrabbit/deploy.yml to our Craft repo and now all uploads in web/uploads are gone after the deploy", "should_trigger": true},
+  {"query": "Craft can't connect to the database on our frbit.app environment, what should CRAFT_DB_DSN look like with FORTRABBIT_DB_HOST?", "should_trigger": true},
+  {"query": "How do I pull the production database from en-k3x9q2 into my local DDEV Craft project?", "should_trigger": true},
+  {"query": "The Craft queue blocks our site on fortrabbit when editors upload images, how do I move it into a worker job?", "should_trigger": true},
+  {"query": "Why can't I change fields in the control panel of our Craft site hosted on fortrabbit?", "should_trigger": true},
+  {"query": "Sync the Craft asset volume between my laptop and ssh.eu-w1a.frbit.app with rsync", "should_trigger": true},
+  {"query": "After importing my local database on fortrabbit, Craft throws decryption errors on plugin settings", "should_trigger": true},
+  {"query": "Connect TablePlus to the MySQL database of our Craft environment on fortrabbit", "should_trigger": true},
+  {"query": "Set up a cron on fortrabbit that runs a Craft console command every night", "should_trigger": true},
+  {"query": "We're deploying to Craft Cloud and need to configure craft-cloud.yaml's cache rules", "should_trigger": false},
+  {"query": "How do I install the servd/craft-asset-storage plugin for our Servd project?", "should_trigger": false},
+  {"query": "Write a deploy script for Laravel Forge that runs craft up with zero downtime", "should_trigger": false},
+  {"query": "Set up DDEV locally with Redis caching for our Craft project", "should_trigger": false},
+  {"query": "Write a queue job class that resaves entries in batches", "should_trigger": false},
+  {"query": "Configure Blitz static caching with the Cloudflare purger for a self-hosted site", "should_trigger": false}
+]

@@ -31,7 +31,7 @@ needing the production skill set installed or touched.
 
 IMPORTANT: this makes real `claude -p` model calls (one per query per
 run per condition) unless `--dry-run` is passed. Costs add up fast with
-13 skills x ~16 queries x --runs x 2 conditions. Always sanity-check
+14 skills x ~16 queries x --runs x 2 conditions. Always sanity-check
 a new invocation with `--dry-run` first.
 
 Usage

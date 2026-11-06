@@ -22,6 +22,7 @@ When this skill triggers, also load:
 - **`ddev`** — All commands run through DDEV. Required for running Vite, npm, and Craft CLI commands.
 - **`craft-cloud`** — When the site is hosted on Craft Cloud (detect via `craft-cloud.yaml` at the repo root or `craftcms/cloud` in `composer.json`). Required for edge static caching rules, `cloud.esi(...)` dynamic islands inside cached pages, edge image transform constraints, and the `csrfInput()` requirement on cacheable pages.
 - **`servd`** — When the site is hosted on Servd (detect via `servd.yaml` at the repo root or `servd/craft-asset-storage` in `composer.json`). Required for Servd static caching, `{% dynamicInclude %}` islands in cached pages, running Blitz in reverse-proxy mode, and off-server image transforms.
+- **`craft-fortrabbit`** — When the site is hosted on fortrabbit (detect via a `.fortrabbit/deploy.yml` deploy file or `FORTRABBIT_*` variables in config). Required for asset volumes and deployments, the queue and image transforms in a worker job, and the site URL from `FORTRABBIT_MAIN_DOMAIN`.
 
 ## Documentation
 

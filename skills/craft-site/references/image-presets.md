@@ -244,7 +244,7 @@ served through Cloudflare Images — the template code is identical either way.
 
 ## Transform Generation Timing
 
-Applies to native Craft transforms on self-hosted sites (Forge, VPS, shared hosting, Servd's local transforms). On Craft Cloud the edge generates transforms, so none of this runs on your server.
+Applies to native Craft transforms on self-hosted sites (Forge, VPS, shared hosting, fortrabbit, Servd's local transforms). On Craft Cloud the edge generates transforms, so none of this runs on your server.
 
 `generateTransformsBeforePageLoad`: default `false`. The docs say only "Whether image transforms should be generated before page load." What each value does, from `ImageTransformer::getTransformUrl()`:
 
