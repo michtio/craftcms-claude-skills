@@ -28,7 +28,7 @@ Authoritative sources (fortrabbit's own docs):
 
 Any page is available as Markdown: insert `/raw` after the host and append `.md`, e.g. `https://docs.fortrabbit.com/raw/guides/craft-cms/setup.md`.
 
-**Current values beat this skill.** Template commands, ENV vars and the deploy file format change over time. Read the live values before writing a deploy file or changing settings: the environment itself (`get_environment` or `frbit environments get <env> --json`), the Craft setup page above (rendered from fortrabbit's platform definitions), and the deploy file page. See `references/deploy-and-environments.md`. Last verified against the docs on 2026-11-04.
+**Current values beat this skill.** Template commands, ENV vars and the deploy file format change over time. Read the live values before writing a deploy file or changing settings, fetching the docs pages with `WebFetch`: the environment itself (`get_environment` or `frbit environments get <env> --json`), the Craft setup page above (rendered from fortrabbit's platform definitions), and the deploy file page. See `references/deploy-and-environments.md`. Last verified against the docs on 2026-11-06.
 
 ## What's Different on fortrabbit vs Self-Hosted
 

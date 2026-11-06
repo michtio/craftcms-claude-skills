@@ -24,7 +24,7 @@ How a git push becomes a deployment on fortrabbit, what the Craft CMS software t
 
 ## Current values
 
-Template values and the deploy file format change over time. The examples in this file show their shape; read the current values before writing a deploy file or changing settings:
+Template values and the deploy file format change over time. The examples in this file show their shape; read the current values before writing a deploy file or changing settings (fetch the docs pages with `WebFetch`):
 
 - **This environment's settings**: `frbit environments get <env> --json` or MCP `get_environment`: ENV vars, build and post-deploy commands, root path. When the branch has a deploy file, these show the dashboard values, which are not used; read the file instead.
 - **The Craft template**: `https://docs.fortrabbit.com/raw/guides/craft-cms/setup.md`. The page renders the template from fortrabbit's platform definitions, so it is always current.
@@ -113,11 +113,12 @@ The environment's ENV vars replace `.env` on the server; the local `.env` stays 
 - The database connection as `CRAFT_DB_*` vars that reference **platform variables**, e.g. `CRAFT_DB_PASSWORD=${FORTRABBIT_DB_PASSWORD}`.
 - `CRAFT_ENVIRONMENT=${FORTRABBIT_ENVIRONMENT_NAME}`, e.g. `production`. Multi-environment config in `config/general.php` keys off it.
 - A random `CRAFT_SECURITY_KEY`.
+- `PRIMARY_SITE_URL=https://${FORTRABBIT_MAIN_DOMAIN}`, the site URL (below).
 - The production settings below, and `CRAFT_STREAM_LOG=true` so logs go to the dashboard.
 
 Platform variables are filled and kept current by fortrabbit. They all start with `FORTRABBIT_`, a reserved prefix: `FORTRABBIT_DB_*` for the database, `FORTRABBIT_ENVIRONMENT_NAME`, `FORTRABBIT_MAIN_DOMAIN`. Reference them with `${…}` instead of copying their values, so a rotated password keeps working.
 
-**Site URL.** Craft's installer saves the site URL to `.env` as `PRIMARY_SITE_URL` and uses `$PRIMARY_SITE_URL` as the primary site's base URL in project config. Check that the environment has it; add it when missing:
+**Site URL.** Craft's installer saves the site URL to `.env` as `PRIMARY_SITE_URL` and uses `$PRIMARY_SITE_URL` as the primary site's base URL in project config. The template sets it from the main domain, so it follows a domain change. Environments created before the template had it may lack it; add the same line there:
 
 ```sh
 PRIMARY_SITE_URL=https://${FORTRABBIT_MAIN_DOMAIN}
@@ -180,6 +181,6 @@ Major upgrade:
 3. **Changing fields or sections in the control panel on fortrabbit** — blocked by `CRAFT_ALLOW_ADMIN_CHANGES=false`, and overwritten by the next deployment if forced. Make the change locally and push `config/project`.
 4. **Expecting the local `.env` to work on the server** — Craft reads the environment's ENV vars. Compare the `CRAFT_DB_*` values with the template when the database connection fails.
 5. **Copying platform values instead of referencing them** — `CRAFT_DB_PASSWORD=abc123` breaks on a password reset. Write `CRAFT_DB_PASSWORD=${FORTRABBIT_DB_PASSWORD}`.
-6. **Site URL missing on the environment** — the base URL resolves to nothing and links break. Add `PRIMARY_SITE_URL` as above.
+6. **Site URL missing on an older environment** — the base URL resolves to nothing and links break. Add `PRIMARY_SITE_URL` as above.
 7. **Hand-uploading code with SFTP and forgetting `php craft up`** — no post-deploy commands run without a git deployment. SFTP clients also hide dot files: upload `web/.htaccess`.
 8. **Pushing to a branch that isn't connected** — nothing happens. Compare the branch with the environment's git settings.
