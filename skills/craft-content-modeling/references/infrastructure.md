@@ -146,7 +146,15 @@ When a draft is created, unchanged nested entries are not duplicated — they ar
 
 **Subpath rules:** When volumes share a filesystem, each must have a unique first-level subpath directory. If Volume A uses `images/`, Volume B cannot use `images/` or `images/photos/` — but `documents/` is fine.
 
-**Environment variables:** Filesystem handles and subpaths support `$ENV_VAR` syntax via `App::parseEnv()`, so storage can differ between local/staging/production.
+**Environment variables:** Filesystem settings (base URL, path, bucket, subpath) are parsed with `App::parseEnv()`, so storage can differ between local/staging/production. Three forms, by Craft version:
+
+| Form | Example | Since |
+|---|---|---|
+| Whole value | `$ASSETS_URL` | 5.0 |
+| Variable plus subpath | `$PRIMARY_SITE_URL/uploads` | 5.5.0 |
+| Variable in any `/`-delimited segment, or `${VAR}` anywhere | `uploads/$SITE_HANDLE/images`, `https://${CDN_HOST}/uploads` | 5.9.0 (#17794, #17949) |
+
+A bare `$VAR` only resolves when it fills a whole `/`-delimited segment: `$SITE-uploads` is left as-is, so write `${SITE}-uploads`. On a release older than the form's version the literal text is stored and used, so the URL breaks silently. An undefined `${VAR}` resolves to an empty string.
 
 **Never use `@web` for filesystem URLs.** `@web` is auto-detected from the HTTP request's `Host` header — it can be spoofed if `trustedHostPatterns` isn't configured, and it resolves to empty in console/queue contexts (no HTTP request). Use environment variables instead:
 
@@ -171,6 +179,8 @@ fs:
 ASSETS_URL=https://mysite.ddev.site/uploads
 ASSETS_PATH=/var/www/html/web/uploads
 ```
+
+On Craft 5.5+ the base URL can reuse the site URL instead of a second variable: `url: '$PRIMARY_SITE_URL/uploads'`.
 
 `@webroot` for the `path` is less dangerous (filesystem path, not URL) but env vars are still preferred for portability. The URL is the critical one — it generates `<img src>` and download links, so a wrong value breaks every asset on the site.
 

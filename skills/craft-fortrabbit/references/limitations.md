@@ -36,7 +36,7 @@ By default Craft runs the queue through web requests, which block PHP processes 
 
 1. Book the jobs component for the environment.
 2. Add a worker job in the dashboard with the command `php craft queue/listen --verbose`.
-3. Turn off web-triggered queue processing on that environment. Craft 4+ reads any general config setting from a `CRAFT_`-prefixed ENV var, so no config file change is needed:
+3. Turn off web-triggered queue processing on that environment. Craft reads any general config setting from a `CRAFT_`-prefixed ENV var, so no config file change is needed:
 
 ```sh
 # ENV vars of the fortrabbit environment that has the worker

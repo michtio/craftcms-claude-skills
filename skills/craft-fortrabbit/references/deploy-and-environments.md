@@ -62,7 +62,7 @@ Choosing Craft CMS, or having it detected, applies the Craft template. It sets u
 - **Strategy** `merge` with a replace pattern for `/config/project` (next section).
 - **ENV vars** for the database, environment name and production settings (see [ENV vars](#env-vars)).
 
-Craft 6 is built on Laravel and gets a separate template with a different root path and commands; this skill covers Craft 3–5.
+Craft 6 is built on Laravel and gets a separate template with a different root path and commands; this skill covers Craft 5.
 
 ## Merge strategy and replace patterns
 

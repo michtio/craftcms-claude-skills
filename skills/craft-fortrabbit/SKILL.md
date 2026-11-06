@@ -6,7 +6,7 @@ when_to_use: "Triggers on: .fortrabbit/deploy.yml, .fortrabbit/deploy.yaml, .for
 
 # fortrabbit — Managed PHP Hosting for Craft CMS
 
-Reference for running Craft CMS 3–5 on fortrabbit (fortrabbit.com), a managed PHP hosting platform. Covers git deployment and the Craft software template, the deploy file, ENV vars, the persistent storage and asset volumes, MySQL access over SSH, the Craft queue and image transforms in worker jobs, platform limits, and local development with DDEV.
+Reference for running Craft CMS 5 on fortrabbit (fortrabbit.com), a managed PHP hosting platform. Covers git deployment and the Craft software template, the deploy file, ENV vars, the persistent storage and asset volumes, MySQL access over SSH, the Craft queue and image transforms in worker jobs, platform limits, and local development with DDEV.
 
 This skill is scoped to **Craft on fortrabbit specifically**: what differs from running Craft yourself on Forge or bare metal. For generic Craft deployment, see the `craftcms` skill's `deployment.md`. For Craft Cloud, see `craft-cloud`; for Servd, see `servd`.
 

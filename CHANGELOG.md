@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.23.0
+
+Adds a fortrabbit hosting skill, contributed by Frank Lämmer of fortrabbit ([#18](https://github.com/michtio/craftcms-claude-skills/pull/18)), and documents the environment-variable forms Craft accepts in settings. Verified on 2026-11-06 against `craftcms/cms` 5.12.0.1.
+
+### Added
+
+- **`skills/craft-fortrabbit/`** -- the 14th skill, for Craft 5 sites on fortrabbit: git deploys through the GitHub App, the Craft software template (build and post-deploy commands, merge strategy, the `/config/project` replace pattern), the `.fortrabbit/deploy.yml` deploy file and its `replace` default, `CRAFT_*` ENV vars from `FORTRABBIT_DB_*` platform variables, persistent storage and rsync, MySQL over SSH, the queue and image transforms in a worker job, crons and platform limits. 5 reference files, a trigger eval set, and cross-references from `craftcms`, `craft-site`, `craft-plugins`, `craft-cloud`, `servd`, `craft-project-setup` and the agents.
+- **Environment variables in settings** (`skills/craft-content-modeling/references/infrastructure.md`, `skills/craft-php-guidelines/SKILL.md`) -- `App::parseEnv()` resolves more than a whole-value `$VAR`: `$VAR/subpath` since 5.5.0 (e.g. `$PRIMARY_SITE_URL/uploads` as a volume base URL), and a `$VAR` in any `/`-delimited segment or `${VAR}` anywhere since 5.9.0 (#17794, #17949). A `$VAR` that doesn't fill a whole segment is left as literal text ([`App::parseEnv()`](https://github.com/craftcms/cms/blob/5.12.0.1/src/helpers/App.php)).
+
+### Changed
+
+- **`craft-fortrabbit` scoped to Craft 5**, like the rest of the pack. Craft 4 has been end-of-life since 2026-04-30.
+
 ## 1.22.1 -- 2026-11-04
 
 Corrects statements that were wrong on every Craft 5 version, found while researching Craft 5.12. Verified on 2026-11-04 against `craftcms/cms` 5.11.1 and 5.12.0.1.
