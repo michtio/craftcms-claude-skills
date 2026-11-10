@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.23.0
+## 1.23.0 -- 2026-11-10
 
 Adds a fortrabbit hosting skill, contributed by Frank Lämmer of fortrabbit ([#18](https://github.com/michtio/craftcms-claude-skills/pull/18)), and documents the environment-variable forms Craft accepts in settings. Verified on 2026-11-06 against `craftcms/cms` 5.12.0.1.
 
