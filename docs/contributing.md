@@ -141,6 +141,26 @@ bash bin/validate-skills.sh
 
 It parses every skill's frontmatter as strict YAML, rejects unknown keys, confirms `name` matches the skill's directory, and enforces both length limits above. `bin/release.sh` runs it automatically and refuses to release on failure.
 
+Every SKILL.md also carries the Craft version detection wiring: an `allowed-tools` line that pre-approves `scripts/craft-version.sh`, and a "Craft Version of This Project" section that runs it. Copy both from an existing skill. The script itself lives in `bin/craft-version.sh`; after editing it, run `sh bin/sync-version-script.sh` and `sh bin/test-craft-version.sh`.
+
+## Version Tags
+
+The pack covers every Craft 5 minor, so anything that needs a specific Craft version carries a tag. Sessions are told the project's Craft version, and the tag is what they compare it with.
+
+| Tag | Meaning |
+|---|---|
+| `[5.10+]`, `[5.11.4+]` | Added in that Craft release. Use patch precision when a feature landed in a patch. |
+| `[changed 5.12]` | Behaviour changed in that release. Say what it did before and after, and what to do when supporting both. |
+| `[deprecated 5.12]`, `[removed 5.12]` | Deprecated or removed in that release. |
+| `[seomatic 5.1+]` | A third-party plugin's own version. Always name the plugin, so it can't be read as a Craft version. |
+
+- Put the tag on the line, list item, table row or heading it applies to. A heading tag covers its whole section.
+- For features from the last three minors, give the older alternative on the same item: `Before 5.10: …`.
+- Write tags as plain text, never as links (`[5.10+]`, not `[5.10+](...)`). "5.0" needs no tag: the whole pack is Craft 5.
+- Don't use the old styles ("since 5.4.0", "Craft 5.10+", "(5.9.0)", "new in 5.10").
+
+`bin/craft_tags.py lint` checks this, and CI fails on findings. It flags malformed tags, Craft versions written without a tag, and symbols added after 5.0 (from Craft's CHANGELOG) that appear with no tag covering them. A false match goes in `bin/data/tag-lint-allow.tsv` with a reason. `bin/refresh-craft-data.sh` refreshes the symbol map, the minimum safe version and the generated `version-table.md` at each release.
+
 ## Release Process
 
 Releases are cut with `bin/release.sh <version>`, e.g. `bin/release.sh 1.19.0`. It:

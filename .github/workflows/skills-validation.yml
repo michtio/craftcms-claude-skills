@@ -42,3 +42,15 @@ jobs:
 
       - name: Golden-output tests (sh, dash, bash --posix)
         run: sh bin/test-craft-version.sh
+
+  version-tags:
+    name: Craft version tags
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Linter self-test (an untagged craft\filters\Cors must fail)
+        run: "! python3 bin/craft_tags.py lint evals/fixtures/tags/untagged-cors.md"
+
+      - name: Lint the pack (warn-only until the backfill lands)
+        run: python3 bin/craft_tags.py lint skills --warn-only

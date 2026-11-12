@@ -1,0 +1,15 @@
+# Allowlist for bin/craft_tags.py lint. Every row needs a reason.
+#   symbol<TAB><symbol><TAB><reason>
+#   line<TAB><path glob><TAB><regex><TAB><reason>
+symbol	currentUser	Twig global since Craft 3; 5.12.0 added a GraphQL query of the same name
+symbol	entryType	pre-5.0 element property; 5.12.0 added a GraphQL type of the same name
+symbol	EntryType	pre-5.0 model class; 5.12.0 added a GraphQL type class of the same short name
+symbol	getUrl()	pre-5.0 method on elements and assets; 5.6.0 added it to one more class
+symbol	getName()	generic method name; 5.5.0 added it to one class
+symbol	reset()	generic method name; UserPermissions::reset() (5.8.13) is still checked
+symbol	configure()	generic method name
+symbol	getFormatter()	pre-5.0 i18n method
+symbol	getPages()	Formie API, not Craft
+symbol	revisionNotes	pre-5.0 element property; 5.7.0 added a GraphQL mutation argument of the same name
+symbol	getEnvId()	Craft Cloud helper, not craftcms/cms
+line	*.md	[Vv]erified (against|on)\b	provenance notes name the release a claim was checked against; not a version gate
