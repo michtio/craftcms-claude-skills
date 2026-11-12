@@ -52,5 +52,8 @@ jobs:
       - name: Linter self-test (an untagged craft\filters\Cors must fail)
         run: "! python3 bin/craft_tags.py lint evals/fixtures/tags/untagged-cors.md"
 
-      - name: Lint the pack (warn-only until the backfill lands)
-        run: python3 bin/craft_tags.py lint skills --warn-only
+      - name: Linter self-test (the grammar fixture has exactly 3 invalid tags)
+        run: python3 bin/craft_tags.py lint evals/fixtures/tags/grammar.md | grep -q '^3 finding(s)'
+
+      - name: Lint the pack
+        run: python3 bin/craft_tags.py lint skills

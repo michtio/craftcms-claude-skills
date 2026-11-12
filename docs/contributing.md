@@ -152,7 +152,7 @@ The pack covers every Craft 5 minor, so anything that needs a specific Craft ver
 | `[5.10+]`, `[5.11.4+]` | Added in that Craft release. Use patch precision when a feature landed in a patch. |
 | `[changed 5.12]` | Behaviour changed in that release. Say what it did before and after, and what to do when supporting both. |
 | `[deprecated 5.12]`, `[removed 5.12]` | Deprecated or removed in that release. |
-| `[seomatic 5.1+]` | A third-party plugin's own version. Always name the plugin, so it can't be read as a Craft version. |
+| `[seomatic 5.1+]`, `[changed blitz 5.13]` | A third-party plugin's own version. Always name the plugin, so it can't be read as a Craft version. |
 
 - Put the tag on the line, list item, table row or heading it applies to. A heading tag covers its whole section.
 - For features from the last three minors, give the older alternative on the same item: `Before 5.10: …`.

@@ -4,7 +4,7 @@
 Tag grammar (docs/contributing.md, "Version tags"):
   core added          [5.10+]  [5.11.4+]
   core behaviour      [changed 5.12]  [deprecated 5.12]  [removed 5.12]
-  third-party plugin  [seomatic 5.1+]  [ckeditor 4.9+]
+  third-party plugin  [seomatic 5.1+]  [ckeditor 4.9+]  [changed blitz 5.13]
   older alternative   "Before 5.10: ..." on the same item as the tag
 
 Subcommands:
@@ -36,14 +36,16 @@ TABLE_MD = REPO / "skills" / "craftcms" / "references" / "version-table.md"
 
 VERSION = r"\d+\.\d+(?:\.\d+){0,2}"
 CORE_TAG = re.compile(rf"\[(?:(changed|deprecated|removed) )?(5\.\d+(?:\.\d+){{0,2}})(\+)?\]")
-PLUGIN_TAG = re.compile(rf"\[([a-z][a-z0-9-]*) ({VERSION})\+\]")
+PLUGIN_TAG = re.compile(rf"\[(?:(?:changed|deprecated|removed) ([a-z][a-z0-9-]*) ({VERSION})|([a-z][a-z0-9-]*) ({VERSION})\+)\]")
 # Anything bracketed that looks like an attempt at a tag, for grammar errors.
-TAG_LIKE = re.compile(r"\[(?:[A-Za-z][\w-]* )?(?:changed |deprecated |removed )?v?\d+\.\d+[^\]\s]*\]")
+TAG_LIKE = re.compile(r"\[(?:changed |deprecated |removed )?(?:[A-Za-z][\w-]* )?v?\d+\.\d+[^\]\s]*\]")
 BEFORE = re.compile(rf"\bBefore (5\.\d+(?:\.\d+)?):\s*(.+)")
 
 # A bare Craft 5.x version in prose. Lookbehind keeps "PHP 5.6", "^5.6.0" and
 # "v5.1" style numbers out; product names are filtered in is_craft_mention().
-CRAFT_VERSION = re.compile(r"(?<![\w.^~>=<v/-])5\.\d{1,2}(?:\.\d+){0,2}(?![\w.]*\d)")
+CRAFT_VERSION = re.compile(r"(?<![\w.^~>=<v/-])5\.\d{1,2}(?:\.\d+){0,2}(?![\w.]*\d)(?![A-Za-z])")
+# Provenance, not a version gate: URLs and "craftcms/cms 5.x.y" source citations.
+PROVENANCE = re.compile(r"https?://\S+|(?:craftcms/)?cms`?[ @:]v?5\.\d+\.\d+(?:\.\d+)?")
 NON_CRAFT_PRODUCTS = re.compile(
     r"\b(mysql|mariadb|php|node(?:\.js)?|postgres(?:ql)?|twig|tailwind(?:css)?|vite|alpine(?:\.js)?|"
     r"pest|phpunit|laravel|symfony|yii2?|jquery|redis|bootstrap|typescript|imager[- ]?x|vue|"
@@ -191,9 +193,11 @@ def lint_file(path: Path, symbols: dict[str, str], sym_re: list, releases: set[s
     findings = []
     lines = path.read_text(encoding="utf-8").splitlines()
     in_code = False
-    heading_tags: list[tuple[str, str]] = []   # tags on the nearest heading
+    heading_stack: list[tuple[int, list]] = []  # (level, tags) of enclosing headings
+    heading_tags: list[tuple[str, str]] = []   # tags of all enclosing headings
     item_tags: list[tuple[str, str]] = []      # tags on the current paragraph/list item
     prose_before_code: list[tuple[str, str]] = []
+    last_block_tags: list[tuple[str, str]] = []  # tags of the last non-blank block
     in_frontmatter = lines[:1] == ["---"]
 
     allow_here = [rx for glob, rx in allow_lines if Path(rel).match(glob)]
@@ -206,23 +210,29 @@ def lint_file(path: Path, symbols: dict[str, str], sym_re: list, releases: set[s
         if line.lstrip().startswith("```"):
             in_code = not in_code
             if in_code:
-                prose_before_code = item_tags[:]
+                prose_before_code = item_tags[:] if item_tags else last_block_tags[:]
             continue
         if any(rx.search(line) for rx in allow_here):
             continue
 
         if not in_code:
-            if re.match(r"#{1,6} ", line):
-                heading_tags = core_tags(line)
+            hm = re.match(r"(#{1,6}) ", line)
+            if hm:
+                level = len(hm.group(1))
+                heading_stack = [h for h in heading_stack if h[0] < level] + [(level, core_tags(line))]
+                heading_tags = [t for _, tags in heading_stack for t in tags]
                 item_tags = []
+                last_block_tags = []
             elif not line.strip():
+                if item_tags:
+                    last_block_tags = item_tags
                 item_tags = []
             elif re.match(r"\s*([-*+]|\d+\.)\s|\|", line):
                 item_tags = core_tags(line)          # a new list item or table row
             else:
                 item_tags = item_tags + core_tags(line)  # paragraph continuation
 
-            prose = strip_code_spans(line)
+            prose = strip_code_spans(PROVENANCE.sub("", line))
             # 1. grammar
             for m in TAG_LIKE.finditer(prose):
                 t = m.group(0)
@@ -321,9 +331,21 @@ def cmd_table(args) -> int:
                 continue
             if re.match(r"#{1,6} ", line):
                 heading = re.sub(r"^#+\s*", "", line)
-            for kind, ver in core_tags(strip_code_spans(line)):
-                code = re.findall(r"`([^`]+)`", line)
-                feature = f"`{code[0]}`" if code else re.sub(CORE_TAG, "", heading).strip() or "(see file)"
+            spans = [(m.start(), m.end(), m.group(1)) for m in re.finditer(r"`([^`]+)`", line)]
+            for tm in CORE_TAG.finditer(line):
+                if any(a <= tm.start() < b for a, b, _ in spans):
+                    continue  # a tag quoted inside a code span is an example, not a tag
+                kind, ver = (tm.group(1) or "added"), tm.group(2)
+                before = [c for a, b, c in spans if b <= tm.start()]
+                after = [c for a, b, c in spans if a >= tm.end()]
+                if re.match(r"#{1,6} ", line):
+                    feature = re.sub(CORE_TAG, "", heading).strip()
+                elif before and len(before[-1]) <= 80:
+                    feature = f"`{before[-1]}`"
+                elif after and len(after[0]) <= 80:
+                    feature = f"`{after[0]}`"
+                else:
+                    feature = re.sub(CORE_TAG, "", heading).strip() or "(see file)"
                 alt = ""
                 for nxt in [line] + lines[i + 1:i + 3]:
                     bm = BEFORE.search(nxt)
