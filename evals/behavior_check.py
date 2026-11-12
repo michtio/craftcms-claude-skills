@@ -9,6 +9,8 @@ final answer text against regex assertions:
   - must_match:         every group must match; a group is a list of
                         alternatives, any one of which satisfies it
   - must_not_match:     none of these may match
+  - must_not_match_code: none of these may match inside fenced code blocks
+                        (prose may still mention them, e.g. an upgrade note)
   - must_appear_before: [[a, b], ...] inside fenced code blocks only, the
                         first match of a must precede the first match of b;
                         passes when b never appears in code (the answer
@@ -120,6 +122,10 @@ def score(case: dict, text: str) -> list[str]:
             failures.append(f"matched forbidden {pattern}")
 
     code = "\n".join(re.findall(r"```[^\n]*\n(.*?)```", text, re.S))
+
+    for pattern in case.get("must_not_match_code", []):
+        if re.search(pattern, code, re.I | re.S):
+            failures.append(f"matched forbidden {pattern} in code")
 
     for first, second in case.get("must_appear_before", []):
         b = re.search(second, code, re.I | re.S)

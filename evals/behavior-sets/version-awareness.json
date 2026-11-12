@@ -3,43 +3,107 @@
     "id": "v-twig-heading-on-59",
     "cwd": "evals/fixtures/projects/site-5.9.9",
     "prompt": "In this Craft site, I need a Twig component that outputs a heading whose level (h2 or h3) comes from a prop. Write the Twig in your reply; don't create files.",
-    "must_match": [["5\\.10", "not available", "older", "upgrade"]],
-    "must_not_match": ["\\{\\{\\s*heading\\(", "\\{\\{\\s*h\\("]
+    "must_match": [
+      [
+        "5\\.10",
+        "not available",
+        "older",
+        "upgrade"
+      ]
+    ],
+    "must_not_match_code": [
+      "\\{\\{\\s*heading\\(",
+      "\\{\\{\\s*h\\("
+    ]
   },
   {
     "id": "v-plugin-deletion-blockers-56",
     "cwd": "evals/fixtures/version/plugin-56",
     "prompt": "In this Craft plugin, I want to stop deletion of my custom element when other elements still relate to it, and show the reason in the delete modal. Show the PHP in your reply; don't create files.",
-    "must_match": [["5\\.10", "version_compare", "method_exists", "\\^5\\.10", "minimum"]]
+    "must_match": [
+      [
+        "5\\.10",
+        "version_compare",
+        "method_exists",
+        "\\^5\\.10",
+        "minimum"
+      ]
+    ]
   },
   {
     "id": "v-safe-floor-510",
     "cwd": "evals/fixtures/version/below-floor",
     "prompt": "We want to add a new Link field to the article entry type on this site. Anything I should know before doing it?",
-    "must_match": [["secur", "GHSA", "advisor", "vulnerab"]]
+    "must_match": [
+      [
+        "secur",
+        "GHSA",
+        "advisor",
+        "vulnerab"
+      ]
+    ]
   },
   {
     "id": "v-no-floor-warning-5121",
     "cwd": "evals/fixtures/version/site-agree",
     "prompt": "We want to add a new Link field to the article entry type on this site. Anything I should know before doing it?",
-    "must_not_match": ["minimum safe", "below (the )?(minimum|safe|security)", "GHSA-"]
+    "must_not_match": [
+      "minimum safe",
+      "below (the )?(minimum|safe|security)",
+      "GHSA-"
+    ]
   },
   {
     "id": "v-craft4-eol",
     "cwd": "evals/fixtures/version/craft4",
     "prompt": "We want to add a new Link field to the article entry type on this site. How do I set it up?",
-    "must_match": [["end of life", "end-of-life", "EOL", "no longer (receives|gets|supported)", "unsupported"]]
+    "must_match": [
+      [
+        "end of life",
+        "end-of-life",
+        "EOL",
+        "no longer (receives|gets|supported)",
+        "unsupported"
+      ]
+    ]
   },
   {
     "id": "v-eagerly-limit-512",
     "cwd": "evals/fixtures/version/site-agree",
     "prompt": "Since we upgraded this site, a listing loop that does `entry.topics.eagerly().limit(3).all()` shows 3 topics per entry, where it used to show all of them. Why did that change?",
-    "must_match": [["5\\.12"], ["limit", "offset", "orderBy"], ["ignored", "dropped", "not applied", "didn't apply", "did not apply", "before"]]
+    "must_match": [
+      [
+        "5\\.12"
+      ],
+      [
+        "limit",
+        "offset",
+        "orderBy"
+      ],
+      [
+        "ignored",
+        "dropped",
+        "not applied",
+        "didn't apply",
+        "did not apply",
+        "before"
+      ]
+    ]
   },
   {
     "id": "v-lock-vendor-drift",
     "cwd": "evals/fixtures/version/site-drift",
     "prompt": "Which Craft version does this project run? Answer in two or three sentences.",
-    "must_match": [["5\\.11\\.5\\.1"], ["5\\.11\\.1"], ["composer install"]]
+    "must_match": [
+      [
+        "5\\.11\\.5\\.1"
+      ],
+      [
+        "5\\.11\\.1"
+      ],
+      [
+        "composer install"
+      ]
+    ]
   }
 ]
