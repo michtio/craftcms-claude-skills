@@ -14,6 +14,8 @@ Subcommands:
                            untagged post-5.0 symbols; exit 1 on findings
         --warn-only        report but exit 0
   table                    write skills/craftcms/references/version-table.md from the tags
+  floor --changelog FILE   print the minimum safe version (the latest 5.x release with a
+                           ### Security section) and its advisory IDs, tab-separated
 
 Python 3.9+, standard library only. Maintainer and CI tooling: the detection
 script that runs in users' projects is bin/craft-version.sh (POSIX sh).
@@ -350,6 +352,31 @@ def cmd_table(args) -> int:
     return 0
 
 
+def cmd_floor(args) -> int:
+    version, in_security, best = None, False, None
+    advisories: dict[str, list[str]] = {}
+    for line in Path(args.changelog).read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^## (5\.\d+\.\d+(?:\.\d+)?) ", line)
+        if m:
+            version, in_security = m.group(1), False
+            continue
+        if line.startswith("## "):
+            version, in_security = None, False
+            continue
+        if line.startswith("### "):
+            in_security = version is not None and line.strip() == "### Security"
+            continue
+        if in_security and line.startswith("- "):
+            advisories.setdefault(version, []).extend(re.findall(r"GHSA(?:-[0-9a-z]{4}){3}", line))
+            if best is None or vkey(version) > vkey(best):
+                best = version
+    if best is None:
+        print("no ### Security section found", file=sys.stderr)
+        return 1
+    print(f"{best}\t{', '.join(dict.fromkeys(advisories.get(best, []))) or 'see CHANGELOG'}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -362,6 +389,9 @@ def main() -> int:
     l.set_defaults(fn=cmd_lint)
     t = sub.add_parser("table")
     t.set_defaults(fn=cmd_table)
+    fl = sub.add_parser("floor")
+    fl.add_argument("--changelog", required=True)
+    fl.set_defaults(fn=cmd_floor)
     args = ap.parse_args()
     return args.fn(args)
 
