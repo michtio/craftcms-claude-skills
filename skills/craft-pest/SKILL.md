@@ -2,9 +2,16 @@
 name: craft-pest
 description: "Testing Craft CMS 5 plugins and modules with Pest — test isolation, database safety, and the markhuot/craft-pest-core harness. ALWAYS load when writing, running, fixing, or reviewing tests for a Craft plugin or module, and whenever a suite touches a real Craft install. Covers why rollback is opt-in, tests/Pest.php + tests/bootstrap.php wiring, phpunit.xml.dist <env> pins (force DB name + table prefix, default connection coordinates, pin CRAFT_ENVIRONMENT against server-scoped locks), why --configuration= defeats DB isolation, throwing fail-closed DB guards, installing the plugin under test, process-timezone pinning, per-test site fixtures, idempotent Install migrations, stale service caches when components get swapped, muting audit sinks, queue stubs, factories, HTTP/DB assertions, CI jobs."
 when_to_use: "Triggers on: Pest, pestphp, craft-pest-core, markhuot, RefreshesDatabase, InstallsCraft, tests/Pest.php, phpunit.xml.dist, vendor/bin/pest, composer test, ddev craft pest, db_test, CRAFT_DB_DATABASE, CRAFT_ENVIRONMENT, BusyResourceException, GET_LOCK, Entry::factory(), assertDatabaseHas, transaction rollback, test site fixture, createIndexIfMissing, UserPermissions::reset(), TestCaseAlreadyInUse, cookieValidationKey with --filter, 'too many keys', 'tests pollute the database', 'passes on dev but fails in isolation', 'passes alone but fails in the suite', 'two suites deadlock', 'datetimes off by hours in tests', flaky order-dependent test, no CI Pest job. Do NOT trigger for front-end/JS testing or PHP style analysis."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Testing Craft CMS Plugins with Pest
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Reference for testing Craft CMS 5 plugins and modules with Pest, primarily via `markhuot/craft-pest-core`.
 

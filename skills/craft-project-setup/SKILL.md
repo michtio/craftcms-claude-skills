@@ -2,9 +2,16 @@
 name: craft-project-setup
 description: "Scaffold Claude Code configuration specifically for Craft CMS projects. Generates CLAUDE.md and .claude/rules/ files tailored to the project type (plugin, site, module, hybrid, or monorepo). Only for Craft CMS projects — not for Next.js, Laravel, or other frameworks."
 when_to_use: "Triggers on: 'set up Claude for this Craft project', 'initialize CLAUDE.md', 'scaffold project config', 'configure Claude Code for Craft', 'create CLAUDE.md', 'missing CLAUDE.md', 'does this project have a CLAUDE.md', 'bootstrap Claude config', 'new Craft project setup', 'onboard a developer to this Craft project', 'generate .claude/rules', 'set up coding standards config', 'upgrade Claude config', 'update CLAUDE.md', 'compare my setup', 'is my config up to date', 'audit my Claude setup', 'redo project setup'. Also triggers when starting work in a new Craft CMS project that lacks a CLAUDE.md file, or when the user wants to check or upgrade an existing configuration. Detects project type from composer.json (craft-plugin, craft-module, project), .ddev/config.yaml, templates/, config/project/, and modules/. NOT for installing Craft CMS itself, creating DDEV environments, writing PHP code, building templates, or content modeling. NOT for non-Craft projects — if the project is React, Next.js, Laravel, or any non-Craft framework, this skill does not apply."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Craft CMS Project Setup
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Scaffold Claude Code configuration for Craft CMS projects. Generates a `CLAUDE.md` and `.claude/rules/` directory tailored to the project type.
 

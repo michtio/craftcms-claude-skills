@@ -2,9 +2,16 @@
 name: craft-cloud
 description: "Craft Cloud — Pixel & Tonic's serverless hosting platform for Craft CMS. Covers craft-cloud.yaml configuration, the Build → Migrate → Release deploy pipeline, the craftcms/cloud extension package, edge image transforms via Cloudflare, edge static caching with cache.rules + ESI, Cloud-managed S3 filesystem, MySQL 8 / Postgres 15 databases (no MariaDB, no tablePrefix), Console-based command runner and scheduled cron (once-per-hour minimum), auto-handled queue jobs, custom domains and SSL, preview environments per branch, Cloud limitations (ephemeral filesystem, no SSH, no .htaccess, no built-in mail), plugin development requirements for Cloud compatibility, and self-hosted → Cloud migration."
 when_to_use: "Triggers on: craft-cloud.yaml, craftcms/cloud package, cloud.esi(), php craft cloud/up, php craft cloud/setup, App::isEphemeral(), CRAFT_EPHEMERAL, edge.craft.cloud, preview.craft.cloud, CRAFT_CLOUD_PROJECT_ID, CRAFT_CLOUD_ENVIRONMENT_ID, CRAFT_CLOUD_CDN_BASE_URL, Build → Migrate → Release, Cloud filesystem, Cloud-compatible plugin, Cloudflare Images at edge, AssetsFs, static-caching rules, ESI islands, deploy to Craft Cloud, migrate to Craft Cloud, self-hosted to Cloud, Craft Cloud quotas, Craft Cloud regions, request signing (RFC 9421), CRAFT_CLOUD_SIGNING_KEY, headless 429/503, cloud.artifactUrl(), @artifactBaseUrl. Do NOT trigger for Servd (servd), fortrabbit (craft-fortrabbit) or generic Craft deployment on Forge/bare metal (craftcms/deployment.md). Do NOT trigger for general DDEV local dev unrelated to Cloud parity."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Craft Cloud — Serverless Hosting for Craft CMS
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Reference for Craft Cloud, Pixel & Tonic's serverless hosting platform for Craft CMS. Covers the `craft-cloud.yaml` config file, the Build → Migrate → Release deploy pipeline, the `craftcms/cloud` extension, edge image transforms and static caching, the Cloud filesystem, plugin Cloud-compatibility requirements, and self-hosted → Cloud migration.
 

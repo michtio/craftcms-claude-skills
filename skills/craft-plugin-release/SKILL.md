@@ -2,9 +2,16 @@
 name: craft-plugin-release
 description: "Releasing Craft CMS plugins — tagging, Packagist propagation, GitHub releases, branch promotion, shared-library ordering, history rewrites. ALWAYS load when cutting, preparing, verifying, or debugging a plugin release: bumping a version, dating a changelog, creating or moving a git tag, or checking what Packagist serves."
 when_to_use: "Covers: composer.json version key (bump-or-omit trade-off, same-commit rule, verifying the tag's own blob), Packagist verification via repo.packagist.org/p2, the 'Skipped tag' silent failure, the tag recreation risk model, GitHub release objects drifting from tags, gh api PATCH wiping tag_name, blank bodies from empty --notes-file, the create-release.yml Store dispatch (422 already_exists, allowUpdates), shared-library releases dependency-first (additive minors breaking released consumers, module: track invalid), two-way origin comparison, filter-repo purges (already_ran re-runs, --refs/--partial, tree-hash verify, blob-level sweeps), and path repositories (canonical, no exclude, branch-alias, duplicate names). Triggers on: cut/prepare a release, tag a version, Packagist not serving the new version, 'Skipped tag', repo.packagist.org, gh release create/edit, untagged- release, prerelease latest 404, target_commitish, draft release, promote develop to main, release the library first, Invalid migration track, purge a secret from history, filter-repo, path repository, branch-alias. NOT for writing changelog entries, CI workflow YAML (craftcms quality.md), or plugin store listings."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Releasing Craft Plugins
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 A plugin release involves three independent systems that all claim to describe the same version: **git tags**, **Packagist**, and **GitHub release objects**. They drift from each other silently, and every observable signal can say "success" while consumers get nothing. This skill is the checklist and risk model for keeping them in agreement.
 

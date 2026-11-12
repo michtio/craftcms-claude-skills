@@ -2,9 +2,16 @@
 name: craft-content-modeling
 description: "Craft CMS 5 content modeling — sections, entry types, fields, Matrix, relations, project config, and content architecture strategy. Covers choosing section types, designing entry types and field layouts, selecting field types, configuring Matrix and nested entries, relations and eager loading, and multi-site propagation."
 when_to_use: "Triggers on: section types (single, channel, structure), entry types, field types, field layout design, field type selection, Matrix, nested entries, relatedTo, eager loading, .with()/.eagerly(), categories, tags, globals, global sets, preloadSingles, propagation, multi-site content, project config, YAML, project-config/write/diff/apply/touch, YAML vs DB drift, restored prod DB dump, content strategy, taxonomy, asset volumes, filesystems, image transforms, user groups, content permissions, entrify/entrification, CKEditor vs Matrix, CMS editions, multi-language/localization, field translation methods, content migration, field instances, Formie forms vs project config, cross-env/multi-site Formie, elementSources/Entries index sidebar, tableAttributes, defaultSort, authoring schema from code (service layer vs YAML). Always use when planning content architecture, creating sections/fields, configuring Matrix, setting up relations, choosing field types, designing field layouts, planning multi-site propagation, tidying the Entries element index, or running project-config commands. Do NOT trigger for PHP plugin/module development, custom field type code, front-end Twig, or buildchain."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Craft CMS 5 — Content Modeling
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 How to structure content in Craft CMS 5. Sections, entry types, fields, Matrix,
 relations, asset management, and strategic patterns for real projects.

@@ -2,9 +2,16 @@
 name: craft-twig-guidelines
 description: "Twig coding standards and conventions for Craft CMS 5 templates. ALWAYS load this skill when writing, editing, or reviewing any .twig file in a Craft CMS project — even for small edits. Covers: variable naming (camelCase, no abbreviations), null handling (?? operator, ??? with empty-coalesce plugin), whitespace control ({%- trimming, NOT {%- minify -%}), include isolation (always use 'only'), Craft Twig helpers ({% tag %}, tag(), attr(), |attr filter, |parseAttr, |append, svg()), collect() for props and class collections, .implode(), comment headers with ========= separators on component files, and common pitfalls (snake_case, macros as components, hardcoded colors)."
 when_to_use: "Triggers on: Twig template creation, editing, or review; .twig files; {% include %} with 'only'; {% tag %} and polymorphic elements; collect() and props.get(); class string building; attr() and |attr filter; svg() with styling and aria; ?? and ??? null coalescing; whitespace control and blank lines in output; minify alternatives; Twig file headers and comment blocks; variable naming conventions in Twig; currentSite, siteUrl, craft.entries, .eagerly(), .collect in template context; |e('js') aggressive escaping (spaces become \\uXXXX), js escaper, grepping escaped translated strings. NOT for Twig architecture patterns, atomic design structure, or template routing (use craft-site). NOT for PHP code (use craft-php-guidelines). NOT for content modeling or field configuration (use craft-content-modeling)."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Twig Coding Standards — Craft CMS 5
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Coding conventions for Twig templates in Craft CMS 5 projects. These apply to
 all Twig code — atomic components, views, layouts, builders, partials.

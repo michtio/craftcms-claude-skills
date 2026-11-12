@@ -2,9 +2,16 @@
 name: craftcms
 description: "Craft CMS 5 plugin and module development — extending Craft with PHP. Covers elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types, native fields, events, behaviors, Twig extensions, widgets, filesystems, permissions, project config, GraphQL, testing, and debugging."
 when_to_use: "Triggers on: beforePrepare()/afterSave()/defineSources()/defineTableAttributes()/attributeHtml(), MemoizableArray, BaseNativeField, EVENT_REGISTER_*/DEFINE_*/BEFORE_*/AFTER_*, CraftVariable, custom element or field type (normalizeValue/serializeValue/inputHtml), webhook, API endpoint, queue/batch job, CP section, dashboard widget, utility page, element action/exporter/condition, registerUserPermissions, requirePermission vs requireAdmin, kebab-case permissions, allowAdminChanges, canView/canSave/canDelete, defineRules/EVENT_DEFINE_RULES on Entry (fieldId + ownerId must be set), elevated session, project-config/apply/write, drafts/revisions, edit sidebar (EVENT_DEFINE_SIDEBAR_HTML)/toolbar buttons, metaFieldsHtml, VueAdminTable, GeneralConfig, getIsMultiSite/refreshSites stale after new site, deleteSite phantom sites, siteId filter lost, UTC datetime/strtotime drift, ['like'] tuple matches nothing, configWarning. Always use when writing, editing, or reviewing Craft plugin/module PHP (even when no API is named) or saveField()/saveEntryType() from scripts. Plugin work: also load craft-plugins. Do NOT trigger for front-end Twig (craft-site) or content modeling (craft-content-modeling)."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Craft CMS 5 — Extending (Plugins & Modules)
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Reference for extending Craft CMS 5 through plugins and modules. Covers everything from elements and services to controllers, migrations, fields, and events.
 

@@ -1,0 +1,4 @@
+Craft plugin: requires craftcms/cms "^4.0|^5.0", so the lowest supported Craft version is 4.0.0.
+The constraint still allows Craft 4. This pack covers Craft 5 only, and Craft 4 is end of life (security support ended 2026-04-30); code for Craft 5 and suggest dropping the older major from the constraint.
+Any Craft API tagged above 5.0.0 needs either a constraint bump (e.g. "craftcms/cms": "^5.10.0") or a runtime guard (version_compare(Craft::$app->getVersion(), '5.10.0', '>=')); say which and why.
+Version rules: tags such as [5.10+], [5.11.4+], [changed 5.12], [deprecated 5.12], [removed 5.12] and [<plugin> 5.1+] mark version-specific content in these skills. Compare every tag with the version above before using what it marks. When the project is below a tag, say which version the feature needs and how to upgrade, and give the alternative listed after "Before 5.x:" when there is one.

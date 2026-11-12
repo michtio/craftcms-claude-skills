@@ -1,0 +1,2 @@
+Craft project (site): craftcms/cms 5.12.1.
+Version rules: tags such as [5.10+], [5.11.4+], [changed 5.12], [deprecated 5.12], [removed 5.12] and [<plugin> 5.1+] mark version-specific content in these skills. Compare every tag with the version above before using what it marks. When the project is below a tag, say which version the feature needs and how to upgrade, and give the alternative listed after "Before 5.x:" when there is one.

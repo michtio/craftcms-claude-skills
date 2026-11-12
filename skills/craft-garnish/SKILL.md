@@ -2,9 +2,16 @@
 name: craft-garnish
 description: "Garnish — Craft CMS's built-in JavaScript UI toolkit for the control panel. ALWAYS load when writing, editing, or reviewing JavaScript that runs in the Craft CP — plugin CP assets, custom field type JS, element index JS, CP webpack config, or code importing garnishjs / referencing window.Garnish. Also for CP accessibility, keyboard interactions, drag-sort, and CP JS memory issues."
 when_to_use: "Triggers on: Garnish.Base.extend, this.base(), init, setSettings, addListener, on/off/trigger, destroy, garnishjs, GarnishAsset, CpAsset, webpack externals, CP JavaScript, Craft.* pattern, Garnish.Modal, HUD, DisclosureMenu, MenuBtn, CustomSelect, ContextMenu, Select, modal/HUD popover, BaseDrag, DragSort, DragDrop, DragMove, onSortChange/onOptionSelect/onSelectionChange, NiceText, CheckboxSelect, MixedInput, MultiFunctionBtn, ESC_KEY/RETURN_KEY, activate/textchange events, UiLayerManager, registerShortcut, trapFocusWithin/releaseFocusWithin/setFocusWithin, ARIA helpers, focus management, aria-modal, aria-hidden retained focus, inert attribute, focus trap, keyboard navigation CP, Craft.CP, Craft.Slideout, Craft.ElementEditor, Craft.sendActionRequest, CP memory leak, event listener cleanup, jQuery .on() in CP, custom slideout/overlay lifecycle, disable kills listeners, sidebar panel injected into the entry form, id-only inputs with no name attribute, host form swallows my fields, Enter key submits the entry form, lightswitch value in JS. Do NOT trigger for front-end JavaScript (Alpine, Vue, htmx) or Twig templates (craft-site)."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Garnish — Craft CMS Control Panel JavaScript Toolkit
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Reference for Garnish, Craft CMS's built-in JavaScript UI framework. Covers the class system, UI widgets, drag interactions, form components, accessibility helpers, and integration with Craft's CP.
 

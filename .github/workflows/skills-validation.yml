@@ -1,19 +1,25 @@
 name: skills-validation
 
 # Validates every skills/*/SKILL.md frontmatter on each push and pull request
-# that touches a skill: strict YAML parse, known keys only, the spec's
+# that touches a skill or its tooling: strict YAML parse, known keys only, the spec's
 # 1024-character description limit, and Claude Code's 1536-character listing
 # cap for description + when_to_use. See bin/validate-skills.sh.
 
 on:
   push:
     paths:
-      - 'skills/*/SKILL.md'
-      - 'bin/validate-skills.sh'
+      - 'skills/**'
+      - 'bin/**'
+      - 'hooks/**'
+      - 'evals/fixtures/**'
+      - '.github/workflows/skills-validation.yml'
   pull_request:
     paths:
-      - 'skills/*/SKILL.md'
-      - 'bin/validate-skills.sh'
+      - 'skills/**'
+      - 'bin/**'
+      - 'hooks/**'
+      - 'evals/fixtures/**'
+      - '.github/workflows/skills-validation.yml'
 
 permissions:
   contents: read
@@ -25,5 +31,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Validate frontmatter
+      - name: Validate frontmatter and version-detection wiring
         run: bash bin/validate-skills.sh
+
+  craft-version:
+    name: Craft version detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Golden-output tests (sh, dash, bash --posix)
+        run: sh bin/test-craft-version.sh
