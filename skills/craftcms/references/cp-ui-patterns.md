@@ -38,7 +38,7 @@ The `craftcms/webhooks` plugin (3.x branch, `_manage/edit.html`) is the referenc
 <input type="hidden" name="settings[{{ handle }}]" value="{{ value }}">
 ```
 
-Don't reinvent with `buttonGroupField` + custom captions. The webhook table pattern wins on compactness and clarity.
+Don't reinvent with `buttonGroupField` [5.8+] + custom captions. The webhook table pattern wins on compactness and clarity.
 
 ### Status Indicator Classes
 
@@ -52,7 +52,7 @@ Bare `<div class="status"></div>` renders **invisibly** in Craft 5 — the base 
 | `.status.inactive` / `.status.disabled` | Hollow outlined circle (`box-shadow inset`) | Inherit, unset, neutral indicator |
 | `.status.orange` / `.status.pending` | Orange filled circle | Pending, warning |
 
-The synonym groups are defined in `Color::tryFromStatus()` (`src/enums/Color.php`): `on`/`live`/`active`/`enabled` all map to teal (the green fill), and `off`/`suspended`/`expired` all map to red. `on` and `off` are the first-class boolean pair — prefer them for lightswitch-style state. But `off`, `suspended`, and `expired` are **distinct statuses that merely share the red fill** — they are not synonyms for one another, so pass the status that actually applies (`suspended` for a suspended user, `expired` for an expired entry) rather than flattening everything to `off`.
+The synonym groups are defined in `Color::tryFromStatus()` [5.2+] (`src/enums/Color.php`): `on`/`live`/`active`/`enabled` all map to teal (the green fill), and `off`/`suspended`/`expired` all map to red. `on` and `off` are the first-class boolean pair — prefer them for lightswitch-style state. But `off`, `suspended`, and `expired` are **distinct statuses that merely share the red fill** — they are not synonyms for one another, so pass the status that actually applies (`suspended` for a suspended user, `expired` for an expired entry) rather than flattening everything to `off`.
 
 For "inherit/neutral" indicators, use `.status.inactive` (hollow). When placing an inactive status inside a dark `.active` button background, override the outline color for WCAG contrast: `--outline-color: var(--white)` (the default `var(--gray-500)` fails 3:1 contrast against dark backgrounds).
 

@@ -139,7 +139,7 @@ The rules that fall out:
 
 ### Library-shipped Yii modules have no CLI migration track
 
-`craft migrate/up --track=module:<handle>` fails with `Invalid migration track`. Craft's `MigrateController` resolves only `craft`, `content`, and `plugin:<handle>` tracks (plus an `EVENT_REGISTER_MIGRATOR` escape hatch that nothing wires up for you) — verified in `craftcms/cms` 5.10.12, `src/console/controllers/MigrateController.php:467`.
+`craft migrate/up --track=module:<handle>` fails with `Invalid migration track`. Craft's `MigrateController` resolves only `craft`, `content`, and `plugin:<handle>` tracks (plus an `EVENT_REGISTER_MIGRATOR` escape hatch that nothing wires up for you) — verified against `craftcms/cms` 5.10.12, `src/console/controllers/MigrateController.php:467`.
 
 So a library-shipped module's migrations reach an install **only** when a consumer plugin runs them from its own dated migration:
 

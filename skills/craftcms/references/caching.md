@@ -15,7 +15,7 @@ Complete reference for all caching strategies in Craft CMS 5 -- template caching
 - Using `{% cache %}` around variable assignments needed outside the block -- cached variables do not leak out. A `{% set x %}` inside a cache block is invisible to code after `{% endcache %}`.
 - Caching everything instead of targeting expensive queries -- adds key lookup and storage overhead for operations that are already cheap. Only cache blocks that contain slow element queries or external API calls.
 - Not setting `enableTemplateCaching => false` in dev -- debugging cached output is confusing because changes to templates do not appear until cache expires or is cleared.
-- Forgetting `asyncCsrfInputs` when using full-page static caching (Blitz) -- CSRF tokens get frozen into cached HTML, causing form submissions to fail for all users except the one who warmed the cache.
+- Forgetting `asyncCsrfInputs` [5.1+] when using full-page static caching (Blitz) -- CSRF tokens get frozen into cached HTML, causing form submissions to fail for all users except the one who warmed the cache.
 - Skipping cache warming after deploy -- first visitors hit a cold cache and experience slow page loads. Use Blitz Cache Warmer or a custom queue job to pre-warm critical pages.
 - Not understanding invalidation boundaries -- Craft auto-invalidates template caches when elements referenced inside the block change, but custom data caches (`Craft::$app->getCache()`) need manual invalidation via `TagDependency` or explicit `delete()` calls.
 - Using the same Redis `database` index for cache and session -- flushing cache kills all active sessions. See `config-app.md` for the correct separation.
@@ -329,7 +329,7 @@ On first request (or during cache warming), Blitz renders the page through Craft
 
 ### Key architecture decisions
 
-**CSRF handling:** `asyncCsrfInputs` MUST be set to `true` in `config/general.php` when using Blitz. Without it, CSRF tokens are baked into the cached HTML, and form submissions fail for every visitor except the one who originally warmed the cache.
+**CSRF handling:** `asyncCsrfInputs` [5.1+] MUST be set to `true` in `config/general.php` when using Blitz. Without it, CSRF tokens are baked into the cached HTML, and form submissions fail for every visitor except the one who originally warmed the cache.
 
 ```php
 // config/general.php
@@ -339,7 +339,7 @@ return GeneralConfig::create()
     ->asyncCsrfInputs(true);
 ```
 
-**Forms:** Even with `asyncCsrfInputs`, forms inside Blitz-cached pages need careful handling. Use `{% dynamicInclude %}` for form blocks, or use Sprig components that fetch fresh tokens on load.
+**Forms:** Even with `asyncCsrfInputs` [5.1+], forms inside Blitz-cached pages need careful handling. Use `{% dynamicInclude %}` for form blocks, or use Sprig components that fetch fresh tokens on load.
 
 **User-specific content:** Cart counts, login/logout state, personalized greetings, and other per-user content must be loaded client-side via JavaScript or through `{% dynamicInclude %}` blocks that are excluded from the static cache.
 
@@ -540,7 +540,7 @@ ddev craft invalidate-tags/all
 |---------|-------------|-----|
 | Template changes not appearing | `enableTemplateCaching` is true in dev | Set to `false` for dev environment |
 | Stale content after saving entry | Cache key does not include the element query | Verify the query runs inside the `{% cache %}` block |
-| CSRF token errors on forms | Token cached inside `{% cache %}` or Blitz page | Move form outside cache block, or use `asyncCsrfInputs` |
+| CSRF token errors on forms | Token cached inside `{% cache %}` or Blitz page | Move form outside cache block, or use `asyncCsrfInputs` [5.1+] |
 | Different users see same personalized content | User-specific content inside `{% cache %}` | Move personalized content outside cache, load via JS |
 | Cache grows unboundedly | `{% cache globally %}` with dynamic keys based on URL params | Add `for` TTL or restrict which params generate keys |
 | Data cache not updating | No invalidation trigger for data cache | Add `TagDependency` and invalidate on element events |

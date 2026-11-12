@@ -16,8 +16,8 @@
 - Setting `maxGraphqlComplexity`, `maxGraphqlDepth`, or `maxGraphqlResults` to `0` in production — zero means unlimited, which is a denial-of-service vector.
 - Not sending the `X-Craft-Site` header for multi-site API consumers — Craft defaults to the primary site, silently returning wrong-language content.
 - Leaving the public GraphQL schema enabled without auditing its scope — it exposes content to unauthenticated requests.
-- Selecting `author`, `authors`, or `uploader` from a schema without **Query for users** — since Craft 5.11.0 those fields (plus `authorId`, `authorIds`, `draftCreator`, `revisionCreator`, `uploaderId`) only exist in schemas with the Users → "Query for users" scope. A front end that worked on 5.10 fails query validation after the upgrade. Grant the scope on the private schema the front end uses (not the public one, unless author accounts are meant to be public) or stop selecting author data.
-- Assuming `allowedGraphqlOrigins` still works on Craft 5.3+ — it is deprecated since 4.11.0. Use the `craft\filters\Cors` filter instead.
+- Selecting `author`, `authors`, or `uploader` from a schema without **Query for users** — [changed 5.11] those fields (plus `authorId`, `authorIds`, `draftCreator`, `revisionCreator`, `uploaderId`) only exist in schemas with the Users → "Query for users" scope. Before 5.11 they existed in every schema; after, a front end that worked on 5.10 fails query validation. When supporting both, grant the scope. Grant the scope on the private schema the front end uses (not the public one, unless author accounts are meant to be public) or stop selecting author data.
+- Relying on `allowedGraphqlOrigins` — [deprecated 5.3] (already deprecated in 4.11.0). Use the `craft\filters\Cors` filter [5.3+] instead; before 5.3 `allowedGraphqlOrigins` is the only option.
 
 ## Contents
 
@@ -62,7 +62,7 @@ The default endpoint is `actions/graphql/api`. When using the `verbs` route patt
 
 ### Authentication and Schema Resolution
 
-Craft resolves which GraphQL schema to use in this order (`GraphqlController::_schema()`, `Request::getBearerToken()`):
+Craft resolves which GraphQL schema to use in this order (`GraphqlController::_schema()`, `Request::getBearerToken()` [5.1+]):
 
 1. **`X-Craft-Gql-Schema` header** — admin sessions only (`requireAdmin`); a schema UID, or `*` for the full schema. This is what the CP GraphiQL playground uses.
 2. **`X-Craft-Authorization: Bearer <token>`** — checked *before* `Authorization`. Use it where the web server or a proxy strips `Authorization`.
@@ -78,7 +78,7 @@ Authorization: Bearer abc123def456
 
 Private tokens are created in the CP under Settings > GraphQL > Tokens. Each token is scoped to one schema.
 
-Schema scopes decide which fields *exist*, not just which return data. From Craft 5.11 the user-related fields (`author`, `authors`, `uploader`, and their id variants) are absent from any schema without **Query for users**, so selecting them is a validation error, not an empty result. The `craftcms` skill's `graphql.md` (Craft 5.11 Additions) has the full list.
+Schema scopes decide which fields *exist*, not just which return data. [changed 5.11] The user-related fields (`author`, `authors`, `uploader`, and their id variants) are absent from any schema without **Query for users**, where before 5.11 they were present everywhere, so selecting them is a validation error, not an empty result. The `craftcms` skill's `graphql.md` (the 5.11 additions section) has the full list.
 
 ### Rate Limiting
 
@@ -135,7 +135,7 @@ return GeneralConfig::create()
 ;
 ```
 
-### Modern: `craft\filters\Cors` (since Craft 5.3.0)
+### Modern: `craft\filters\Cors` [5.3+]
 
 Configure in `config/app.web.php`. Applies to any controller action, not just GraphQL:
 

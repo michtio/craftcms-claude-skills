@@ -409,13 +409,13 @@ ddev craft project-config/diff       # "No pending project config YAML changes."
 
 For small settings changes (a required flag, instructions, a dropdown option), editing the YAML directly and running `craft up` is simpler. See `deployment.md` → "project-config/write safely".
 
-Source: `craftcms/cms` 5.11.5.1 -- https://github.com/craftcms/cms/blob/5.11.5.1/src/services/ProjectConfig.php (`init()` 403-412, `flush()` 415-424, `set()` 527-535, `_saveConfigAfterRequest()` 1567-1575).
+Verified against `craftcms/cms` 5.11.5.1 -- https://github.com/craftcms/cms/blob/5.11.5.1/src/services/ProjectConfig.php (`init()` 403-412, `flush()` 415-424, `set()` 527-535, `_saveConfigAfterRequest()` 1567-1575).
 
 ### Never call `ProjectConfig::flush()` inside a migration
 
 Two independent reasons:
 
-- `flush()` calls `saveModifiedConfigData()`, which **releases the shared project-config mutex when it finishes** (`craftcms/cms` 5.10.12, `src/services/ProjectConfig.php:873`) — including a lock the surrounding process (Craft's own migration apply, a test harness) acquired and still believes it holds. The lock state is desynced for the rest of the process; later project-config writes then fail with `BusyResourceException`/`StaleResourceException` in places far from the migration that caused it.
+- `flush()` calls `saveModifiedConfigData()`, which **releases the shared project-config mutex when it finishes** (verified against `craftcms/cms` 5.10.12, `src/services/ProjectConfig.php:873`) — including a lock the surrounding process (Craft's own migration apply, a test harness) acquired and still believes it holds. The lock state is desynced for the rest of the process; later project-config writes then fail with `BusyResourceException`/`StaleResourceException` in places far from the migration that caused it.
 - With automatic YAML writing enabled, `flush()` rewrites `config/project/*.yaml` — files the developer has **committed to VCS**. A plugin upgrade that mutates a project's tracked YAML out from under its owner is wrong on its own terms, independent of the lock problem.
 
 If a plugin stored a bad settings value that needs correcting, coerce it **at read time** (in the settings model or a getter) rather than rewriting stored config from a migration.
@@ -483,7 +483,7 @@ Each plugin has its own migration track, triggered when the plugin's `schemaVers
 
 ### Modules and library-shipped modules have no CLI track
 
-`craft migrate/up --track=module:<handle>` fails with `Invalid migration track` — `MigrateController` resolves only `craft`, `content`, and `plugin:<handle>` (plus an `EVENT_REGISTER_MIGRATOR` escape hatch nothing registers for you; `craftcms/cms` 5.10.12, `src/console/controllers/MigrateController.php:467`). A project-level module uses content migrations instead (see above). A module shipped **inside a Composer library** is worse: its migrations run only when a consumer plugin calls the module's own migrator from a dated migration of its own —
+`craft migrate/up --track=module:<handle>` fails with `Invalid migration track` — `MigrateController` resolves only `craft`, `content`, and `plugin:<handle>` (plus an `EVENT_REGISTER_MIGRATOR` escape hatch nothing registers for you; verified against `craftcms/cms` 5.10.12, `src/console/controllers/MigrateController.php:467`). A project-level module uses content migrations instead (see above). A module shipped **inside a Composer library** is worse: its migrations run only when a consumer plugin calls the module's own migrator from a dated migration of its own —
 
 ```php
 // In the consumer plugin's dated migration

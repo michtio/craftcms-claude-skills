@@ -20,7 +20,7 @@ When unsure about a Blitz feature, `WebFetch` the plugin page.
 - Caching pages with CSRF tokens — forms with CSRF tokens get frozen in the cache. Render the token dynamically with `craft.blitz.csrfInput()` (or use `craft.blitz.includeDynamic()` for the whole form partial).
 - Including user-specific content in cached pages — anything that varies per user (cart counts, logged-in state, dashboards) must use `craft.blitz.includeDynamic()` / `craft.blitz.fetchUri()` or be loaded client-side.
 - Caching pages behind authentication — `account/*`, admin areas, and any authenticated routes must be excluded via `excludedUriPatterns`.
-- Upgrading across 5.13.0 without a cache clear — element, field and element-query dependency tracking became site-aware in 5.13.0, so clear or refresh the cache once the update completes. From then on, saving translated content refreshes only the affected site's pages and the pages depending on them (putyourlightson/craft-blitz#803). Also be on 5.12.16+, where POST requests to pages containing cached includes could be processed more than once (#849).
+- Upgrading across [blitz 5.13+] without a cache clear — [changed blitz 5.13] element, field and element-query dependency tracking became site-aware, so clear or refresh the cache once the update completes. From then on, saving translated content refreshes only the affected site's pages and the pages depending on them (putyourlightson/craft-blitz#803). Also be on [blitz 5.12.16+], where POST requests to pages containing cached includes could be processed more than once (#849).
 
 ## What to Exclude From the Cache
 
@@ -88,7 +88,7 @@ For user-specific or real-time content within cached pages. `craft.blitz.include
 
 ### Per-Page Cache Options
 
-`craft.blitz.options()` controls caching for the current page. Pass an object, or chain the methods (`cachingEnabled`, `cacheDuration`, `expiryDate`, `tags`, `addTags` (5.12.10+), `trackElements`, `trackElementQueries`, `paginate`):
+`craft.blitz.options()` controls caching for the current page. Pass an object, or chain the methods (`cachingEnabled`, `cacheDuration`, `expiryDate`, `tags`, `addTags` [blitz 5.12.10+], `trackElements`, `trackElementQueries`, `paginate`):
 
 ```twig
 {# Object notation — disable caching for this page #}
@@ -103,7 +103,7 @@ For user-specific or real-time content within cached pages. `craft.blitz.include
 {# Chained — combine duration and tags #}
 {% do craft.blitz.options.cacheDuration('P1D').tags(['home', 'listing']) %}
 
-{# Chained — append tags from a partial without clobbering the layout's (5.12.10+) #}
+{# Chained — append tags from a partial without clobbering the layout's ([blitz 5.12.10+]) #}
 {% do craft.blitz.options.addTags('sidebar') %}
 ```
 
@@ -131,7 +131,7 @@ Beyond templates, Blitz has a pluggable driver system configured in `config/blit
 - **Purger** — clears an upstream CDN / reverse proxy on refresh (Cloudflare, CloudFront, KeyCDN, via add-on packages such as `putyourlightson/craft-blitz-cloudflare`).
 - **Deployer** — pushes cached pages to a static host (e.g. the Git deployer).
 - **Web-server rewrite** — an Nginx/Apache rule that serves cached files directly, bypassing PHP. The single biggest performance win, but a deploy/infra concern.
-- **`batchInsertSize`** (5.12.14+, default `50`) — how many tracking records Blitz inserts per statement when it records a page's element and query dependencies. Added for the save-time deadlocks in putyourlightson/craft-blitz#903; lower it when large pages deadlock or trip packet limits on clustered databases.
+- **`batchInsertSize`** [blitz 5.12.14+] (default `50`) — how many tracking records Blitz inserts per statement when it records a page's element and query dependencies. Added for the save-time deadlocks in putyourlightson/craft-blitz#903; lower it when large pages deadlock or trip packet limits on clustered databases.
 
 Configure these per Blitz's official [configuration docs](https://putyourlightson.com/plugins/blitz#configuration). General Craft caching strategy lives in the `craftcms` skill's `caching.md`. Blitz is a plugin and runs on any host; on platforms that already ship full-page/edge caching (e.g. Craft Cloud, Servd) running Blitz on top is often redundant — check your host's built-in caching model before adding it.
 

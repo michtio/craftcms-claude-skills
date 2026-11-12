@@ -20,8 +20,8 @@ When unsure about a Feed Me feature, `WebFetch` the GitHub README.
 - Debug mode runs the import — the "Debug" button in the CP processes the feed for real against your database. It is not a dry run or preview. Use it only in dev environments.
 - Empty values clearing existing data — by default, blank/missing values in the feed can overwrite existing field values with empty content. Configure the "Set empty values" option per field mapping to control this behavior. Set to "Don't update" for fields that should only be written when the feed provides a value.
 - Matrix unique identifiers are unreliable — Feed Me's duplicate detection for nested Matrix entries does not work consistently. Expect Matrix blocks to be re-created on each import unless you carefully test your specific mapping.
-- Feed on a private host rejected (6.16.0+) — any feed or asset URL that resolves to a private IP address is refused unless its hostname is listed in `allowedPrivateHosts` in `config/feed-me.php`. That covers every DDEV import (`*.ddev.site`, container hostnames) and internal feeds on a VPN. The setting is config-file only, takes a `*.` wildcard for subdomains, and never reaches project config. 6.16.0 and 6.16.1 also close one missing-authorization and three SSRF advisories, so 6.16.1 is the floor.
-- Looking for the "Clear pending job queue" utility — removed in 6.15.0. The same release added mapping into Craft's native Link field.
+- Feed on a private host rejected [feed-me 6.16+] — any feed or asset URL that resolves to a private IP address is refused unless its hostname is listed in `allowedPrivateHosts` in `config/feed-me.php`. That covers every DDEV import (`*.ddev.site`, container hostnames) and internal feeds on a VPN. The setting is config-file only, takes a `*.` wildcard for subdomains, and never reaches project config. 6.16.0 and 6.16.1 also close one missing-authorization and three SSRF advisories, so 6.16.1 is the floor.
+- Looking for the "Clear pending job queue" utility — [removed feed-me 6.15]. The same release added mapping into Craft's native Link field.
 - devMode kills import performance — with `devMode` on, Craft logs every database query. A 5,000-entry import can generate millions of log entries, consuming memory and slowing the import by 10x or more. Always disable `devMode` when running production imports.
 
 ## Import Strategy (Duplicate Handling)
@@ -88,7 +88,7 @@ return [
         // Sleep time in microseconds between element saves (throttling)
         'sleepBetweenSaves' => 0,
 
-        // Hostnames allowed to resolve to private IP addresses (6.16.0+); a leading
+        // Hostnames allowed to resolve to private IP addresses [feed-me 6.16+]; a leading
         // `*.` matches any subdomain. Config file only, never project config.
         'allowedPrivateHosts' => ['feeds.internal', '*.ddev.site'],
     ],

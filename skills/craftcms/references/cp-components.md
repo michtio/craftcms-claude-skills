@@ -206,7 +206,7 @@ Craft.createElementEditor('myplugin\\elements\\MyElement', { attributes: { typeI
 
 Slideouts appear in: relation fields (clicking chips/cards), element indexes ("Edit" action), inline creation buttons, and any custom UI rendering `_elements/chip.twig`.
 
-### Reloading a Slideout (5.10+)
+### Reloading a Slideout [5.10+]
 
 `Craft.CpScreenSlideout` instances expose a `reload()` method that re-fetches the screen's HTML and replaces the slideout content in place. Craft itself uses this to auto-refresh slideouts when the same element is edited in another browser tab. You can also call it manually from custom JS after a background operation completes:
 
@@ -219,7 +219,7 @@ slideout.reload();
 
 The reload preserves the slideout's open state and scroll position; only the form contents update.
 
-### Queue Completion Event (5.10+)
+### Queue Completion Event [5.10+]
 
 `Craft.cp` fires a `queueCompleted` event when the last queue job in the running batch finishes. Useful for CP screens that want to refresh themselves once a long-running queue (resave, propagation, batch import) is done:
 

@@ -17,7 +17,7 @@ Complete reference for `config/app.php` component configuration in Craft CMS 5. 
 - Overriding mailer in `app.php` without using `App::mailerConfig()` as the base -- loses CP email settings (system address, sender name, transport adapter selected in Settings).
 - Trying to set the mail transport *type* per environment via an env variable -- adapter settings (host, port, username) are env-parseable, but the transport class itself is not, and project config syncs the CP choice across environments. The `app.php` mailer override is the only per-environment mechanism. See [Environment-Specific Transport](#environment-specific-transport).
 - Overriding session without using `App::sessionConfig()` as the base -- loses Craft's `SessionBehavior` which the CP depends on.
-- Database sessions via `yii\web\DbSession` on Craft 5.11+ -- use `craft\web\DbSession`, which adds the "headers already sent" guard. Either way the `phpsessions` table is not created on install: run `craft setup/php-session-table` first.
+- Database sessions via `yii\web\DbSession` -- [5.11+] use `craft\web\DbSession`, which adds the "headers already sent" guard. Before 5.11: `yii\web\DbSession` is the only option. Either way the `phpsessions` table is not created on install: run `craft setup/php-session-table` first.
 - Not running `ddev craft db/search-indexes` after changing search component config -- existing entries are still indexed with the old settings.
 - Forgetting `CRAFT_APP_ID` when multiple Craft installs share a cache backend -- cache key collisions cause cross-site data leaks.
 
@@ -103,7 +103,7 @@ The default `cache` component is `yii\caching\FileCache` writing to `storage/run
 
 ### Database Cache
 
-Use `craft\cache\DbCache` (Craft's subclass of Yii's) with `'cacheTable' => Table::CACHE`. The `{{%cache}}` table is not created on install: run `ddev craft setup/db-cache-table` first. Before Craft 5.11.4, with `DbCache` already configured and schema caching on, `setup/php-session-table` could roll back because invalidating the schema cache hit the not-yet-created cache table (craftcms/cms#19742) -- run `setup/db-cache-table` first, or be on 5.11.4+. On 5.11.4 exactly, `DbCache` plus `Craft::$app->getDb()->cache(...)` recursed until memory ran out, because `setValue()` introspected the cache table inside the query-cache scope and cached that query too (craftcms/cms#19877); 5.11.5 wraps the lookup in `noCache()`, so be on 5.11.5+ before combining the two.
+Use `craft\cache\DbCache` (Craft's subclass of Yii's) with `'cacheTable' => Table::CACHE`. The `{{%cache}}` table is not created on install: run `ddev craft setup/db-cache-table` first. [changed 5.11.4] Before 5.11.4, with `DbCache` already configured and schema caching on, `setup/php-session-table` could roll back because invalidating the schema cache hit the not-yet-created cache table (craftcms/cms#19742) -- run `setup/db-cache-table` first; 5.11.4 and later no longer hit it. [changed 5.11.5] On 5.11.4 exactly, `DbCache` plus `Craft::$app->getDb()->cache(...)` recursed until memory ran out, because `setValue()` introspected the cache table inside the query-cache scope and cached that query too (craftcms/cms#19877); 5.11.5 wraps the lookup in `noCache()`, so do not combine the two on 5.11.4.
 
 ### Redis Cache
 
@@ -182,7 +182,7 @@ Out of the box the `session` component is `craft\web\Session`, which sits on PHP
 
 ### Database Session
 
-Craft ships the `phpsessions` table migration but does not run it on install. Create the table first (idempotent), then point the session at it:
+[5.11+] `craft\web\DbSession` replaces `yii\web\DbSession` here (Before 5.11: use `yii\web\DbSession`). Craft ships the `phpsessions` table migration but does not run it on install. Create the table first (idempotent), then point the session at it:
 
 ```bash
 ddev craft setup/php-session-table   # creates {{%phpsessions}}
@@ -197,7 +197,7 @@ return [
     'components' => [
         'session' => function() {
             $config = App::sessionConfig();
-            $config['class'] = craft\web\DbSession::class; // 5.11+; yii\web\DbSession::class before
+            $config['class'] = craft\web\DbSession::class; // [5.11+]; Before 5.11: yii\web\DbSession::class
             $config['sessionTable'] = Table::PHPSESSIONS;
             return Craft::createObject($config);
         },
@@ -205,7 +205,7 @@ return [
 ];
 ```
 
-`craft\web\DbSession` (Craft 5.11.0+) extends `yii\web\DbSession` with the same guard `craft\web\Session` has: `has()` reads `$_SESSION` directly instead of opening a session once output has started. With plain `yii\web\DbSession` that path logs a *Headers already sent* warning on every affected request (craftcms/cms#19139). Swap the class when you upgrade; the table and the rest of the config are unchanged.
+`craft\web\DbSession` [5.11+] extends `yii\web\DbSession` with the same guard `craft\web\Session` has: `has()` reads `$_SESSION` directly instead of opening a session once output has started. With plain `yii\web\DbSession` (Before 5.11: the only option) that path logs a *Headers already sent* warning on every affected request (craftcms/cms#19139). Swap the class when you upgrade; the table and the rest of the config are unchanged.
 
 ### Redis Session
 
@@ -333,7 +333,7 @@ Craft's mailer (`craft\mail\Mailer`) wraps Symfony Mailer. Transport is configur
 
 ### CP Configuration (Settings > Email)
 
-Configures: System Email Address, Reply-To, Sender Name, HTML Email Template (receives `body` variable), Transport adapter, and per-site overrides (Craft 5.6+). Settings are stored in project config. Use the **Test** button to verify delivery before saving.
+Configures: System Email Address, Reply-To, Sender Name, HTML Email Template (receives `body` variable), Transport adapter, and per-site overrides [5.6+]. Settings are stored in project config. Use the **Test** button to verify delivery before saving.
 
 ### Built-in Transport Adapters
 
@@ -428,7 +428,7 @@ Consider gating on an opt-in env flag as well as `devMode` — `if (Craft::$app-
 
 - `App::mailerConfig()` is essential when overriding -- without it, system email address, sender name, and CP settings are lost.
 - Changes in `app.php` are NOT reflected when testing from Settings > Email -- the test button uses CP settings directly.
-- Multi-site: mail settings use the user's preferred site for per-site overrides (Craft 5.6+).
+- Multi-site: mail settings use the user's preferred site for per-site overrides [5.6+].
 
 ## Search Component
 
@@ -522,7 +522,7 @@ $config['targets']['file']['except'] = [
 
 ## CORS Filter
 
-Brief coverage here -- see `headless.md` for the full headless/hybrid pattern.
+[5.3+] `craft\filters\Cors`. Brief coverage here -- see `headless.md` for the full headless/hybrid pattern.
 
 ```php
 // config/app.web.php
@@ -542,7 +542,7 @@ return [
 
 Must be in `app.web.php` -- CORS is an HTTP concern with no meaning in console context.
 
-The `as corsFilter` key attaches this as a Yii2 behavior on the application object, so it runs on every web request. The `craft\filters\Cors` class extends Yii's CORS filter with Craft-specific defaults.
+The `as corsFilter` key attaches this as a Yii2 behavior on the application object, so it runs on every web request. The `craft\filters\Cors` class [5.3+] extends Yii's CORS filter with Craft-specific defaults.
 
 ## Database Replicas
 

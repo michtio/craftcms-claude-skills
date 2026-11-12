@@ -20,13 +20,13 @@ When unsure about CKEditor options, `WebFetch` the GitHub readme.
 - Using `{{ entry.ckeditorField }}` directly when nested entries exist — the field returns an iterable chunk array, not a string. Direct output renders `Array`. Always use the chunk loop pattern.
 - Configuring heading levels in both the field's `$headingLevels` setting and the config options' `heading.options` — the field setting takes precedence. Don't set `heading.options` in config unless you need fine-grained control beyond what the field exposes.
 - Images as `<img>` vs nested entries — CKEditor supports both via `$imageMode`. Using nested entries gives editors more control (alt text fields, captions, transforms) but adds rendering complexity. See Image Mode below.
-- Pre-5.0 custom plugin asset bundles silently break — plugin 5.0.0 changed third-party CKEditor plugin registration to ES modules. Asset bundles built against the 4.x pattern load but their plugins never register. See Extending with Custom Plugins.
-- Custom plugin missing from a field after upgrading to CKEditor 5.8.0 — packages now load per field only when one of their `$toolbarItems` is in that field's toolbar, and custom pages that create their own editors must call `Plugin::registerCkeditorPackageBundles($view)`. See Extending with Custom Plugins.
+- Pre-5.0 custom plugin asset bundles silently break — [changed ckeditor 5.0] the plugin changed third-party CKEditor plugin registration to ES modules. Asset bundles built against the 4.x pattern load but their plugins never register. See Extending with Custom Plugins.
+- Custom plugin missing from a field after upgrading to CKEditor [ckeditor 5.8+] — packages now load per field only when one of their `$toolbarItems` is in that field's toolbar, and custom pages that create their own editors must call `Plugin::registerCkeditorPackageBundles($view)`. See Extending with Custom Plugins.
 - Pre-5.0 CKEditor Config records carrying toolbar/heading settings — these have moved to field-level settings (`$toolbar`, `$headingLevels`). The v5 upgrade migrates them; double-check fields after upgrade.
 
 ## Configuration
 
-CKEditor field settings expose toolbar arrangement, heading levels, config options, and custom styles directly on the field — no separate "CKEditor Config" record needed for these (as of 5.0.0). Shared configs that span multiple fields live in `config/ckeditor/` files (as of 5.3.0).
+CKEditor field settings expose toolbar arrangement, heading levels, config options, and custom styles directly on the field — no separate "CKEditor Config" record needed for these [ckeditor 5.0+]. Shared configs that span multiple fields live in `config/ckeditor/` files [ckeditor 5.3+].
 
 ### Field Settings
 
@@ -38,13 +38,13 @@ The CKEditor field carries these settings, configurable in the field's UI or pro
 | `$headingLevels` | array \| false | Allowed heading levels. Default: `[1..6]`. `false` disables headings entirely. |
 | `$options` | string | Inline JS/JSON config (CKEditor `EditorConfig` shape) |
 | `$styles` | string | Inline CSS for the editor surface |
-| `$jsFile` | string | Path to a `.js` or `.json` file in `config/ckeditor/` (5.3.0+) |
-| `$cssFile` | string | Path to a `.css` file in `config/ckeditor/` (5.3.0+) |
-| `$imageMode` | string | `'img'` (default) or `'entries'` (5.0.0+, see Image Mode) |
+| `$jsFile` | string | Path to a `.js` or `.json` file in `config/ckeditor/` [ckeditor 5.3+] |
+| `$cssFile` | string | Path to a `.css` file in `config/ckeditor/` [ckeditor 5.3+] |
+| `$imageMode` | string | `'img'` (default) or `'entries'` [ckeditor 5.0+] (see Image Mode) |
 | `$imageEntryTypeUid` | string | Entry type UID used when `$imageMode = 'entries'` |
 | `$imageFieldUid` | string | Assets field UID inside the image entry type |
-| `$advancedLinkFields` | array | Extra fields shown in the link modal (5.0.0+, see Link Configuration) |
-| `$fullGraphqlData` | bool | GraphQL Mode toggle (4.8.0+, see GraphQL Mode) |
+| `$advancedLinkFields` | array | Extra fields shown in the link modal [ckeditor 5.0+] (see Link Configuration) |
+| `$fullGraphqlData` | bool | GraphQL Mode toggle [ckeditor 4.8+] (see GraphQL Mode) |
 
 Programmatic config goes through `Field::getJson()` / `Field::setJson()`:
 
@@ -80,9 +80,9 @@ Inline config goes in the field's "Config Options" textarea, or in a `.json` / `
 }
 ```
 
-Custom `toolbar` values are respected as of plugin 5.2.0 — earlier versions silently overrode toolbar in the config with the field-level setting. Set toolbar via the field setting where possible; reach for config-level `toolbar` only for ordering tweaks that the UI can't express.
+[changed ckeditor 5.2] Custom `toolbar` values are respected. Earlier versions silently overrode toolbar in the config with the field-level setting. Set toolbar via the field setting where possible; reach for config-level `toolbar` only for ordering tweaks that the UI can't express.
 
-### Config as Files (5.3.0+)
+### Config as Files [ckeditor 5.3+]
 
 Drop shared configs into `config/ckeditor/` and reference them per-field:
 
@@ -108,15 +108,15 @@ Custom style classes appear in the editor's Styles dropdown:
 ]
 ```
 
-The CSS that styles these classes inside the editor surface lives in `$styles` (inline) or `$cssFile` (5.3.0+). `@import` works in the `$cssFile` CSS as of 5.2.1 — pull in shared font/color tokens without inlining them.
+The CSS that styles these classes inside the editor surface lives in `$styles` (inline) or `$cssFile` [ckeditor 5.3+]. `@import` works in the `$cssFile` CSS [ckeditor 5.2.1+] — pull in shared font/color tokens without inlining them.
 
 Ensure HTML Purifier permits the corresponding classes and elements on save.
 
-## Image Mode (5.0.0+)
+## Image Mode [ckeditor 5.0+]
 
 CKEditor fields can render images two ways:
 
-- **`$imageMode = 'img'`** (default) — images are inserted as `<img>` tags directly in the content. Simplest, but no caption or extra per-image fields. Since 5.7.0 the `alt` attribute is filled from the asset's Alternative Text and stays in sync with it until an editor changes it in the alt-text modal (which also has a "Sync from asset" button); before 5.7.0 it was not populated from the asset. Since 5.9.0 a dynamic default upload subpath (`{slug}`, `{id}`, anything in braces) no longer throws `InvalidSubpathException` while editing a new element: uploads land in the user's temporary folder and `afterElementSave()` moves them into the resolved folder, creating it on a canonical save and, like the Assets field, only moving a draft's uploads when the folder already exists (craftcms/ckeditor#618).
+- **`$imageMode = 'img'`** (default) — images are inserted as `<img>` tags directly in the content. Simplest, but no caption or extra per-image fields. [changed ckeditor 5.7] The `alt` attribute is filled from the asset's Alternative Text and stays in sync with it until an editor changes it in the alt-text modal (which also has a "Sync from asset" button); earlier versions did not populate it from the asset. [changed ckeditor 5.9] A dynamic default upload subpath (`{slug}`, `{id}`, anything in braces) no longer throws `InvalidSubpathException` while editing a new element: uploads land in the user's temporary folder and `afterElementSave()` moves them into the resolved folder, creating it on a canonical save and, like the Assets field, only moving a draft's uploads when the folder already exists (craftcms/ckeditor#618).
 - **`$imageMode = 'entries'`** — each image is inserted as a nested entry of a configured type. The image entry type carries an Assets field plus any other fields you want (alt text, caption, focal point overrides). Editors interact with images as element chips.
 
 To use entries mode, configure `$imageEntryTypeUid` (the entry type UID) and `$imageFieldUid` (the Assets field UID inside that entry type). The entry type's field layout determines what editors can configure per-image.
@@ -127,17 +127,17 @@ $field->imageEntryTypeUid = $imageEntryType->uid;
 $field->imageFieldUid = $imageAssetsField->uid;
 ```
 
-Drag-and-drop uploads work in both modes. In entries mode, dropping an image creates a new nested entry with the dropped file in the configured Assets field (5.0.0; refined in 5.2.0 to work even when the toolbar has only the "Add nested content" button, no dedicated "Insert image").
+Drag-and-drop uploads work in both modes. In entries mode, dropping an image creates a new nested entry with the dropped file in the configured Assets field [ckeditor 5.0+], refined [ckeditor 5.2+] to work even when the toolbar has only the "Add nested content" button, no dedicated "Insert image").
 
-## Link Configuration (5.0.0+)
+## Link Configuration [ckeditor 5.0+]
 
-The link modal was rebuilt on top of Craft's native Link fields in 5.0.0. The link picker supports the same target types as a regular Link field (URL, email, phone, asset, entry, category, custom element types registered via Link field events).
+The link modal was rebuilt on top of Craft's native Link fields [ckeditor 5.0+]. The link picker supports the same target types as a regular Link field (URL, email, phone, asset, entry, category, custom element types registered via Link field events).
 
 `$advancedLinkFields` opts in to additional fields in the link modal — labels, target attributes, link types beyond the defaults. The setting is an array of field handles drawn from a Link field's settings schema. Default: empty (basic link picker only).
 
-New links default to the first available link type as of 5.4.0 (typically "Entry"), instead of leaving the type unselected.
+[changed ckeditor 5.4] New links default to the first available link type (typically "Entry"). Earlier versions left the type unselected.
 
-## GraphQL Mode (4.8.0+)
+## GraphQL Mode [ckeditor 4.8+]
 
 Set `$fullGraphqlData = true` to expose the CKEditor field as a structured object in GraphQL, not just the rendered HTML string. Two GraphQL types ship:
 
@@ -158,7 +158,7 @@ CKEditor fields can embed Craft entries inline within rich text content — Craf
    - **Entry types with icons** get dedicated toolbar buttons (configurable via the entry type's icon setting).
    - **Entry types without icons** are grouped under a single "+" / "Add nested content" button.
 
-The 4.8.0-era "'New' Button Label" setting was removed in 5.0.0 — the "+" button is named automatically based on what the field allows.
+The "'New' Button Label" setting from ckeditor 4.8 was [removed ckeditor 5.0] — the "+" button is named automatically based on what the field allows.
 
 `Field::entryType()` returns the configured nested-entries entry type when one is set, useful for programmatic introspection.
 
@@ -178,7 +178,7 @@ Always use the chunk iteration pattern — it handles both plain HTML and nested
 {% endfor %}
 ```
 
-### Value Helpers (4.8.0+)
+### Value Helpers [ckeditor 4.8+]
 
 For non-chunk workflows, the field value (`craft\ckeditor\data\FieldData`) and individual markup chunks (`craft\ckeditor\data\Markup`) expose helpers:
 
@@ -219,7 +219,7 @@ If the field has no nested entries, output directly:
 {{ entry.richContent }}
 ```
 
-## Fullscreen Toolbar Item (5.0.0+)
+## Fullscreen Toolbar Item [ckeditor 5.0+]
 
 The `fullscreen` toolbar item maximizes the editor to fill the viewport. Add it to the field's `$toolbar` array or the config's `toolbar` array. Useful for content-heavy fields where editors want extra working room without a slideout.
 
@@ -246,33 +246,33 @@ If custom styles or plugins produce HTML that gets stripped on save, the Purifie
 ddev craft ckeditor/convert
 ```
 
-Converts all Redactor fields to CKEditor fields, preserving content. Run once during the Craft 5 upgrade process. Nested-context conversion is correct as of 4.10.0.
+Converts all Redactor fields to CKEditor fields, preserving content. Run once during the Craft 5 upgrade process. Nested-context conversion is correct from [ckeditor 4.10+].
 
-## Reference Deletion Blocker (5.6.0+ — requires Craft 5.10)
+## Reference Deletion Blocker [ckeditor 5.6+] (requires Craft [5.10+])
 
-Plugin 5.6.0 hooks into Craft 5.10's deletion-blocker subsystem (see `craftcms/elements.md` → Deletion Blockers) to prevent silent orphaning of CKEditor references. When an editor tries to delete an element that appears inside a CKEditor field somewhere — embedded as a nested entry, linked via the link picker, used as an image source — Craft now surfaces the conflict in the deletion modal instead of letting the delete proceed and leaving broken markup behind.
+Plugin [ckeditor 5.6+] hooks into the [5.10+] deletion-blocker subsystem (see `craftcms/elements.md` → Deletion Blockers) to prevent silent orphaning of CKEditor references. When an editor tries to delete an element that appears inside a CKEditor field somewhere — embedded as a nested entry, linked via the link picker, used as an image source — Craft now surfaces the conflict in the deletion modal instead of letting the delete proceed and leaving broken markup behind.
 
 The mechanism: a new `ckeditor_references` table tracks every cross-reference. `craft\ckeditor\deletionblockers\ReferenceDeletionBlocker` listens for delete attempts on any element type and consults the table. If the element is referenced, the blocker reports the offending CKEditor fields and (when possible) offers reassignment to a replacement element.
 
 ### Upgrade step
 
-Existing CKEditor field data won't be in the `ckeditor_references` table until you backfill it. After upgrading to plugin 5.6.0 on a Craft 5.10 install:
+Existing CKEditor field data won't be in the `ckeditor_references` table until you backfill it. After upgrading to plugin [ckeditor 5.6+] on a Craft [5.10+] install:
 
 ```bash
 ddev craft resave/all --with-fields=ckeditor
 ```
 
-Adjust `--with-fields` to match the handles of the CKEditor fields you want indexed (comma-separated for multiple). The resave walks each element, parses its CKEditor field values, and populates `ckeditor_references`. Until this completes, the blocker has nothing to block on and deletions proceed as before 5.6.0.
+Adjust `--with-fields` [5.5+] to match the handles of the CKEditor fields you want indexed (comma-separated for multiple). The resave walks each element, parses its CKEditor field values, and populates `ckeditor_references`. Until this completes, the blocker has nothing to block on and deletions proceed as they did before the plugin update.
 
 This is a one-time migration. New saves write to `ckeditor_references` automatically.
 
-### `removePlugins` config respected (5.6.0+)
+### `removePlugins` config respected [ckeditor 5.6+]
 
-Before 5.6.0, custom `removePlugins` config values were silently ignored. As of 5.6.0 the value passes through to CKEditor — useful for disabling built-in plugins (like the upload adapter or autoformat) that conflict with custom workflows. Pair with `removePlugins` in your inline config or `$jsFile`.
+[changed ckeditor 5.6] Earlier versions silently ignored custom `removePlugins` config values. Now the value passes through to CKEditor — useful for disabling built-in plugins (like the upload adapter or autoformat) that conflict with custom workflows. Pair with `removePlugins` in your inline config or `$jsFile`.
 
-## Extending with Custom Plugins (5.0.0+ — Breaking)
+## Extending with Custom Plugins [ckeditor 5.0+] (Breaking)
 
-Third-party CKEditor plugins ship as **ES modules** loaded through the CP import map as of plugin 5.0.0 (craftcms/ckeditor#363); the 4.x DLL-style bundles no longer work. The pattern (verified against `craftcms/ckeditor` 5.8.0 `README.md` and `src/Plugin.php`; neither changed in 5.9.0, which bumped CKEditor itself to 48.5.2):
+Third-party CKEditor plugins ship as **ES modules** loaded through the CP import map as of plugin [ckeditor 5.0+] (craftcms/ckeditor#363); the 4.x DLL-style bundles no longer work. The pattern (verified against `craftcms/ckeditor` 5.8.0 `README.md` and `src/Plugin.php`; neither changed in 5.9.0, which bumped CKEditor itself to 48.5.2):
 
 1. **Asset bundle** extending `craft\ckeditor\web\assets\BaseCkeditorPackageAsset`, declaring the import-map `$namespace` (recommended form `@{vendor}/ckeditor5-{handle}`), the entry file as a **module**, and what the package provides:
 
@@ -304,17 +304,17 @@ Third-party CKEditor plugins ship as **ES modules** loaded through the CP import
     \craft\ckeditor\Plugin::registerCkeditorPackage(TokensAsset::class, 'tokens.js');
     ```
 
-    The second argument was added in 5.0.0; a 4.x-era call without it falls back to `index.js`. There is no `CkeditorConfig::registerPackageAsset()`. For CKEditor's own first-party packages that Craft doesn't bundle, use `CkeditorConfig::registerFirstPartyPackage(['SpecialCharacters', 'SpecialCharactersEssentials'], ['specialCharacters'])` instead.
+    The second argument was added in [ckeditor 5.0+]; a 4.x-era call without it falls back to `index.js`. There is no `CkeditorConfig::registerPackageAsset()`. For CKEditor's own first-party packages that Craft doesn't bundle, use `CkeditorConfig::registerFirstPartyPackage(['SpecialCharacters', 'SpecialCharactersEssentials'], ['specialCharacters'])` instead.
 
-**Loading rules since 5.8.0:**
+**Loading rules** [changed ckeditor 5.8]:
 
 - A field imports your package, and registers its asset bundle, **only when one of `$toolbarItems` is in that field's toolbar**. Empty `$toolbarItems` means the plugins load for every field; empty `$pluginNames` too means the bundle is registered everywhere and its JS runs for side effects. Plugins that must always load alongside a toolbar-gated one go in a `registerPackage()` override that calls `CkeditorConfig::registerPackage($this->namespace, ['plugins' => [...]])` after `parent::registerPackage()`.
-- Package bundles are **no longer registered just because `CkeditorAsset` is**. A custom page that builds its own CKEditor instances must call `\craft\ckeditor\Plugin::registerCkeditorPackageBundles($view)` (5.8.0+).
-- Packages are resolved when the page is finalized, so registering from a `Craft::$app->onInit()` callback or from a plugin that loads after CKEditor works (5.8.0; earlier versions could miss late registrations, craftcms/ckeditor#621).
+- Package bundles are **no longer registered just because `CkeditorAsset` is**. A custom page that builds its own CKEditor instances must call `\craft\ckeditor\Plugin::registerCkeditorPackageBundles($view)` [ckeditor 5.8+].
+- Packages are resolved when the page is finalized, so registering from a `Craft::$app->onInit()` callback or from a plugin that loads after CKEditor works [ckeditor 5.8+] (earlier versions could miss late registrations, craftcms/ckeditor#621).
 - Plugins are imported through a **namespace import**, so two packages can each ship a plugin called `Tokens`. Custom config JS can still say `extraPlugins: [Tokens]` as long as the name is unique across packages.
-- `CkeditorConfig::getImportStatements()` is deprecated in 5.8.0.
+- `CkeditorConfig::getImportStatements()` is [deprecated ckeditor 5.8].
 
-The `BaseCkeditorPackageAsset::getImportCompliantLanguage()` helper (5.2.0+) returns the user's CKEditor language code in a form compatible with `import()` statements — useful when your plugin needs to load a language file on demand.
+The `BaseCkeditorPackageAsset::getImportCompliantLanguage()` helper [ckeditor 5.2+] returns the user's CKEditor language code in a form compatible with `import()` statements — useful when your plugin needs to load a language file on demand.
 
 ## Pair With
 

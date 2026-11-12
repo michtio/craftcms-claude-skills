@@ -2,7 +2,7 @@
 
 Passwordless front-end auth for Craft members, by CraftPulse: magic-link and one-time-code (OTP) sign-in, passkeys (WebAuthn), passwordless registration, and session/device management. Built on Auth Kit (`craftpulse/craft-auth-kit`) — a Composer **library**, not a plugin: it installs as a dependency, never appears in the plugins list, and needs no install step.
 
-`craftpulse/craft-warp` — Commercial (Plugin Store). Craft 5.10+, PHP 8.2+.
+`craftpulse/craft-warp` — Commercial (Plugin Store). Craft [5.10+], PHP 8.2+.
 
 ## Documentation
 
@@ -12,7 +12,7 @@ Passwordless front-end auth for Craft members, by CraftPulse: magic-link and one
 
 ## Common Pitfalls
 
-- **Craft Cloud on Warp below 5.0.3** — signing in, and rendering the sign-in pages, errored on Cloud because the platform's session component is not `craft\web\Session`. Fixed in 5.0.3 (2026-08-20); nothing to configure.
+- **Craft Cloud on Warp below [warp 5.0.3+]** — signing in, and rendering the sign-in pages, errored on Cloud because the platform's session component is not `craft\web\Session`. Fixed in [warp 5.0.3+] (2026-08-20); nothing to configure.
 - **Hand-building a magic-link URL with `token`** — the query param is **`mlToken`**. Craft's web app reserves `token` for its own routed tokens and 400s any request naming it with a value Craft didn't issue, so a `token=`-built URL never reaches Warp's controller at all.
 - **Posting Craft's hashed `redirect` to `warp/auth/verify-code`** — that action reads a plain **`returnUrl`** body param and ignores `redirectInput()` entirely; the member silently lands on the site root. The asymmetry is deliberate: `warp/auth/request` *does* use Craft's `redirect` (the channel-swap script rewrites it), a verified code goes straight to the destination the credential was issued for.
 - **Printing a builder without `.render()`** — `{{ craft.warp.otpForm() }}` goes through `__toString()`, which Twig escapes, so the markup appears on the page as visible tags. Always terminate with `.render()`.
@@ -120,4 +120,4 @@ Members created through Warp **never have a password** — registration provisio
 ## Pair With
 
 - **Password Policy** — only if the site keeps a separate password surface; Warp itself needs no password rules.
-- **Blitz / static caching** — the passkey button emits Craft's own CSRF field specifically so `asyncCsrfInputs` can swap in a fresh token on a cached page; keep that mechanism intact rather than templating your own static token.
+- **Blitz / static caching** — the passkey button emits Craft's own CSRF field specifically so `asyncCsrfInputs` [5.1+] can swap in a fresh token on a cached page; keep that mechanism intact rather than templating your own static token.

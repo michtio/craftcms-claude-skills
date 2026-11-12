@@ -14,7 +14,7 @@ Site-wide password protection by Verbb. Locks the entire front-end behind a pass
 - Leaving Knock Knock enabled in production — the most common mistake. Use environment-aware config to ensure it's only active on staging/preview.
 - Not excluding health check or webhook URLs — external services (uptime monitors, CI/CD webhooks, n8n) get blocked by the password wall. Exclude their paths.
 - Forgetting that Knock Knock uses a cookie — once authenticated, the cookie persists. If you change the password, existing authenticated sessions remain valid until the cookie expires.
-- Running anything below 3.0.13 — 3.0.11 and 3.0.12 (2026-09-30 and 2026-10-04) closed eleven advisories in one go: access control on protected-URL matching, regex URL rules, access cookies, denied IPs behind an access cookie and zero-prefix CIDR rules, CSRF on password-gate lockouts, an open redirect, and settings now route through the plugin's authorized settings controller. Treat 3.0.13 as the floor on any staging site that is reachable from the internet.
+- Running anything below [knock-knock 3.0.13+] — 3.0.11 and 3.0.12 (2026-09-30 and 2026-10-04) closed eleven advisories in one go: access control on protected-URL matching, regex URL rules, access cookies, denied IPs behind an access cookie and zero-prefix CIDR rules, CSRF on password-gate lockouts, an open redirect, and settings now route through the plugin's authorized settings controller. Treat [knock-knock 3.0.13+] as the floor on any staging site that is reachable from the internet.
 
 ## Config File
 

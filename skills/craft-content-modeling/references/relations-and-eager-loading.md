@@ -80,6 +80,8 @@ Specify the relationship direction:
 
 ### Compound Criteria
 
+`notRelatedTo` and `andNotRelatedTo` [5.4+] exclude elements related to a target.
+
 ```twig
 {# Must be related to origin AND any of the proteins #}
 {% set results = craft.entries
@@ -186,7 +188,7 @@ that handle. Two batched alternatives that need no special getter:
 - `.with(['comments'])` loads the elements; `entry.comments.count()` then counts the cached result.
 - `entry.comments.eagerly().count()` batches a count lazily across the query result (stored under its own `eagerly:comments` alias, so it does not reuse a `.with()` count).
 
-### Link Fields Cannot Be Eager-Loaded
+### Link Fields Cannot Be Eager-Loaded [5.3+]
 
 `craft\fields\Link` implements `RelationalFieldInterface` (so `relatedTo({ targetElement: page, field: 'ctaLink' })`
 works for element links) but not `EagerLoadingFieldInterface`. `Element::eagerLoadingMap()`
@@ -231,8 +233,8 @@ works in partials without upstream coordination.
 
 ### .eagerly() Limitations
 
-1. **Native attributes** — `.eagerly()` doesn't work for `author`, `uploader`, `photo`; they return the element, not a query. Use `.with()`. Exception: since Craft 5.8.0, `entry.author` and `entry.authors` batch themselves. The first access on an entry that came from a multi-result query eager-loads `authors` for every entry in that result (`Entry::getAuthors()`), so a plain `entry.author` inside a loop is one query, with or without `.with(['author'])`. Nothing further down is batched: `entry.author.photo` is still one query per author, so keep `.with(['author.photo'])` when you render author photos.
-2. **`limit`, `offset`, `orderBy` before Craft 5.12** — filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`|slice(0, 3)`). Craft 5.12 applies all three to `.eagerly()` (#19994).
+1. **Native attributes** — `.eagerly()` doesn't work for `author`, `uploader`, `photo`; they return the element, not a query. Use `.with()`. Exception: [5.8+] `entry.author` and `entry.authors` batch themselves. The first access on an entry that came from a multi-result query eager-loads `authors` for every entry in that result (`Entry::getAuthors()`), so a plain `entry.author` inside a loop is one query, with or without `.with(['author'])`. Nothing further down is batched: `entry.author.photo` is still one query per author, so keep `.with(['author.photo'])` when you render author photos.
+2. **`limit`, `offset`, `orderBy` on `.eagerly()`** [changed 5.12] — Before 5.12: filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`|slice(0, 3)`). After 5.12: all three are applied to `.eagerly()` (#19994). When supporting both, keep the `.with()` or `|slice` form.
 3. **One result per field handle** — every `.eagerly()` call on the same field shares the alias `eagerly:<handle>`. `block.children.eagerly().type('cta').all()` followed by `block.children.eagerly().type('quote').all()` returns the CTA set both times. Name each variant: `.eagerly('ctaChildren')`, `.eagerly('quoteChildren')`.
 4. **Transform preloading** — No `withTransforms` equivalent. Use `.with()`.
 5. **Auto-injected single entries** — `preloadSingles` entries aren't part of the query chain.
@@ -242,7 +244,7 @@ works in partials without upstream coordination.
 
 | Attribute | Element Types |
 |-----------|--------------|
-| `author` / `authors` | Entries (self-batching across the query result since 5.8.0; `.with()` still needed for nested paths such as `author.photo`) |
+| `author` / `authors` | Entries (self-batching across the query result [5.8+]; `.with()` still needed for nested paths such as `author.photo`) |
 | `uploader` | Assets |
 | `photo` | Users |
 | `addresses` | Users |

@@ -180,11 +180,11 @@ Notes on the `<env>` entries:
 
 Forcing the database name is **not sufficient** for isolation. Craft's project-config lock lives at the *server* level, so suites in separate databases still collide. The symptoms: two suites running at once fail with `BusyResourceException`, `1213 Deadlock`, or `1412 Table definition has changed` — and giving one suite its own fresh, empty, exclusively-owned database does **not** fix it. It still dies inside `craft\migrations\Install` with `BusyResourceException`, with no other connection visible in `information_schema.processlist`.
 
-The chain (verified in `craftcms/cms` 5.10.12):
+The chain (verified against `craftcms/cms` 5.10.12):
 
-- Craft's DB mutex is `App::dbMutexConfig()` → `yii\mutex\MysqlMutex` with `'keyPrefix' => Craft::$app->getEnvId()` (`src/helpers/App.php:1141`).
+- Craft's DB mutex is `App::dbMutexConfig()` → `yii\mutex\MysqlMutex` with `'keyPrefix' => Craft::$app->getEnvId()` [5.4+] (`src/helpers/App.php:1141`).
 - `MysqlMutex` acquires `GET_LOCK(SUBSTRING(CONCAT(keyPrefix, sha1(name)), 1, 64), timeout)` — and **MySQL `GET_LOCK` names are scoped to the server, not the database.**
-- `getEnvId()` is `id--env` (`ApplicationTrait::getEnvId()`), and craft-pest-core's own bootstrap does `define('CRAFT_ENVIRONMENT', getenv('ENVIRONMENT') ?: 'production')` (`src/bootstrap/bootstrap.php:32`). So every unpinned suite on the machine shares the env id `CraftCMS--production` — and therefore the same lock names, e.g. for `\craft\services\ProjectConfig::MUTEX_NAME` (`'project-config'`).
+- `getEnvId()` is `id--env` (`ApplicationTrait::getEnvId()` [5.4+]), and craft-pest-core's own bootstrap does `define('CRAFT_ENVIRONMENT', getenv('ENVIRONMENT') ?: 'production')` (`src/bootstrap/bootstrap.php:32`). So every unpinned suite on the machine shares the env id `CraftCMS--production` — and therefore the same lock names, e.g. for `\craft\services\ProjectConfig::MUTEX_NAME` (`'project-config'`).
 
 The fix is one more `<env>` pin, unique per plugin:
 
@@ -196,7 +196,7 @@ Three details that each cost real time:
 
 - **The pin must be `CRAFT_ENVIRONMENT`, never `CRAFT_APP_ID`.** Core reads `CRAFT_ENVIRONMENT` in `bootstrap/bootstrap.php`; core's own `src/config/app.php` hard-codes `'id' => 'CraftCMS'`. The `App::env('CRAFT_APP_ID') ?: 'CraftCMS'` line you may remember belongs to the **craftcms/craft starter project's** `config/app.php` — a plugin repo doesn't have that file, so a `CRAFT_APP_ID` pin is inert.
 - **The `<env>` pin beats craft-pest's `define()`.** `InstallsCraft::loadPhpunitXmlEnvironmentVariables()` sets `$_SERVER` before craft-pest's bootstrap runs, and `App::env()` checks `$_SERVER` ahead of defined constants.
-- **Pinning it is safe.** `getEnvId()` has exactly three readers in core — the mutex key prefix and the session/web-user state key prefixes — all process-local.
+- **Pinning it is safe.** `getEnvId()` [5.4+] has exactly three readers in core — the mutex key prefix and the session/web-user state key prefixes — all process-local.
 
 To verify which pin actually takes (or re-verify after a core bump), run the controlled experiment rather than reasoning about precedence: hold the lock by hand in one MySQL session —
 

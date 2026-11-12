@@ -270,7 +270,7 @@ For adding content to an element string:
 Combine with `|attr` for classes and aria attributes. Use `|append` for
 accessible labels inside the SVG.
 
-### `url()` with `false` Params (Craft 5.11+)
+### `url()` with `false` Params [5.11+]
 
 Passing `false` as the second argument strips every query-string param from
 an absolute URL. Canonical links, share URLs, and "clear filters" links:
@@ -284,14 +284,17 @@ An array still merges params in; `false` removes them all. The stripping
 only applies when the passed-in URL is absolute, so feed it a full URL, not a
 path. PHP has the same call as `UrlHelper::url($url, false)`, plus
 `UrlHelper::removeParams($url, [...])` and `UrlHelper::removeAllParams($url)`
-for finer control. Before 5.11, rebuild the clean URL with
+for finer control.
+[5.11+] `false` is new. Before 5.11: rebuild the clean URL with
 `siteUrl(craft.app.request.pathInfo)` instead.
 
-### `heading()` / `h()` / `h1()`…`h6()` — Programmatic Headings (Craft 5.10+)
+### `heading()` / `h()` / `h1()`…`h6()` — Programmatic Headings [5.10+]
 
 Build heading tags from a dynamic level without string-concatenation. Useful in
 components that receive a `level` prop and need to render the matching tag
-without doing `tag('h' ~ level, text)` manually.
+without doing `tag('h' ~ level, { text: title })` manually.
+
+`heading()` and `h()` need [5.10+]. Before 5.10: build the tag from the level yourself. `{{ tag('h' ~ level, { text: title }) }}` (`tag()` takes an attributes array; `text` is encoded, `html` is not) or `{% tag 'h' ~ level with { class: 'text-xl' } %}Subsection{% endtag %}`. Don't ship `heading()` / `h()` to a site below 5.10.
 
 ```twig
 {# heading(level, text-or-attributes) — level is an int 1-6 #}
@@ -312,7 +315,7 @@ tracking. Components that need to thread a level across nested contexts still
 pass it as a prop. `heading()` throws `InvalidArgumentException` when level is
 outside 1-6.
 
-### Filter Additions (Craft 5.10+)
+### Filter Additions [5.10+]
 
 ```twig
 {{ price|number(locale: 'de-DE') }}                   {# locale arg #}
@@ -389,7 +392,7 @@ Never use em-dashes (—) or en-dashes (–) in user-facing copy: template text,
 7. **Macros as components** — wrong scoping, no extends/block support.
 8. **Hardcoded colors in class strings** — `bg-yellow-600` → `bg-brand-accent`.
 9. **String concatenation for classes** — `'flex ' ~ extraClass` → use `collect({})` with named keys.
-10. **`is empty` / `|default` on Craft Models (5.10+)** — any `yii\base\Model` (entries, settings, custom models) is now treated as non-empty regardless of its property values. Means `{{ user|default('Guest') }}` always renders the user object; `{% if entry is empty %}` always false. Check the specific property you care about: `{% if entry.title is empty %}`.
+10. **`is empty` / `|default` on Craft Models** [changed 5.10] — from 5.10 any `yii\base\Model` (entries, settings, custom models) is treated as non-empty regardless of its property values; before 5.10 these checks did not treat every model as non-empty. Means `{{ user|default('Guest') }}` always renders the user object; `{% if entry is empty %}` always false. Check the specific property you care about: `{% if entry.title is empty %}`.
 11. **`options.x` pattern** — old macro convention. Use direct variable names.
 12. **Blocks inside conditionals** — `{% if %}{% block foo %}{% endblock %}{% endif %}` is invalid Twig. Blocks are compile-time structures and cannot be conditionally defined. Move the conditional inside the block: `{% block foo %}{% if condition %}...{% endif %}{% endblock %}`.
 13. **Hardcoded `/admin` CP URL** — `cpTrigger` is configurable via `CRAFT_CP_TRIGGER` env var or `cpTrigger` in general.php. Many projects use `cp` instead of `admin`. Use `cpUrl()` function or check `.env` — never hardcode `/admin/`.

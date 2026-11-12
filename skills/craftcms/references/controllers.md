@@ -23,7 +23,7 @@
 - **Over-engineering with CP URL rules when action URLs suffice** — If the endpoint is an API call, AJAX handler, or utility action, the default `actions/{pluginHandle}/{controller}/{action}` URL works out of the box with query params (`?itemId=123`). CP URL rules with `<itemId:\d+>` path params are only worth the complexity for pretty URLs in CP nav or browser-facing pages. Don't register routes for endpoints that will only be called from JavaScript or `UrlHelper::actionUrl()`.
 - **TOCTOU: checking permissions before model population** — if your save action checks a permission (`requirePermission`), then populates a model from POST data, verify that the POST data hasn't changed the permission-relevant context. For example: action checks `saveEntries:{sectionUid}`, then `$entry->sectionId = $this->request->getBodyParam('sectionId')` could change which section the entry belongs to — the original permission check no longer applies. Re-check permissions after populating the model when the POST data can change the authorization context. Safe pattern: check permission, populate model, re-check if the context changed. If the permission context is immutable during the action (e.g., you strip or ignore context-changing fields from POST), document why.
 - **Element/block ID manipulation in POST data** — if a save action or custom element action accepts element IDs, block IDs, or owner IDs from POST data, an attacker can substitute IDs they don't own. Always verify that the user has permission to the referenced element after loading it: `$element = Craft::$app->getElements()->getElementById($id)` then check `Craft::$app->getElements()->canSave($element, $currentUser)`. Never trust IDs from POST without authorization checks on the resolved element.
-- **Relying on `AppController::actionResourceJs()` (removed in 5.10)** — the cross-domain JS proxy at `actions/app/resource-js` no longer exists. Plugins that loaded JS through this proxy must register normal asset bundles instead. Direct script tags work cleanly across origins now.
+- **Relying on `AppController::actionResourceJs()` [removed 5.10]** — the cross-domain JS proxy at `actions/app/resource-js` no longer exists. Plugins that loaded JS through this proxy must register normal asset bundles instead. Direct script tags work cleanly across origins now.
 - **Failure redirect lands where no flash surface exists** — an anonymous (public) action that sets an error flash then redirects to a bare `UrlHelper::siteUrl()` or the site root will "lose" the flash: the message is set correctly but the target page never renders `flash`, so the user sees nothing and can't retry. Redirect failures to a page that actually renders the flash and lets the user act — for a login flow that's Craft's `loginPath`, not the homepage. See the front-end side in the `craft-site` skill's `auth-flows.md` (Failure Redirect Landings).
 - **Enumeration-safe redirect flow drops the visitor's typed input** — a flow that must return identical responses whether or not an account exists (to avoid account enumeration) and that redirects between form pages will force the visitor to re-type their email after the redirect unless you carry it forward. Stash their own typed input (e.g. their email) in the session and set it **unconditionally, before** any exists/not-exists branch — the unconditional set is what keeps the two branches indistinguishable. Setting it only in one branch reintroduces the enumeration signal. See the `craft-site` skill's `auth-flows.md` (Session-Carried Form State).
 
@@ -422,7 +422,7 @@ Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_SITE_URL_RULES,
 
 ## Reserved request params
 
-**Never name a route segment, query param, or body param `token`.** Craft claims it globally: `GeneralConfig::$tokenParam` defaults to `'token'`, and `craft\web\Request::getToken()` reads `getQueryParam($this->generalConfig->tokenParam)` (falling back to the `X-Craft-Token` header). If that value doesn't resolve to a valid token row, `Application::init()` throws before routing:
+**Never name a route segment, query param, or body param `token`.** Craft claims it globally: `GeneralConfig::$tokenParam` defaults to `'token'`, and `craft\web\Request::getToken()` reads `getQueryParam($this->generalConfig->tokenParam)` (falling back to the `X-Craft-Token` header). If that value doesn't resolve to a valid token row, `Application::init()` throws before routing [5.9+]:
 
 ```php
 // craft\web\Application::init() — runs before your controller exists
@@ -592,7 +592,7 @@ $this->requireCpRequest();                              // CP only
 | Preview/share URL for logged-in users | `requireLogin()` — any authenticated user, not just admins |
 | Public API endpoint (headless) | `$allowAnonymous = true` on a **dedicated** API controller (no CP actions on the same controller) — validate via API key/signature in each action |
 
-## Sec-Fetch-Site Filter (5.10+)
+## Sec-Fetch-Site Filter [5.10+]
 
 `craft\filters\SecFetchSiteFilter` is a Yii `ActionFilter` that verifies the `Sec-Fetch-Site` header on non-safe HTTP methods. Browsers set this header automatically and it can't be forged from cross-origin contexts, which makes it a stronger origin guarantee than CSRF tokens for internal AJAX endpoints.
 

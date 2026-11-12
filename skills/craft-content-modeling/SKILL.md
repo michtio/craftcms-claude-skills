@@ -47,7 +47,7 @@ Use `WebFetch` on specific doc pages when a reference file doesn't cover enough 
 Matrix fields). Fields come from a global pool. This is the "entrification" of Craft — categories, tags, and globals are being unified into entries over a three-version arc:
 
 - **Craft 4.4** — `entrify` CLI commands added to convert categories, tags, and globals to entries
-- **Craft 5** — Categories, tags, and global sets are deprecated and discouraged for new projects. New category groups, tag groups, and global sets can still be created in the CP (the "New" buttons remain, gated by `allowAdminChanges`), and existing ones continue to work. A unified "Content" section replaces the fragmented entries view. Custom entry index pages (5.9.0) solve the sidebar organization concern.
+- **Craft 5** — Categories, tags, and global sets are deprecated and discouraged for new projects. New category groups, tag groups, and global sets can still be created in the CP (the "New" buttons remain, gated by `allowAdminChanges`), and existing ones continue to work. A unified "Content" section replaces the fragmented entries view. Custom entry index pages [5.9+] solve the sidebar organization concern.
 - **Craft 6** — Categories, tags, and global sets will be removed entirely
 
 For **new projects**, always use entries: Structure sections for hierarchical taxonomy, Channel sections for flat taxonomy, Singles for site-wide settings. For **existing projects**, migrate at your own pace using the `entrify` commands.
@@ -80,7 +80,7 @@ Choose the edition before modeling — it determines whether you can scope conte
 Beyond the type, sections have settings that matter for content architecture:
 
 - **`maxAuthors`** (default 1) — allows multiple authors per entry (new in 5.0.0). Set higher for collaborative content.
-- **`minAuthors`** (default 1, new in 5.10) — minimum number of authors required to save an entry. Set `1` to enforce that every entry has at least one author. Validated on save; setting `minAuthors > maxAuthors` is rejected by Craft's section validator. Combine with `maxAuthors` to define an exact range (`min: 1, max: 3` = "1 to 3 authors required").
+- **`minAuthors`** [5.10+] (default 1) — minimum number of authors required to save an entry. Set `1` to enforce that every entry has at least one author. Validated on save; setting `minAuthors > maxAuthors` is rejected by Craft's section validator. Combine with `maxAuthors` to define an exact range (`min: 1, max: 3` = "1 to 3 authors required").
 - **`enableVersioning`** (default true) — version history for entries
 - **`defaultPlacement`** — `'beginning'` or `'end'` for new entries in structures
 - **`previewTargets`** — array of `{label, urlFormat}` objects defining where entries can be previewed. Default: primary entry page. Add custom targets for headless frontends, staging URLs, or PDF previews.
@@ -116,7 +116,7 @@ sections and Matrix fields. One entry type can serve multiple contexts.
 Key implications:
 - Changing an entry type's field layout affects **every** section and Matrix field using it
 - Fields come from the global pool — same field definition reused everywhere
-- Per-context name/handle/description overrides available (5.6.0+) — useful when the same entry type serves different purposes in different sections
+- Per-context name/handle/description overrides available [5.6+] — useful when the same entry type serves different purposes in different sections
 - The global pool demands careful field naming — use specific handles
 
 ### Entry Type Visual Identity (Craft 5 new)
@@ -125,18 +125,18 @@ Entry types have visual properties that improve the editorial experience:
 
 - **`icon`** — custom icon identifier, shown in entry type selectors and Matrix "+" menus
 - **`color`** — one of 20 options (red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, white, gray, black)
-- **`description`** (5.8.0) — help text explaining what this entry type is for
-- **`group`** (5.8.0) — collapsible grouping in section/Matrix entry type assignments
-- **`uiLabelFormat`** (5.9.0) — customize the label shown in element indexes (default `'{title}'`)
+- **`description`** [5.8+] — help text explaining what this entry type is for
+- **`group`** [5.8+] — collapsible grouping in section/Matrix entry type assignments
+- **`uiLabelFormat`** [5.9+] — customize the label shown in element indexes (default `'{title}'`)
 - **`hasTitleField`** / **`titleFormat`** — disable the title field and auto-generate from other fields
 - **`showSlugField`** (5.0.0) / **`showStatusField`** (4.5.0) — hide slug or status from editors
-- **`allowLineBreaksInTitles`** (5.9.0) — for long-form titles
+- **`allowLineBreaksInTitles`** [5.9+] — for long-form titles
 
 These settings are configured in Settings → Entry Types and affect all contexts where the entry type is used.
 
 ### Reserved handles — check every proposed field handle against this list
 
-Craft has **83+ reserved handles** across all element types via `Field::RESERVED_HANDLES`. Validation is case-insensitive. Using any of these as a custom field handle will cause a validation error or silent template collision where the native attribute shadows the custom field.
+Craft has **83+ reserved handles** across all element types via `Field::RESERVED_HANDLES` [5.8+]. Validation is case-insensitive. Using any of these as a custom field handle will cause a validation error or silent template collision where the native attribute shadows the custom field.
 
 **Before proposing any field handle in a content model, check it against the lists below.** When a user asks for a field that matches a native attribute name, always use a domain-specific synonym. For example: user says "I need a title field" — the entry already has a native `title`, so use `heading`, `headline`, or `pageTitle` depending on context.
 
@@ -166,7 +166,7 @@ Craft has **83+ reserved handles** across all element types via `Field::RESERVED
 | `author` / `authors` | `writer`, `creator`, `contributor` | Native entry author(s) |
 | `postDate` | `publishDate`, `releaseDate`, `goLiveDate` | Native entry post date |
 
-**Full list of reserved handles shared across ALL element types** (from `Field::RESERVED_HANDLES`):
+**Full list of reserved handles shared across ALL element types** (from `Field::RESERVED_HANDLES` [5.8+]):
 
 `ancestors`, `archived`, `attributes`, `behaviors`, `canonical`, `children`, `contentTable`, `dateCreated`, `dateDeleted`, `dateLastMerged`, `dateUpdated`, `descendants`, `draftId`, `enabled`, `enabledForSite`, `error`, `errors`, `fieldLayoutId`, `fieldValue`, `fieldValues`, `firstSave`, `icon`, `id`, `language`, `level`, `lft`, `link`, `localized`, `next`, `nextSibling`, `owner`, `parent`, `parents`, `prev`, `prevSibling`, `ref`, `revisionId`, `rgt`, `root`, `searchScore`, `siblings`, `site`, `siteId`, `siteSettingsId`, `slug`, `sortOrder`, `status`, `structureId`, `title`, `trashed`, `uid`, `uri`, `url`, `viewMode`
 
@@ -176,7 +176,7 @@ Craft has **83+ reserved handles** across all element types via `Field::RESERVED
 |---|---|
 | **Entries** | `author`, `authorId`, `authorIds`, `authors`, `section`, `sectionId`, `type`, `postDate` |
 | **Assets** | `alt`, `extension`, `filename`, `folder`, `height`, `kind`, `size`, `volume`, `width` |
-| **Users** | `active`, `addresses`, `admin`, `affiliatedSiteId`, `email`, `firstName`, `friendlyName`, `fullName`, `groups`, `lastName`, `locked`, `name`, `password`, `pending`, `photo`, `suspended`, `username` |
+| **Users** | `active`, `addresses`, `admin`, `affiliatedSiteId` [5.6+], `email`, `firstName`, `friendlyName`, `fullName`, `groups`, `lastName`, `locked`, `name`, `password`, `pending`, `photo`, `suspended`, `username` |
 | **Categories** | `group` |
 | **Tags** | `group` |
 | **Addresses** | `address`, `countryCode`, `fullName`, `latLong`, `organization`, `organizationTaxId` |
@@ -241,7 +241,7 @@ ddev craft entrify/global-set <globalSetHandle>        # → Single section
 
 All three accept `--section` to target an existing section instead of creating a new one. `entrify/categories` and `entrify/tags` additionally accept `--entry-type` and `--author`; `entrify/global-set` does not.
 
-As of 5.9.0, these commands are interactive — the handle argument is optional.
+[5.9+] These commands are interactive and the handle argument is optional. Before 5.9: pass the handle explicitly.
 
 ### What the commands do
 
@@ -265,7 +265,7 @@ Three tools for structured content within an entry — choose based on editing e
 
 - **Matrix** — reorderable blocks, page builders, data grids, media galleries. Multiple view modes (blocks, cards, cards-grid, index).
 - **CKEditor** with nested entries — rich text with occasional structured content inline (image blocks, code blocks, CTAs). Natural writing flow.
-- **Content Block** (5.8.0) — single non-repeatable nested entry for reusable field groups (SEO metadata, banner config).
+- **Content Block** [5.8+] — single non-repeatable nested entry for reusable field groups (SEO metadata, banner config).
 
 For the full decision table, nested entry type patterns, and the CKEditor chunks rendering pattern, read `references/content-patterns.md`.
 

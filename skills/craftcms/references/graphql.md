@@ -16,18 +16,18 @@
 - Mutation resolvers that don't validate before saving — elements silently fail or throw unstructured exceptions instead of returning `userErrors`.
 - Using `!empty()` for optional integer arguments like `limit` — `0` is a valid value but `!empty(0)` is `true`. Use `isset()` for nullable integers.
 - Tokens are stored in the database only, not project config — forgetting to create tokens per environment leaves staging/production with no API access.
-- Expecting `author`/`uploader` data from a schema without **Query for users** (Craft 5.11+) — the fields are absent from the schema, so the query fails at validation (`Cannot query field "author" on type …`) rather than returning `null`. See Craft 5.11 Additions.
+- Expecting `author`/`uploader` data from a schema without **Query for users** [5.11+] — the fields are absent from the schema, so the query fails at validation (`Cannot query field "author" on type …`) rather than returning `null`. See Additions [5.11+].
 
-## Craft 5.10 Additions
+## Additions [5.10+]
 
 - **`hardDelete` argument on `delete*` mutations** — every built-in delete mutation now accepts `hardDelete: Boolean` (default `false`). When `true`, bypasses soft-delete and removes the element immediately. Custom delete mutations should mirror this argument shape for consistency.
-- **Assets' `url` field `immediately` argument is no longer deprecated** — earlier docs said to avoid `immediately: true` on `url` queries; that deprecation was reversed in 5.10. The argument forces synchronous transform generation instead of returning a queued URL.
+- **Assets' `url` field `immediately` argument is no longer deprecated** [changed 5.10] — Before 5.10, `immediately: true` on `url` queries was deprecated and to be avoided; that deprecation was reversed. The argument forces synchronous transform generation instead of returning a queued URL.
 
-## Craft 5.11 Additions
+## Additions [5.11+]
 
-- **User-data fields are gated on "Query for users"** — `author`, `authorId`, `authors`, `authorIds`, `draftCreator`, `revisionCreator`, `uploader`, and `uploaderId` only exist in a schema that has **Query for users** enabled (Settings → GraphQL → Schemas → Users; the `usergroups.everyone` scope). Through 5.10 any schema that could read the entry also exposed its author. After upgrading, a front end that selects `author { fullName }` from a content-only schema fails query validation. Audit every schema's Users scope before deploying 5.11: grant it on the private schema the front end uses, or stop selecting author data. Leave the public schema without it unless exposing author accounts is intentional.
+- **User-data fields are gated on "Query for users"** — `author`, `authorId`, `authors`, `authorIds`, `draftCreator`, `revisionCreator`, `uploader`, and `uploaderId` only exist in a schema that has **Query for users** enabled (Settings → GraphQL → Schemas → Users; the `usergroups.everyone` scope). [changed 5.11] Before 5.11, any schema that could read the entry also exposed its author; now only a schema with **Query for users** does. After upgrading, a front end that selects `author { fullName }` from a content-only schema fails query validation. Audit every schema's Users scope before deploying the upgrade: grant it on the private schema the front end uses, or stop selecting author data. Leave the public schema without it unless exposing author accounts is intentional.
 - **`Gql::canQueryAllUsers(?GqlSchema $schema = null)`** — the helper core uses for that gate (`canSchema('usergroups.everyone')`). Custom types that expose user data (a `createdBy` field on a plugin element, say) should condition the field definition on it so they follow the same rule instead of leaking user data through a side door.
-- **Cached queries now carry cache tags and expiry** — 5.11.0 fixed cached GraphQL responses not registering the original query's element cache tags or expiration date, so results depending on Post/Expiry Dates could stay stale until a manual cache clear. Projects that worked around it with `enableGraphqlCaching => false` can re-enable caching after upgrading.
+- **Cached queries now carry cache tags and expiry** [changed 5.11.0] — Before 5.11.0, cached GraphQL responses didn't register the original query's element cache tags or expiration date, so results depending on Post/Expiry Dates could stay stale until a manual cache clear. Projects that worked around it with `enableGraphqlCaching => false` can re-enable caching after upgrading; while supporting older releases, keep that workaround.
 
 ## Table of Contents
 
@@ -443,7 +443,7 @@ ddev craft graphql/create-token <schema-uid> --name="My API Token" --expiry="202
 Authorization: Bearer {your-token-here}
 ```
 
-`X-Craft-Authorization: Bearer {token}` is read first and wins over `Authorization` (`Request::getBearerToken()`); use it when a proxy strips `Authorization`. There is no query-parameter form: `?token=` is Craft's preview-token param, not GraphQL auth.
+`X-Craft-Authorization: Bearer {token}` is read first and wins over `Authorization` (`Request::getBearerToken()` [5.1+]); use it when a proxy strips `Authorization`. There is no query-parameter form: `?token=` is Craft's preview-token param, not GraphQL auth.
 
 ### Important notes
 

@@ -4,7 +4,7 @@ Craft behaviors that are correct in production and surprising in a test process.
 
 ## Contents
 
-- Permission-tree memoization (`UserPermissions::reset()`)
+- Permission-tree memoization (`UserPermissions::reset()` [5.8.13+])
 - Simulating a login in a console-driven harness
 - CP-surface controller tests: three orthogonal pins
 - Fixture timestamps: MySQL session clock vs Craft's UTC
@@ -14,7 +14,7 @@ Craft behaviors that are correct in production and surprising in a test process.
 - Queue stubs
 - Project-config writes inside a rolled-back transaction
 
-## Permission-tree memoization (`UserPermissions::reset()`)
+## Permission-tree memoization (`UserPermissions::reset()` [5.8.13+])
 
 `UserPermissions::getAllPermissions()` builds the whole permission tree once and memoizes it in a private `$_allPermissions` property for the life of the process. In a web request that's free; in a test process it means the tree is frozen at whatever the *first* call saw.
 
@@ -272,7 +272,7 @@ Class-level handlers (`Event::on(SomeService::class, ...)`) keep working — the
 
 Craft core acknowledges this hazard directly. Its project-config listeners are registered through a `_proxy()` indirection specifically so that "the correct component is called if it happens to get swapped out (**e.g. for a test**)" — the comment is in `ApplicationTrait`.
 
-**The pattern: give any service with process-lifetime memoization an explicit `reset()`,** mirroring core's `UserPermissions::reset()`, and call it from the fixture that mutated the underlying state rather than trusting a listener to fire:
+**The pattern: give any service with process-lifetime memoization an explicit `reset()`,** mirroring core's `UserPermissions::reset()` [5.8.13+], and call it from the fixture that mutated the underlying state rather than trusting a listener to fire:
 
 ```php
 namespace acme\myplugin\services;

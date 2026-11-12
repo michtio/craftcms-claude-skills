@@ -12,7 +12,7 @@ How to use `entry.render()` and the `_partials/` template directory in Craft CMS
 - N+1 queries inside partials — use `.eagerly()` for any related element queries. Each partial renders independently, so without eager loading, every card in a grid fires separate queries.
 - Assuming `render()` works in the CP — it's front-end only (`TEMPLATE_MODE_SITE`).
 - Hardcoding the partial path instead of using the convention — the lookup path is automatic. Don't `{% include %}` the partial manually when `entry.render()` works.
-- Overriding an entry type's handle per field and expecting the partial to follow — it does, but only on Craft 5.10.14+. On older versions the override is ignored for lookup, so the partial must live under the original handle.
+- Overriding an entry type's handle per field and expecting the partial to follow — it does, but only from [5.10.14+]. Before 5.10.14: the override is ignored for lookup, so the partial must live under the original handle.
 
 ## Contents
 
@@ -44,15 +44,15 @@ If no matching template exists, `render()` falls back to a `<p>` tag containing 
 
 ## Template Lookup Path
 
-`render()` builds a list of candidate templates and renders the first one that exists (lowest priority number wins). Since 5.8.0 plugins can add or reorder candidates through `Element::EVENT_RENDER`.
+`render()` builds a list of candidate templates and renders the first one that exists (lowest priority number wins). [5.8+] Plugins can add or reorder candidates through `Element::EVENT_RENDER`.
 
-### Priority 1: Overridden entry type handle (5.10.14+)
+### Priority 1: Overridden entry type handle [5.10.14+]
 
 ```
 _partials/{refHandle}/{overriddenHandle}.twig
 ```
 
-Entries only, and only when the entry type's handle is overridden for the field or section it's used in (per-usage overrides, 5.6.0+). Before 5.10.14 this candidate didn't exist: a `cta` type renamed to `richTextCta` inside a CKEditor field still rendered `_partials/entry/cta.twig` (craftcms/cms#18968).
+Entries only, and only when the entry type's handle is overridden for the field or section it's used in (per-usage overrides, [5.6+]). Before 5.10.14: this candidate didn't exist: a `cta` type renamed to `richTextCta` inside a CKEditor field still rendered `_partials/entry/cta.twig` (craftcms/cms#18968).
 
 ### Priority 2: Type-specific partial
 
@@ -193,7 +193,7 @@ Use `.eagerly()` on **custom relation fields** to avoid N+1 queries when renderi
 
 `.eagerly()` batches queries across all partials in the same render cycle.
 
-**Native attributes can't be `.eagerly()`-loaded.** `entry.author` (also `entry.authors`, an asset's `uploader`, a user's `photo`) returns the element directly — not a query — so there's no `.eagerly()`/`.one()` to chain; `entry.author.eagerly()` throws. Since Craft 5.8.0 `entry.author`/`entry.authors` batch themselves across the query result, so a bare `entry.author` in a partial costs one query per listing; anything below the author (`author.photo`, author fields) does not, so cover it with `.with(['author.photo'])` on the **outer** query, as the Blog card grid above does with `.with(['author'])`. See `craft-content-modeling` → `relations-and-eager-loading.md` for the full `.with()`-vs-`.eagerly()` rules.
+**Native attributes can't be `.eagerly()`-loaded.** `entry.author` (also `entry.authors`, an asset's `uploader`, a user's `photo`) returns the element directly — not a query — so there's no `.eagerly()`/`.one()` to chain; `entry.author.eagerly()` throws. [5.8+] `entry.author`/`entry.authors` batch themselves across the query result, so a bare `entry.author` in a partial costs one query per listing; anything below the author (`author.photo`, author fields) does not, so cover it with `.with(['author.photo'])` on the **outer** query, as the Blog card grid above does with `.with(['author'])`. See `craft-content-modeling` → `relations-and-eager-loading.md` for the full `.with()`-vs-`.eagerly()` rules.
 
 ### Asset partials
 

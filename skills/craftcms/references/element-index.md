@@ -11,7 +11,7 @@ For **site content** Entries index sources after creating sections (project conf
 - Table Attributes (defineTableAttributes, attributeHtml, status pills, prepElementQueryForTableAttribute)
 - Sort Options (defineSortOptions)
 - Element Display Modes — chips, cards, table rows: when each renders, customization methods
-- Card Attributes (Craft 5.5+)
+- Card Attributes [5.5+]
 - Relation Field Display/Props — viewMode, previewMode, maxRelations, sources, maintainHierarchy
 - Thumbnails — hasThumbs, thumbUrl, thumbSvg, checkered/rounded
 - Conditions (createCondition, custom condition rules)
@@ -35,7 +35,7 @@ For **site content** Entries index sources after creating sections (project conf
 - Forgetting `includeSetStatusAction()` — without it, users can't bulk-change status from the index, even though your element has statuses.
 - Sources returning stale data — sources are memoized per-request. Use service getters that read from MemoizableArray, not static arrays.
 - Returning all table attributes as defaults — clutters the index. Pick the 4-5 columns users need most; they can customize from there.
-- Using `<span class="status red">` for status labels — produces a 10×10 px dot, not a pill. Text inside it wraps vertically one character per line. Use `Cp::statusLabelHtml()` instead.
+- Using `<span class="status red">` for status labels — produces a 10×10 px dot, not a pill. Text inside it wraps vertically one character per line. Use `Cp::statusLabelHtml()` [5.2+] instead.
 - Registering bulk actions (`EVENT_REGISTER_ACTIONS`) but forgetting per-element actions (`EVENT_DEFINE_ACTION_MENU_ITEMS`) — plugin actions appear on the index multi-select menu but not on the per-element edit screen "..." menu.
 - Loading all elements in `defineSources()` to extract grouping values — `defineSources()` runs on every element index page load. Use an aggregate query (`GROUP BY`) to get distinct values, never `::find()->all()` followed by array extraction.
 
@@ -71,7 +71,7 @@ protected static function defineSources(string $context): array
 
 Source key `'*'` = all elements. Use prefix patterns like `'category:{uid}'` — consistent with Craft core (`section:{uid}`, `folder:{uid}`).
 
-Context values: `'index'` (element index page), `'modal'` (selection modal), `'restricted-modal'` (`ElementSources::CONTEXT_RESTRICTED_MODAL`, Craft 5.11.2+: a selection modal that must only offer what the user may access, e.g. the "transfer content to" picker when deleting elements), `'field'` (relation field), `'settings'` (admin). If `defineSources()` narrows `'index'` to editable/viewable sources, narrow `'restricted-modal'` the same way, as core's `Entry` and `Asset` do; otherwise the restricted picker shows sources the user can't open.
+Context values: `'index'` (element index page), `'modal'` (selection modal), `'restricted-modal'` (`ElementSources::CONTEXT_RESTRICTED_MODAL` [5.11.2+]: a selection modal that must only offer what the user may access, e.g. the "transfer content to" picker when deleting elements), `'field'` (relation field), `'settings'` (admin). If `defineSources()` narrows `'index'` to editable/viewable sources, narrow `'restricted-modal'` the same way, as core's `Entry` and `Asset` do; otherwise the restricted picker shows sources the user can't open.
 
 ## Table Attributes
 
@@ -119,9 +119,9 @@ protected function attributeHtml(string $attribute): string
 
 ### Status Pills in Table Attributes
 
-Status pills in custom table attributes use `Cp::statusLabelHtml()`, not `<span class="status">`. The raw `<span class="status red">` produces a 10×10 px dot indicator — putting text inside it causes one-character-per-line vertical wrapping in narrow element-index columns.
+Status pills in custom table attributes use `Cp::statusLabelHtml()` [5.2+], not `<span class="status">`. The raw `<span class="status red">` produces a 10×10 px dot indicator — putting text inside it causes one-character-per-line vertical wrapping in narrow element-index columns.
 
-The correct helper (Craft 5.2.0+) is `\craft\helpers\Cp::statusLabelHtml()` — the same helper Craft uses for the native Status column's "ACTIVE" pill:
+The correct helper [5.2+] is `\craft\helpers\Cp::statusLabelHtml()` — the same helper Craft uses for the native Status column's "ACTIVE" pill:
 
 ```php
 use craft\enums\Color;
@@ -191,8 +191,7 @@ Craft 5 renders elements in three display modes depending on context. Each mode 
 
 ### Chips (compact inline)
 
-Chips appear in relation fields, breadcrumbs, inline references, and anywhere elements are shown compactly. Rendered by `Cp::elementChipHtml()` or the Twig function `elementChip()`.
-
+Chips appear in relation fields, breadcrumbs, inline references, and anywhere elements are shown compactly. Rendered by `Cp::elementChipHtml()` or the Twig function `elementChip()`. `showStatusIndicator()` below is [5.4+].
 ```php
 // Customize the chip label (default: uiLabel, which is usually the title)
 // Public override — NOT a Craft-4-era chipHtml(); the whole-chip markup is
@@ -203,7 +202,7 @@ public function getChipLabelHtml(): string
 }
 
 // Control whether the status pip shows on chips
-public function showStatusIndicator(): bool  // Since 5.4.0
+public function showStatusIndicator(): bool
 {
     return true;
 }
@@ -213,8 +212,7 @@ Sizing: `Cp::CHIP_SIZE_LARGE`, `Cp::CHIP_SIZE_SMALL`. Plugins can modify chip ou
 
 ### Cards (visual with thumbnail)
 
-Cards appear in card view of element indexes, Matrix card mode, and relation field card display. Rendered by `Cp::elementCardHtml()` or the Twig function `elementCard()`.
-
+Cards appear in card view of element indexes, Matrix card mode, and relation field card display. Rendered by `Cp::elementCardHtml()` or the Twig function `elementCard()`. `getCardTitle()` below is [5.7+].
 ```php
 // Custom card body content (default: renders card body elements from field layout)
 // Public override — NOT a Craft-4-era cardHtml(); Cp::elementCardHtml() builds
@@ -225,14 +223,14 @@ public function getCardBodyHtml(): ?string
     return parent::getCardBodyHtml();
 }
 
-// Custom card title (public, since 5.7.0)
+// Custom card title (public)
 public function getCardTitle(): ?string
 {
     return $this->title;
 }
 ```
 
-Card layout (which attributes appear in the card body) is configured via `FieldLayout::getCardView()`/`setCardView()` (since 5.5.0).
+Card layout (which attributes appear in the card body) is configured via `FieldLayout::getCardView()`/`setCardView()` [5.5+].
 
 ### Table rows (column-based)
 
@@ -256,10 +254,10 @@ The base implementation handles `contentBlock:*` and `generatedField:*` prefixed
 | Mode | Where it appears | Customization method | Size control |
 |------|-----------------|---------------------|-------------|
 | **Chip** | Relation fields, breadcrumbs, inline refs | `getChipLabelHtml()` | `CHIP_SIZE_SMALL`, `CHIP_SIZE_LARGE` |
-| **Card** | Card view, Matrix cards, relation card display | `getCardBodyHtml()`, `defineCardAttributes()` | Field layout card view config |
+| **Card** | Card view, Matrix cards, relation card display | `getCardBodyHtml()`, `defineCardAttributes()` [5.5+] | Field layout card view config |
 | **Table** | Table view of element indexes | `attributeHtml()`, `defineTableAttributes()` | Column selection |
 
-## Card Attributes (Craft 5.5+)
+## Card Attributes [5.5+]
 
 Define which attributes are available in card view:
 
@@ -299,11 +297,11 @@ All relation fields (Entries, Categories, Assets, Users, Tags, and custom `BaseR
 
 | Value | Constant | Renders as |
 |-------|----------|-----------|
-| `list` | `VIEW_MODE_LIST` | Vertical list of chips (default for most relation fields, `BaseRelationField.php:474`) |
-| `list-inline` | `VIEW_MODE_LIST_INLINE` | Chips flowing inline |
-| `cards` | `VIEW_MODE_CARDS` | Stacked element cards |
-| `cards-grid` | `VIEW_MODE_CARDS_GRID` | Cards in a multi-column grid |
-| `thumbs` | `VIEW_MODE_THUMBS` | Thumbnail tiles |
+| `list` | `VIEW_MODE_LIST` [5.9+] | Vertical list of chips (default for most relation fields, `BaseRelationField.php:474`) |
+| `list-inline` | `VIEW_MODE_LIST_INLINE` [5.9+] | Chips flowing inline |
+| `cards` | `VIEW_MODE_CARDS` [5.9+] | Stacked element cards |
+| `cards-grid` | `VIEW_MODE_CARDS_GRID` [5.9+] | Cards in a multi-column grid |
+| `thumbs` | `VIEW_MODE_THUMBS` [5.9+] | Thumbnail tiles |
 
 The constructor defaults `viewMode` to `list` (`BaseRelationField.php:474`).
 
@@ -578,13 +576,14 @@ Element indexes support multiple view modes. Users switch between them via toolb
 | Mode | Icon | When to use | Rendering |
 |------|------|-------------|-----------|
 | **Table** | list | Default for all elements. Column-based with sort headers. | `attributeHtml()` per column |
-| **Cards** | grid | Visual overview with thumbnails. Good for media, products. | `getCardBodyHtml()` + `defineCardAttributes()` |
+| **Cards** | grid | Visual overview with thumbnails. Good for media, products. | `getCardBodyHtml()` + `defineCardAttributes()` [5.5+] |
 | **Structure** | structure | Hierarchical elements with drag-to-reorder. | Table with nesting indicators |
 
-Table mode is always available. Cards require `defineCardAttributes()`. Structure requires the element type to support structures.
+Table mode is always available. Cards require `defineCardAttributes()` [5.5+]. Structure requires the element type to support structures.
 
 ### Registering view modes
 
+`indexViewModes()` [5.5+]:
 ```php
 public static function indexViewModes(): array
 {
@@ -631,8 +630,8 @@ Plugins can extend any element type's index (including Craft's built-in Users, E
 | `EVENT_DEFINE_ACTION_MENU_ITEMS` | `DefineMenuItemsEvent` | Add per-element edit-screen "..." menu items |
 | `EVENT_REGISTER_SORT_OPTIONS` | `RegisterElementSortOptionsEvent` | Add sort options |
 | `EVENT_REGISTER_SEARCHABLE_ATTRIBUTES` | `RegisterElementSearchableAttributesEvent` | Add searchable attributes |
-| `EVENT_REGISTER_CARD_ATTRIBUTES` | `RegisterElementCardAttributesEvent` | Add card view attributes (5.5+) |
-| `EVENT_REGISTER_DEFAULT_CARD_ATTRIBUTES` | `RegisterElementDefaultCardAttributesEvent` | Set default card attributes (5.5+) |
+| `EVENT_REGISTER_CARD_ATTRIBUTES` | `RegisterElementCardAttributesEvent` | Add card view attributes [5.5+] |
+| `EVENT_REGISTER_DEFAULT_CARD_ATTRIBUTES` | `RegisterElementDefaultCardAttributesEvent` | Set default card attributes [5.5+] |
 | `EVENT_DEFINE_METADATA` | `DefineMetadataEvent` | Add metadata to element editor sidebar |
 
 Condition rules live on `craft\base\conditions\BaseCondition`:

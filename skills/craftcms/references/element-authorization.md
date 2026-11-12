@@ -283,7 +283,7 @@ Authorization events fire when Craft checks whether a user can perform a specifi
 | `EVENT_AUTHORIZE_CREATE_DRAFTS` | `'authorizeCreateDrafts'` | 4.3.0 | Create drafts |
 | `EVENT_AUTHORIZE_DUPLICATE` | `'authorizeDuplicate'` | 4.3.0 | Duplicate element |
 | `EVENT_AUTHORIZE_DUPLICATE_AS_DRAFT` | `'authorizeDuplicateAsDraft'` | 5.0.0 | Duplicate as unpublished draft |
-| `EVENT_AUTHORIZE_COPY` | `'authorizeCopy'` | 5.7.0 | Copy for duplication elsewhere |
+| `EVENT_AUTHORIZE_COPY` | `'authorizeCopy'` | 5.7.0 | [5.7+] Copy for duplication elsewhere |
 | `EVENT_AUTHORIZE_DELETE` | `'authorizeDelete'` | 4.3.0 | Delete element |
 | `EVENT_AUTHORIZE_DELETE_FOR_SITE` | `'authorizeDeleteForSite'` | 4.3.0 | Delete for specific site |
 
@@ -360,7 +360,7 @@ These methods are declared `public` on `ElementInterface`. Override them in your
 | `canDuplicate(User $user)` | `false` | `EVENT_AUTHORIZE_DUPLICATE` |
 | `canDuplicateAsDraft(User $user)` | Delegates to `canDuplicate()` | `EVENT_AUTHORIZE_DUPLICATE_AS_DRAFT` |
 | `canCreateDrafts(User $user)` | `false` | `EVENT_AUTHORIZE_CREATE_DRAFTS` |
-| `canCopy(User $user)` | Delegates to `canView()` | `EVENT_AUTHORIZE_COPY` |
+| `canCopy(User $user)` | Delegates to `canView()` | `EVENT_AUTHORIZE_COPY` [5.7+] |
 
 ### Custom element type pattern
 

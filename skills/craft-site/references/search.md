@@ -223,9 +223,9 @@ The search index **does not distinguish between instances of a reused field**. I
 | `ddev craft resave/entries --update-search-index` | After enabling search on existing fields |
 | `ddev craft resave/entries --section=blog --update-search-index` | Rebuild for a specific section |
 | `ddev craft resave/entries --update-search-index --queue` | Async rebuild via queue |
-| `ddev craft resave/all --update-search-index` | Full rebuild across every element type |
+| `ddev craft resave/all --update-search-index` [5.5+] | Full rebuild across every element type |
 
-`resave/entries` (and `resave/assets`, `resave/users`) with `--update-search-index` is selective — it only re-indexes the specified element type. `resave/all --update-search-index` re-saves every element type, rebuilding the entire search index.
+`resave/entries` (and `resave/assets`, `resave/users`) with `--update-search-index` is selective — it only re-indexes the specified element type. `resave/all --update-search-index` [5.5+] re-saves every element type, rebuilding the entire search index.
 
 ## Score and Ranking
 

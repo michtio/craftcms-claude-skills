@@ -11,7 +11,7 @@
 - ImageOptimize plugin: https://nystudio107.com/docs/image-optimize/
 - Responsive images (MDN): https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images
 
-The transform docs page does not describe when a transform is generated. The timing below comes from the `craftcms/cms` 5.11.5.1 source:
+The transform docs page does not describe when a transform is generated. The timing below comes from the `craftcms/cms` source at ref=5.11.5.1:
 
 - `ImageTransformer::getTransformUrl()`: https://github.com/craftcms/cms/blob/5.11.5.1/src/imagetransforms/ImageTransformer.php
 - `AssetsController::actionGenerateTransform()`: https://github.com/craftcms/cms/blob/5.11.5.1/src/controllers/AssetsController.php
