@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.24.0
+
+Makes the pack Craft-version-aware. In a Craft project, the skills now know which Craft version the project runs and compare it with version tags throughout the pack. They also warn when the version is below the minimum safe release. Measured with `evals/behavior_check.py --runs 2`, with the version detected from fixture projects instead of stated in the prompt: the three version cases from the 2026-11-04 baseline went from 2 of 6 to 6 of 6, and all 7 version cases pass, in both the symlink and the plugin install. Version tags are checked against Craft's CHANGELOG through 5.12.1.
+
+### Added
+
+- **Craft version detection** (`bin/craft-version.sh`, copied into every skill as `scripts/craft-version.sh`) -- a read-only POSIX `sh` script that reads `composer.json`, `composer.lock` and `vendor/craftcms/cms/src/config/app.php` in the current folder, its `cms/` subfolder or up to three parents. It never writes, never uses the network, and prints nothing outside Craft projects.
+  - Sites: the `craftcms/cms` version in `composer.lock` and the one installed in `vendor/`, with a `ddev composer install` note when they differ.
+  - Plugins: the lowest Craft version the `craftcms/cms` constraint allows, so newer APIs come with a constraint bump or a `version_compare` guard.
+  - Below the minimum safe version (5.12.0, the latest release with a `### Security` section): a warning that names the advisories and points to `ddev composer audit`. Craft doesn't backport security fixes to older minors.
+  - Craft 4: a one-line end-of-life notice.
+- **Where it runs** -- a `!` line in every SKILL.md (pre-approved in `allowed-tools`, so the skill still loads outside auto mode), with a prose fallback when shell execution is disabled. Plugin installs also get a `SessionStart` hook (`hooks/hooks.json`) on startup, resume, clear and compaction. Turn them off with `disableSkillShellExecution` and `disableAllHooks`; see the README's new "Craft Versions" section.
+- **Version tags across the pack** -- `[5.10+]`, `[5.11.4+]`, `[changed 5.12]`, `[deprecated 5.10]`, `[removed 5.10]`, and plugin tags that name the plugin (`[ckeditor 5.3+]`, `[changed blitz 5.13]`). The six older phrasings are gone. Behaviour changes read as before/after, and features from 5.10 to 5.12 carry a `Before 5.x:` alternative where one exists. The grammar is in `docs/contributing.md`.
+- **`skills/craftcms/references/version-table.md`** -- generated from the tags: 239 rows of version, feature, older alternative and the file that covers it.
+- **Tag linter** (`bin/craft_tags.py`) -- checks tag grammar, Craft versions written without a tag, and post-5.0 symbols (1,578, mapped from Craft's CHANGELOG) that appear with no tag covering them. CI fails on findings. False matches live in `bin/data/tag-lint-allow.tsv`, each with a reason.
+- **`bin/refresh-craft-data.sh`** -- one command, run at each release, that refreshes the symbol map, the minimum safe version and the version table.
+- **Evals** -- `evals/behavior-sets/version-awareness.json` (7 cases run inside fixture projects), per-case `cwd` and `--plugin-dir` in `behavior_check.py`, and `must_not_match_code` for patterns forbidden only in the code an answer ships. Golden-output tests for the script (`bin/test-craft-version.sh`, 11 fixtures under sh, dash and bash) run in CI.
+
+### Changed
+
+- **Supported range** -- README and the plugin manifests state Craft 5.0-5.12.x.
+
+### Fixed
+
+- `UsersController::EVENT_DEFINE_EDIT_SCREENS` is 5.1, not 5.0 (`skills/craftcms/references/elements.md`).
+- `allowedGraphqlOrigins` and `permissionsPolicyHeader` are tagged `[deprecated 5.3]`, alongside `craft\filters\Cors` and `craft\filters\Headers` `[5.3+]`.
+- The pre-5.10 dynamic-heading alternative passes `tag()` an attributes array (`tag('h' ~ level, { text: title })`); `tag()` takes no string second argument.
+- `bin/release.sh` now dates a bare `## X.Y.Z` CHANGELOG heading, and reminds you to run the refresh.
+
 ## 1.23.0 -- 2026-11-10
 
 Adds a fortrabbit hosting skill, contributed by Frank Lämmer of fortrabbit ([#18](https://github.com/michtio/craftcms-claude-skills/pull/18)), and documents the environment-variable forms Craft accepts in settings. Verified on 2026-11-06 against `craftcms/cms` 5.12.0.1.
