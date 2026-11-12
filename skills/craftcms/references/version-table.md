@@ -90,7 +90,7 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.6+` | `affiliatedSiteId` |  | `craft-content-modeling/SKILL.md` |
 | `5.6+` | `body` |  | `craftcms/references/config-app.md` |
 | `5.6+` | `craft utils/delete-empty-volume-folders` |  | `craftcms/references/console-commands.md` |
-| `5.6+` | `cta` | this candidate didn't exist: a `cta` type renamed to `richTextCta` inside a CKEditor field still rendered `_partials/entry/cta.twig` (craftcms/cms#18968). | `craft-site/references/element-partials.md` |
+| `5.6+` | `cta` | this candidate wasn't checked first (5.10.4 to 5.10.13 respected the override without prioritizing it; earlier releases ignored it), so a `cta` type renamed to `richTextCta` inside a CKEditor field could still render `_partials/entry/cta.twig` (craftcms/cms#18968). | `craft-site/references/element-partials.md` |
 | `5.6+` | `false` |  | `craftcms/references/config-general.md` |
 | `5.6+` | `fromEmail` |  | `craftcms/references/email.md` |
 | `5.6+` | `getReadOnlySettingsResponse()` |  | `craft-project-setup/templates/plugin/.claude/rules/scaffolding.md` |
@@ -201,12 +201,14 @@ Use it to answer "what can this project use?" against the version reported under
 | `changed 5.10` | `null` |  | `craftcms/references/elements.md` |
 | `deprecated 5.10` | Deprecations  (replaced by this flow) |  | `craftcms/references/elements.md` |
 | `removed 5.10` | `AppController::actionResourceJs()` |  | `craftcms/references/controllers.md` |
-| `5.10.14+` | Common Pitfalls | the override is ignored for lookup, so the partial must live under the original handle. | `craft-site/references/element-partials.md` |
+| `5.10.14+` | Common Pitfalls | from 5.10.4 the override is respected but not prioritized, and before 5.10.4 it is ignored, so keep the partial under the original handle when supporting older releases. | `craft-site/references/element-partials.md` |
 | `5.10.14+` | Priority 1: Overridden entry type handle |  | `craft-site/references/element-partials.md` |
-| `changed 5.10.14` | `entry.render()` | the override was ignored and only the original handle was looked up (craftcms/cms#18968). When supporting both, keep the partial under the original handle. See the `craft-site` skill's `element-partials.md`. | `craft-content-modeling/references/field-types.md` |
+| `changed 5.10.14` | `entry.render()` | from 5.10.4 the overridden handle was respected but not prioritized, and before 5.10.4 it was ignored and only the original handle was looked up (craftcms/cms#18968). When supporting both, keep the partial under the original handle. See the `craft-site` skill's `element-partials.md`. | `craft-content-modeling/references/field-types.md` |
 | `5.11+` | Additions |  | `craftcms/references/graphql.md` |
 | `5.11+` | `.well-known/change-password` |  | `craftcms/references/config-general.md` |
 | `5.11+` | `Craft::$app->getConfig()->doesEnvVarExist('NAME')` |  | `craft-php-guidelines/SKILL.md` |
+| `5.11+` | `Gql::canQueryAllUsers()` |  | `craft-site/references/headless.md` |
+| `5.11+` | `Gql::canQueryAllUsers()` |  | `craftcms/references/graphql.md` |
 | `5.11+` | `Matrix::normalizeValue()` |  | `craftcms/references/elements.md` |
 | `5.11+` | `craft\web\DbSession` |  | `craftcms/SKILL.md` |
 | `5.11+` | `craft\web\DbSession` | use `yii\web\DbSession`). Craft ships the `phpsessions` table migration but does not run it on install. Create the table first (idempotent), then point the session at it: | `craftcms/references/config-app.md` |

@@ -12,7 +12,7 @@ How to use `entry.render()` and the `_partials/` template directory in Craft CMS
 - N+1 queries inside partials — use `.eagerly()` for any related element queries. Each partial renders independently, so without eager loading, every card in a grid fires separate queries.
 - Assuming `render()` works in the CP — it's front-end only (`TEMPLATE_MODE_SITE`).
 - Hardcoding the partial path instead of using the convention — the lookup path is automatic. Don't `{% include %}` the partial manually when `entry.render()` works.
-- Overriding an entry type's handle per field and expecting the partial to follow — it does, but only from [5.10.14+]. Before 5.10.14: the override is ignored for lookup, so the partial must live under the original handle.
+- Overriding an entry type's handle per field and expecting the partial to follow — it does, but only from [5.10.14+]. Before 5.10.14: from 5.10.4 the override is respected but not prioritized, and before 5.10.4 it is ignored, so keep the partial under the original handle when supporting older releases.
 
 ## Contents
 
@@ -52,7 +52,7 @@ If no matching template exists, `render()` falls back to a `<p>` tag containing 
 _partials/{refHandle}/{overriddenHandle}.twig
 ```
 
-Entries only, and only when the entry type's handle is overridden for the field or section it's used in (per-usage overrides, [5.6+]). Before 5.10.14: this candidate didn't exist: a `cta` type renamed to `richTextCta` inside a CKEditor field still rendered `_partials/entry/cta.twig` (craftcms/cms#18968).
+Entries only, and only when the entry type's handle is overridden for the field or section it's used in (per-usage overrides, [5.6+]). Before 5.10.14: this candidate wasn't checked first (5.10.4 to 5.10.13 respected the override without prioritizing it; earlier releases ignored it), so a `cta` type renamed to `richTextCta` inside a CKEditor field could still render `_partials/entry/cta.twig` (craftcms/cms#18968).
 
 ### Priority 2: Type-specific partial
 

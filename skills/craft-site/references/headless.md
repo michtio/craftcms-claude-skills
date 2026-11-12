@@ -16,7 +16,7 @@
 - Setting `maxGraphqlComplexity`, `maxGraphqlDepth`, or `maxGraphqlResults` to `0` in production — zero means unlimited, which is a denial-of-service vector.
 - Not sending the `X-Craft-Site` header for multi-site API consumers — Craft defaults to the primary site, silently returning wrong-language content.
 - Leaving the public GraphQL schema enabled without auditing its scope — it exposes content to unauthenticated requests.
-- Selecting `author`, `authors`, or `uploader` from a schema without **Query for users** — [changed 5.11] those fields (plus `authorId`, `authorIds`, `draftCreator`, `revisionCreator`, `uploaderId`) only exist in schemas with the Users → "Query for users" scope. Before 5.11 they existed in every schema; after, a front end that worked on 5.10 fails query validation. When supporting both, grant the scope. Grant the scope on the private schema the front end uses (not the public one, unless author accounts are meant to be public) or stop selecting author data.
+- Selecting `author`, `authors`, or `uploader` from a schema without **Query for users** — [changed 5.11] those fields (plus `authorId`, `authorIds`, `draftCreator`, `revisionCreator`, `uploaderId`) only exist in schemas with the Users → "Query for users" scope (`usergroups.everyone`). Before 5.11, read access to any one user group was enough (`Gql::canQueryUsers()`); from 5.11 it takes the all-users scope (`Gql::canQueryAllUsers()` [5.11+]), so a schema scoped to specific user groups loses these fields and a front end that worked on 5.10 fails query validation. When supporting both, grant **Query for users**. Grant the scope on the private schema the front end uses (not the public one, unless author accounts are meant to be public) or stop selecting author data.
 - Relying on `allowedGraphqlOrigins` — [deprecated 5.3] (already deprecated in 4.11.0). Use the `craft\filters\Cors` filter [5.3+] instead; before 5.3 `allowedGraphqlOrigins` is the only option.
 
 ## Contents
@@ -78,7 +78,7 @@ Authorization: Bearer abc123def456
 
 Private tokens are created in the CP under Settings > GraphQL > Tokens. Each token is scoped to one schema.
 
-Schema scopes decide which fields *exist*, not just which return data. [changed 5.11] The user-related fields (`author`, `authors`, `uploader`, and their id variants) are absent from any schema without **Query for users**, where before 5.11 they were present everywhere, so selecting them is a validation error, not an empty result. The `craftcms` skill's `graphql.md` (the 5.11 additions section) has the full list.
+Schema scopes decide which fields *exist*, not just which return data. [changed 5.11] The user-related fields (`author`, `authors`, `uploader`, and their id variants) are absent from any schema without **Query for users**. Before 5.11, read access to any one user group was enough; a schema with no user scope never had them. Selecting them is a validation error, not an empty result. The `craftcms` skill's `graphql.md` (the 5.11 additions section) has the full list.
 
 ### Rate Limiting
 

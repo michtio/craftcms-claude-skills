@@ -341,7 +341,7 @@ Select from globally-defined entry types or create new ones. Entry types can be 
 
 When an entry type is used in a section or Matrix field, its name, handle, and description can be overridden for that specific context. The original entry type is unchanged — the override only applies in that section/field. This allows one entry type to serve different semantic roles in different contexts.
 
-[changed 5.10.14] An overridden handle also changes which element partial renders. After: `entry.render()` checks `_partials/entry/{overriddenHandle}.twig` before `_partials/entry/{originalHandle}.twig`. Before 5.10.14: the override was ignored and only the original handle was looked up (craftcms/cms#18968). When supporting both, keep the partial under the original handle. See the `craft-site` skill's `element-partials.md`.
+[changed 5.10.14] An overridden handle also changes which element partial renders. After: `entry.render()` checks `_partials/entry/{overriddenHandle}.twig` before `_partials/entry/{originalHandle}.twig`. Before 5.10.14: from 5.10.4 the overridden handle was respected but not prioritized, and before 5.10.4 it was ignored and only the original handle was looked up (craftcms/cms#18968). When supporting both, keep the partial under the original handle. See the `craft-site` skill's `element-partials.md`.
 
 ### View Modes
 
