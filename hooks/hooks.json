@@ -1,0 +1,17 @@
+{
+  "description": "Reports the Craft CMS version of the project at session start and after compaction (read-only; prints nothing outside Craft projects). See bin/craft-version.sh.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" 2>/dev/null; sh \"${CLAUDE_PLUGIN_ROOT}/bin/craft-version.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
