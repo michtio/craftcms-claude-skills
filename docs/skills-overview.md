@@ -1,6 +1,6 @@
 # Skills Overview
 
-14 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), plugin release mechanics, and managed hosting (Craft Cloud, Servd and fortrabbit). Reference files spread across each skill's `references/` directory.
+15 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), plugin release mechanics, Craft's MCP and OAuth servers, and managed hosting (Craft Cloud, Servd and fortrabbit). Reference files spread across each skill's `references/` directory.
 
 ## How Skills Load
 
@@ -253,6 +253,22 @@ fortrabbit (fortrabbit.com), managed PHP hosting with a Craft CMS software templ
 
 ---
 
+## craft-mcp
+
+**Track:** Shared (site setup and plugin/module extension)
+**Reference files:** 7 (approximately 950 lines)
+**SKILL.md:** 95 lines
+
+Craft 5.12's MCP servers, OAuth authorization server and personal access tokens. Covers the authenticated, public and stdio (`mcp/serve`) servers and their access levels (`mcp:read`, `mcp:write`, `mcp:admin`), Settings → MCP and every `config/mcp.php` / `config/oauth.php` key, OAuth signing keys (`oauth/generate-keys`, `CRAFT_OAUTH_PRIVATE_KEY` / `CRAFT_OAUTH_PUBLIC_KEY`), dynamic client registration, token lifetimes and rate limits, personal access tokens (which can't carry MCP scopes), connecting Claude Code over HTTP or stdio on DDEV, production, Craft Cloud, Servd and fortrabbit, the snake_case tool catalogue, plugin MCP tools (naming, annotations, scopes), `InputSchemaFieldInterface` / `McpOutputFieldInterface`, OAuth resources, and what exposing MCP means for security.
+
+**When it triggers:** Prompts like "connect Claude Code to my Craft site", "set up Craft's MCP server", "register an MCP tool from my plugin", "use a personal access token", or any mention of `mcp/serve`, `oauth/generate-keys`, `CRAFT_OAUTH_*`, `config/mcp.php`, `/admin/mcp/auth` or a Craft MCP tool name such as `elements_list`. Version-aware: on a project below 5.12 it says MCP needs 5.12 and how to upgrade.
+
+**Companion skills:** `craftcms` (plugin PHP, GraphQL authentication in `graphql.md`), `ddev` (local HTTPS and `ddev craft`), `craft-cloud` / `servd` / `craft-fortrabbit` (where the OAuth keys live on each host).
+
+**Boundary:** Does NOT cover Chrome DevTools MCP or other non-Craft MCP servers, GraphQL schema tokens (`craftcms/graphql.md`), or hosting deploys unrelated to MCP.
+
+---
+
 ## Skill Boundaries at a Glance
 
 Understanding which skill handles what prevents misfires and gets you better results.
@@ -271,6 +287,7 @@ Understanding which skill handles what prevents misfires and gets you better res
 | "Build a language switcher" | `craft-site` (multi-site-patterns.md) |
 | "Plan a multi-site content model" | `craft-content-modeling` |
 | "Add drag-to-reorder to my settings page" | `craft-garnish` |
+| "Connect Claude Code to my Craft site over MCP" | `craft-mcp` |
 | "Set up Pest tests for my plugin" | `craft-pest` |
 | "My tests are writing to the dev database" | `craft-pest` (isolation.md) |
 | "Deploy Craft to production" | `craftcms` (deployment.md) |

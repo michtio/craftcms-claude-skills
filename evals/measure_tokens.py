@@ -300,6 +300,11 @@ LOAD_SCENARIOS = {
         "skills/craft-fortrabbit/references/database.md",
         "skills/craft-fortrabbit/references/asset-storage.md",
     ],
+    "Connect an AI client over MCP": [
+        "skills/craft-mcp/SKILL.md",
+        "skills/craft-mcp/references/client-setup.md",
+        "skills/craft-mcp/references/oauth-server.md",
+    ],
     "Configure Formie + Blitz": [
         "skills/craft-plugins/SKILL.md",
         "skills/craft-plugins/references/formie.md",

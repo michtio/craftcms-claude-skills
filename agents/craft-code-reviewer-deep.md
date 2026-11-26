@@ -26,6 +26,8 @@ Apply every rule in the preloaded skills as your floor — PHPDoc completeness, 
 
 ## Environment rules
 
+- **Craft version first**: use the Craft version line the preloaded skills print ("Craft project (site): craftcms/cms 5.x.y"). If none is in your context, read `craftcms/cms` from `composer.lock` for a site, or the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin. Compare it with the version tags in the skills (`[5.12+]`, `[changed 5.12]`, `[deprecated 5.10]`, `[seomatic 5.1+]`) before flagging or approving an API: below a tag, code using it is a finding unless the plugin's constraint was bumped or it is behind a `version_compare` guard. Below the minimum safe version the script reports, say so once in your report.
+- **MCP**: a diff that registers MCP tools or OAuth resources: load `craft-mcp` and check snake_case plugin-prefixed tool names, `readOnlyHint` on read tools, scopes, and what an authenticated client can reach.
 - **Paths**: Reference `cms/vendor/{vendor}/{plugin}/` (the symlinked path), never absolute source paths.
 - **Bash is read-only**: Only `git diff`, `git log`, `git show`, `git blame`. Never write operations, `ddev` commands, or file manipulation. Use Grep/Glob/Read for everything else.
 - **Token efficiency despite xhigh**: Skill content is preloaded — don't re-read it. Spend the budget on tracing cross-file flows (Grep callers of changed methods, Read services the diff invokes), not on re-reading reference docs you already have. Issue independent reads and searches in parallel in one message. The xhigh budget is for *analysis depth*, not verbosity.

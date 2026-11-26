@@ -26,6 +26,7 @@ When this skill triggers, also load:
 - **`craft-garnish`** — When working on CP JavaScript, asset bundles, or interactive CP components. Covers Garnish's class system, UI widgets (Modal, HUD, DisclosureMenu, Select), drag system, and the Craft.* JS class pattern.
 - **`craft-pest`** — When writing, running, fixing, or reviewing tests. Covers the `markhuot/craft-pest-core` harness, database isolation (its rollback is opt-in and its env overrides are cwd-bound — both cause silent writes to the dev database), factories, HTTP/queue/DB assertions, and CI test jobs.
 - **`craft-cloud`** — When the project is hosted on Craft Cloud (detect via `craft-cloud.yaml` at the repo root or `craftcms/cloud` in `composer.json`). Required for plugin Cloud-compatibility constraints — `App::isEphemeral()` guards, asset-bundle CDN publishing, 15-minute queue-job cap, `csrfInput()` function over raw token output, and the `cloud/up` deploy lifecycle events.
+- **`craft-mcp`**: Craft's MCP servers, OAuth server, personal access tokens and plugin MCP tools [5.12+].
 
 ## Documentation
 
@@ -174,6 +175,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up CI/CD for a Craft project" → read `deployment.md` (CI/CD Patterns)
 - "Zero-downtime deploy" → read `deployment.md` (Zero-Downtime)
 - "Roll back a failed deploy" → read `deployment.md` (Rollback Strategies)
+- "Upgrade to Craft 5.12 / what changed after upgrading" [5.12+] → read `upgrade-5.12.md`
 - "Work with drafts and revisions" → read `drafts-revisions.md`
 - "Create a draft programmatically" → read `drafts-revisions.md` (Creating Drafts)
 - "Skip side effects for drafts in afterSave" → read `drafts-revisions.md` (Plugin Considerations)
@@ -209,7 +211,7 @@ Load only the reference files your task needs — each file costs input tokens o
 | Testing: pointer to the `craft-pest` skill (Pest/craft-pest-core lives there) + Codeception basics | `references/testing.md` | 0.6K |
 | Field types, native fields, BaseNativeField, field layout elements (built-in Tip/Heading/LineBreak/HorizontalRule reference), FieldLayoutBehavior | `references/fields.md` | 3.6K |
 | Events: registration, lifecycle, naming conventions, validation rules on core elements (EVENT_DEFINE_RULES), custom events, behaviors, Twig extensions, utilities, widgets, filesystems | `references/events.md` | 4.4K |
-| GraphQL types, queries, mutations, directives, schema components, resolvers | `references/graphql.md` | 4.6K |
+| GraphQL: authentication (schema tokens, OAuth, personal access tokens), authenticated requests, settings queries, types, queries, mutations, directives, schema components, resolvers | `references/graphql.md` | 10.5K |
 | Plugin Vite: VitePluginService, CP asset bundles, HMR, TypeScript, Vue in CP | `references/plugin-vite.md` | 2.7K |
 | Headless & hybrid: headlessMode, GraphQL API, CORS, preview tokens, front-end frameworks | craft-site skill `references/headless.md` | 3.4K |
 | GeneralConfig (system, routing, security, users, sessions, search, assets, images) | `references/config-general.md` | 8.4K |
@@ -227,6 +229,7 @@ Load only the reference files your task needs — each file costs input tokens o
 | Email system: system messages, custom messages, programmatic sending, templates, events, testing | `references/email.md` | 2.4K |
 | Deployment: standard pipeline, project config deploy, project-config/write safely, zero-downtime, CI/CD, rollback | `references/deployment.md` | 2.5K |
 | Drafts & revisions: draft types, provisional drafts, autosave, applying, merge, revisions | `references/drafts-revisions.md` | 2.5K |
+| Upgrading 5.11 to 5.12.4 [5.12+]: silent behaviour changes, plugin-code changes, deploy steps | `references/upgrade-5.12.md` | 2.6K |
 
 ## Plugin vs Module Differences
 
