@@ -1577,3 +1577,9 @@ filters()	5.12.1
 serializeNestedValue()	5.12.1
 summarize()	5.12.1
 supports()	5.12.1
+Dashboard::isWidgetTypeAvailable()	5.12.2
+UrlHelper::absoluteUrl()	5.12.2
+absoluteUrl()	5.12.2
+craft\helpers\UrlHelper::absoluteUrl()	5.12.2
+craft\services\Dashboard::isWidgetTypeAvailable()	5.12.2
+isWidgetTypeAvailable()	5.12.2

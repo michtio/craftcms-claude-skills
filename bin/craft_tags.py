@@ -388,7 +388,14 @@ def cmd_floor(args) -> int:
         if line.startswith("### "):
             in_security = version is not None and line.strip() == "### Security"
             continue
-        if in_security and line.startswith("- "):
+        # Minor releases group fixes under "### Security"; patch releases have no
+        # subsections and list them as flat bullets that link Craft's security
+        # policy or cite a GHSA (5.12.2, 5.12.3), so those count as well.
+        is_fix = in_security or (
+            version is not None
+            and ("security/policy" in line or re.search(r"GHSA(?:-[0-9a-z]{4}){3}", line))
+        )
+        if is_fix and line.startswith("- "):
             advisories.setdefault(version, []).extend(re.findall(r"GHSA(?:-[0-9a-z]{4}){3}", line))
             if best is None or vkey(version) > vkey(best):
                 best = version

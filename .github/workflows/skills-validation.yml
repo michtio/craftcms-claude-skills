@@ -55,5 +55,8 @@ jobs:
       - name: Linter self-test (the grammar fixture has exactly 3 invalid tags)
         run: python3 bin/craft_tags.py lint evals/fixtures/tags/grammar.md | grep -q '^3 finding(s)'
 
+      - name: Floor self-test (flat security bullets in a patch release count)
+        run: python3 bin/craft_tags.py floor --changelog evals/fixtures/tags/changelog-floor.md | grep -q '^5\.12\.3	'
+
       - name: Lint the pack
         run: python3 bin/craft_tags.py lint skills

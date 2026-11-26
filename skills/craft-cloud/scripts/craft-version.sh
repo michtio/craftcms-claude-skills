@@ -14,9 +14,9 @@
 # The three CRAFT_SAFE_FLOOR values are written by bin/refresh-craft-data.sh;
 # don't edit them by hand.
 
-CRAFT_SAFE_FLOOR="5.12.0"
-CRAFT_SAFE_FLOOR_SET="2026-11-12"
-CRAFT_SAFE_FLOOR_ADVISORIES="GHSA-hgwm-4xxx-w8jq, GHSA-vvm6-wrc8-5fgh"
+CRAFT_SAFE_FLOOR="5.12.3"
+CRAFT_SAFE_FLOOR_SET="2026-11-26"
+CRAFT_SAFE_FLOOR_ADVISORIES="see CHANGELOG"
 
 main() {
     root=$(find_root) || return 0
@@ -168,7 +168,7 @@ report_site() {
         lowest=$locked
     fi
     if version_lt "$lowest" "$CRAFT_SAFE_FLOOR"; then
-        echo "Security: $lowest is below the minimum safe Craft version, $CRAFT_SAFE_FLOOR (set $CRAFT_SAFE_FLOOR_SET; $CRAFT_SAFE_FLOOR_ADVISORIES). Craft does not backport security fixes to older minors. In every answer about this site, warn once: upgrade to $CRAFT_SAFE_FLOOR or later, run \`ddev composer audit\` (it covers plugins too), and check the ### Security sections of Craft's CHANGELOG, because advisories are published 30 days after the fix."
+        echo "Security: $lowest is below the minimum safe Craft version, $CRAFT_SAFE_FLOOR (set $CRAFT_SAFE_FLOOR_SET; $CRAFT_SAFE_FLOOR_ADVISORIES). Craft does not backport security fixes to older minors. In every answer about this site, warn once: upgrade to $CRAFT_SAFE_FLOOR or later, run \`ddev composer audit\` (it covers plugins too), and check the security fixes in Craft's CHANGELOG, because advisories are published 30 days after the fix."
     fi
 
     rules

@@ -216,7 +216,7 @@ Development happens on `main`. The `1.4.x` branch is a **frozen snapshot targeti
 
 ## Craft Versions
 
-The pack supports **Craft CMS 5.0–5.12.x**. Its version tags are checked against Craft's CHANGELOG through 5.12.1, and references cite the `craftcms/cms` release they were verified against.
+The pack supports **Craft CMS 5.0–5.12.x**. Its version tags are checked against Craft's CHANGELOG through 5.12.4, and references cite the `craftcms/cms` release they were verified against.
 
 Anything that needs a specific Craft release carries a tag: `[5.10+]` for a feature added in 5.10, `[changed 5.12]` for a behaviour change, `[seomatic 5.1+]` for a plugin's own version. For features from the last three minors, the pack also gives the older alternative. The [version table](skills/craftcms/references/version-table.md) lists every tag in one place.
 
@@ -224,7 +224,7 @@ Anything that needs a specific Craft release carries a tag: `[5.10+]` for a feat
 
 - **Site:** the `craftcms/cms` version in `composer.lock`, plus the version installed in `vendor/`. If they differ, it suggests `ddev composer install`.
 - **Plugin:** the lowest version your `craftcms/cms` constraint allows, so code for a newer API comes with a constraint bump or a runtime guard.
-- **Below the minimum safe version** (currently 5.12.0, the latest release with security fixes): a warning, plus a pointer to `ddev composer audit`. Craft doesn't backport security fixes to older minors.
+- **Below the minimum safe version** (currently 5.12.3, the latest release with security fixes): a warning, plus a pointer to `ddev composer audit`. Craft doesn't backport security fixes to older minors.
 - **Craft 4:** a one-line end-of-life notice.
 
 How it works: a read-only POSIX shell script ([`bin/craft-version.sh`](bin/craft-version.sh), copied into each skill). It reads `composer.json`, `composer.lock` and `vendor/craftcms/cms/src/config/app.php` in the current folder, its `cms/` subfolder or up to three parent folders. It never writes files, never touches the network, and prints nothing outside Craft projects.
