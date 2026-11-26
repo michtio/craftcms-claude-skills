@@ -54,7 +54,8 @@ import sys
 from pathlib import Path
 
 
-def skills_invoked(claude_bin: str, query: str, timeout: int) -> tuple[set[str], str]:
+def skills_invoked(claude_bin: str, query: str, timeout: int,
+                   plugin_dir: str | None = None) -> tuple[set[str], str]:
     """Runs the query through claude -p and returns (skills invoked, error)."""
     env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
 
@@ -66,6 +67,8 @@ def skills_invoked(claude_bin: str, query: str, timeout: int) -> tuple[set[str],
         "--max-turns", "2",
         "--allowed-tools", "Skill",
     ]
+    if plugin_dir:
+        cmd += ["--plugin-dir", plugin_dir]
 
     try:
         proc = subprocess.run(
@@ -107,6 +110,7 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=5, help="Concurrent claude -p invocations (default: 5)")
     parser.add_argument("--timeout", type=int, default=240, help="Per-query subprocess timeout in seconds (default: 240)")
     parser.add_argument("--claude-bin", default=None, help="Path to the claude binary (default: autodetect via PATH)")
+    parser.add_argument("--plugin-dir", action="store_true", help="Also load this working tree as a plugin, so a skill that isn't installed yet can trigger")
     args = parser.parse_args()
 
     claude_bin = args.claude_bin or shutil.which("claude") or "/opt/homebrew/bin/claude"
@@ -114,7 +118,8 @@ def main() -> int:
 
     def run(idx_item):
         idx, item = idx_item
-        found, err = skills_invoked(claude_bin, item["query"], args.timeout)
+        found, err = skills_invoked(claude_bin, item["query"], args.timeout,
+                                    str(Path(__file__).resolve().parent.parent) if args.plugin_dir else None)
         # A skill may be namespaced (craftcms-claude-skills:craft-pest).
         targets = set(args.target.split(","))
         hit = any(s.split(":")[-1] in targets for s in found)

@@ -22,7 +22,7 @@
     "id": "c512-mcp-pat",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "Can I just create a personal access token in Craft and paste it into my MCP client config? Answer in your reply.",
-    "must_match": [["can.?t", "cannot", "not carry", "no MCP scope", "don't include", "do not include", "not support"], ["OAuth", "stdio", "mcp/serve"]]
+    "must_match": [["can.?t", "won.?t", "cannot", "not carry", "no MCP scope", "don't include", "do not include", "not support"], ["OAuth", "stdio", "mcp/serve"]]
   },
   {
     "id": "c512-mcp-plugin-tool",
