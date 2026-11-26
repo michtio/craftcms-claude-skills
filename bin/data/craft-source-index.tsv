@@ -2193,6 +2193,184 @@ command	users/password-reset-url
 command	users/remove-2fa		
 command	users/set-password		
 command	users/unlock		
+config	GeneralConfig	accessibilityDefaults	[ 'useShapes' => false, 'underlineLinks' => false, 'disableAutofocus' => false, 'notificationDuration' => 5000, 'notificationPosition' => 'end-start', 'slideoutPosition' => 'end', ]
+config	GeneralConfig	actionTrigger	'actions'
+config	GeneralConfig	activateAccountSuccessPath	''
+config	GeneralConfig	addTrailingSlashesToUrls	false
+config	GeneralConfig	aliases	[]
+config	GeneralConfig	allowAdminChanges	true
+config	GeneralConfig	allowSimilarTags	false
+config	GeneralConfig	allowUpdates	true
+config	GeneralConfig	allowUppercaseInSlug	false
+config	GeneralConfig	allowedFileExtensions	[ '7z', 'aiff', 'asc', 'asf', 'avi', 'avif', 'bmp', 'cap', 'cin', 'csv', 'dfxp', 'doc', 'docx', 'dotm', 'dotx', 'fla', 'flv', 'gif', 'gz', 'gzip', 'heic', 'heif', 'hevc', 'itt', 'jp2', 'jpeg', 'jpg', 'jpx', 'js', 'json', 'jxl', 'lrc', 'm2t', 'm4a', 'm4v', 'markdown', 'mcc', 'md', 'mid', 'mov', 'mp3', 'mp4', 'mpc', 'mpeg', 'mpg', 'mpsub', 'ods', 'odt', 'ogg', 'ogv', 'pdf', 'png', 'potx', 'pps', 'ppsm', 'ppsx', 'ppt', 'pptm', 'pptx', 'ppz', 'pxd', 'qt', 'ram', 'rar', 'rm', 'rmi', 'rmvb', 'rt', 'rtf', 'sami', 'sbv', 'scc', 'sdc', 'sitd', 'smi', 'srt', 'stl', 'sub', 'svg', 'swf', 'sxc', 'sxw', 'tar', 'tds', 'tgz', 'tif', 'tiff', 'ttml', 'txt', 'vob', 'vsd', 'vtt', 'wav', 'webm', 'webp', 'wma', 'wmv', 'xls', 'xlsx', 'zip', ]
+config	GeneralConfig	allowedGraphqlOrigins	null
+config	GeneralConfig	asyncCsrfInputs	false
+config	GeneralConfig	autoLoginAfterAccountActivation	false
+config	GeneralConfig	autosaveDrafts	true
+config	GeneralConfig	backupCommand	null
+config	GeneralConfig	backupCommandFormat	null
+config	GeneralConfig	backupOnUpdate	true
+config	GeneralConfig	baseCpUrl	null
+config	GeneralConfig	blowfishHashCost	13
+config	GeneralConfig	brokenImagePath	null
+config	GeneralConfig	buildId	null
+config	GeneralConfig	cacheDuration	86400
+config	GeneralConfig	convertFilenamesToAscii	false
+config	GeneralConfig	cooldownDuration	300
+config	GeneralConfig	cpHeadTags	[]
+config	GeneralConfig	cpTrigger	'admin'
+config	GeneralConfig	csrfTokenName	'CRAFT_CSRF_TOKEN'
+config	GeneralConfig	customIconPath	null
+config	GeneralConfig	defaultCookieDomain	''
+config	GeneralConfig	defaultCountryCode	'US'
+config	GeneralConfig	defaultCpLanguage	null
+config	GeneralConfig	defaultCpLocale	null
+config	GeneralConfig	defaultDirMode	0775
+config	GeneralConfig	defaultFileMode	null
+config	GeneralConfig	defaultImageQuality	82
+config	GeneralConfig	defaultRateLimit	10
+config	GeneralConfig	defaultRateLimitDuration	60
+config	GeneralConfig	defaultSearchTermOptions	[]
+config	GeneralConfig	defaultTemplateExtensions	['twig', 'html']
+config	GeneralConfig	defaultTokenDuration	86400
+config	GeneralConfig	defaultWeekStartDay	1
+config	GeneralConfig	deferPublicRegistrationPassword	false
+config	GeneralConfig	devMode	false
+config	GeneralConfig	disable2fa	false
+config	GeneralConfig	disableGraphqlTransformDirective	false
+config	GeneralConfig	disabledPlugins	null
+config	GeneralConfig	disabledUtilities	[]
+config	GeneralConfig	disallowRobots	false
+config	GeneralConfig	elevatedSessionDuration	300
+config	GeneralConfig	enableBasicHttpAuth	false
+config	GeneralConfig	enableCsrfCookie	true
+config	GeneralConfig	enableCsrfProtection	true
+config	GeneralConfig	enableGql	true
+config	GeneralConfig	enableGraphqlCaching	true
+config	GeneralConfig	enableGraphqlIntrospection	true
+config	GeneralConfig	enableTemplateCaching	true
+config	GeneralConfig	enableTwigSandbox	false
+config	GeneralConfig	errorTemplatePrefix	''
+config	GeneralConfig	extraAllowedFileExtensions	null
+config	GeneralConfig	extraAppLocales	null
+config	GeneralConfig	extraFileKinds	[]
+config	GeneralConfig	extraLastNamePrefixes	[]
+config	GeneralConfig	extraNameSalutations	[]
+config	GeneralConfig	extraNameSuffixes	[]
+config	GeneralConfig	filenameWordSeparator	'-'
+config	GeneralConfig	generateTransformsBeforePageLoad	false
+config	GeneralConfig	gqlTypePrefix	''
+config	GeneralConfig	handleCasing	self::CAMEL_CASE
+config	GeneralConfig	headlessMode	false
+config	GeneralConfig	httpProxy	null
+config	GeneralConfig	imageDriver	self::IMAGE_DRIVER_AUTO
+config	GeneralConfig	imageEditorRatios	[ 'Unconstrained' => 'none', 'Original' => 'original', 'Square' => 1, '16:9' => 1.78, '10:8' => 1.25, '7:5' => 1.4, '4:3' => 1.33, '5:3' => 1.67, '3:2' => 1.5, ]
+config	GeneralConfig	indexTemplateFilenames	['index']
+config	GeneralConfig	invalidLoginWindowDuration	3600
+config	GeneralConfig	invalidUserTokenPath	null
+config	GeneralConfig	ipHeaders	null
+config	GeneralConfig	isSystemLive	null
+config	GeneralConfig	lazyGqlTypes	false
+config	GeneralConfig	limitAutoSlugsToAscii	false
+config	GeneralConfig	localeAliases	[]
+config	GeneralConfig	loginPath	'login'
+config	GeneralConfig	logoutPath	'logout'
+config	GeneralConfig	maxBackups	20
+config	GeneralConfig	maxCachedCloudImageSize	0
+config	GeneralConfig	maxGraphqlBatchSize	0
+config	GeneralConfig	maxGraphqlComplexity	0
+config	GeneralConfig	maxGraphqlDepth	0
+config	GeneralConfig	maxGraphqlResults	0
+config	GeneralConfig	maxInvalidLogins	5
+config	GeneralConfig	maxRevisions	50
+config	GeneralConfig	maxSlugIncrement	100
+config	GeneralConfig	maxUploadFileSize	16777216
+config	GeneralConfig	omitScriptNameInUrls	false
+config	GeneralConfig	optimizeImageFilesize	true
+config	GeneralConfig	pageTrigger	'p'
+config	GeneralConfig	partialTemplatesPath	'_partials'
+config	GeneralConfig	pathParam	'p'
+config	GeneralConfig	permissionsPolicyHeader	null
+config	GeneralConfig	phpMaxMemoryLimit	null
+config	GeneralConfig	phpSessionName	'CraftSessionId'
+config	GeneralConfig	postCpLoginRedirect	'dashboard'
+config	GeneralConfig	postLoginRedirect	''
+config	GeneralConfig	postLogoutRedirect	''
+config	GeneralConfig	prefixGqlRootTypes	true
+config	GeneralConfig	preloadSingles	false
+config	GeneralConfig	preserveCmykColorspace	false
+config	GeneralConfig	preserveExifData	false
+config	GeneralConfig	preserveImageColorProfiles	true
+config	GeneralConfig	preventUserEnumeration	false
+config	GeneralConfig	previewIframeResizerOptions	[]
+config	GeneralConfig	previewTokenDuration	null
+config	GeneralConfig	privateTemplateTrigger	'_'
+config	GeneralConfig	purgePendingUsersDuration	0
+config	GeneralConfig	purgeStaleUserSessionDuration	7776000
+config	GeneralConfig	purgeUnsavedDraftsDuration	2592000
+config	GeneralConfig	rasterizeSvgThumbs	false
+config	GeneralConfig	rememberUsernameDuration	31536000
+config	GeneralConfig	rememberedUserSessionDuration	1209600
+config	GeneralConfig	requireMatchingUserAgentForSession	true
+config	GeneralConfig	requireUserAgentAndIpForSession	true
+config	GeneralConfig	resourceBasePath	'@webroot/cpresources'
+config	GeneralConfig	resourceBaseUrl	'@web/cpresources'
+config	GeneralConfig	restoreCommand	null
+config	GeneralConfig	revAssetUrls	false
+config	GeneralConfig	rotateImagesOnUploadByExifData	true
+config	GeneralConfig	runQueueAutomatically	true
+config	GeneralConfig	safeMode	false
+config	GeneralConfig	sameSiteCookieValue	null
+config	GeneralConfig	sanitizeCpImageUploads	true
+config	GeneralConfig	sanitizeSvgUploads	true
+config	GeneralConfig	secureHeaders	null
+config	GeneralConfig	secureProtocolHeaders	null
+config	GeneralConfig	securityKey	''
+config	GeneralConfig	sendContentLengthHeader	false
+config	GeneralConfig	sendPoweredByHeader	true
+config	GeneralConfig	setGraphqlDatesToSystemTimeZone	false
+config	GeneralConfig	setPasswordPath	'setpassword'
+config	GeneralConfig	setPasswordRequestPath	null
+config	GeneralConfig	setPasswordSuccessPath	''
+config	GeneralConfig	showFirstAndLastNameFields	false
+config	GeneralConfig	siteToken	'siteToken'
+config	GeneralConfig	slugWordSeparator	'-'
+config	GeneralConfig	softDeleteDuration	2592000
+config	GeneralConfig	staticStatuses	false
+config	GeneralConfig	storeUserIps	false
+config	GeneralConfig	systemTemplateCss	null
+config	GeneralConfig	tempAssetUploadFs	null
+config	GeneralConfig	testToEmailAddress	null
+config	GeneralConfig	timezone	null
+config	GeneralConfig	tokenParam	'token'
+config	GeneralConfig	transformGifs	true
+config	GeneralConfig	transformSvgs	true
+config	GeneralConfig	translationDebugOutput	false
+config	GeneralConfig	trustedHosts	['any']
+config	GeneralConfig	upscaleImages	true
+config	GeneralConfig	useEmailAsUsername	false
+config	GeneralConfig	useFileLocks	null
+config	GeneralConfig	useIdnaNontransitionalToUnicode	false
+config	GeneralConfig	useIframeResizer	false
+config	GeneralConfig	usePathInfo	false
+config	GeneralConfig	useSecureCookies	'auto'
+config	GeneralConfig	useSslOnTokenizedUrls	'auto'
+config	GeneralConfig	userSessionDuration	3600
+config	GeneralConfig	verificationCodeDuration	86400
+config	GeneralConfig	verifyEmailPath	'verifyemail'
+config	GeneralConfig	verifyEmailSuccessPath	''
+config	McpConfig	filters	[]
+config	McpConfig	instructions	''
+config	OAuthConfig	accessTokenDuration	'PT1H'
+config	OAuthConfig	authorizationCodeDuration	'PT10M'
+config	OAuthConfig	customSchemes	[]
+config	OAuthConfig	privateKey	null
+config	OAuthConfig	publicKey	null
+config	OAuthConfig	redirectDomains	['*']
+config	OAuthConfig	refreshTokenDuration	'P30D'
+config	OAuthConfig	registrationRateLimit	10
+config	OAuthConfig	registrationRateLimitDuration	3600
+config	OAuthConfig	resources	[]
 const	Craft	Pro	
 const	Craft	Solo	
 const	craft\base\ConfigurableComponent	EVENT_DEFINE_SETTINGS_ATTRIBUTES	
@@ -3541,6 +3719,96 @@ const	yii\web\View	POS_READY
 const	yii\widgets\ActiveForm	VALIDATION_STATE_ON_CONTAINER	
 const	yii\widgets\ActiveForm	VALIDATION_STATE_ON_INPUT	
 const	yii\widgets\MaskedInput	PLUGIN_NAME	
+mcp	prompt	audit-content-model		Admin
+mcp	resource	craft-addresses-get	craft://addresses/{id}/sites/{siteId}	
+mcp	resource	craft-assets-get	craft://assets/{id}/sites/{siteId}	
+mcp	resource	craft-element-types	craft://element-types	accessCp
+mcp	resource	craft-element-types-get	craft://element-types/{type}	accessCp
+mcp	resource	craft-entries-get	craft://entries/{id}/sites/{siteId}	
+mcp	resource	craft-entry-types	craft://entry-types	Admin
+mcp	resource	craft-entry-types-field-layout	craft://field-layouts/entry-types/{entryType}	Admin
+mcp	resource	craft-entry-types-get	craft://entry-types/{entryType}	Admin
+mcp	resource	craft-fields	craft://fields	Admin
+mcp	resource	craft-fields-get	craft://fields/{field}	Admin
+mcp	resource	craft-sections	craft://sections	Admin
+mcp	resource	craft-sections-get	craft://sections/{section}	Admin
+mcp	resource	craft-sites	craft://sites	Admin
+mcp	resource	craft-sites-get	craft://sites/{site}	Admin
+mcp	resource	craft-user-groups	craft://user-groups	Admin
+mcp	resource	craft-user-groups-get	craft://user-groups/{group}	Admin
+mcp	resource	craft-user-permissions	craft://user-permissions	assignUserPermissions
+mcp	resource	craft-users-get	craft://users/{user}	viewUsers
+mcp	tool	addresses_field_layout_get	admin	Admin
+mcp	tool	addresses_field_layout_update	admin	AdminChanges
+mcp	tool	asset_folders_create	write	
+mcp	tool	asset_folders_delete	write	
+mcp	tool	asset_folders_get	read	
+mcp	tool	asset_folders_list	read	
+mcp	tool	asset_folders_update	write	
+mcp	tool	assets_create	write	
+mcp	tool	assets_replace	write	
+mcp	tool	assets_transform_url	read	
+mcp	tool	assets_upload_url	write	
+mcp	tool	caches_clear	write	utility:clear-caches
+mcp	tool	caches_list	read	utility:clear-caches
+mcp	tool	configuration_create	admin	AdminChanges
+mcp	tool	configuration_delete	admin	AdminChanges
+mcp	tool	configuration_get	admin	Admin
+mcp	tool	configuration_list	admin	Admin
+mcp	tool	configuration_schema	admin	Admin
+mcp	tool	configuration_update	admin	AdminChanges
+mcp	tool	content_model_audit	admin	Admin
+mcp	tool	craft_context_get	read	
+mcp	tool	craft_query	read	
+mcp	tool	drafts_apply	write	
+mcp	tool	drafts_create	write	
+mcp	tool	drafts_delete	write	
+mcp	tool	drafts_list	read	
+mcp	tool	elements_create	write	
+mcp	tool	elements_delete	write	
+mcp	tool	elements_duplicate	write	
+mcp	tool	elements_field_schema	read	
+mcp	tool	elements_get	read	
+mcp	tool	elements_list	read	
+mcp	tool	elements_restore	write	
+mcp	tool	elements_schema	read	accessCp
+mcp	tool	elements_update	write	
+mcp	tool	elements_validate	read	
+mcp	tool	info_get	read	accessCp
+mcp	tool	plugins_disable	admin	AdminChanges
+mcp	tool	plugins_enable	admin	AdminChanges
+mcp	tool	plugins_install	admin	AdminChanges
+mcp	tool	plugins_list	admin	Admin
+mcp	tool	plugins_uninstall	admin	AdminChanges
+mcp	tool	preferences_get	read	accessCp
+mcp	tool	preferences_update	write	accessCp
+mcp	tool	project_config_apply	admin	AdminChanges
+mcp	tool	project_config_diff	admin	Admin
+mcp	tool	project_config_get	admin	Admin
+mcp	tool	project_config_rebuild	admin	Admin
+mcp	tool	project_config_status	admin	Admin
+mcp	tool	project_config_write	admin	AdminChanges
+mcp	tool	queue_release_all	write	utility:queue-manager
+mcp	tool	queue_retry_all	write	utility:queue-manager
+mcp	tool	queue_run	write	utility:queue-manager
+mcp	tool	queue_status	read	utility:queue-manager
+mcp	tool	revisions_apply	write	
+mcp	tool	revisions_get	read	
+mcp	tool	revisions_list	read	
+mcp	tool	search_query	read	
+mcp	tool	structures_move_element	write	
+mcp	tool	system_status_disable	admin	AdminChanges
+mcp	tool	system_status_enable	admin	AdminChanges
+mcp	tool	system_status_get	admin	Admin
+mcp	tool	user_permissions_group_get	read	assignUserPermissions
+mcp	tool	user_permissions_group_set	admin	AdminChanges,assignUserPermissions
+mcp	tool	user_permissions_group_update	admin	AdminChanges,assignUserPermissions
+mcp	tool	user_permissions_list	read	assignUserPermissions
+mcp	tool	user_permissions_user_get	read	assignUserPermissions
+mcp	tool	user_permissions_user_set	write	assignUserPermissions
+mcp	tool	user_permissions_user_update	write	assignUserPermissions
+mcp	tool	users_field_layout_get	admin	Admin
+mcp	tool	users_field_layout_update	admin	AdminChanges
 method	Craft	_autoloadCustomFieldBehavior	
 method	Craft	_fields	
 method	Craft	_generateCustomFieldBehavior	

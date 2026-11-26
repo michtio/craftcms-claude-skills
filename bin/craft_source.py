@@ -62,7 +62,7 @@ YII_CONSOLE_OPTIONS = {"interactive", "color", "help", "silent-exit-on-exception
 
 def strip_php_comments(src: str) -> str:
     src = re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), src, flags=re.S)
-    return re.sub(r"(?m)(?<![:\"'])//[^\n]*|^\s*#[^\n\[]*", "", src)
+    return re.sub(r"(?m)(?<![:\"'])//[^\n]*|^\s*#(?!\[)[^\n]*", "", src)
 
 
 def resolve(name: str, ns: str, uses: dict[str, str]) -> str:
@@ -143,6 +143,69 @@ def parse_php(path: Path) -> list[tuple]:
     return rows
 
 
+MCP_ATTR = re.compile(r"#\[(McpTool|McpResource|McpResourceTemplate|McpPrompt)\(")
+
+
+def mcp_rows(src_dir: Path) -> list[tuple]:
+    """MCP capabilities: (mcp, kind, name, scope-or-uri, gate).
+
+    Scope follows CapabilityDiscovery::requiredScope(): admin for #[RequiresAdmin] or
+    #[RequiresAdminChanges], else write for a tool without readOnlyHint: true, else read.
+    Gate lists Admin / AdminChanges / RequiresPermission handles, comma-separated.
+    """
+    rows = []
+    links = {}
+    erl = src_dir / "mcp" / "ElementResourceLinks.php"
+    if erl.exists():
+        links = dict(re.findall(r"(\w+)::class\s*=>\s*'([^']+)'", erl.read_text()))
+    for php in sorted((src_dir / "mcp").rglob("*.php")):
+        text = strip_php_comments(php.read_text(encoding="utf-8", errors="replace"))
+        for m in MCP_ATTR.finditer(text):
+            kind = {"McpTool": "tool", "McpResource": "resource", "McpResourceTemplate": "resource", "McpPrompt": "prompt"}[m.group(1)]
+            fm = re.compile(r"^\s*(?:(?:public|protected|private|static)\s+)*function\s", re.M).search(text, m.end())
+            block = text[m.start():fm.start() if fm else len(text)]
+            name = re.search(r"\bname:\s*'([^']+)'", block)
+            if not name:
+                continue
+            gates = []
+            if "#[RequiresAdminChanges]" in block:
+                gates.append("AdminChanges")
+            elif "#[RequiresAdmin]" in block:
+                gates.append("Admin")
+            gates += re.findall(r"#\[RequiresPermission\('([^']+)'\)\]", block)
+            if kind == "tool":
+                if gates and gates[0] in {"Admin", "AdminChanges"}:
+                    third = "admin"
+                else:
+                    third = "read" if re.search(r"readOnlyHint:\s*true", block) else "write"
+            else:
+                uri = re.search(r"\buri(?:Template)?:\s*'([^']+)'", block)
+                if uri:
+                    third = uri.group(1)
+                else:
+                    const = re.search(r"uriTemplate:\s*ElementResourceLinks::Templates\[(\w+)::class\]", block)
+                    third = links.get(const.group(1), "") if const else ""
+            rows.append(("mcp", kind, name.group(1), third, ",".join(sorted(gates))))
+    return rows
+
+
+CONFIG_CLASSES = ("GeneralConfig", "McpConfig", "OAuthConfig")
+
+
+def config_default_rows(src_dir: Path) -> list[tuple]:
+    """(config, Class, key, default) for public properties of the config classes."""
+    rows = []
+    for cls in CONFIG_CLASSES:
+        php = src_dir / "config" / f"{cls}.php"
+        if not php.exists():
+            continue
+        text = strip_php_comments(php.read_text(encoding="utf-8", errors="replace"))
+        for m in re.finditer(rf"^\s*public\s+(?!function|const|static)[^$\n]*\$({IDENT})\s*(=\s*([^;]+))?;", text, re.M):
+            default = re.sub(r"\s+", " ", m.group(3).strip()) if m.group(3) else ""
+            rows.append(("config", cls, m.group(1), default))
+    return rows
+
+
 def kebab(name: str) -> str:
     return re.sub(r"(?<=[a-z0-9])([A-Z])", r"-\1", name).lower()
 
@@ -212,6 +275,8 @@ def cmd_index(args) -> int:
             continue
         rows += parse_php(php)
     rows += console_rows(src_dir, rows)
+    rows += mcp_rows(src_dir)
+    rows += config_default_rows(src_dir)
     # Libraries Craft classes extend (yii2, yii2-queue): indexed so a member that is
     # missing from the whole chain is provably missing, not "left Craft".
     for lib in args.lib or []:
@@ -467,6 +532,173 @@ def cmd_verify(args) -> int:
     return 1 if findings else 0
 
 
+# ----------------------------------------------------------------------------
+# tables
+# ----------------------------------------------------------------------------
+
+CATALOGUE = REPO / "skills" / "craft-mcp" / "references" / "tool-catalogue.md"
+
+
+def cell_tokens(cell: str) -> set[str]:
+    """Gate cell -> set of gates: Admin, AdminChanges, permission handles."""
+    out = set(re.findall(r"`([^`]+)`", cell))
+    out |= set(re.findall(r"\b(AdminChanges|Admin)\b", re.sub(r"`[^`]+`", "", cell)))
+    return {t for t in out if t}
+
+
+def check_catalogue(path: Path, idx_rows: list[list[str]]) -> list[str]:
+    tools = {r[2]: (r[3], set(filter(None, r[4].split(",")))) for r in idx_rows if r[1] == "tool"}
+    res = {r[2]: (r[3], set(filter(None, r[4].split(",")))) for r in idx_rows if r[1] in {"resource", "prompt"}}
+    rel = path.relative_to(REPO) if path.is_relative_to(REPO) else path
+    findings, seen_tools, seen_res = [], set(), set()
+    header, common = None, set()
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if line.startswith("## "):
+            header, common = None, set()
+            continue
+        m = re.match(r"All need `([^`]+)`", line)
+        if m:
+            common = {m.group(1)}
+        if not line.startswith("|"):
+            header = None if not line.strip() else header
+            continue
+        cells = [c.strip() for c in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+        if header is None:
+            header = [c.lower() for c in cells]
+            continue
+        if set(line) <= set("|-: "):
+            continue
+        col = {h: cells[i] if i < len(cells) else "" for i, h in enumerate(header)}
+        first = cells[0]
+        if header[0] == "tool":
+            name = first.strip("`")
+            seen_tools.add(name)
+            if name not in tools:
+                findings.append(f"{rel}:{n}: tool `{name}` is not in the source")
+                continue
+            scope, gates = tools[name]
+            if "scope" in col and col["scope"] != scope:
+                findings.append(f"{rel}:{n}: `{name}` scope is {col['scope']}, source says {scope}")
+            gate_col = col.get("gate", col.get("extra gate"))
+            if gate_col is not None:
+                listed = cell_tokens(gate_col) | common
+                if listed != gates:
+                    findings.append(f"{rel}:{n}: `{name}` gate is {sorted(listed) or '(none)'}, source says {sorted(gates) or '(none)'}")
+        elif header[0] == "name":
+            names = re.findall(r"`([^`]+)`", first)
+            if first.lower().startswith("prompt"):
+                names = names[:1]
+            for name in names:
+                seen_res.add(name)
+                if name not in res:
+                    findings.append(f"{rel}:{n}: resource/prompt `{name}` is not in the source")
+                    continue
+                uri, gates = res[name]
+                if "uri" in col and uri and uri not in col["uri"]:
+                    findings.append(f"{rel}:{n}: `{name}` URI is not {uri} in the source")
+                if "gate" in col and cell_tokens(col["gate"]) != gates:
+                    findings.append(f"{rel}:{n}: `{name}` gate is {sorted(cell_tokens(col['gate'])) or '(none)'}, source says {sorted(gates) or '(none)'}")
+    for name in sorted(set(tools) - seen_tools):
+        findings.append(f"{rel}: tool `{name}` (source) is missing from the catalogue")
+    for name in sorted(set(res) - seen_res):
+        findings.append(f"{rel}: resource/prompt `{name}` (source) is missing from the catalogue")
+    return findings
+
+
+def load_index_rows(kind: str) -> list[list[str]]:
+    return [l.split("\t") for l in INDEX_TSV.read_text().splitlines() if l.startswith(kind + "\t")]
+
+
+ISO_DURATION = re.compile(r"^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$")
+
+
+def norm_default(v: str) -> str | None:
+    """A comparable literal, or None when the text is prose (not checked)."""
+    v = v.strip().strip("`").strip()
+    v = re.sub(r"^\\?[\w\\]*::", "", v) if "::" in v and not v.startswith("'") else v
+    if re.fullmatch(r"'[^']*'|\"[^\"]*\"", v):
+        v = v[1:-1]
+        if v == "":
+            return "''"
+    low = v.lower()
+    if low in {"true", "false", "null"}:
+        return low
+    if v in {"[]", "array()"}:
+        return "[]"
+    if re.fullmatch(r"-?\d+(?:\.\d+)?", v.replace("_", "")):
+        return str(float(v.replace("_", ""))).rstrip("0").rstrip(".")
+    m = ISO_DURATION.match(v)
+    if m and v != "P":
+        y, mo, w, d, h, mi, se = (int(x or 0) for x in m.groups())
+        secs = ((((y * 365 + mo * 30 + w * 7 + d) * 24 + h) * 60 + mi) * 60) + se
+        return str(secs)
+    if re.fullmatch(r"\[[^\]]*\]", v):
+        return re.sub(r"\s+", "", v).replace('"', "'")
+    return None
+
+
+def doc_default(cell: str) -> str | None:
+    spans = re.findall(r"`([^`]+)`", cell)
+    if spans:
+        return norm_default(spans[0])
+    first = cell.strip().split(" ")[0] if cell.strip() else ""
+    return norm_default(first) if first else None
+
+
+def check_config_tables(paths) -> list[str]:
+    defaults: dict[str, dict[str, str]] = defaultdict(dict)
+    for r in load_index_rows("config"):
+        defaults[r[1]][r[2]] = r[3] if len(r) > 3 else ""
+    targets: list[Path] = []
+    for p in (paths or ["skills"]):
+        p = Path(p) if Path(p).is_absolute() else REPO / p
+        targets += [p] if p.is_file() else sorted(p.rglob("*.md"))
+    findings = []
+    for path in targets:
+        rel = path.relative_to(REPO) if path.is_relative_to(REPO) else path
+        posix = path.as_posix()
+        if "/craft-plugins/" in posix:
+            continue  # plugin settings tables, not Craft's config classes
+        order = (["OAuthConfig"] if "oauth" in path.name else ["McpConfig"] if "craft-mcp" in posix else []) + ["GeneralConfig"]
+        header = None
+        for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if not line.startswith("|"):
+                header = None
+                continue
+            cells = [c.strip() for c in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+            if header is None:
+                header = [c.lower() for c in cells]
+                continue
+            if set(line) <= set("|-: ") or "default" not in header:
+                continue
+            if not re.match(r"(setting|key|option|property)\b", header[0]):
+                continue
+            key = re.match(r"`(\w+)`", cells[0])
+            if not key:
+                continue
+            cls = next((c for c in order if key.group(1) in defaults[c]), None)
+            if not cls:
+                continue
+            i = header.index("default")
+            doc = doc_default(cells[i]) if i < len(cells) else None
+            src = norm_default(defaults[cls][key.group(1)])
+            if doc is None or src is None:
+                continue
+            if doc != src:
+                findings.append(f"{rel}:{n}: `{key.group(1)}` default is {cells[i]!r}, {cls} says {defaults[cls][key.group(1)]}")
+    return findings
+
+
+def cmd_tables(args) -> int:
+    catalogue = Path(args.catalogue).resolve() if args.catalogue else CATALOGUE
+    findings = check_catalogue(catalogue, load_index_rows("mcp"))
+    findings += check_config_tables(args.paths)
+    for f in findings:
+        print(f)
+    print(f"{len(findings)} table mismatch(es) against craftcms/cms {TAG_TXT.read_text().strip()}")
+    return 1 if findings else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -477,8 +709,11 @@ def main() -> int:
     i.add_argument("--lib-versions", default="", help="recorded in the index header, e.g. 'yii2 2.0.55, yii2-queue 2.3.8'")
     v = sub.add_parser("verify")
     v.add_argument("paths", nargs="*")
+    t = sub.add_parser("tables")
+    t.add_argument("--catalogue", help="check this file instead of craft-mcp/references/tool-catalogue.md")
+    t.add_argument("paths", nargs="*", help="files to scan for config-key tables (default: skills/)")
     args = ap.parse_args()
-    return {"index": cmd_index, "verify": cmd_verify}[args.cmd](args)
+    return {"index": cmd_index, "verify": cmd_verify, "tables": cmd_tables}[args.cmd](args)
 
 
 if __name__ == "__main__":
