@@ -143,7 +143,7 @@ Craft::error('API call failed: ' . $e->getMessage(), __METHOD__);
 Or for structured logs:
 
 ```php
-Craft::$app->getLogger()->log(
+Craft::getLogger()->log(
     'API call failed',
     \yii\log\Logger::LEVEL_ERROR,
     'my-plugin',

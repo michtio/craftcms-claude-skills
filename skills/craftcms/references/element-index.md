@@ -384,10 +384,10 @@ public static function createCondition(): ElementConditionInterface
 
 ### Custom Condition Rules
 
-No scaffold — create manually. Extend `craft\elements\conditions\ElementConditionRule`:
+No scaffold — create manually. Extend one of the `craft\base\conditions\Base*ConditionRule` classes (`BaseElementSelectConditionRule`, `BaseTextConditionRule`, `BaseLightswitchConditionRule`, ...) and implement `craft\elements\conditions\ElementConditionRuleInterface` (`getExclusiveQueryParams()`, `modifyQuery()`, `matchElement()`):
 
 ```php
-class CategoryConditionRule extends BaseElementSelectConditionRule
+class CategoryConditionRule extends BaseElementSelectConditionRule implements ElementConditionRuleInterface
 {
     public function getLabel(): string
     {
@@ -399,9 +399,19 @@ class CategoryConditionRule extends BaseElementSelectConditionRule
         return ['categoryId'];
     }
 
+    protected function elementType(): string
+    {
+        return Category::class;
+    }
+
     public function modifyQuery(ElementQueryInterface $query): void
     {
         $query->categoryId($this->getElementId());
+    }
+
+    public function matchElement(ElementInterface $element): bool
+    {
+        return $this->matchValue($element->categoryId);
     }
 }
 ```

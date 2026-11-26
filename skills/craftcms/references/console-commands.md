@@ -187,7 +187,6 @@ Note: search index rebuilding is handled via `craft resave/* --update-search-ind
 | `craft users/create` | Create a user interactively (email, username, password, admin flag). |
 | `craft users/delete` | Delete a user. Accepts `--inheritor` (user to inherit content), `--delete-content`, `--hard`. |
 | `craft users/set-password` | Set a user's password. Accepts `--password` or prompts securely. |
-| `craft users/list` | List users with ID, email, username, and admin status. |
 | `craft users/list-admins` | List admin users only. |
 | `craft users/unlock` | Unlock a locked-out user account. |
 | `craft users/activation-url` | Generate an activation URL for a pending user. |

@@ -335,7 +335,7 @@ public function getSearchKeywords(mixed $value, ElementInterface $element): stri
 }
 ```
 
-After changing this method on an existing field, rebuild: `ddev craft db/search-indexes`.
+After changing this method on an existing field, rebuild: `ddev craft resave/entries --update-search-index` (or `resave/all --update-search-index` [5.5+]).
 
 ## GraphQL Integration
 

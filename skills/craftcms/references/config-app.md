@@ -18,7 +18,7 @@ Complete reference for `config/app.php` component configuration in Craft CMS 5. 
 - Trying to set the mail transport *type* per environment via an env variable -- adapter settings (host, port, username) are env-parseable, but the transport class itself is not, and project config syncs the CP choice across environments. The `app.php` mailer override is the only per-environment mechanism. See [Environment-Specific Transport](#environment-specific-transport).
 - Overriding session without using `App::sessionConfig()` as the base -- loses Craft's `SessionBehavior` which the CP depends on.
 - Database sessions via `yii\web\DbSession` -- [5.11+] use `craft\web\DbSession`, which adds the "headers already sent" guard. Before 5.11: `yii\web\DbSession` is the only option. Either way the `phpsessions` table is not created on install: run `craft setup/php-session-table` first.
-- Not running `ddev craft db/search-indexes` after changing search component config -- existing entries are still indexed with the old settings.
+- Not rebuilding the search index (`ddev craft resave/all --update-search-index` [5.5+]; before 5.5: `resave/entries --update-search-index`, per element type) after changing search component config -- existing entries are still indexed with the old settings. There is no `db/search-indexes` command.
 - Forgetting `CRAFT_APP_ID` when multiple Craft installs share a cache backend -- cache key collisions cause cross-site data leaks.
 
 ## Contents
@@ -458,10 +458,10 @@ SHOW VARIABLES LIKE 'innodb_ft_min_token_size';
 ```
 
 2. Set Craft's `minFullTextWordLength` to match the MySQL value.
-3. After changing, rebuild the search index:
+3. After changing, rebuild the search index [5.5+]. Before 5.5: `resave/entries --update-search-index`, per element type.
 
 ```
-ddev craft db/search-indexes
+ddev craft resave/all --update-search-index
 ```
 
 ### Interaction with GeneralConfig
@@ -478,25 +478,28 @@ PostgreSQL does not support MySQL-style fulltext indexing. Craft falls back to `
 // config/app.php
 return [
     'components' => [
-        'log' => function() {
-            $config = craft\helpers\App::logConfig();
-            if ($config) {
+        // Craft's log component is craft\log\Dispatcher. Its init() merges the default
+        // Monolog targets (web, console, queue) with the `targets` set here.
+        'log' => [
+            // Applied to the default web/console/queue targets
+            'monologTargetConfig' => [
+                'except' => ['yii\db\Command::query', 'yii\db\Command::execute'],
+            ],
+            'targets' => [
                 // Add a custom file target
-                $config['targets']['custom'] = [
+                'custom' => [
                     'class' => yii\log\FileTarget::class,
                     'logFile' => '@storage/logs/custom.log',
                     'categories' => ['my-plugin'],
                     'levels' => ['error', 'warning', 'info'],
-                ];
-
+                ],
                 // Example: Sentry target (requires sentry/sdk)
-                // $config['targets']['sentry'] = [
+                // 'sentry' => [
                 //     'class' => \sentry\log\SentryTarget::class,
                 //     'levels' => ['error', 'warning'],
-                // ];
-            }
-            return $config ? Craft::createObject($config) : null;
-        },
+                // ],
+            ],
+        ],
     ],
 ];
 ```
@@ -513,12 +516,7 @@ Yii log categories follow a hierarchical naming pattern. Setting `categories` to
 
 ### Suppressing noisy categories
 
-```php
-$config['targets']['file']['except'] = [
-    'yii\db\Command::query',
-    'yii\db\Command::execute',
-];
-```
+Set `except` in `monologTargetConfig` (above): it applies to the default `web`, `console` and `queue` targets. Craft 5 has no `logConfig()` helper; configure the `log` component as an array.
 
 ## CORS Filter
 
@@ -661,18 +659,16 @@ return [
         'search' => [
             'minFullTextWordLength' => 3,
         ],
-        'log' => function() {
-            $config = craft\helpers\App::logConfig();
-            if ($config) {
-                $config['targets']['custom'] = [
+        'log' => [
+            'targets' => [
+                'custom' => [
                     'class' => yii\log\FileTarget::class,
                     'logFile' => '@storage/logs/application.log',
                     'categories' => ['application', 'modules\*'],
                     'levels' => ['error', 'warning'],
-                ];
-            }
-            return $config ? Craft::createObject($config) : null;
-        },
+                ],
+            ],
+        ],
     ],
     'modules' => [
         'site-module' => \modules\sitemodule\Module::class,

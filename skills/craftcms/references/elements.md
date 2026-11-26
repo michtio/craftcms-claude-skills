@@ -140,7 +140,7 @@ class MyDescriptionField extends BaseNativeField
 }
 ```
 
-The `$attribute` value lives in PHP property namespace, not the global `fields` table. No collision with user-created custom fields of the same handle. Users can only attach custom fields to your element type if you explicitly register via `EVENT_REGISTER_FIELD_LAYOUT_TYPES`.
+The `$attribute` value lives in PHP property namespace, not the global `fields` table. No collision with user-created custom fields of the same handle. Users can only attach custom fields to your element type if you give it a field layout: a field layout designer in your settings, saved with `Fields::saveLayout()` (or fetched with `Fields::getLayoutByType()`), and returned from your element's `getFieldLayout()`. There is no registration event for field layout types.
 
 Reference: `vendor/craftcms/cms/src/fieldlayoutelements/TitleField.php` for the canonical shape, `vendor/craftcms/cms/src/elements/Category.php` for the structure-aware element pattern.
 

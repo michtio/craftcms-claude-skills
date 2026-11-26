@@ -87,7 +87,7 @@ When `Craft::$app->getUser()->login()` succeeds:
 
 ### Token validation (every request)
 
-`craft\web\User::validateToken()` runs on every authenticated request:
+On every authenticated request, `craft\web\User::renewAuthStatus()` (via Yii's `yii\web\User`) calls `craft\elements\User::validateAuthKey()` with the auth key stored in the session:
 1. Reads token from PHP session
 2. Queries `Table::SESSIONS` for matching `userId` + `token`
 3. If no match → forces logout
