@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.28.1 -- unreleased
+## 1.28.1 -- 2026-11-26
 
 ### Fixed
 
