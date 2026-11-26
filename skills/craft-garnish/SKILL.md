@@ -40,6 +40,7 @@ Use `WebFetch` on Craft's class reference (https://docs.craftcms.com/api/v5/) wh
 - Not calling `destroy()` when removing widgets — orphaned listeners accumulate, especially in slideouts and live preview where DOM is repeatedly created/destroyed.
 - Importing Garnish into webpack bundles instead of using the external — `import Garnish from 'garnishjs'` resolves to `window.Garnish` via webpack externals; bundling it duplicates 134KB.
 - Giving `name` attributes to inputs in a panel injected into another form (an entry-edit sidebar panel, a CP template hook) — the host form serializes them on save and your plugin's values are silently swallowed. Inputs are id-only, your JS reads them by id and posts to your own endpoint, and an Enter-key guard keeps the host form from submitting. See `integration.md` (Panels Injected Into Another Form).
+- [deprecated 5.12] Registering `PrismJsAsset` for custom grammars, hooks or Prism plugins: since 5.12 it is a shim over TanStack Highlight and they silently stop working. Use `HighlightAsset` [5.12+] and `Craft.highlighter.highlight(code, {lang})`. Before 5.12: real Prism. See `integration.md` (Syntax Highlighting and Uploaders).
 - Using deprecated `Garnish.Menu` instead of `Garnish.CustomSelect` — `Menu` is an alias kept for BC only.
 - Using deprecated `Garnish.escManager` or `Garnish.shortcutManager` instead of `Garnish.uiLayerManager` — the newer manager provides layer-aware keyboard routing that respects the modal/menu stack.
 

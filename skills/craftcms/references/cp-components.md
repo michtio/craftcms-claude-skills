@@ -174,6 +174,8 @@ Event::on(Dashboard::class, Dashboard::EVENT_REGISTER_WIDGET_TYPES,
 );
 ```
 
+[5.12.2+] `Craft::$app->getDashboard()->isWidgetTypeAvailable(RecentItems::class)` answers "may the current user use this widget type": the type must be registered and its `isSelectable()` must pass. Unlike calling `isSelectable()` directly, it ignores whether the user already has a widget of that type, so it works for checking widgets a user already has (for example a one-per-user widget that `isSelectable()` hides once added). Before 5.12.2: call `RecentItems::isSelectable()` and accept that one-per-user logic reads as "unavailable" once the widget exists.
+
 ## Slideout Editors
 
 > For Garnish library primitives (`Garnish.Modal`/`HUD`/`DragSort`, `UiLayerManager`, focus/ARIA helpers, the `Garnish.Base.extend` class system), see the `craft-garnish` skill. This file covers Craft's higher-level `Craft.*` CP APIs built on top.

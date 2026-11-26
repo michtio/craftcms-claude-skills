@@ -48,4 +48,6 @@ $this->tester->mockCraftMethods('request', [
 
 `consoleCommand()` works the same as in craft-pest.
 
+[changed 5.12] Element fixtures (`craft\test\fixtures\elements\BaseElementFixture`, via the new `craft\test\ElementFixtureTrait` [5.12+]) no longer create revisions: the trait switches off section and Matrix versioning while it saves. Set `public bool $createRevisions = true;` on a fixture whose tests assert revisions. Before 5.12: fixtures always created revisions. [changed 5.12.2] Tests extending `craft\test\console\ConsoleTest` run with a console application; before 5.12.2 they ran with a web application.
+
 **Don't mix the two harnesses.** `craft\test\TestSetup::configureCraft()` transitively autoloads `craft\test\Craft`, which extends `Codeception\Module\Yii2` — calling it from a Pest-only project is a fatal class-not-found error.

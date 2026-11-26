@@ -7,7 +7,7 @@
 - Registering Handlers — class-level, instance-level, deferred
 - Event Naming Conventions — REGISTER, DEFINE, BEFORE, AFTER, SET, AUTHORIZE
 - Key Event Sources — Element, Elements service, Fields, FieldLayout, UrlManager, View, Permissions, Plugins, ProjectConfig, Gql, Dashboard, Console, CP nav
-- Other Registerable Component Types — Utilities, Filesystems, Image Transformers, Auth Methods, Mail Transports
+- Other Registerable Component Types — Utilities, Filesystems, Image Transformers, Icon Sets [5.12+], Auth Methods, Mail Transports
 - Validation Rules on Core Elements From a Module — `EVENT_DEFINE_RULES` on `Entry::class`, the nested-entry guard, `'when'` vs filtering in the handler, `Validator` subclasses, `field:<handle>` errors, test checklist
 - Behaviors
 - Twig Extensions
@@ -141,6 +141,10 @@ These fire on the **Elements service**, not on the element instance. `$event->se
 | `EVENT_AUTHORIZE_SAVE` | Save permission check |
 | `EVENT_AUTHORIZE_CREATE_DRAFTS` | Draft creation permission |
 | `EVENT_AUTHORIZE_DELETE` | Delete permission check |
+
+[changed 5.12] `EVENT_BEFORE_DELETE_ELEMENT` (`DeleteElementEvent::$hardDelete`) and `EVENT_AFTER_DELETE_ELEMENT` (read `$event->element->hardDelete`) report a soft delete when "Delete for site" removes an element's only site (5.11 passed `true`; drafts and nested elements are still hard-deleted). Listeners that drop plugin rows only on hard delete now wait for GC; listeners that drop them on any delete must restore them in `EVENT_AFTER_RESTORE_ELEMENT`. See `elements.md` → "Delete for site".
+
+[changed 5.12.1] `Entry::EVENT_DEFINE_ENTRY_TYPES` is now respected by "New entry" buttons too. Before 5.12.1: a section's New entry menu could still offer an entry type the handler had removed, and choosing it returned a 400.
 
 ### Fields Service (`craft\services\Fields`)
 
@@ -282,6 +286,24 @@ Doc: https://craftcms.com/docs/5.x/extend/image-transforms.html
 Event::on(ImageTransforms::class, ImageTransforms::EVENT_REGISTER_IMAGE_TRANSFORMERS,
     function(RegisterComponentTypesEvent $event) {
         $event->types[] = MyTransformer::class;
+    }
+);
+```
+
+### Icon Sets (`craft\services\Icons`) [5.12+]
+
+Register custom icon sets for icon pickers and Icon fields. Append `craft\icons\IconSet` subclasses to `RegisterIconSetsEvent::$iconSets`. Handles must match `/^[a-zA-Z][\w\-]*$/` and `fontawesome` is reserved (`Icons::FONT_AWESOME`); anything else throws `InvalidConfigException`. Stored icon values of a custom set read `handle:name`.
+
+```php
+use craft\events\RegisterIconSetsEvent;
+use craft\services\Icons;
+
+Event::on(Icons::class, Icons::EVENT_REGISTER_ICON_SETS,
+    function(RegisterIconSetsEvent $event) {
+        $event->iconSets[] = new MyIconSet([
+            'handle' => 'my-icons',
+            'name' => 'My Icons',
+        ]);
     }
 );
 ```

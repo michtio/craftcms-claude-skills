@@ -33,6 +33,7 @@
 - [Panels Injected Into Another Form](#panels-injected-into-another-form)
 - [Custom Field Input JS & Dynamic Re-init](#custom-field-input-js--dynamic-re-init)
 - [Element Index JS Loading](#element-index-js-loading)
+- [Syntax Highlighting and Uploaders [5.12+]](#syntax-highlighting-and-uploaders-512)
 - [Form Widgets](#form-widgets)
 
 ---
@@ -399,6 +400,18 @@ Details worth knowing:
 - **`activate`, not `click`**, on the submit button, so keyboard users get the same behavior (this is why the button is `type="button"`).
 - **`Craft.sendActionRequest`** handles the CSRF token; hand-rolled `$.post` to an action URL will 400 without it.
 - **Call `destroy()`** if the panel can be torn down and rebuilt — slideouts and live preview recreate their DOM, and listeners added with `addListener()` are what `destroy()` cleans up. See `class-system.md`.
+
+## Syntax Highlighting and Uploaders [5.12+]
+
+**Highlighting.** [5.12+] Craft's CP highlights code with TanStack Highlight. Depend on `craft\web\assets\highlight\HighlightAsset` (it depends on `CpAsset`) and call the shared instance:
+
+```js
+const html = Craft.highlighter.highlight(code, {lang: 'json'}).html;
+```
+
+Languages bundled at 5.12.4: `diff`, `html`, `js`, `json`, `markdown`, `php`, `plaintext`, `yaml`. [deprecated 5.12] `craft\web\assets\prismjs\PrismJsAsset` now registers a `Prism` shim over TanStack Highlight: Prism's commonly used APIs work, but custom grammars (`Prism.languages.x = …`), hooks and Prism plugins don't, and fail silently (unhighlighted code). Before 5.12: `PrismJsAsset` was real Prism; when supporting both, register `PrismJsAsset` with only built-in languages, or branch on `Craft.highlighter`. ([`HighlightAsset.php`](https://github.com/craftcms/cms/blob/5.12.4/src/web/assets/highlight/HighlightAsset.php))
+
+**Pasting files.** [5.12+] `Craft.BaseUploader` accepts a `pasteZone` setting: files pasted while focus is inside it are passed to `addFiles(files)`. The base `addFiles()` is a no-op, so a custom uploader class must implement it to support pasting. Assets fields use this for paste-to-upload.
 
 ## Custom Field Input JS & Dynamic Re-init
 

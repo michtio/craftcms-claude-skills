@@ -720,6 +720,8 @@ public function saveItem(MyEntity $item): bool
 }
 ```
 
+**Read-modify-write needs the lock first.** [5.12.1+] When the new config depends on values you read from project config (appending to a list, bumping a counter, merging into another component's settings), call `Craft::$app->getProjectConfig()->acquireLock()` before the read. It takes the project-config mutex and reloads the config if another process changed it, and holds the lock until the modified config is saved, so no other process can change those values in between. It throws `BusyResourceException` or `StaleResourceException` (catch them in controllers, see `controllers.md` → "Project-config writes from controllers"). Before 5.12.1: the lock was private (`_acquireLock()`, taken inside `set()`), so a value read before `set()` could already be stale.
+
 ### Handle Config Changes
 
 The handler applies project config to the database. Skip validation — it was done before the config write:

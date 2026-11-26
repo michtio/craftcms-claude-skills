@@ -15,6 +15,7 @@ Complete reference for Craft CMS 5's draft and revision system: draft types, pro
 - Assuming `hasRevisions()` is a static method — it's an instance method. It must return `true` for revision tracking, and `hasDrafts()` must also return `true`.
 - Setting `maxRevisions` to `0` without understanding the consequences — unlimited revisions means the `elements` table grows indefinitely.
 - Expecting `createRevision()` to always create one — it silently returns the existing revision when `elements.dateUpdated` hasn't changed, which is exactly what happens after a raw `Db::update()`. Pass `force: true`. See [createRevision() skips silently](#createrevision-skips-silently-when-dateupdated-didnt-move).
+- Raw SQL on the `addresses` table that forgets drafts. [changed 5.12] Addresses support drafts (`Address::hasDrafts()` returns `true`): editing an address from an owner's draft creates a draft address row with a `draftId` in `elements`. `Address::find()` excludes drafts by default; joins on `addresses` must filter `elements.draftId IS NULL` themselves. Before 5.12: addresses had no drafts, and editors who could save an owner's draft but not the canonical owner couldn't edit its addresses.
 
 ## Contents
 
@@ -140,6 +141,8 @@ if (ElementHelper::isOutdated($draft)) {
 }
 ```
 
+[changed 5.12.2] Applying an outdated draft no longer deletes other sites' nested entries in required Matrix fields (craftcms/cms#20838). Before 5.12.2: multi-site installs with required Matrix fields should upgrade rather than rely on applying outdated drafts.
+
 ## Revisions
 
 Revisions are read-only snapshots of canonical elements, captured each time a canonical element is saved.
@@ -212,6 +215,8 @@ Craft::$app->getRevisions()->createRevision(
 ```
 
 Use the named argument — `$force` is the fifth parameter, after `$newAttributes`.
+
+[changed 5.12] Nested elements and their owners: saving a canonical nested element on its own (a Matrix entry saved directly, not through its owner) now bumps `dateUpdated` on every owner up the chain (`NestedElementTrait::$touchOwnersOnSave` [5.12+], default `true`), so the owner's next revision captures the new nested content. Before 5.12: the owner's `dateUpdated` didn't move and its next revision could reuse stale nested content (craftcms/cms#19594). The bump is a raw `Db::update()` (no owner save events, no search reindex); set `$nested->touchOwnersOnSave = false` on bulk scripts that must not move owners' timestamps.
 
 If you're writing content with raw SQL for performance, the alternative is to bump `dateUpdated` yourself so downstream change detection (revisions, search index, caches) behaves normally. Preferring `saveElement()` where you can afford it avoids the whole class of problem.
 

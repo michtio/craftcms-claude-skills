@@ -159,7 +159,7 @@ Entry-linked nodes automatically update their URL when the entry's slug changes.
 
 Navigation nodes support custom field layouts. Add fields in CP → Navigation → Settings → Field Layout. Common additions:
 
-- **Icon field** — FontAwesome class or asset for nav icons
+- **Icon field** — FontAwesome class or asset for nav icons. [5.12+] Icon fields can hold custom-set icons (`custom:name`) with no Font Awesome class; branch on `icon.set` and output `icon.svg|raw`.
 - **Subtitle field** — secondary text for mega-menu items
 - **Image field** — thumbnails for visual navigation
 

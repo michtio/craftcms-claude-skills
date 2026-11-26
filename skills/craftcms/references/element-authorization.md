@@ -287,6 +287,10 @@ Authorization events fire when Craft checks whether a user can perform a specifi
 | `EVENT_AUTHORIZE_DELETE` | `'authorizeDelete'` | 4.3.0 | Delete element |
 | `EVENT_AUTHORIZE_DELETE_FOR_SITE` | `'authorizeDeleteForSite'` | 4.3.0 | Delete for specific site |
 
+[changed 5.12.1] The deprecated element-level `Element::EVENT_AUTHORIZE_DELETE_FOR_SITE` was never fired before 5.12.1 (`Element::canDeleteForSite()` now triggers it). The `Elements` service event above always fired; keep using it.
+
+Delete-for-site has two more gates besides authorization. [changed 5.12.1] The CP `elements/delete-for-site` action and the "Delete for site" element action also require `ElementHelper::isMultiSite($element)`: an element can't be deleted for the only site it exists in, whatever a handler returns. [changed 5.12] When code does call `Elements::deleteElementsForSite()` on an element's only site, it soft-deletes (drafts and nested elements with a primary owner are still hard-deleted); see `elements.md` → "Delete for site".
+
 ### Event object: AuthorizationCheckEvent
 
 ```php
@@ -356,11 +360,13 @@ These methods are declared `public` on `ElementInterface`. Override them in your
 | `canView(User $user)` | `false` | `EVENT_AUTHORIZE_VIEW` |
 | `canSave(User $user)` | `false` | `EVENT_AUTHORIZE_SAVE` |
 | `canDelete(User $user)` | `false` | `EVENT_AUTHORIZE_DELETE` |
-| `canDeleteForSite(User $user)` | `false` | `EVENT_AUTHORIZE_DELETE_FOR_SITE` |
+| `canDeleteForSite(User $user)` | `false` (nested elements ask their field's `canDeleteElementForSite()` first) | `EVENT_AUTHORIZE_DELETE_FOR_SITE` (element-level handlers fire [changed 5.12.1]) |
 | `canDuplicate(User $user)` | `false` | `EVENT_AUTHORIZE_DUPLICATE` |
 | `canDuplicateAsDraft(User $user)` | Delegates to `canDuplicate()` | `EVENT_AUTHORIZE_DUPLICATE_AS_DRAFT` |
 | `canCreateDrafts(User $user)` | `false` | `EVENT_AUTHORIZE_CREATE_DRAFTS` |
 | `canCopy(User $user)` | Delegates to `canView()` | `EVENT_AUTHORIZE_COPY` [5.7+] |
+
+[5.12+] `Asset::canDeleteForSite()`: for assets in a Custom-propagation volume it returns `parent::canDeleteForSite() || canDelete()`; callers check `ElementHelper::isMultiSite()` themselves, since an asset can't be deleted for its only site. Assets in All volumes keep the parent behaviour.
 
 ### Custom element type pattern
 

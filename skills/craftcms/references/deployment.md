@@ -26,6 +26,8 @@ How to deploy Craft CMS 5 to production: the standard pipeline, project config d
 - [CI/CD Patterns](#cicd-patterns)
 - [Post-Deploy Steps](#post-deploy-steps)
 - [Rollback Strategies](#rollback-strategies)
+- [First Install on a New Environment](#first-install-on-a-new-environment)
+- [Composer Notes for 5.12](#composer-notes-for-512)
 - [Environment Management](#environment-management)
 - [Hosting Platforms](#hosting-platforms)
 
@@ -38,10 +40,11 @@ Build → Release → Migrate → Clear Caches → Swap
 1. `composer install --no-dev --optimize-autoloader`
 2. `npm run build` (Vite, if applicable)
 3. Stop queue worker
-4. `php craft up --interactive=0`
-5. `php craft clear-caches/all`
-6. Swap symlink (atomic deploys) or restart web server
-7. Restart queue worker
+4. [5.12+] `php craft project-config/check` (optional gate: fails before anything is applied when the YAML needs a newer Craft or plugin than the release ships)
+5. `php craft up --interactive=0`
+6. `php craft clear-caches/all`
+7. Swap symlink (atomic deploys) or restart web server
+8. Restart queue worker
 
 `craft up` is the single deploy command — it runs all pending migrations (every track) first, then applies project config YAML.
 
@@ -69,6 +72,7 @@ return GeneralConfig::create()
 | `craft up` | Runs all migrations + applies project config | **Every deploy** |
 | `craft project-config/apply` | Applies YAML to DB (no migrations) | Emergency re-sync when you know no migrations are pending |
 | `craft project-config/apply --force` | Treats every YAML value as changed and re-applies all of it | Stubborn drift that `apply` alone doesn't fix |
+| `craft project-config/check` [5.12+] | Checks that the YAML's Craft and plugin schema versions are compatible with the installed code, without applying anything. Exits non-zero when Craft isn't installed, `project.yaml` is missing (unless `--require-yaml=0`, which exits 0 with a skip message), YAML writes failed, an enabled plugin can't be loaded, or a schema version is incompatible. Needs database access. | Deploy gate before `craft up`, in CI against the target environment |
 | `craft project-config/touch` | Sets `dateModified` in `project.yaml` to now | After manual YAML edits, merge conflict resolution |
 | `craft project-config/diff` | Shows YAML changes that are not yet in the DB (`--invert` for the other direction) | Before `write`, diagnosing drift |
 | `craft project-config/rebuild` | Rebuilds the config from the DB's component tables (sections, fields, …) | When DB is the source of truth (destructive to YAML) |
@@ -76,7 +80,7 @@ return GeneralConfig::create()
 
 ### project-config/write safely
 
-`write` is `ProjectConfig::regenerateExternalConfig()`, which ends in `writeYamlFiles(true)`. That method **clears the `config/project/` directory** (everything except dotfiles) and rewrites it from the config stored in the DB. Any YAML the DB doesn't know about is deleted, and any YAML value the DB has older is reverted.
+`write` is `ProjectConfig::regenerateExternalConfig()`, which ends in `writeYamlFiles(true)`. That method **clears the `config/project/` directory** (everything except dotfiles) and rewrites it from the config stored in the DB. [changed 5.12.1] It now overwrites files in place and deletes stale ones only after everything else is written, so a failed write no longer leaves `config/project/` empty (craftcms/cms#20519). Before 5.12.1: the folder was emptied first. The end state is the same either way, and that is the danger below. Any YAML the DB doesn't know about is deleted, and any YAML value the DB has older is reverted.
 
 On a local DB restored from a production dump, the DB is behind the branch. Running `write` there deletes teammates' new fields, their layout elements, and anything else committed since the dump. Nothing warns you.
 
@@ -266,6 +270,24 @@ craft project-config/rebuild  # DB → YAML (destructive to YAML)
 ```
 
 Choose direction carefully. `diff` first, always.
+
+## First Install on a New Environment
+
+[changed 5.12.1] The web-based installer only runs when Dev Mode is on (GHSA-pcf5-h66c-9wxw). On staging or production (`devMode` off) `/admin/install` returns a 404, so install from the CLI:
+
+```bash
+php craft install --interactive=0 \
+  --username=admin --email=admin@example.com --password="$ADMIN_PASSWORD" \
+  --site-name="My Site" --site-url='$PRIMARY_SITE_URL' --language=en-US
+```
+
+With a committed `config/project/`, `craft install` installs from the YAML. Put the DB credentials in `.env` (or real environment variables) first. [changed 5.12.1] Also: the installer's actions are gone once Craft is installed, even in Dev Mode; it answers 503 when the database is unreachable instead of offering to change the connection; and it only writes connection settings to `.env` after the install succeeds, refusing them when `.env` isn't writable. Before 5.12.1: the web installer also ran without Dev Mode, which is the advisory's subject; don't leave an uninstalled environment on an older release publicly reachable.
+
+## Composer Notes for 5.12
+
+- [5.12+] `mcp/sdk` pulls in `php-http/discovery`, a Composer plugin. It declares itself optional (`"plugin-optional": true`), so when it isn't in `config.allow-plugins` Composer skips it silently: no prompt and no error, interactive or not (runtime-verified with Composer 2.11.3). The `craftcms/craft` starter already allows it. Adding `"php-http/discovery": true` (or `false`) to `allow-plugins` only makes the choice explicit; it isn't a CI blocker.
+- [5.12+] `mcp/sdk` needs `ext-fileinfo`, which Craft itself doesn't require. Check minimal CI images and hosts.
+- [changed 5.12.2] Craft's built-in `composer.phar` (used by CP updates and plugin installs from the Plugin Store, when `allowUpdates` is on) is 2.11.2, and Composer no longer falls back to cloning a package's source when its zip download fails. A private or self-hosted package with no working dist URL now fails the CP update instead of quietly cloning; fix the package's dist (or its auth) or update from the CLI. Your own CLI Composer follows its own version.
 
 ## Environment Management
 

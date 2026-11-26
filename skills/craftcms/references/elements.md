@@ -16,12 +16,14 @@
 - Field Layouts — getFieldLayout, defineFieldLayouts
 - URI/Routing
 - Searchable Attributes
-- Propagation
+- Propagation — getSupportedSites, Assets in Custom volumes [5.12+] (`new Asset()` siteId, asset lookups)
+- Nested Element Queries — empty-array params [changed 5.12], mustHaveField/mustHaveOwner [5.12+], owner() arrays [5.12.2+]
 - CP Edit Pages — getCpEditUrl, elements/edit route, asCpScreen, slide-outs, extending User edit screens
 - Preview Targets — previewTargets, EVENT_REGISTER_PREVIEW_TARGETS
 - Generated Fields [5.8+] — computed values saved on elements
+- Rendering Elements [5.12+] — Template::render(), Renderable, renderElements() deprecation
 - Eager Loading — eagerLoadingMap
-- Soft Delete and Garbage Collection — Gc::EVENT_RUN
+- Soft Delete and Garbage Collection — Gc::EVENT_RUN, delete-for-site soft deletes [changed 5.12]
 - Element Events Reference — ~40 events
 
 ## Documentation
@@ -41,7 +43,11 @@
 - Missing `site('*')` in queue workers — elements on non-primary sites are invisible. See `queue-jobs.md`.
 - `hasDrafts()` returning `true` is required for `hasRevisions()` to work.
 - Overriding `canView()` / `canSave()` without calling `parent::` — base class fires authorization events that other plugins depend on.
-- Relying on the field fallback to authorize a custom nested element — a `NestedElementInterface` element with no `canSave()` of its own is authorized only by `Element::canSave()` falling through to its field's `canSaveElement()`. [changed 5.11.5] Craft limited that fallback to draft-capable types for one day and every third-party nested element without `hasDrafts()` became uneditable, admins included (craftcms/cms#19898; [changed 5.11.5.1] reverted). Implement `canSave()` on the element: check the owner, and when the type has no drafts also the canonical owner, the way `Addresses::canSaveElement()` does [5.11.5.1+].
+- Relying on the field fallback to authorize a custom nested element — a `NestedElementInterface` element with no `canSave()` of its own is authorized only by `Element::canSave()` falling through to its field's `canSaveElement()`. [changed 5.11.5] Craft limited that fallback to draft-capable types for one day and every third-party nested element without `hasDrafts()` became uneditable, admins included (craftcms/cms#19898; [changed 5.11.5.1] reverted). Implement `canSave()` on the element: check the owner, and when the type has no drafts also the canonical owner, the way `Addresses::canSaveElement()` did on 5.11.5.1 through 5.11.x [5.11.5.1+]. [changed 5.12] Addresses support drafts now, and `Addresses::canSaveElement()` accepts the save when the user can save the owner or any other non-revision owner (no canonical-owner check), so don't copy its 5.12 shape into a draft-less type.
+- [changed 5.12] Expecting "Delete for site" on an element's only site to hard-delete. `Elements::deleteElementsForSite()` now **soft-deletes** such elements (restorable from the Trashed index or with `restoreElement()`, purged by GC after `softDeleteDuration`), except drafts and nested elements with a primary owner, which are still hard-deleted. `EVENT_BEFORE_DELETE_ELEMENT` listeners (`DeleteElementEvent::$hardDelete`) and `afterDelete()`/`EVENT_AFTER_DELETE_ELEMENT` code reading `$element->hardDelete` see `false` where 5.11 had `true`: purge plugin rows on hard delete (or GC), and handle restore. Before 5.12: hard delete, and on single-site installs the method removed site rows without deleting the element. [changed 5.12.1] The CP action and the "Delete for site" element action refuse an element's only site altogether ("Elements can't be deleted for the only site they exist in."), so the soft delete is reached from code (`deleteElementForSite()`, `utils/prune-orphaned-entries`).
+- [changed 5.12] Passing a possibly empty ID list to a nested element query. `ownerId([])`, `fieldId([])`, `primaryOwnerId([])`, `owner([])` and `field([])` now return **no rows** (runtime-verified on 5.12.4); `null` still means "no filter". Before 5.12: an empty array normalised to `null`, so the query returned every nested element. Guard the empty case explicitly. See "Nested element queries".
+- [5.12+] Bulk-saving canonical nested elements on their own (scripts, `resave/entries` on nested entries) bumps every owner's `dateUpdated` up the chain (`touchOwnersOnSave`). It is a raw DB update: no owner save events, no search reindex, but "recently updated" listings, feeds and sitemap `lastmod` values move. Set `$nested->touchOwnersOnSave = false` before saving when that's unwanted. Before 5.12: owners weren't touched, so the owner's next revision could reuse stale nested content (craftcms/cms#19594).
+- [changed 5.12] Looking up an asset with `Asset::find()->id($id)->one()`. Assets in a Custom-propagation volume may not exist in the current site, so it returns `null`. Use `Craft::$app->getAssets()->getAssetById($id)` (with no `$siteId` it now falls back to another site) or `->site('*')->unique()->preferSites([$siteId])`. See "Assets in Custom volumes".
 - `getFieldLayout()` returning null — field layout designer won't render, custom fields won't save.
 - Native attributes without a validation rule or `'safe'` marker — Yii2 mass assignment silently drops the value on CP form saves. No error, no warning. The form appears to save but `afterSave()` writes null/old value. Add `'safe'` to `defineRules()` for any native attribute that needs to come through from forms.
 - Using `->where()` on an element query — replaces all internal conditions (status filters, soft-delete filters, site scoping). Always use `->andWhere()`. The `where()` method is inherited from Yii's `Query` and does not understand element query internals. This applies everywhere: services, controllers, Twig — not just `beforePrepare()`.
@@ -764,6 +770,47 @@ public function getSupportedSites(): array
 }
 ```
 
+[changed 5.12] Addresses support drafts now but still don't propagate (`Address` gained `hasDrafts()` and nothing else), so the primary-site-only rule above holds.
+
+### Assets in Custom volumes [5.12+]
+
+Volumes have a `propagationMethod` (`craft\enums\PropagationMethod::All` or `::Custom`). In a **Custom** volume an asset exists only in the sites it was saved or added to (`Asset::getSupportedSites()` propagates to its own `siteId`, sites with an `enabledForSite` value, and sites it already exists in). New volumes default to Custom, single-site installs were migrated to Custom, and multi-site installs kept All. Volume semantics and the add-a-site trap: the `craft-content-modeling` skill's `infrastructure.md` → "Asset Propagation (Volumes)".
+
+**`new Asset()` lands in the primary site, not the current one.** `Element::init()` sets an unset `siteId` to the primary site ([`src/base/Element.php`](https://github.com/craftcms/cms/blob/5.12.4/src/base/Element.php)). Runtime-verified on 5.12.4: an asset created while the current site was the secondary site got `siteId` 1, existed only in the primary site, and an Assets field read from a site-2 entry returned no assets. CP uploads (`assets/upload`) pass the request's `siteId`, so only code paths are affected: plugin imports, queue jobs, and the Assets field's own front-end data uploads (`src/fields/Assets.php` builds `new Asset()` without a site, by source reading).
+
+```php
+use craft\elements\Asset;
+use craft\enums\PropagationMethod;
+
+$asset = new Asset();
+$asset->tempFilePath = $tempPath;
+$asset->setFilename($filename);
+$asset->newFolderId = $folder->id;
+$asset->setVolumeId($folder->volumeId);
+$asset->setScenario(Asset::SCENARIO_CREATE);
+
+$volume = $asset->getVolume();
+if ($volume->propagationMethod === PropagationMethod::Custom) {
+    // Save it to the site the owner lives in, or to several sites at once
+    $asset->siteId = $entry->siteId;
+    // $asset->setEnabledForSite([$siteA->id => true, $siteB->id => true]);
+}
+
+Craft::$app->getElements()->saveElement($asset);
+```
+
+Setting `siteId` alone puts the asset in that one site (runtime-verified). `setEnabledForSite([...])` adds every listed site, because `getSupportedSites()` propagates to sites with an `enabledForSite` value (source reading). [changed 5.12] Before 5.12: every asset was saved to every site, so none of this mattered.
+
+Looking assets up by ID: `Assets::getAssetById($id)` with no `$siteId` [changed 5.12] falls back to the asset in another site (`site('*')->preferSites([current])->unique()`). `Asset::find()->id($id)->one()` stays scoped to the current site and misses Custom-volume assets that aren't in it.
+
+## Nested Element Queries
+
+`NestedElementQueryTrait` [5.5+] (entries, addresses, custom nested types) owns `fieldId`, `ownerId`, `primaryOwnerId`, `field()`, `owner()`:
+
+- [changed 5.12] An **empty array** for `fieldId`, `ownerId`, `primaryOwnerId`, `field` or `owner` aborts the query, so it returns nothing (runtime-verified on 5.12.4). `null` means "no filter". Before 5.12: an empty array meant "no filter" and returned every nested element. `Entry::find()->ownerId($ids)` with an empty `$ids` is the classic case; guard it with an early `return []`.
+- [5.12+] `mustHaveField()` and `mustHaveOwner()` (protected, default `true`) declare whether results always have a field and an owner. They pick INNER vs LEFT for the `elements_owners` join and decide whether `fieldId(false)`/`ownerId(false)` abort the query or mean "has none". `EntryQuery` returns `false` for both (entries can be top-level); `AddressQuery` returns `false` for `mustHaveField()`. By source reading, `Entry::find()->fieldId(false)` on 5.12 filters to entries with no field rather than returning nothing. Override both on a custom nested element query when its elements can exist without a field or owner.
+- [changed 5.12.2] `owner()` accepts an array of owner elements: `Entry::find()->owner($owners)->field('blocks')->all()` loads the nested entries of several owners in one query and sets each result's owner to the matching element (and site, when localized). Before 5.12.2: one owner per query, or `ownerId([...])` without the owner objects being set.
+
 ## CP Edit Pages
 
 Custom elements need a CP edit page for creating and editing instances. Craft provides a built-in `elements/edit` action that handles drafts, revisions, auto-saving, and slide-out editing automatically.
@@ -979,6 +1026,15 @@ Event::on(
 );
 ```
 
+## Rendering Elements [5.12+]
+
+- [5.12+] `craft\helpers\Template::render($objects, $variables = [], $context = [])` renders one `Renderable` or an iterable of them and returns `Twig\Markup`. It backs the `{% render %}` tag and `ElementQuery::render()`.
+- [changed 5.12] List renders inject a `loop` variable into each element's partial, like `{% for %}` (a `loop` in `$context` is replaced; one in `$variables` is left alone).
+- [deprecated 5.12] `ElementHelper::renderElements()`. Use `Template::render()`. The deprecation is docblock-only (no deprecation-log entry), so keep `renderElements()` while supporting releases before 5.12. Before 5.12: `renderElements()` was the PHP API.
+- [5.12+] `craft\base\Renderable` (`render(array $variables = []): Markup`, allowed in the Twig sandbox) lets non-element objects work with `{% render %}` and `Template::render()`.
+
+Twig side (partial paths, `{% render %}` usage): the `craft-site` skill's `element-partials.md`.
+
 ## Eager Loading
 
 For custom relations, implement `eagerLoadingMap()` — returns source→target ID mappings:
@@ -1060,6 +1116,13 @@ Event::on(Gc::class, Gc::EVENT_RUN, function(\yii\base\Event $event) {
 });
 ```
 
+### Delete for site [changed 5.12]
+
+`Elements::deleteElementsForSite()` removes elements from one site. [changed 5.12] For an element that exists only in that site it now soft-deletes the element (it keeps its `elements_sites` rows and `dateDeleted` hides it), except drafts and nested elements with a primary owner, which are hard-deleted. Find it with `Entry::find()->trashed()->site('*')->unique()`, restore with `Craft::$app->getElements()->restoreElement($entry)`. Before 5.12: those elements were hard-deleted, and single-site installs lost the site row without the element being deleted (orphans).
+
+- [changed 5.12.1] The CP `elements/delete-for-site` action and the "Delete for site" element action check `ElementHelper::isMultiSite()` [5.8+] and refuse an element's only site. Assets in Custom volumes can be deleted for a site only while another site keeps them (`Asset::canDeleteForSite()` needs `canDelete()` or the parent check).
+- `EVENT_BEFORE_DELETE_FOR_SITE`/`EVENT_AFTER_DELETE_FOR_SITE` don't fire on the soft-delete branch; the normal delete events do, with `hardDelete` `false`.
+
 Never run synchronous cleanup in `init()` or request-level event handlers — it adds latency to every CP page load. For bulk element deletion, use a queue job or a single batch query where possible.
 
 ## Element Events Reference
@@ -1074,13 +1137,15 @@ Element.php fires ~40 events. Key categories:
 **Authorization** (fired from `canView()`, `canSave()`, etc. — see `permissions.md` for full patterns):
 `EVENT_AUTHORIZE_VIEW`, `EVENT_AUTHORIZE_SAVE`, `EVENT_AUTHORIZE_CREATE_DRAFTS`, `EVENT_AUTHORIZE_DUPLICATE`, `EVENT_AUTHORIZE_DELETE`, `EVENT_AUTHORIZE_DELETE_FOR_SITE`
 
+These element-level constants are deprecated in favour of the same-named events on `craft\services\Elements`. [changed 5.12.1] `Element::EVENT_AUTHORIZE_DELETE_FOR_SITE` handlers were never called before 5.12.1; the `Elements` service event always worked, so use that.
+
 **Registration** (extend via events):
 `EVENT_REGISTER_SOURCES`, `EVENT_REGISTER_FIELD_LAYOUTS`, `EVENT_REGISTER_ACTIONS`, `EVENT_REGISTER_EXPORTERS`, `EVENT_REGISTER_SEARCHABLE_ATTRIBUTES`, `EVENT_REGISTER_SORT_OPTIONS`, `EVENT_REGISTER_TABLE_ATTRIBUTES`, `EVENT_REGISTER_DEFAULT_TABLE_ATTRIBUTES`, `EVENT_REGISTER_CARD_ATTRIBUTES` [5.5+], `EVENT_REGISTER_DEFAULT_CARD_ATTRIBUTES` [5.5+], `EVENT_REGISTER_PREVIEW_TARGETS`
 
 **Customization**:
 `EVENT_DEFINE_SIDEBAR_HTML`, `EVENT_DEFINE_METADATA`, `EVENT_DEFINE_ADDITIONAL_BUTTONS`, `EVENT_DEFINE_ATTRIBUTE_HTML`, `EVENT_DEFINE_EAGER_LOADING_MAP`, `EVENT_SET_ROUTE`, `EVENT_DEFINE_KEYWORDS`, `EVENT_DEFINE_CACHE_TAGS`, `EVENT_DEFINE_URL`
 
-`EVENT_DEFINE_SIDEBAR_HTML` and `EVENT_DEFINE_ADDITIONAL_BUTTONS` both pass `DefineHtmlEvent` — append to `$event->html` (`$event->sender` is the element). For `EVENT_DEFINE_SIDEBAR_HTML`, `getSidebarHtml()` hands you the *already-assembled* sidebar (the element's `metaFieldsHtml()` wrapped in `.meta`, then the Status and Notes panels); markup you append is **not** auto-wrapped, so emit your own `<fieldset><legend class="h6">…</legend><div class="meta">…</div></fieldset>`. For `EVENT_DEFINE_ADDITIONAL_BUTTONS`, the controller appends your HTML to the toolbar after the native Preview / Create a draft buttons. For the sidebar `.meta` vs `.meta read-only` markup rules, the `metaFieldsHtml()` override pattern, and the toolbar split-button template, see `cp-ui-patterns.md` (Element Edit Screen — Sidebar Panels & Toolbar Buttons).
+`EVENT_DEFINE_SIDEBAR_HTML` and `EVENT_DEFINE_ADDITIONAL_BUTTONS` both pass `DefineHtmlEvent` — append to `$event->html` (`$event->sender` is the element). For `EVENT_DEFINE_SIDEBAR_HTML`, `getSidebarHtml()` hands you the *already-assembled* sidebar (the element's `metaFieldsHtml()` wrapped in `.meta`, then the Status panel, or [changed 5.12] the Sites pane on multi-site installs, then Notes); markup you append is **not** auto-wrapped, so emit your own `<fieldset><legend class="h6">…</legend><div class="meta">…</div></fieldset>`. For `EVENT_DEFINE_ADDITIONAL_BUTTONS`, the controller appends your HTML to the toolbar after the native Preview / Create a draft buttons. For the sidebar `.meta` vs `.meta read-only` markup rules, the `metaFieldsHtml()` override pattern, and the toolbar split-button template, see `cp-ui-patterns.md` (Element Edit Screen — Sidebar Panels & Toolbar Buttons).
 
 **Structures**: `EVENT_BEFORE_MOVE_IN_STRUCTURE`, `EVENT_AFTER_MOVE_IN_STRUCTURE`
 
