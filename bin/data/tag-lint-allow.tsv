@@ -1,0 +1,28 @@
+# Allowlist for bin/craft_tags.py lint. Every row needs a reason.
+#   symbol<TAB><symbol><TAB><reason>
+#   line<TAB><path glob><TAB><regex><TAB><reason>
+symbol	currentUser	Twig global since Craft 3; 5.12.0 added a GraphQL query of the same name
+symbol	entryType	pre-5.0 element property; 5.12.0 added a GraphQL type of the same name
+symbol	EntryType	pre-5.0 model class; 5.12.0 added a GraphQL type class of the same short name
+symbol	getUrl()	pre-5.0 method on elements and assets; 5.6.0 added it to one more class
+symbol	getName()	generic method name; 5.5.0 added it to one class
+symbol	reset()	generic method name; UserPermissions::reset() (5.8.13) is still checked
+symbol	configure()	generic method name
+symbol	getFormatter()	pre-5.0 i18n method
+symbol	getPages()	Formie API, not Craft
+symbol	revisionNotes	pre-5.0 element property; 5.7.0 added a GraphQL mutation argument of the same name
+line	*.md	[Vv]erified (against|on)\b	provenance notes name the release a claim was checked against; not a version gate
+symbol	getAttributes()	Yii ActiveRecord/Model method; 5.x added LinkData::getAttributes()
+symbol	categoryGroups	project-config path and pre-5.0 API; 5.12.0 added a GraphQL query of the same name
+line	skills/craftcms/references/config-general.md	Behaviour from `ImageTransformer::getTransformUrl\(\)` in 5\.11\.5\.1:	cites the source release the behaviour was read from
+symbol	Enterprise	the edition exists since 5.0; 5.3.0 only added a CmsEdition enum case
+symbol	defaultLabel	Link field settings key; 5.7.0 added a GraphQL field of the same name
+symbol	ColorData	class predates Craft 5; 5.12.0 added methods to it
+symbol	getFilename()	Asset::getFilename() predates Craft 5; 5.x added LinkData::getFilename()
+symbol	--format	generic CLI flag (pg_dump, mysqldump); not the Craft 5.x option
+line	skills/craft-site/references/multi-site-patterns.md	primarySite	craft.app.sites.primarySite and a local variable, not the 5.6.0 global
+line	skills/craft-cloud/references/extension.md	DbSession	the Cloud extension's own session component, not craft\web\DbSession
+symbol	CategoryGroup	craft\models\CategoryGroup predates Craft 5; 5.12.0 added a GraphQL type of the same short name
+symbol	isValueEmpty()	Field::isValueEmpty() predates Craft 5; 5.7.11 added BaseLinkType::isValueEmpty()
+symbol	ExpressionInterface	yii\db\ExpressionInterface; 5.1.0 added craft\db\ExpressionInterface
+symbol	isEmpty()	generic method name; 5.6.11 added BaseTextConditionRule::isEmpty()

@@ -259,7 +259,7 @@ if (!$this->getIsDraft() && !$this->getIsRevision() && !$this->propagating) {
 
 ### Provisional draft visibility
 
-Provisional drafts are only accessible to their creator. Other users see the canonical element. The `withProvisionalDrafts()` query parameter swaps the canonical element with the current user's provisional draft in results.
+Provisional drafts are only accessible to their creator. Other users see the canonical element. The `withProvisionalDrafts()` [5.6+] query parameter swaps the canonical element with the current user's provisional draft in results.
 
 ## Query Parameters
 
@@ -270,7 +270,7 @@ Provisional drafts are only accessible to their creator. Other users see the can
 | `draftId($id)` | Specific draft by ID |
 | `draftCreator($user)` | Drafts created by a specific user |
 | `provisionalDrafts(true)` | Only provisional drafts |
-| `withProvisionalDrafts()` | Swap canonical with user's provisional draft |
+| `withProvisionalDrafts()` | Swap canonical with user's provisional draft [5.6+] |
 | `revisions(true)` | Include only revisions in results |
 | `revisionOf($element)` | Revisions of a specific canonical element |
 | `revisionId($id)` | Specific revision by ID |

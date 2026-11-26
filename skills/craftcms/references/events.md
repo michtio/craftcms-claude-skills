@@ -298,7 +298,7 @@ Event::on(Auth::class, Auth::EVENT_REGISTER_METHODS,
 );
 ```
 
-Craft 5.11.4+ destroys the user's other sessions when a method's `isActive()` flips from `false` to `true` during `Auth::verify()` (the setup ceremony). A custom method gets this for free only if setup completes through `verify()` and `isActive()` reflects the saved state; a method activated by some other path should call `Craft::$app->getUsers()->destroyOtherSessions($user)` itself. See `sessions-and-auth.md`.
+[5.11.4+] Craft destroys the user's other sessions when a method's `isActive()` flips from `false` to `true` during `Auth::verify()` (the setup ceremony). A custom method gets this for free only if setup completes through `verify()` and `isActive()` reflects the saved state; a method activated by some other path should call `Craft::$app->getUsers()->destroyOtherSessions($user)` itself. See `sessions-and-auth.md`.
 
 ### Mail Transport Adapters (`craft\helpers\MailerHelper`)
 
@@ -416,7 +416,7 @@ Why each piece:
 
 The same applies to other core elements with context-dependent getters: decide in `'when'`, not in the handler.
 
-What this rule does not do: Craft's own required check skips fields that a layout condition hides (`getEditableCustomFieldElements()`), but this rule does not. If a condition can hide the field, check `$entry->getFieldLayout()->getEditableCustomFieldElements($entry)` in `'when'`. Saves with `runValidation: false` (resave jobs, many imports) skip it like every other rule.
+What this rule does not do: Craft's own required check skips fields that a layout condition hides (`getEditableCustomFieldElements()` [5.9.4+]), but this rule does not. If a condition can hide the field, check `$entry->getFieldLayout()->getEditableCustomFieldElements($entry)` in `'when'`. Saves with `runValidation: false` (resave jobs, many imports) skip it like every other rule.
 
 ### Where the error shows up
 
@@ -531,7 +531,7 @@ Extend `\Twig\Extension\AbstractExtension` and override `getFunctions()`, `getFi
 - Twig functions must **return** values, not `echo` them. Using `echo` bypasses Twig's output escaping and produces unpredictable template output.
 - Extensions should delegate to services — keep the extension as a thin adapter over your service layer, not a place for direct record queries or business logic.
 - Use `'is_safe' => ['html']` only when the function returns pre-sanitized HTML. Otherwise let Twig auto-escape.
-- A function that instantiates classes, touches the filesystem, or runs queries on caller-supplied input should refuse inside string and object templates (title/URI formats, system messages, anything rendered via `renderString()`/`renderObjectTemplate()`), which are authored in the CP or project config rather than the repo. Check `Craft::$app->getView()->getIsRenderingStringTemplate()` (Craft 5.11.4+; also `true` for templates included from one) and throw `InvalidArgumentException` — core's own `create()` does exactly this since 5.11.4.
+- A function that instantiates classes, touches the filesystem, or runs queries on caller-supplied input should refuse inside string and object templates (title/URI formats, system messages, anything rendered via `renderString()`/`renderObjectTemplate()`), which are authored in the CP or project config rather than the repo. Check `Craft::$app->getView()->getIsRenderingStringTemplate()` ([5.11.4+]; also `true` for templates included from one) and throw `InvalidArgumentException` — core's own `create()` does exactly this [5.11.4+].
 - `__toString()` on HTML-builder classes is a double-escape trap. `__toString()` must return `string` (PHP constraint), but Twig auto-escapes strings. If a consumer writes `{{ myBuilder }}` instead of `{{ myBuilder.render() }}`, the HTML is escaped and rendered as visible tags. Fix: have `render()` return `\Twig\Markup` (which Twig treats as pre-escaped), and document clearly that consumers must call `.render()`. `__toString()` is a convenience fallback for non-Twig contexts (logging, debugging) — not the primary rendering path.
 
 ### Conditional asset bundle registration

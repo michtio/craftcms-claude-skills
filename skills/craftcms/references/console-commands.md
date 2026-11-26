@@ -89,7 +89,7 @@ Every Craft CLI command supports these inherited options:
 | `craft setup/cloud` | Scaffold Craft Cloud extension config on the project. See the `craft-cloud` skill's `extension.md` for what this installs and `migration.md` for when to run it during a self-hosted → Cloud migration. |
 | `craft setup/welcome` | Display post-install welcome information. |
 | `craft update/info` | Show available Craft and plugin updates. |
-| `craft update/update` | Apply updates. Accepts `--minor-only`, `--patch-only`, `--force`, `--backup`. |
+| `craft update/update` | Apply updates. Accepts `--minor-only`, `--patch-only` [5.5+], `--force`, `--backup`. |
 | `craft update/composer-install` | Run `composer install` and apply pending migrations. |
 
 ### Project Config
@@ -114,21 +114,21 @@ The `project-config/` controller has a `pc/` shorthand alias — `craft pc/apply
 |---------|---------|
 | `craft sections/create` | Create a new section. Accepts `--name`, `--handle`, `--type` (single/channel/structure), `--uri-format`, `--template`, `--from-category-group`, `--from-tag-group`, `--from-global-set`. |
 | `craft sections/delete` | Delete a section by handle or interactively. |
-| `craft entry-types/merge` | Merge two entry types — reassign entries from one type to another, then delete the source type. |
+| `craft entry-types/merge` | Merge two entry types — reassign entries from one type to another, then delete the source type. [5.3+] |
 
 ### Fields
 
 | Command | Purpose |
 |---------|---------|
-| `craft fields/auto-merge` | Automatically merge fields with identical settings into a single global field. |
-| `craft fields/delete` | Delete a field by handle or interactively. |
-| `craft fields/merge` | Merge two fields — reassign content from one field to another, then delete the source field. |
+| `craft fields/auto-merge` | Automatically merge fields with identical settings into a single global field. [5.3+] |
+| `craft fields/delete` | Delete a field by handle or interactively. [5.7+] |
+| `craft fields/merge` | Merge two fields — reassign content from one field to another, then delete the source field. [5.3+] |
 
 ### Content and Elements
 
 | Command | Purpose |
 |---------|---------|
-| `craft resave/all` | Resave all element types. |
+| `craft resave/all` | Resave all element types. [5.5+] |
 | `craft resave/entries` | Resave entries — triggers `afterSave` events, updates search index. |
 | `craft resave/assets` | Resave assets. |
 | `craft resave/users` | Resave users. |
@@ -141,9 +141,9 @@ The `project-config/` controller has a `pc/` shorthand alias — `craft pc/apply
 | `craft elements/delete` | Delete elements by ID or criteria. Accepts `--hard` for permanent deletion (skip soft-delete). |
 | `craft elements/delete-all-of-type` | Delete all elements of a given type. Accepts `--dry-run` to preview without deleting. |
 | `craft elements/restore` | Restore soft-deleted elements by ID. |
-| `craft update-statuses` | Update entry statuses based on post/expiry dates. Required when `staticStatuses` is enabled in `config/general.php`. |
+| `craft update-statuses` | Update entry statuses based on post/expiry dates. Required when `staticStatuses` is enabled in `config/general.php`. [5.7+] |
 
-Common resave flags: `--queue` (push to queue instead of running inline), `--batch-size`, `--element-id`, `--uid`, `--site`, `--status`, `--offset`, `--limit`, `--update-search-index`, `--touch` (update `dateUpdated` without re-saving), `--set=fieldHandle`, `--to=value`, `--to-default` (5.10+, writes the field type's default value — requires the field to implement `craft\base\DefaultableFieldInterface`), `--if-empty` (only set if field is empty), `--if-invalid` (only resave elements that fail validation).
+Common resave flags: `--queue` (push to queue instead of running inline), `--batch-size` [5.7+], `--element-id`, `--uid`, `--site`, `--status`, `--offset`, `--limit`, `--update-search-index`, `--touch` (update `dateUpdated` without re-saving), `--set=fieldHandle`, `--to=value`, `--to-default` ([5.10+] writes the field type's default value — requires the field to implement `craft\base\DefaultableFieldInterface`), `--if-empty` (only set if field is empty), `--if-invalid` (only resave elements that fail validation).
 
 Element type-specific flags: `--section=blog`, `--type=post` (entries), `--volume=images` (assets), `--group=myGroup` (users).
 
@@ -174,7 +174,7 @@ Element type-specific flags: `--section=blog`, `--type=post` (entries), `--volum
 | `craft db/convert-charset` | Convert database charset (e.g., to `utf8mb4`). |
 | `craft db/drop-all-tables` | Drop all tables in the database. Destructive — prompts for confirmation. |
 | `craft db/drop-table-prefix` | Remove the table prefix from all Craft tables. |
-| `craft db/repair` | Repair database integrity issues (foreign keys, orphaned rows). |
+| `craft db/repair` | Repair database integrity issues (foreign keys, orphaned rows). [5.7+] |
 
 Note: search index rebuilding is handled via `craft resave/* --update-search-index`. Check `craft help` for the current list of DB commands in your Craft version.
 
@@ -191,7 +191,7 @@ Note: search index rebuilding is handled via `craft resave/* --update-search-ind
 | `craft users/activation-url` | Generate an activation URL for a pending user. |
 | `craft users/password-reset-url` | Generate a password reset URL for a user. |
 | `craft users/impersonate` | Generate an impersonation URL to log in as a user. |
-| `craft users/remove-2fa` | Remove two-factor authentication from a user account. |
+| `craft users/remove-2fa` | Remove two-factor authentication from a user account. [5.5+] |
 | `craft users/logout-all` | Log out all users by invalidating all active sessions. |
 
 ### Plugin Management
@@ -254,7 +254,7 @@ For queue architecture and custom job implementation, see `queue-jobs.md`.
 | `craft utils/prune-orphaned-entries` | Delete entries that belong to deleted sections or entry types. |
 | `craft utils/prune-provisional-drafts` | Delete stale provisional drafts. |
 | `craft utils/ascii-filenames` | Rename assets to ASCII-safe filenames. |
-| `craft utils/delete-empty-volume-folders` | Remove empty folders from asset volumes. |
+| `craft utils/delete-empty-volume-folders` | Remove empty folders from asset volumes. [5.6+] |
 | `craft utils/fix-element-uids` | Regenerate missing or duplicate element UIDs. |
 | `craft utils/fix-field-layout-uids` | Regenerate missing or duplicate field layout UIDs. |
 | `craft utils/repair/category-group-structure` | Repair a category group's nested set structure. |
@@ -266,8 +266,8 @@ For queue architecture and custom job implementation, see `queue-jobs.md`.
 
 | Command | Purpose |
 |---------|---------|
-| `craft env/set` | Set an environment variable in `.env`. |
-| `craft env/remove` | Remove an environment variable from `.env`. |
+| `craft env/set` | Set an environment variable in `.env`. [5.3+] |
+| `craft env/remove` | Remove an environment variable from `.env`. [5.3+] |
 | `craft env/show` | Display current `.env` values. |
 | `craft shell` | Launch an interactive PHP shell (PsySH) with Craft bootstrapped. |
 | `craft exec/exec` | Execute a PHP statement and print the result. |

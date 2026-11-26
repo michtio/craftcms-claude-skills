@@ -2,9 +2,16 @@
 name: craft-plugins
 description: "Index and router for plugin-specific Craft CMS 5 guidance — configuration, Twig API, PHP API, migrations, deployment, and pitfalls for the plugins this pack documents. Load whenever a task names a plugin this pack documents, and for passwordless or magic-link auth with no plugin named; read references/<plugin>.md first."
 when_to_use: "Triggers whenever a task names one of these plugins in ANY context (build, configure, style, render, query, import, migrate, deploy, cache, debug): Formie (forms, submissions, File Upload, form in a migration, notifications, translations), SEOmatic (meta, sitemaps, JSON-LD, SEO field), Blitz (static/page caching, purge), Feed Me (XML/JSON/CSV import), Imager-X (transforms, srcset, quick syntax, named transforms, Power Pack, pppicture, ppimg), ImageOptimize (OptimizedImages), CKEditor (rich text, nested entries), Sprig (reactive, htmx), Element API (JSON endpoints), Retour (redirects, 404s), Navigation (nav menus), Hyper (link field), Colour Swatches, Password Policy (HIBP), Typogrify, Cache Igniter, Knock Knock (staging password), Elements Panel (N+1 debug), Sherlock (security scan), Amazon SES (SES/SNS bounce), Embedded Assets (oEmbed), Timeloop (recurring dates), Vite (craft.vite.*, asset bundling), Warp (passwordless login, magic link, one-time code/OTP, passkeys, WebAuthn, craft.warp, member sessions). Do NOT trigger for Craft core with no plugin named (craftcms), template architecture (craft-site), or content modeling (craft-content-modeling)."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Craft CMS 5 — Plugin References (Index & Router)
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 This skill is a **router**, not a tutorial. Its job is to make per-plugin
 guidance discoverable from any task framing — front-end, back-end PHP, content

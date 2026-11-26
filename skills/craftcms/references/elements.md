@@ -3,7 +3,7 @@
 ## Contents
 
 - Common Pitfalls
-- 5.10 Element Query and Save Utilities — collectIds, setDirtyFieldTracking, belongsToCanonicalOwner, getTriggerId
+- Element Query and Save Utilities [5.10+] — collectIds, setDirtyFieldTracking, belongsToCanonicalOwner, getTriggerId
 - Architecture: One Element Class with Native Structure — default to Structure for hierarchies, code-only field layouts, native fields for plugin attributes
 - Static Configuration Methods — displayName, hasTitles, hasUris, hasDrafts, etc.
 - Element Save Lifecycle (15 steps) — beforeSave, afterSave, afterPropagate
@@ -11,7 +11,7 @@
 - Element Query — beforePrepare()
 - Status from Dates
 - Authorization — canView, canSave, canDelete + 5 more
-- Deletion Blockers (5.10+) — DeletionBlockerInterface, EVENT_DEFINE_DELETION_BLOCKERS, bulk reassignment
+- Deletion Blockers [5.10+] — DeletionBlockerInterface, EVENT_DEFINE_DELETION_BLOCKERS, bulk reassignment
 - Drafts and Revisions
 - Field Layouts — getFieldLayout, defineFieldLayouts
 - URI/Routing
@@ -19,7 +19,7 @@
 - Propagation
 - CP Edit Pages — getCpEditUrl, elements/edit route, asCpScreen, slide-outs, extending User edit screens
 - Preview Targets — previewTargets, EVENT_REGISTER_PREVIEW_TARGETS
-- Generated Fields (5.8.0) — computed values saved on elements
+- Generated Fields [5.8+] — computed values saved on elements
 - Eager Loading — eagerLoadingMap
 - Soft Delete and Garbage Collection — Gc::EVENT_RUN
 - Element Events Reference — ~40 events
@@ -41,7 +41,7 @@
 - Missing `site('*')` in queue workers — elements on non-primary sites are invisible. See `queue-jobs.md`.
 - `hasDrafts()` returning `true` is required for `hasRevisions()` to work.
 - Overriding `canView()` / `canSave()` without calling `parent::` — base class fires authorization events that other plugins depend on.
-- Relying on the field fallback to authorize a custom nested element — a `NestedElementInterface` element with no `canSave()` of its own is authorized only by `Element::canSave()` falling through to its field's `canSaveElement()`. Craft 5.11.5 limited that fallback to draft-capable types for one day and every third-party nested element without `hasDrafts()` became uneditable, admins included (craftcms/cms#19898; reverted in 5.11.5.1). Implement `canSave()` on the element: check the owner, and when the type has no drafts also the canonical owner, the way `Addresses::canSaveElement()` does since 5.11.5.1.
+- Relying on the field fallback to authorize a custom nested element — a `NestedElementInterface` element with no `canSave()` of its own is authorized only by `Element::canSave()` falling through to its field's `canSaveElement()`. [changed 5.11.5] Craft limited that fallback to draft-capable types for one day and every third-party nested element without `hasDrafts()` became uneditable, admins included (craftcms/cms#19898; [changed 5.11.5.1] reverted). Implement `canSave()` on the element: check the owner, and when the type has no drafts also the canonical owner, the way `Addresses::canSaveElement()` does [5.11.5.1+].
 - `getFieldLayout()` returning null — field layout designer won't render, custom fields won't save.
 - Native attributes without a validation rule or `'safe'` marker — Yii2 mass assignment silently drops the value on CP form saves. No error, no warning. The form appears to save but `afterSave()` writes null/old value. Add `'safe'` to `defineRules()` for any native attribute that needs to come through from forms.
 - Using `->where()` on an element query — replaces all internal conditions (status filters, soft-delete filters, site scoping). Always use `->andWhere()`. The `where()` method is inherited from Yii's `Query` and does not understand element query internals. This applies everywhere: services, controllers, Twig — not just `beforePrepare()`.
@@ -52,15 +52,15 @@
 - Assuming `NestedElementTrait` handles site propagation — it doesn't. The trait manages owner relationships (eager loading, owner getters/setters, sort order) but does NOT override `getSupportedSites()` or `isLocalized()`. Address elements fall through to the base `Element` default: primary site only. Matrix entries get multi-site support because the `Entry` class explicitly overrides `getSupportedSites()` and delegates to `$this->getField()->getSupportedSitesForElement($this)` when `$this->fieldId` is set. If your custom nested element type needs multi-site propagation, you must override `getSupportedSites()` yourself — the trait won't do it for you.
 - Inventing two parallel element classes (e.g., `Item` + `ItemReference`) when the relationship is parent/child — that's what Structure was built for. One element class with `structureId` gives you drag-sort, drafts, revisions, multi-site, search, conditions, and the full element query API for free. See "Architecture: One Element Class with Native Structure" above.
 - Assuming all User properties are populated from element queries — `UserQuery::beforePrepare()` only selects a subset of columns from the `users` table. Security-sensitive columns like `lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, and `lastLoginAttemptIp` are intentionally excluded. These properties are `null` on User elements loaded via `Craft::$app->getUser()->getIdentity()` or any element query, even when the database has values. To access them, query the `users` table directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`. Craft's CP profile page does this internally — it loads the User record separately from the element.
-- **`PopulateElementEvent::$row` shape change (5.10)** — `$row` no longer carries `fieldValues` / `generatedFieldValues` keys. Those moved to the new `PopulateElementEvent::$content` property. Any plugin reading `$event->row['fieldValues']` from an `EVENT_AFTER_POPULATE_ELEMENT` handler now silently receives the wrong shape. Migrate to `$event->content`.
-- **Entry `postDate` is `null` on creation (5.10)** — previously auto-set to `dateCreated`. Now stays null until the entry is saved as enabled. Sites and queries that filter on `postDate :notempty:` or use `postDate` for sort order will see different behavior for newly-created entries. If you need the legacy "always populated" behavior, set `postDate` explicitly in `beforeSave()`.
-- **Relation-field element queries respect target sites (5.10)** — `$query->relatedTo()` now honors the parent query's `siteId` constraints. Previously a globally-scoped relation query could return elements from any site. Queries that intentionally crossed sites need an explicit `->site('*')` now.
-- **Reordering nested elements by saving each sibling** — `NestedElementTrait::setSortOrder()` only changes memory; persisting it with `saveElement()` per sibling fires save events and reindexes search for content that didn't change, and pushing a whole new value through `Matrix::normalizeValue()` deletes any block you leave out. Craft 5.11.0 exposes what the CP always used: `Craft::$app->getElements()->reorderNestedElements($owner, $nestedElementsQueryOrCollection, $movedIds, $zeroBasedOffset)` renumbers `elements_owners.sortOrder` directly and invalidates the owner's caches (craftcms/cms#19321). It checks no permissions — authorization stays in your controller.
+- **`PopulateElementEvent::$row` shape change** [changed 5.10] — Before 5.10, `$row` carried `fieldValues` / `generatedFieldValues` keys. Now it doesn't: those moved to the new `PopulateElementEvent::$content` property [5.10+]. Any plugin reading `$event->row['fieldValues']` from an `EVENT_AFTER_POPULATE_ELEMENT` handler now silently receives the wrong shape. Migrate to `$event->content`; when supporting both, read `$event->content` where the property exists and fall back to `$event->row` otherwise.
+- **Entry `postDate` is `null` on creation** [changed 5.10] — Before 5.10, auto-set to `dateCreated`. Now stays null until the entry is saved as enabled. Sites and queries that filter on `postDate :notempty:` or use `postDate` for sort order will see different behavior for newly-created entries. If you need the legacy "always populated" behavior, set `postDate` explicitly in `beforeSave()`.
+- **Relation-field element queries respect target sites** [changed 5.10] — `$query->relatedTo()` now honors the parent query's `siteId` constraints. Before 5.10, a globally-scoped relation query could return elements from any site. Queries that intentionally crossed sites need an explicit `->site('*')` now.
+- **Reordering nested elements by saving each sibling** — `NestedElementTrait::setSortOrder()` only changes memory; persisting it with `saveElement()` per sibling fires save events and reindexes search for content that didn't change, and pushing a whole new value through `Matrix::normalizeValue()` deletes any block you leave out. [5.11+] Craft exposes what the CP always used: `Craft::$app->getElements()->reorderNestedElements($owner, $nestedElementsQueryOrCollection, $movedIds, $zeroBasedOffset)` renumbers `elements_owners.sortOrder` directly and invalidates the owner's caches (craftcms/cms#19321). It checks no permissions — authorization stays in your controller.
 - **Setting a relation field by writing the `relations` table directly** — has **zero effect** on the rendered value. Craft 5 reads the field value from `elements_sites.content` (JSON, keyed by layout-element UID); `relations` is only a secondary `relatedTo`/eager-load index. The field renders empty and `clear-caches/all` won't fix it. Always `setFieldValue('handle', [$id])` + `saveElement()` (a content migration on Cloud). See "Field value storage — and setting relation fields the right way" above.
 
-## 5.10 Element Query and Save Utilities
+## Element Query and Save Utilities [5.10+]
 
-Smaller plumbing additions in 5.10 (the substantive new subsystem is [Deletion Blockers](#deletion-blockers-510) further down):
+Smaller plumbing additions [5.10+] (the substantive new subsystem is [Deletion Blockers](#deletion-blockers-510) further down):
 
 - **`ElementQueryInterface::collectIds(?Connection $db = null): Collection`** — sibling to `ids()` that returns a Laravel-style `Collection` instead of a plain array. Useful when you want to chain `.filter()` / `.map()` / `.chunk()` over IDs without an intermediate `collect()` call.
 - **`ElementInterface::setDirtyFieldTracking(bool $enabled = true): void`** — toggle field-dirtiness tracking on a specific element instance. Set to `false` when programmatically populating an element for save where you've already validated upstream and want to skip the dirty-tracking side effects (propagation hints, change events). Re-enable before normal user-driven saves.
@@ -341,8 +341,7 @@ No error. No warning. The form appears to save, the value is gone. In `devMode`,
 
 ### Custom field value lifecycle
 
-Custom field values go through a normalization and serialization chain:
-
+Custom field values go through a normalization and serialization chain (the `serializeValueForDb()` step is [5.7+]):
 ```
 Form POST → normalizeValueFromRequest() → stored on behavior → [lazy] normalizeValue() on read
                                                                          ↓
@@ -353,7 +352,7 @@ Form POST → normalizeValueFromRequest() → stored on behavior → [lazy] norm
 
 - **`normalizeValueFromRequest()`** — transforms raw POST data into the field's working type. Called immediately during `setFieldValueFromRequest()`.
 - **`normalizeValue()`** — transforms stored/raw values into the field's working type. Called lazily on first `getFieldValue()`. Skipped if already normalized from request.
-- **`serializeValueForDb()`** — converts the working value back to a DB-storable format. Called during the element save pipeline for fields with a `dbType()`.
+- **`serializeValueForDb()`** [5.7+] — converts the working value back to a DB-storable format. Called during the element save pipeline for fields with a `dbType()`.
 - **`afterElementSave()`** — persists complex data (relations, nested elements). Called from `Element::afterSave()`.
 
 ### Field value storage — and setting relation fields the right way
@@ -364,7 +363,7 @@ Craft 5 stores custom field values in `elements_sites.content`, a **JSON column 
 {"5579e14a-…": [68391], "acafd21e-…": [16815]}  // hero & teaser layout-element UIDs → [assetId]
 ```
 
-For relation fields (Assets/Entries/Categories/Users), `dbType()` is `JSON` (`BaseRelationField::dbType()`) and `serializeValue()` writes the target **element IDs** into that content key. **The `relations` table (`fieldId, sourceId, sourceSiteId, targetId, sortOrder`) is a *secondary* index** — it powers `relatedTo()` reverse lookups and eager-load JOINs, but it is **not** the source of the field's own value. `BaseRelationField::normalizeValue()` builds `entry.myField` from the content ID array; it only falls back to the `relations` table for a `null` value on the *first* instance of a field (a documented Craft 5.3+ back-compat path).
+For relation fields (Assets/Entries/Categories/Users), `dbType()` is `JSON` (`BaseRelationField::dbType()`) and `serializeValue()` writes the target **element IDs** into that content key. **The `relations` table (`fieldId, sourceId, sourceSiteId, targetId, sortOrder`) is a *secondary* index** — it powers `relatedTo()` reverse lookups and eager-load JOINs, but it is **not** the source of the field's own value. `BaseRelationField::normalizeValue()` builds `entry.myField` from the content ID array; it only falls back to the `relations` table for a `null` value on the *first* instance of a field (a documented back-compat path, [5.3+]).
 
 **Consequence — never set a relation field by writing the `relations` table directly.** An `INSERT`/`UPDATE` on `relations` alone does **not** change what `entry.myField` returns (it renders empty) and desyncs content vs. relations — `relatedTo()` may find the row while the field value stays blank, and `clear-caches/all` won't surface it. Especially tempting on Craft Cloud (no SSH/console), and especially wrong there.
 
@@ -505,15 +504,17 @@ public function canCreateDrafts(User $user): bool
 }
 ```
 
-Full authorization method list: `canView()`, `canSave()`, `canDelete()`, `canDeleteForSite()`, `canDuplicate()`, `canDuplicateAsDraft()`, `canCreateDrafts()`, `canCopy()`.
+Full authorization method list: `canView()`, `canSave()`, `canDelete()`, `canDeleteForSite()`, `canDuplicate()`, `canDuplicateAsDraft()`, `canCreateDrafts()`, `canCopy()` [5.7+].
 
 Each has a corresponding event: `EVENT_AUTHORIZE_VIEW`, `EVENT_AUTHORIZE_SAVE`, etc.
 
-## Deletion Blockers (5.10+)
+## Deletion Blockers [5.10+]
 
-Authorization answers "may the user delete this?". Deletion blockers answer "would the delete leave the system in a bad state?" — references that would orphan, dependents that need reassignment, content elsewhere that points at this element. The 5.10 subsystem replaces the older user-deletion content-summary flow with a generic, element-type-agnostic API.
+Authorization answers "may the user delete this?". Deletion blockers answer "would the delete leave the system in a bad state?" — references that would orphan, dependents that need reassignment, content elsewhere that points at this element. This subsystem replaces the older user-deletion content-summary flow with a generic, element-type-agnostic API.
 
-### Method Signature
+[5.10+] Before 5.10: user deletion used `UsersController::EVENT_DEFINE_CONTENT_SUMMARY` (see Deprecations below). A plugin that supports Craft older than 5.10 must bump its constraint to `craftcms/cms: ^5.10` or guard every use of `deletionBlockers()`, `EVENT_DEFINE_DELETION_BLOCKERS` and `DeletionBlockerInterface` with `version_compare(Craft::$app->getVersion(), '5.10.0', '>=')`; none of them exist on older releases.
+
+### Method Signature [5.10+]
 
 `deletionBlockers()` is a **static method** taking an `ElementCollection` (Craft can delete multiple elements in one operation), not an instance method:
 
@@ -523,7 +524,7 @@ public static function deletionBlockers(ElementCollection $elements, bool $hardD
 
 The base implementation gathers blockers + fires `EVENT_DEFINE_DELETION_BLOCKERS`. Override to add type-specific blockers; always call `parent::deletionBlockers($elements, $hardDelete)` first to preserve the event chain.
 
-### Adding Blockers to Your Own Element
+### Adding Blockers to Your Own Element [5.10+]
 
 Override the static method on your element class. Each blocker is a `DeletionBlockerInterface` instance:
 
@@ -551,7 +552,7 @@ public static function deletionBlockers(ElementCollection $elements, bool $hardD
 
 When a user attempts deletion in the CP, `Craft.ElementDeletionManager` collects the active blockers and presents a reassignment / cancel modal (replacing the deprecated `Craft.DeleteUserModal`).
 
-### Adding Blockers to Third-Party Elements
+### Adding Blockers to Third-Party Elements [5.10+]
 
 For elements your plugin doesn't own, hook `EVENT_DEFINE_DELETION_BLOCKERS` on the foreign element class. The event carries `$event->elements` (an `ElementCollection` — the elements pending deletion) and `$event->hardDelete`. Note that `$event->sender` is the **class name** for static events, not an instance — use `$event->elements` for the actual elements:
 
@@ -575,15 +576,15 @@ Event::on(
 );
 ```
 
-### Custom Blocker Classes
+### Custom Blocker Classes [5.10+]
 
 Extend `craft\elements\deletionblockers\BaseDeletionBlocker` when the built-in `RelationDeletionBlocker` and `EntryAuthorsBlocker` don't fit. The base class constructor takes `(ElementCollection $elements, bool $hardDelete, array $config = [])`. Override `init()` to compute conflict counts, `isActive(): bool` to skip the blocker when no conflict exists, and `getMessage(): string` for the user-facing modal copy. Optionally implement reassignment-options getters for the modal's "reassign to…" picker.
 
-### Bulk Reassignment
+### Bulk Reassignment [5.10+]
 
 `Craft::$app->getEntries()->reassignEntries($oldUserId, $newUserId)` reassigns every entry authored by one or more users (`int|int[]`) to a single new user (`int`), returning the number of affected entries — the same primitive the User-deletion flow uses for "reassign content to another user before deleting." For relation fields specifically, the new `craft\queue\jobs\ReplaceRelations` queue job rewrites pointers in the background.
 
-### Deprecations (replaced by this flow)
+### Deprecations [deprecated 5.10] (replaced by this flow)
 
 - `craft\controllers\UsersController::EVENT_DEFINE_CONTENT_SUMMARY`
 - `craft\events\DefineUserContentSummaryEvent`
@@ -591,7 +592,7 @@ Extend `craft\elements\deletionblockers\BaseDeletionBlocker` when the built-in `
 - `craft\elements\actions\DeleteUsers`
 - `Craft.DeleteUserModal` (JS)
 
-Migrate any custom user-deletion content summaries to `EVENT_DEFINE_DELETION_BLOCKERS` on `User::class`. The new API is element-type-agnostic so the same pattern works for entries, assets, and custom elements.
+[5.10+] Migrate any custom user-deletion content summaries to `EVENT_DEFINE_DELETION_BLOCKERS` on `User::class`. The new API is element-type-agnostic so the same pattern works for entries, assets, and custom elements.
 
 ## Drafts and Revisions
 
@@ -823,9 +824,9 @@ public function actionEdit(?int $elementId = null): Response
 
 `asCpScreen()` automatically handles both full-page and slide-out (modal) contexts — no need to detect which mode is active.
 
-### Extending User Edit Screens
+### Extending User Edit Screens [5.1+]
 
-Craft 5.0 ships `UsersController::EVENT_DEFINE_EDIT_SCREENS`, fired from `EditUserTrait::asEditUserScreen()` between the native screens (Profile, Permissions, Preferences, Addresses) and the auth screens (Password & Verification, Passkeys). Plugin-defined screens render as left-nav items alongside the natives — no template hacks or sidebar workarounds needed.
+`UsersController::EVENT_DEFINE_EDIT_SCREENS` is fired from `EditUserTrait::asEditUserScreen()` between the native screens (Profile, Permissions, Preferences, Addresses) and the auth screens (Password & Verification, Passkeys). Plugin-defined screens render as left-nav items alongside the natives — no template hacks or sidebar workarounds needed.
 
 ```php
 use craft\controllers\UsersController;
@@ -1000,11 +1001,11 @@ public static function eagerLoadingMap(array $sourceElements, string $handle): a
 }
 ```
 
-## Generated Fields (5.8.0)
+## Generated Fields [5.8+]
 
 Generated fields are computed values stored on elements. Unlike native fields (entered by editors) or custom fields (configured by admins), generated fields are defined on the field layout and their values are computed from an object template on every save.
 
-### How they work
+### How they work [5.8+]
 
 Generated fields are configured on `FieldLayout`, not on the element class. Each generated field has:
 - `uid` — unique identifier
@@ -1027,7 +1028,7 @@ Generated field values are stored in the database. They can be:
 - Used in sort options: `.orderBy('myGeneratedHandle DESC')`
 - Displayed in table and card views on element indexes
 
-Since 5.9.0, `true`/`false`/`null`/integer/float values are normalized to appropriate types.
+[5.9+] `true`/`false`/`null`/integer/float values are normalized to appropriate types.
 
 ### Use cases
 
@@ -1074,7 +1075,7 @@ Element.php fires ~40 events. Key categories:
 `EVENT_AUTHORIZE_VIEW`, `EVENT_AUTHORIZE_SAVE`, `EVENT_AUTHORIZE_CREATE_DRAFTS`, `EVENT_AUTHORIZE_DUPLICATE`, `EVENT_AUTHORIZE_DELETE`, `EVENT_AUTHORIZE_DELETE_FOR_SITE`
 
 **Registration** (extend via events):
-`EVENT_REGISTER_SOURCES`, `EVENT_REGISTER_FIELD_LAYOUTS`, `EVENT_REGISTER_ACTIONS`, `EVENT_REGISTER_EXPORTERS`, `EVENT_REGISTER_SEARCHABLE_ATTRIBUTES`, `EVENT_REGISTER_SORT_OPTIONS`, `EVENT_REGISTER_TABLE_ATTRIBUTES`, `EVENT_REGISTER_DEFAULT_TABLE_ATTRIBUTES`, `EVENT_REGISTER_CARD_ATTRIBUTES`, `EVENT_REGISTER_DEFAULT_CARD_ATTRIBUTES`, `EVENT_REGISTER_PREVIEW_TARGETS`
+`EVENT_REGISTER_SOURCES`, `EVENT_REGISTER_FIELD_LAYOUTS`, `EVENT_REGISTER_ACTIONS`, `EVENT_REGISTER_EXPORTERS`, `EVENT_REGISTER_SEARCHABLE_ATTRIBUTES`, `EVENT_REGISTER_SORT_OPTIONS`, `EVENT_REGISTER_TABLE_ATTRIBUTES`, `EVENT_REGISTER_DEFAULT_TABLE_ATTRIBUTES`, `EVENT_REGISTER_CARD_ATTRIBUTES` [5.5+], `EVENT_REGISTER_DEFAULT_CARD_ATTRIBUTES` [5.5+], `EVENT_REGISTER_PREVIEW_TARGETS`
 
 **Customization**:
 `EVENT_DEFINE_SIDEBAR_HTML`, `EVENT_DEFINE_METADATA`, `EVENT_DEFINE_ADDITIONAL_BUTTONS`, `EVENT_DEFINE_ATTRIBUTE_HTML`, `EVENT_DEFINE_EAGER_LOADING_MAP`, `EVENT_SET_ROUTE`, `EVENT_DEFINE_KEYWORDS`, `EVENT_DEFINE_CACHE_TAGS`, `EVENT_DEFINE_URL`

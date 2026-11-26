@@ -1,0 +1,2 @@
+Craft project (site): craftcms/cms 4.16.5.
+This pack targets Craft 5 (5.0-5.12.x). Craft 4 is end of life (Craft 4 security support ended 2026-04-30): say so once, and treat Craft 5 guidance as needing an upgrade first.

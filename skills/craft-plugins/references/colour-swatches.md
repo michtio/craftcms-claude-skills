@@ -96,7 +96,7 @@ Custom keys are whatever your project needs — `background`, `backgroundHover`,
 
 ## Twig API
 
-The v5 swatch model uses **property access**, not method calls. The only callable is `collection()` (added in v5.1.0).
+The v5 swatch model uses **property access**, not method calls. The only callable is `collection()` [colour-swatches 5.1+].
 
 ### Model Properties
 
@@ -161,7 +161,7 @@ Colour Swatches pairs naturally with the named-key collection pattern (single-co
 
 ### Collection API
 
-`collection()` (v5.1.0+) returns a recursive Laravel collection of the swatch's colour data — handy for `.pluck()`, `.filter()`, `.map()`, etc.
+`collection()` [colour-swatches 5.1+] returns a recursive Laravel collection of the swatch's colour data — handy for `.pluck()`, `.filter()`, `.map()`, etc.
 
 ```twig
 {# Pull every hex value #}

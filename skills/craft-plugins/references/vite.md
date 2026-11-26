@@ -101,7 +101,7 @@ Full config, environment-awareness, and DDEV setup are in
 | `errorEntry` | Entry point(s) loaded on error templates. |
 | `cacheKeySuffix` | Suffix for the plugin's internal cache key. |
 | `devServerInternal` | Internal dev-server URL for the `checkDevServer` ping. |
-| `checkDevServer` | Ping the dev server before emitting HMR URLs (enable for DDEV). Vite 6 and later answer the ping with `403`; plugin 5.0.2+ treats that as running (nystudio107/craft-vite#103). |
+| `checkDevServer` | Ping the dev server before emitting HMR URLs (enable for DDEV). Vite 6 and later answer the ping with `403`; [vite 5.0.2+] treats that as running (nystudio107/craft-vite#103). |
 | `includeReactRefreshShim` | Inject the React Fast Refresh shim (React only). |
 | `includeModulePreloadShim` | Inject the `modulepreload` polyfill. |
 | `includeScriptOnloadHandler` | Add an `onload` handler to generated scripts. |

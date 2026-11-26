@@ -269,7 +269,7 @@ Both events pass a `DefineFieldLayoutFieldsEvent`. For the full registration eve
 
 ### Suppressing the condition builders
 
-Every field-layout component inherits the Visibility/Editability condition-builder UI from `FieldLayoutComponent`. The sanctioned way to remove it on a custom component is overriding `protected function conditional(): bool` to return `false` (`base/FieldLayoutComponent.php:124` — both `hasSettings()` and `conditionalSettingsHtml()` consult it). Don't hide the builders with CSS or strip them out of the settings markup.
+Every field-layout component inherits the Visibility/Editability condition-builder UI from `FieldLayoutComponent`. The sanctioned way to remove it on a custom component is overriding `protected function conditional(): bool` to return `false` (`base/FieldLayoutComponent.php:124` — both `hasSettings()` and `conditionalSettingsHtml()` [5.7+] consult it). Don't hide the builders with CSS or strip them out of the settings markup.
 
 ## FieldLayoutBehavior
 

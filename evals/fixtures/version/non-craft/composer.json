@@ -1,0 +1,6 @@
+{
+    "name": "acme/app",
+    "require": {
+        "laravel/framework": "^12.0"
+    }
+}

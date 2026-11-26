@@ -1,19 +1,25 @@
 name: skills-validation
 
 # Validates every skills/*/SKILL.md frontmatter on each push and pull request
-# that touches a skill: strict YAML parse, known keys only, the spec's
+# that touches a skill or its tooling: strict YAML parse, known keys only, the spec's
 # 1024-character description limit, and Claude Code's 1536-character listing
 # cap for description + when_to_use. See bin/validate-skills.sh.
 
 on:
   push:
     paths:
-      - 'skills/*/SKILL.md'
-      - 'bin/validate-skills.sh'
+      - 'skills/**'
+      - 'bin/**'
+      - 'hooks/**'
+      - 'evals/fixtures/**'
+      - '.github/workflows/skills-validation.yml'
   pull_request:
     paths:
-      - 'skills/*/SKILL.md'
-      - 'bin/validate-skills.sh'
+      - 'skills/**'
+      - 'bin/**'
+      - 'hooks/**'
+      - 'evals/fixtures/**'
+      - '.github/workflows/skills-validation.yml'
 
 permissions:
   contents: read
@@ -25,5 +31,32 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Validate frontmatter
+      - name: Validate frontmatter and version-detection wiring
         run: bash bin/validate-skills.sh
+
+  craft-version:
+    name: Craft version detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Golden-output tests (sh, dash, bash --posix)
+        run: sh bin/test-craft-version.sh
+
+  version-tags:
+    name: Craft version tags
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Linter self-test (an untagged craft\filters\Cors must fail)
+        run: "! python3 bin/craft_tags.py lint evals/fixtures/tags/untagged-cors.md"
+
+      - name: Linter self-test (the grammar fixture has exactly 3 invalid tags)
+        run: python3 bin/craft_tags.py lint evals/fixtures/tags/grammar.md | grep -q '^3 finding(s)'
+
+      - name: Floor self-test (flat security bullets in a patch release count)
+        run: python3 bin/craft_tags.py floor --changelog evals/fixtures/tags/changelog-floor.md | grep -q '^5\.12\.3	'
+
+      - name: Lint the pack
+        run: python3 bin/craft_tags.py lint skills

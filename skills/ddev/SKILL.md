@@ -2,9 +2,16 @@
 name: ddev
 description: "DDEV local development environment for Craft CMS projects. ALWAYS load this skill when running any ddev command, configuring .ddev/config.yaml, or troubleshooting local container issues. Covers config.yaml (project type, PHP/Node versions, database, docroot), shorthand commands, add-ons and built-in Mailpit, custom commands, Vite dev server exposure, database import/export, Xdebug toggling, sharing local sites, and troubleshooting (port conflicts, container restarts, ddev-injected env vars silently overriding your .env or config/general.php)."
 when_to_use: "Triggers on: ddev start/stop/restart, ddev craft, ddev composer, ddev npm, ddev ssh, ddev import-db, ddev export-db, ddev craft db/backup, ddev xdebug on/off, ddev share, ddev add-on, ddev poweroff, ddev describe, ddev logs, ddev delete, .ddev/config.yaml, .ddev/commands/, web_extra_exposed_ports, web_extra_daemons, PHP version or Node version in local dev, port conflicts, container restart issues, database backup/restore locally, ran npm/composer on host instead of ddev, wrong node_modules architecture, local dev environment for Craft CMS, ddev-injected PRIMARY_SITE_URL, .ddev/.env.web regenerated on restart, CRAFT_ env var overriding config/general.php, general-config edit has no effect, ddev exec --dir, running a plugin's Pest suite inside a host project, ddev craft pest, tests wrote to the dev database. NOT for production deployment, CI/CD pipelines, GitHub Actions, or server configuration. NOT for Docker/container usage outside of DDEV."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # DDEV for Craft CMS Development
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 ## Companion Skills — Always Load Together
 

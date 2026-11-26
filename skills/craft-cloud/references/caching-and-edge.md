@@ -47,7 +47,7 @@ Cloud's edge layer (Cloudflare) caches HTML responses based on `cache.rules` in 
 - Passing a non-scalar value to `cloud.esi(...)`. The docs are explicit: "Only scalar values can be passed to `cloud.esi()`." Pass IDs or handles, then re-fetch the object inside the included template.
 - Assuming the included ESI template inherits the parent template's Twig context. It doesn't. The fragment runs as a fresh subrequest with only the variables you explicitly pass.
 - Nesting `cloud.esi(...)` inside another ESI fragment. The docs "strongly discourage using edge-side includes inside one another."
-- Writing manual `{{ csrfInput() }}` in cacheable templates expecting it to be a synchronous input. Cloud force-enables `asyncCsrfInputs`, so `csrfInput()` renders an async JS-fetched input. Building the input yourself by reading `craft\web\Request::getCsrfToken()` leaks tokens across users — the docs warn this explicitly.
+- Writing manual `{{ csrfInput() }}` in cacheable templates expecting it to be a synchronous input. Cloud force-enables `asyncCsrfInputs` [5.1+], so `csrfInput()` renders an async JS-fetched input. Building the input yourself by reading `craft\web\Request::getCsrfToken()` leaks tokens across users — the docs warn this explicitly.
 - Using `{{ cloud.esi(...) }}` in a non-HTML response. Only `text/html` and `text/plain` responses are parsed for ESI tags.
 - Assuming `clear-caches/*` clears the edge. It does **not** — every `clear-caches` option except `craft-cloud-caches` only clears Craft's *data* cache. "I cleared caches" can leave stale HTML live at the edge. See [Two cache layers](#two-cache-layers-data-cache-vs-edge).
 

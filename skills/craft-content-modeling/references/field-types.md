@@ -41,13 +41,13 @@ Returns `string|null`. Validates email format automatically.
 <a href="mailto:{{ entry.myField }}">{{ entry.myField }}</a>
 ```
 
-### Link (replaced URL field in 5.3)
+### Link [5.3+] (replaces the URL field)
 
-Returns `LinkData|null`. Supports URL, Asset, Category, Email, Entry, Phone, SMS link types. Settings: allowed link types, custom label, target/rel/ARIA attributes (5.6.0+).
+Returns `LinkData|null`. Supports URL, Asset, Category, Email, Entry, Phone, SMS link types. Settings: allowed link types, custom label, target/rel/ARIA attributes [5.6+].
 
-Serialising a `LinkData` value (`toArray()`, an Element API transformer that returns the raw value, `|json_encode`) yields a full array since 5.11.0: `type`, `value`, `url`, `label`, `filename`, `link`, `attributes`, `defaultLabel`, `elementType`, `elementId`, `elementSiteId`, `elementTitle`. On 5.3–5.10 the array was sparse, so API code had to call `getUrl()`/`getLabel()`/`getElement()` itself — keep doing that when the project must run on both.
+Serialising a `LinkData` value (`toArray()`, an Element API transformer that returns the raw value, `|json_encode`) [changed 5.11] yields a full array: `type`, `value`, `url`, `label`, `filename`, `link`, `attributes`, `defaultLabel`, `elementType`, `elementId`, `elementSiteId`, `elementTitle`. Before 5.11 the array was sparse, so API code had to call `getUrl()`/`getLabel()`/`getElement()` itself — keep doing that when the project must run on both.
 
-The Url field is deprecated since 5.3.0 and is now an alias for Link.
+The Url field is [deprecated 5.3] and is now an alias for Link.
 
 Extensible via `EVENT_REGISTER_LINK_TYPES` — plugins can register custom link types (e.g., internal route links, tel with extensions).
 
@@ -90,7 +90,7 @@ Returns `Money\Money|null`. Stored as integers in minor units ($123.45 → 12345
 
 ### Range
 
-Returns `int|float|null`. Same as Number but renders as a slider in the CP. Since 5.5.0. Settings: min/max, step size, decimal points.
+Returns `int|float|null`. Same as Number but renders as a slider in the CP. [5.5+] Settings: min/max, step size, decimal points.
 
 ```twig
 {{ entry.myField }}
@@ -137,7 +137,7 @@ All return `SingleOptionFieldData|null`.
 {% if entry.myField.value == 'featured' %}
 ```
 
-Radio Buttons support "other" option (5.5.0+). Button Group supports icon/color options (5.7.0+).
+Radio Buttons support "other" option [5.5+]. Button Group supports icon/color options [5.7+].
 
 ### Multi Option (Checkboxes / Multi-Select)
 
@@ -166,7 +166,7 @@ Returns `bool`. Settings: default value, ON/OFF labels.
 
 ### Color
 
-Returns `ColorData|null`. Settings: predefined palette (5.6.0+), allow custom colors.
+Returns `ColorData|null`. Settings: predefined palette [5.6+], allow custom colors.
 
 ```twig
 {{ entry.myField }}        {# hex: #ff0000 #}
@@ -178,7 +178,7 @@ Returns `ColorData|null`. Settings: predefined palette (5.6.0+), allow custom co
 
 ### Icon
 
-Returns `IconData|null` (`craft\fields\data\IconData`). Two properties: `name` (string, e.g., `'heart'`, `'arrow-right'`) and `styles` (array of available Font Awesome styles). Stored as a string in the database — the `styles` array is reconstructed at runtime from Craft's icon index.
+Returns `IconData|null` (`craft\fields\data\IconData`) [5.8+]. Two properties: `name` (string, e.g., `'heart'`, `'arrow-right'`) and `styles` (array of available Font Awesome styles). Stored as a string in the database — the `styles` array is reconstructed at runtime from Craft's icon index.
 
 Settings: `includeProIcons` (bool, whether to show Font Awesome Pro icons in the picker).
 
@@ -216,10 +216,10 @@ All relational fields return **element queries** (not arrays). Each access retur
 
 Properties common to all relation fields (Entries, Assets, Categories, Tags, Users):
 
-- `viewMode` — display mode in the CP: `'list'`, `'list-inline'`, `'thumbs'`, `'cards'`, `'cards-grid'` (since 5.9.0)
+- `viewMode` — display mode in the CP: `'list'`, `'list-inline'`, `'thumbs'`, `'cards'`, `'cards-grid'` [5.9+]
 - `allowSelfRelations` (bool) — allow an element to relate to itself
 - `localizeRelations` (bool) — maintain separate relations per site
-- `defaultPlacement` (5.7.0) — `'beginning'` or `'end'` for newly added relations
+- `defaultPlacement` [5.7+] — `'beginning'` or `'end'` for newly added relations
 
 ### Entries
 
@@ -283,7 +283,7 @@ Returns `EntryQuery` of nested entries. The most powerful field type — see det
 
 Returns `array` of row arrays. Column types: checkbox, color, date, dropdown, email, lightswitch, multi-line text, number, single-line text, time, URL, row heading.
 
-Settings: `staticRows` (bool, 5.5.0) — predefined rows that can't be added/removed, only edited. `maxRows` / `minRows` — limit number of rows.
+Settings: `staticRows` (bool) [5.5+] — predefined rows that can't be added/removed, only edited. `maxRows` / `minRows` — limit number of rows.
 
 ```twig
 {% for row in entry.myField %}
@@ -318,7 +318,7 @@ Returns `AddressQuery`. Owned by parent element (not relational).
 {{ address.countryCode }}
 ```
 
-### Content Block (5.8.0+)
+### Content Block [5.8+]
 
 Returns a single nested `ContentBlock` element (`craft\elements\ContentBlock`). Always exactly one per element — not repeatable. Ideal for reusable field groups (SEO metadata, banner config).
 
@@ -335,13 +335,13 @@ Cannot be nested within other Content Block fields.
 
 ### Entry Types in Matrix
 
-Select from globally-defined entry types or create new ones. Entry types can be organized into named groups (5.8.0+). Local name/handle overrides available (5.6.0+).
+Select from globally-defined entry types or create new ones. Entry types can be organized into named groups [5.8+]. Local name/handle overrides available [5.6+].
 
-### Entry Type Per-Usage Overrides (5.6.0+)
+### Entry Type Per-Usage Overrides [5.6+]
 
 When an entry type is used in a section or Matrix field, its name, handle, and description can be overridden for that specific context. The original entry type is unchanged — the override only applies in that section/field. This allows one entry type to serve different semantic roles in different contexts.
 
-An overridden handle also changes which element partial renders: `entry.render()` checks `_partials/entry/{overriddenHandle}.twig` before `_partials/entry/{originalHandle}.twig` on Craft 5.10.14+. Earlier versions ignored the override and only looked up the original handle (craftcms/cms#18968). See the `craft-site` skill's `element-partials.md`.
+[changed 5.10.14] An overridden handle also changes which element partial renders. After: `entry.render()` checks `_partials/entry/{overriddenHandle}.twig` before `_partials/entry/{originalHandle}.twig`. Before 5.10.14: from 5.10.4 the overridden handle was respected but not prioritized, and before 5.10.4 it was ignored and only the original handle was looked up (craftcms/cms#18968). When supporting both, keep the partial under the original handle. See the `craft-site` skill's `element-partials.md`.
 
 ### View Modes
 
@@ -349,15 +349,15 @@ An overridden handle also changes which element partial renders: `entry.render()
 |------|----------|-------|
 | **Blocks** | Page builders, inline editing. Classic collapse/expand + drag reorder. | 5.0.0 |
 | **Cards** | Read-only overview. Double-click opens slideout editor. | 5.0.0 |
-| **Cards Grid** | Media galleries, visual content. Grid layout of cards. | 5.9.0 |
+| **Cards Grid** | Media galleries, visual content. Grid layout of cards. | [5.9+] |
 | **Index** | Large datasets (100+ entries). Search, sort, filter, table toggle. | 5.0.0 |
 
 ### Matrix Properties
 
-- `enableVersioning` (bool, 5.7.0) — version nested entries alongside owner (blocks mode) or independently (cards/index)
+- `enableVersioning` (bool) [5.7+] — version nested entries alongside owner (blocks mode) or independently (cards/index)
 - `pageSize` (int) — pagination for index view mode
 - `defaultTableColumns` (array) — columns shown in table view
-- `defaultIndexViewMode` (string, 5.5.0) — default view in index mode
+- `defaultIndexViewMode` (string) [5.5+] — default view in index mode
 - `createButtonLabel` (string) — customize the "New entry" button text
 
 Matrix entries can have their own URI formats and templates per site (5.0.0) — enabling nested entries to have independent URLs.
@@ -387,6 +387,6 @@ Matrix fields can contain entry types that themselves have Matrix fields. Use di
 {{ entry.owner.title }}
 ```
 
-### Versioning (5.7.0+)
+### Versioning [5.7+]
 
 Controlled by `enableVersioning`. Blocks view mode: nested entries versioned alongside owner. Cards/Index modes: independent versioning via slideout editor when enabled.

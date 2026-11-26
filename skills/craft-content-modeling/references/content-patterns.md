@@ -121,7 +121,7 @@ Fields: description, topicIcon, featured image, SEO fields
 URI: topics/{slug}
 ```
 
-The conversion preserves all content and relations. Craft 5.9.0 added **custom entry index pages** to solve the sidebar organization concern — you can now group entry sections in the CP sidebar just like category groups used to appear.
+The conversion preserves all content and relations. Craft added **custom entry index pages** [5.9+] to solve the sidebar organization concern — you can now group entry sections in the CP sidebar just like category groups used to appear.
 
 ---
 

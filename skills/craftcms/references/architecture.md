@@ -103,7 +103,7 @@ PHPStan is the safety net — unresolved class names surface immediately if any 
 As the plugin grows, the entry class accumulates service wiring, event listeners, URL rule registration, and settings-form overrides — quickly becoming unreadable. Split these into two traits so the main class stays a thin orchestrator:
 
 - **`src/services/ServicesTrait.php`** — service registration. Implements `static config()` (Craft reads this during plugin construction and merges it into the Yii config; no `setComponents()` call in `init()`), typed `getX(): X` accessors that wrap `$this->get('x')` with an `assert($component instanceof X)` narrowing call, and `@property X $name` docblocks on the trait class. **The trait owns the `@property` tags — never duplicate them on the main plugin class.**
-- **`src/base/PluginTrait.php`** — private `_register*` methods (events, URL rules), plugin lifecycle overrides (`getSettingsResponse()`, `getReadOnlySettingsResponse()`, `createSettingsModel()`), and anything else that would clutter `init()`.
+- **`src/base/PluginTrait.php`** — private `_register*` methods (events, URL rules), plugin lifecycle overrides (`getSettingsResponse()`, `getReadOnlySettingsResponse()` [5.6+], `createSettingsModel()`), and anything else that would clutter `init()`.
 
 Adopt `ServicesTrait` as soon as a plugin has 2+ services. A plugin with 0 or 1 services can declare its component inline in the main class without the trait — the split exists to keep service wiring out of the way once the count grows.
 
@@ -1165,7 +1165,7 @@ class MyPlugin extends Plugin
 }
 ```
 
-Available: `CmsEdition::Solo`, `CmsEdition::Team`, `CmsEdition::Pro`, `CmsEdition::Enterprise` (5.3.0+).
+Available: `CmsEdition::Solo`, `CmsEdition::Team`, `CmsEdition::Pro`, `CmsEdition::Enterprise` [5.3+].
 
 Use this when the plugin depends on CMS features only available in higher editions (e.g., user groups for permission-scoped content). For what each CMS edition unlocks (user groups, permissions, public registration), see the `craft-content-modeling` skill's `references/users-and-permissions.md`.
 

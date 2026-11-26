@@ -2,9 +2,16 @@
 name: craftcms
 description: "Craft CMS 5 plugin and module development — extending Craft with PHP. Covers elements, element queries, services, models, records, controllers, migrations, queue jobs, console commands, field types, native fields, events, behaviors, Twig extensions, widgets, filesystems, permissions, project config, GraphQL, testing, and debugging."
 when_to_use: "Triggers on: beforePrepare()/afterSave()/defineSources()/defineTableAttributes()/attributeHtml(), MemoizableArray, BaseNativeField, EVENT_REGISTER_*/DEFINE_*/BEFORE_*/AFTER_*, CraftVariable, custom element or field type (normalizeValue/serializeValue/inputHtml), webhook, API endpoint, queue/batch job, CP section, dashboard widget, utility page, element action/exporter/condition, registerUserPermissions, requirePermission vs requireAdmin, kebab-case permissions, allowAdminChanges, canView/canSave/canDelete, defineRules/EVENT_DEFINE_RULES on Entry (fieldId + ownerId must be set), elevated session, project-config/apply/write, drafts/revisions, edit sidebar (EVENT_DEFINE_SIDEBAR_HTML)/toolbar buttons, metaFieldsHtml, VueAdminTable, GeneralConfig, getIsMultiSite/refreshSites stale after new site, deleteSite phantom sites, siteId filter lost, UTC datetime/strtotime drift, ['like'] tuple matches nothing, configWarning. Always use when writing, editing, or reviewing Craft plugin/module PHP (even when no API is named) or saveField()/saveEntryType() from scripts. Plugin work: also load craft-plugins. Do NOT trigger for front-end Twig (craft-site) or content modeling (craft-content-modeling)."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Craft CMS 5 — Extending (Plugins & Modules)
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Reference for extending Craft CMS 5 through plugins and modules. Covers everything from elements and services to controllers, migrations, fields, and events.
 
@@ -81,10 +88,11 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "My element query with ['like', ...] returns nothing" → read `architecture.md` (Element-query param setters don't take Yii operator tuples)
 - "Match elements by title/slug prefix" → read `architecture.md` (Element-query param setters don't take Yii operator tuples)
 - "Configure Redis for caching and sessions" → read `config-app.md`
-- "Store PHP sessions in the database (load balancer, no Redis)" → read `config-app.md` (Session Component — `craft\web\DbSession`, `setup/php-session-table`)
+- "Store PHP sessions in the database (load balancer, no Redis)" → read `config-app.md` (Session Component — `craft\web\DbSession` [5.11+], `setup/php-session-table`)
 - "Set up environment variables for production" → read `config-bootstrap.md`
 - "Find a GeneralConfig setting" → read `config-general.md`
 - "Read a config value in plugin code (App::env, parseEnv, GeneralConfig)" → read `config-bootstrap.md` + `config-general.md`
+- "Which Craft version does this feature need? / What can this project use on its version?" → read `version-table.md` (every version tag in the pack, with older-version alternatives)
 - "Check if allowAdminChanges is enabled in plugin code" → read `config-general.md` + `cp.md` (Read-Only Mode)
 - "Resolve env vars in plugin settings ($MY_API_KEY)" → read `config-bootstrap.md` (App::parseEnv)
 - "Understand CRAFT_* env var conventions" → read `config-bootstrap.md`
@@ -92,7 +100,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up custom URL routes" → read `config-bootstrap.md`
 - "Configure search to find short words" → read `config-app.md`
 - "Set up GraphQL tokens and schemas" → read `graphql.md` + `config-general.md`
-- "GraphQL `author`/`uploader` fields disappeared after upgrading to Craft 5.11" → read `graphql.md` (Craft 5.11 Additions — "Query for users" scope)
+- "GraphQL `author`/`uploader` fields disappeared after a Craft upgrade" [changed 5.11] → read `graphql.md` ("Query for users" scope)
 - "Set up caching for a high-traffic site" → read `caching.md`
 - "Register custom permissions for my plugin" → read `permissions.md`
 - "Check user permissions in templates" → read `permissions.md`
@@ -205,6 +213,7 @@ Load only the reference files your task needs — each file costs input tokens o
 | Plugin Vite: VitePluginService, CP asset bundles, HMR, TypeScript, Vue in CP | `references/plugin-vite.md` | 2.7K |
 | Headless & hybrid: headlessMode, GraphQL API, CORS, preview tokens, front-end frameworks | craft-site skill `references/headless.md` | 3.4K |
 | GeneralConfig (system, routing, security, users, sessions, search, assets, images) | `references/config-general.md` | 8.4K |
+| Craft version table, generated from the pack's version tags | `references/version-table.md` | 23.0K |
 | GeneralConfig (content, templates, performance, GC, localization, headless, GraphQL, accessibility) | `references/config-general-extended.md` | 7.2K |
 | App config: cache, session, queue, mutex, mailer/SMTP, search, logging, CORS, DB replicas | `references/config-app.md` | 5.5K |
 | Config bootstrap: env vars, aliases, priority order, fluent API, custom.php, db.php, routes.php | `references/config-bootstrap.md` | 3.6K |

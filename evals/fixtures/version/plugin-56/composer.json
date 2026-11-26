@@ -1,0 +1,8 @@
+{
+    "name": "acme/craft-thing",
+    "type": "craft-plugin",
+    "require": {
+        "php": "^8.2",
+        "craftcms/cms": "^5.6.0"
+    }
+}

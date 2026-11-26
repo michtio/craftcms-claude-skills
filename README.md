@@ -199,7 +199,7 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and configured
 - [DDEV](https://ddev.com) for local Craft CMS development
-- Craft CMS 5.x
+- Craft CMS 5.0–5.12.x (see [Craft Versions](#craft-versions))
 - Bash (macOS/Linux) for the install script
 
 ## Versioning
@@ -210,9 +210,34 @@ This package follows its own [semantic versioning](https://semver.org), driven b
 - **Minor** (e.g. 1.5.x → 1.6.0) — new skills, new plugin references, significant content additions
 - **Major** (1.x → 2.x) — Craft's next major (5.x → 6.x, where APIs break) or a major reorganization of the pack
 
-The pack targets **Craft CMS 5, latest minor** (currently 5.11). Behaviour specific to a Craft minor is annotated inline in the content (e.g. "since 5.10.0"), so a single line serves projects on any Craft 5 minor — the minors are additive and backward-compatible. New content like a hosting skill or plugin reference is a feature of the pack, independent of which Craft minor is current.
+New content like a hosting skill or plugin reference is a feature of the pack, independent of which Craft minor is current.
 
 Development happens on `main`. The `1.4.x` branch is a **frozen snapshot targeting Craft 5.9** — it received a final quality release and no longer takes new work; all new development lands on `main`. The `release-validation` workflow enforces that manifest versions match the release tag.
+
+## Craft Versions
+
+The pack supports **Craft CMS 5.0–5.12.x**. Its version tags are checked against Craft's CHANGELOG through 5.12.4, and references cite the `craftcms/cms` release they were verified against.
+
+Anything that needs a specific Craft release carries a tag: `[5.10+]` for a feature added in 5.10, `[changed 5.12]` for a behaviour change, `[seomatic 5.1+]` for a plugin's own version. For features from the last three minors, the pack also gives the older alternative. The [version table](skills/craftcms/references/version-table.md) lists every tag in one place.
+
+**The skills detect your project's Craft version.** In a Craft project, each skill reports the version when it loads, and a plugin install also reports it when the session starts and after compaction. Answers then fit your version, or say which version a feature needs and how to upgrade. Specifically:
+
+- **Site:** the `craftcms/cms` version in `composer.lock`, plus the version installed in `vendor/`. If they differ, it suggests `ddev composer install`.
+- **Plugin:** the lowest version your `craftcms/cms` constraint allows, so code for a newer API comes with a constraint bump or a runtime guard.
+- **Below the minimum safe version** (currently 5.12.3, the latest release with security fixes): a warning, plus a pointer to `ddev composer audit`. Craft doesn't backport security fixes to older minors.
+- **Craft 4:** a one-line end-of-life notice.
+
+How it works: a read-only POSIX shell script ([`bin/craft-version.sh`](bin/craft-version.sh), copied into each skill). It reads `composer.json`, `composer.lock` and `vendor/craftcms/cms/src/config/app.php` in the current folder, its `cms/` subfolder or up to three parent folders. It never writes files, never touches the network, and prints nothing outside Craft projects.
+
+It runs in two places:
+
+- From a `!` line in each SKILL.md, which each skill pre-approves in its `allowed-tools`.
+- For plugin installs, from a `SessionStart` hook in [`hooks/hooks.json`](hooks/hooks.json).
+
+To turn it off:
+
+- Set `"disableSkillShellExecution": true` in your Claude Code settings for the skill lines. Each skill then tells Claude to check `composer.lock` or ask you instead.
+- Set `"disableAllHooks": true` for the hook. That turns off every hook, not just this one.
 
 ## Roadmap
 

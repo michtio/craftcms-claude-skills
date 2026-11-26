@@ -61,10 +61,10 @@ Key facts about admin status:
 
 | Handle | Purpose | Since | Notes |
 |--------|---------|-------|-------|
-| `viewUsers` | Read-only user access | 5.6.0 | |
+| `viewUsers` | Read-only user access | [5.6+] | |
 | `editUsers` | Edit custom fields and non-critical data | | |
 | `registerUsers` | Create new user accounts | | |
-| `moderateUsers` | Edit names, usernames, send activation emails | 5.8.0 | Limited scope |
+| `moderateUsers` | Edit names, usernames, send activation emails | [5.8+] | Limited scope |
 | `administrateUsers` | Change emails, reset passwords, deactivate | | Dangerous -- enables escalation |
 | `impersonateUsers` | Log in as another user | | |
 | `assignUserPermissions` | Grant permissions to other users | | |

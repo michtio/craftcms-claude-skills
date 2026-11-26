@@ -70,7 +70,7 @@ plugins, permissions) are stored as YAML in `config/project/`.
 - After resolving Git merge conflicts in YAML: `ddev craft project-config/touch` then `ddev craft project-config/apply`
 - Use `$ENV_VAR` syntax in YAML for environment-specific values — including for genuinely per-environment plugin settings; don't move a setting to a DB-only column to get "per-environment tuning"
 - Plugin settings — including per-instance/per-entity *operational* settings (alert thresholds, notification routing, workflow mappings) — are configuration and belong in project config, the canonical source of truth, not a DB-only column. Set them locally and deploy; prod project config is read-only by design. The risk to manage is YAML↔DB divergence (a downstream DB edit silently reverts on the next `craft up`), fixed by keeping project config authoritative — not by bypassing it. For the full rationale and the code-review misconception it corrects, see the `craftcms` skill's `architecture.md` → "Settings belong in project config".
-- **After every project config change made outside the CP** (manual edit, merge conflict resolution, script): run `ddev craft project-config/touch` to update the `dateModified` timestamp, then `ddev craft up` to apply, then `ddev craft project-config/diff` must print "No pending project config YAML changes." `craft up` itself compares YAML content (`areChangesPending(force: true)`, `UpController.php:60` in `craftcms/cms` 5.11.5.1), so it applies an edit without the bump. The bump is what makes the CP's "pending changes" alert notice it: that check skips the content comparison while `project.yaml`'s mtime is unchanged. Keep doing both. The CP updates `dateModified` itself when you save through the UI.
+- **After every project config change made outside the CP** (manual edit, merge conflict resolution, script): run `ddev craft project-config/touch` to update the `dateModified` timestamp, then `ddev craft up` to apply, then `ddev craft project-config/diff` must print "No pending project config YAML changes." `craft up` itself compares YAML content (`areChangesPending(force: true)`, `UpController.php:60` in `craftcms/cms` at ref=5.11.5.1), so it applies an edit without the bump. The bump is what makes the CP's "pending changes" alert notice it: that check skips the content comparison while `project.yaml`'s mtime is unchanged. Keep doing both. The CP updates `dateModified` itself when you save through the UI.
 - **Never run `project-config/write` on a DB that's behind the branch** (for example, restored from a production dump). It empties `config/project/` and rewrites it from the DB, deleting teammates' YAML. Gate: `craft up`, clean `project-config/diff`, then `write`, then `git diff -- config/project`. See the `craftcms` skill's `deployment.md` → "project-config/write safely".
 - **After creating sections or singles** that appear in Entries: tidy `elementSources.craft\elements\Entry` (placement under the right heading, `tableAttributes` / `defaultSort` matched to role peers). This is part of the content model, not optional CP cosmetics. Full checklist: `element-index-sources.md`.
 
@@ -151,8 +151,8 @@ When a draft is created, unchanged nested entries are not duplicated — they ar
 | Form | Example | Since |
 |---|---|---|
 | Whole value | `$ASSETS_URL` | 5.0 |
-| Variable plus subpath | `$PRIMARY_SITE_URL/uploads` | 5.5.0 |
-| Variable in any `/`-delimited segment, or `${VAR}` anywhere | `uploads/$SITE_HANDLE/images`, `https://${CDN_HOST}/uploads` | 5.9.0 (#17794, #17949) |
+| Variable plus subpath | `$PRIMARY_SITE_URL/uploads` | [5.5+] |
+| Variable in any `/`-delimited segment, or `${VAR}` anywhere | `uploads/$SITE_HANDLE/images`, `https://${CDN_HOST}/uploads` | [5.9+] (#17794, #17949) |
 
 A bare `$VAR` only resolves when it fills a whole `/`-delimited segment: `$SITE-uploads` is left as-is, so write `${SITE}-uploads`. On a release older than the form's version the literal text is stored and used, so the URL breaks silently. An undefined `${VAR}` resolves to an empty string.
 
@@ -180,7 +180,7 @@ ASSETS_URL=https://mysite.ddev.site/uploads
 ASSETS_PATH=/var/www/html/web/uploads
 ```
 
-On Craft 5.5+ the base URL can reuse the site URL instead of a second variable: `url: '$PRIMARY_SITE_URL/uploads'`.
+[5.5+] The base URL can reuse the site URL instead of a second variable: `url: '$PRIMARY_SITE_URL/uploads'`.
 
 `@webroot` for the `path` is less dangerous (filesystem path, not URL) but env vars are still preferred for portability. The URL is the critical one — it generates `<img src>` and download links, so a wrong value breaks every asset on the site.
 
@@ -188,7 +188,7 @@ On Craft 5.5+ the base URL can reuse the site URL instead of a second variable: 
 
 Each volume has its own **field layout** — this is where you add custom metadata fields for assets. Common patterns:
 
-- **Alternative Text** (native field layout element) — always include for accessibility. Has its own translation method (`altTranslationMethod`) for multi-site. Since Craft 5.11.0 that method is honoured from the **first** save: before 5.11 the first alt text entered was copied to every site regardless of the setting, and only edits from the second save on were scoped (craftcms/cms#19067). The 5.11 migration backfills `assets_sites.alt` from the old global `assets.alt` column, which is now ignored and is removed in Craft 6 — read alt through the element (`asset.alt`, `alt` in GraphQL), never by joining `assets.alt` in a query.
+- **Alternative Text** (native field layout element) — always include for accessibility. Has its own translation method (`altTranslationMethod`) for multi-site. [changed 5.11] That method is honoured from the **first** save. Before 5.11, the first alt text entered was copied to every site regardless of the setting, and only edits from the second save on were scoped (craftcms/cms#19067). The 5.11 migration backfills `assets_sites.alt` from the old global `assets.alt` column, which is now ignored and is removed in Craft 6 — read alt through the element (`asset.alt`, `alt` in GraphQL), never by joining `assets.alt` in a query.
 - **Title translation** — `titleTranslationMethod` controls whether asset titles differ per site (default: per site).
 - **Custom fields** — photographer credit, copyright notice, focal point, usage rights, expiry date.
 - **Reserved handles** on volumes: `alt`, `extension`, `filename`, `folder`, `height`, `kind`, `size`, `volume`, `width`.

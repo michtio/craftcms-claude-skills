@@ -36,10 +36,10 @@ When unsure about a Formie feature, `WebFetch` the relevant docs page.
 - (Back-end) Translating form strings via the `site` category — Formie uses the single **`formie`** category (`Craft::t('formie', …)` / `translations/<locale>/formie.php`). See *Programmatic & Back-End* below.
 - (Back-end) Assigning an HTML string to a notification's `content` in PHP — it's **ProseMirror block JSON**, not HTML. Prefer setting `templateId`.
 - (Back-end) Renaming File Upload assets at `Submission::EVENT_BEFORE_SAVE` — the asset doesn't exist yet; rename at `EVENT_AFTER_SAVE`.
-- (Back-end) Twig in redirect URLs or notification content — since 3.1.42 redirect URLs resolve only strict `{token}` placeholders (`{{ }}` and `{% %}` stay literal), and notification content and other form-authored templates render in verbb/base's explicit Twig sandbox (3.1.36+): `collect()` and the Illuminate collection helpers are gone (3.1.39), `EVENT_MODIFY_TWIG_ENVIRONMENT` permissions add to the sandbox defaults, and broad `allowedClasses` grants no longer apply (3.1.42).
-- (Back-end) Gating Formie's settings on `accessCp` or admin — since 3.1.28 every settings screen requires the plugin's own `formie-accessSettings` permission (`SettingsAccessController::beforeAction()`), alongside `formie-accessForms`, `formie-accessSubmissions` and `formie-accessSentNotifications` for the other sections.
-- Linking to Signature field images from your own templates — since 3.1.44 new submissions' signature image URLs carry a field-scoped access token; URLs already sent in notifications keep working, and `allowLegacySignatureImageUrls` (config, default `true`) keeps unsigned URLs for older submissions until you turn it off.
-- Running anything below 3.1.47 — 3.1.31 through 3.1.44 close server-side template injection, SSRF, authorization and information-disclosure advisories (GHSA-25q7-h5pg-6wjv, GHSA-82jr-3xc8-86mr among them).
+- (Back-end) Twig in redirect URLs or notification content — [changed formie 3.1.42] redirect URLs resolve only strict `{token}` placeholders (`{{ }}` and `{% %}` stay literal), and notification content and other form-authored templates render in verbb/base's explicit Twig sandbox [formie 3.1.36+]: `collect()` and the Illuminate collection helpers are gone [formie 3.1.39+], `EVENT_MODIFY_TWIG_ENVIRONMENT` permissions add to the sandbox defaults, and broad `allowedClasses` grants no longer apply [formie 3.1.42+].
+- (Back-end) Gating Formie's settings on `accessCp` or admin — [changed formie 3.1.28] every settings screen requires the plugin's own `formie-accessSettings` permission (`SettingsAccessController::beforeAction()`), alongside `formie-accessForms`, `formie-accessSubmissions` and `formie-accessSentNotifications` for the other sections.
+- Linking to Signature field images from your own templates — [changed formie 3.1.44] new submissions' signature image URLs carry a field-scoped access token; URLs already sent in notifications keep working, and `allowLegacySignatureImageUrls` (config, default `true`) keeps unsigned URLs for older submissions until you turn it off.
+- Running anything below [formie 3.1.47+] — 3.1.31 through 3.1.44 close server-side template injection, SSRF, authorization and information-disclosure advisories (GHSA-25q7-h5pg-6wjv, GHSA-82jr-3xc8-86mr among them).
 
 ## Rendering
 
@@ -239,7 +239,7 @@ GTM: no GTM integration in the integrations list, but each page's submit button 
 
 - **Calculations field**: Symfony Expression Language formula (not Twig) referencing `{fieldHandle}`. Radio/dropdown resolve to the selected option's *value* (label/value are separate per option, so numeric scoring works). Set **Formatting: Number** — values arrive as strings otherwise. Checkboxes resolve to an *array*; a Number-formatted calc field referencing only the checkbox field sums the array, and calc fields can chain off other calc fields.
 - **Client-side only** — the result is submitted from a read-only input and is tamperable. For trusted scores, recompute server-side via `Submission::EVENT_BEFORE_SAVE` in a module.
-- **No native conditional redirect/success message** (per verbb's own guide). Workaround: the redirect URL resolves strict `{token}` placeholders against the submission (`Templates::renderObjectTokens()` since 3.1.42; a full object template before that, so no Twig expressions any more) — use `/result?submission={uid}`, then query `craft.formie.submissions` on the result page and branch there.
+- **No native conditional redirect/success message** (per verbb's own guide). Workaround: the redirect URL resolves strict `{token}` placeholders against the submission (`Templates::renderObjectTokens()` [formie 3.1.42+]; a full object template before that, so no Twig expressions any more) — use `/result?submission={uid}`, then query `craft.formie.submissions` on the result page and branch there.
 - Notifications render option **values**, not labels (verbb/formie#756) — mind numeric scoring values in user-facing emails.
 
 ## Programmatic & Back-End (PHP / Migrations / Deployment)
@@ -436,7 +436,7 @@ document.addEventListener('onFormieInit', (event) => {
 {% endjs %}
 ```
 
-- **Be on 3.1.46+ for cached forms.** Craft's asynchronous `csrfInput()` and Formie's captcha token refresh raced on statically cached pages and could discard valid submissions (verbb/formie#2986, fixed in 3.1.46). Before 3.1.37 the refresh URL doubled the subdomain when `CRAFT_BASE_CP_URL` was set alongside per-site subdomains.
+- **Be on [formie 3.1.46+] for cached forms.** Craft's asynchronous `csrfInput()` and Formie's captcha token refresh raced on statically cached pages and could discard valid submissions (verbb/formie#2986, fixed in [formie 3.1.46+]). Before [formie 3.1.37+] the refresh URL doubled the subdomain when `CRAFT_BASE_CP_URL` was set alongside per-site subdomains.
 - **Static / edge caching (Blitz, Craft Cloud edge):** the same approach applies — cache the HTML, refresh tokens client-side. Formie explicitly recommends Blitz for static caching. (For per-fragment dynamic content under Blitz, see the `blitz.md` reference's `{% dynamicInclude %}` note.)
 
 ### Deployment & cache-flush caution

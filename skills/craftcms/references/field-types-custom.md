@@ -60,7 +60,7 @@ craft\base\Field
 | `InlineEditableFieldInterface` | Inline editing in element indexes |
 | `EagerLoadingFieldInterface` | Eager-loading support for query fields |
 | `ThumbableFieldInterface` | Thumbnail in element cards |
-| `MergeableFieldInterface` | Merge support for drafts |
+| `MergeableFieldInterface` [5.3+] | Merge support for drafts |
 
 ## Static Configuration Methods
 
@@ -110,8 +110,7 @@ Common types: `TYPE_TEXT`, `TYPE_STRING`, `TYPE_INTEGER`, `TYPE_BOOLEAN`, `TYPE_
 
 ## Value Lifecycle
 
-Values flow through these methods in order:
-
+Values flow through these methods in order (`serializeValueForDb()` is [5.7+]):
 ```
 POST data / DB row
        │
@@ -442,7 +441,7 @@ public function getStaticHtml(mixed $value, ElementInterface $element): string
 }
 ```
 
-## Defaultable Fields (5.10+)
+## Defaultable Fields [5.10+]
 
 Implement `craft\base\DefaultableFieldInterface` when your field has a sensible "factory default" value that should be writable to existing elements on demand. Pairs with the new `--to-default` flag on `resave/*` console commands — operators can backfill a column with the field's default without writing a migration.
 

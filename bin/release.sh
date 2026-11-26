@@ -195,13 +195,14 @@ fi
 
 echo "Stamping CHANGELOG.md heading for $VERSION → $TODAY"
 # Replace the existing "## X.Y.Z ..." heading for this version with today's date.
-# Awk match anchors on `^## VERSION` followed by whitespace, so `1.3.10` won't
+# Awk match anchors on `^## VERSION` followed by whitespace or the end of the
+# line (a bare `## 1.3.1` heading counts), so `1.3.10` won't
 # false-match on a `1.3.1` search. If no entry exists for this version yet, we
 # warn — that's a signal the dev forgot to write the CHANGELOG entry.
-if grep -qE "^## ${VERSION}[[:space:]]" "$CHANGELOG"; then
+if grep -qE "^## ${VERSION}([[:space:]]|\$)" "$CHANGELOG"; then
   tmp="$(mktemp)"
   awk -v ver="$VERSION" -v today="$TODAY" '
-    $0 ~ "^## " ver "[ \t]" { print "## " ver " -- " today; next }
+    $0 ~ "^## " ver "([ \t]|$)" { print "## " ver " -- " today; next }
     { print }
   ' "$CHANGELOG" > "$tmp"
   mv "$tmp" "$CHANGELOG"
@@ -211,6 +212,9 @@ fi
 
 CURRENT_BRANCH="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)"
 
+echo
+echo "Before tagging, refresh the Craft data (symbol map, minimum safe version, version table):"
+echo "  sh bin/refresh-craft-data.sh"
 echo
 echo "Done. Review the diff:"
 echo "  git diff -- .claude-plugin/ CHANGELOG.md"

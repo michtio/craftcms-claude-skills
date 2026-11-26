@@ -2,9 +2,16 @@
 name: craft-fortrabbit
 description: "fortrabbit (fortrabbit.com) — managed PHP hosting with a Craft CMS software template. Covers git push-to-deploy through the fortrabbit GitHub App, the build and post-deploy commands of the Craft template (migrate/all, project-config/apply, clear-caches/all), the merge deployment strategy with the /config/project replace pattern, the deploy file (.fortrabbit/deploy.yml) and its replace-by-default trap, the CRAFT_* ENV vars mapped from FORTRABBIT_DB_* platform variables, production settings (dev mode, admin changes, updates off), the persistent storage for asset volumes and rsync sync, MySQL over SSH and an SSH tunnel, the Craft queue and image transforms in a worker job, crons, platform limits (no root, no sendmail, heavy binaries in jobs only), and DDEV local development."
 when_to_use: "Triggers on: .fortrabbit/deploy.yml, .fortrabbit/deploy.yaml, .fortrabbit/deploy.json, FORTRABBIT_DB_HOST, FORTRABBIT_DB_NAME, FORTRABBIT_ENVIRONMENT_NAME, FORTRABBIT_MAIN_DOMAIN, *.frbit.app, *.frbit.cloud, ssh.<region>.frbit.app, an en-xxxxxx environment ID, the frbit CLI or fortrabbit MCP server in a Craft project, the fortrabbit jobs component or worker job, deploy Craft to fortrabbit, host Craft on fortrabbit. Do NOT trigger for Craft Cloud (craft-cloud skill), Servd (servd skill), generic Craft deployment on Forge, Ploi or bare metal (craftcms/deployment.md), or DDEV setup unrelated to a fortrabbit project (ddev)."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # fortrabbit — Managed PHP Hosting for Craft CMS
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Reference for running Craft CMS 5 on fortrabbit (fortrabbit.com), a managed PHP hosting platform. Covers git deployment and the Craft software template, the deploy file, ENV vars, the persistent storage and asset volumes, MySQL access over SSH, the Craft queue and image transforms in worker jobs, platform limits, and local development with DDEV.
 

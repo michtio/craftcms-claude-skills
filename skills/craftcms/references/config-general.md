@@ -18,7 +18,7 @@ Every public property on `GeneralConfig` maps to a `CRAFT_{UPPER_SNAKE_CASE}` en
 - `softDeleteDuration(0)` -- means "never hard-delete" not "delete immediately" -- soft-deleted items stay forever
 - Changing `slugWordSeparator` or `limitAutoSlugsToAscii` mid-project -- existing slugs don't update, URLs break
 - `disabledPlugins` set per-environment -- causes schema version mismatches across environments
-- `safeMode` vs `allowAdminChanges` confusion -- safeMode disables ALL plugins and config modifications
+- `safeMode` [5.1+] vs `allowAdminChanges` confusion -- safeMode disables ALL plugins and config modifications
 - Not setting `baseCpUrl` when the CP is on a different domain -- action URLs break in headless and multi-domain setups
 - `maxGraphqlComplexity`, `maxGraphqlDepth`, and `maxGraphqlResults` all default to `0` (unlimited) -- denial-of-service vector in production
 
@@ -43,7 +43,7 @@ Every public property on `GeneralConfig` maps to a `CRAFT_{UPPER_SNAKE_CASE}` en
 |---------|------|---------|---------|
 | `devMode` | `bool` | `false` | Verbose errors, debug toolbar, expanded logging. Never `true` in production. |
 | `isSystemLive` | `bool\|null` | `null` | Override System Status from CP. `null` = use CP setting. `true`/`false` = override. |
-| `safeMode` | `bool` | `false` | Disables all plugins and config modifications. For troubleshooting only. (Since 5.1.0) |
+| `safeMode` | `bool` | `false` | Disables all plugins and config modifications. For troubleshooting only. [5.1+] |
 | `allowAdminChanges` | `bool` | `true` | Allow schema/plugin changes in CP. Set `false` in production. |
 | `allowUpdates` | `bool` | `true` | Allow one-click updates from CP. Auto-disabled when `allowAdminChanges` is `false`. |
 | `buildId` | `?string` | `null` | Unique build identifier (Git SHA, deploy timestamp). Used for cache busting. (Since 4.0.0) |
@@ -54,17 +54,17 @@ Every public property on `GeneralConfig` maps to a `CRAFT_{UPPER_SNAKE_CASE}` en
 | `limitAutoSlugsToAscii` | `bool` | `false` | Transliterate Unicode to ASCII in auto-generated slugs (JavaScript-side only). |
 | `handleCasing` | `string` | `GeneralConfig::CAMEL_CASE` | Casing for auto-generated handles. Options: `CAMEL_CASE`, `PASCAL_CASE`, `SNAKE_CASE`. (Since 3.6.0) |
 | `preloadSingles` | `bool` | `false` | Preload Single entries as Twig globals based on variable references. Clear compiled templates after changing. (Since 4.4.0) |
-| `staticStatuses` | `bool` | `false` | Entry statuses only update on save or via `update-statuses` command, not dynamically. (Since 5.7.0) |
+| `staticStatuses` | `bool` | `false` | Entry statuses only update on save or via `update-statuses` command, not dynamically. [5.7+] |
 | `partialTemplatesPath` | `string` | `'_partials'` | Path within `templates/` for element partial templates used by `entry.render()`. (Since 5.0.0) |
 | `errorTemplatePrefix` | `string` | `''` | Prefix for error template paths. E.g., `'_'` makes 404 look for `_404.twig`. |
 | `translationDebugOutput` | `bool` | `false` | Wrap translated strings with `@@@` symbols to identify untranslated text. |
-| `systemTemplateCss` | `?string` | `null` | URL to CSS file for system front-end templates (login, set password). (Since 5.6.0) |
+| `systemTemplateCss` | `?string` | `null` | URL to CSS file for system front-end templates (login, set password). [5.6+] |
 
-`devMode` auto-enables `disallowRobots`. `safeMode` is stricter than `allowAdminChanges(false)` -- it disables plugins entirely. `allowAdminChanges` and `allowUpdates` are independent controls but `allowUpdates` is auto-disabled when `allowAdminChanges` is `false`. A locked-down production should have both `false`.
+`devMode` auto-enables `disallowRobots`. `safeMode` [5.1+] is stricter than `allowAdminChanges(false)` -- it disables plugins entirely. `allowAdminChanges` and `allowUpdates` are independent controls but `allowUpdates` is auto-disabled when `allowAdminChanges` is `false`. A locked-down production should have both `false`.
 
 `isSystemLive` has three states: `null` defers to the CP System Status toggle. `true` forces the system live regardless of CP setting. `false` forces offline mode regardless. The offline page renders `templates/503.twig` if it exists, otherwise Craft's built-in offline template.
 
-`staticStatuses` is a performance optimization for large sites. When enabled, Craft does not dynamically check whether scheduled entries should be live -- you must run `craft update-statuses` on a cron schedule (typically every minute) to flip statuses at the correct time.
+`staticStatuses` [5.7+] is a performance optimization for large sites. When enabled, Craft does not dynamically check whether scheduled entries should be live -- you must run `craft update-statuses` on a cron schedule (typically every minute) to flip statuses at the correct time.
 
 `preloadSingles` works by analyzing compiled Twig templates for variable names matching Single entry handles. It then preloads those entries automatically. After changing this setting, you must clear compiled templates from the Caches utility, otherwise the setting has no effect. When enabled, templates can reference Singles directly as variables (e.g., `{{ homepage.heroTitle }}`) without an explicit element query.
 
@@ -150,12 +150,12 @@ If you change `cpTrigger` mid-project, update bookmarks, external integrations, 
 | `enableCsrfProtection` | `bool` | `true` | CSRF token validation. Never disable. |
 | `enableCsrfCookie` | `bool` | `true` | Persist CSRF token in cookie. If `false`, stored in session (requires session start per page). |
 | `csrfTokenName` | `string` | `'CRAFT_CSRF_TOKEN'` | Name of the CSRF token param/cookie. |
-| `asyncCsrfInputs` | `bool` | `false` | Load CSRF tokens via AJAX. Required for full-page static caching. (Since 5.1.0) |
+| `asyncCsrfInputs` | `bool` | `false` | Load CSRF tokens via AJAX. Required for full-page static caching. [5.1+] |
 | `blowfishHashCost` | `int` | `13` | Password hash cost. Higher = slower/more secure. Time doubles per increment. |
 | `sameSiteCookieValue` | `?string` | `null` | SameSite flag on cookies (`'Lax'`, `'Strict'`, `'None'`). |
 | `secureHeaders` | `?array` | `null` | Headers subject to trusted host validation. |
 | `secureProtocolHeaders` | `?array` | `null` | Headers checked for HTTPS detection behind proxies. |
-| `permissionsPolicyHeader` | `?string` | `null` | Sets Permissions-Policy header. Deprecated since 4.11.0 -- use `craft\filters\Headers`. |
+| `permissionsPolicyHeader` | `?string` | `null` | Sets Permissions-Policy header. [deprecated 5.3] -- use `craft\filters\Headers` [5.3+]. |
 | `trustedHosts` | `array` | `['any']` | Hosts trusted for proxy headers. Default trusts all -- restrict in production. |
 | `ipHeaders` | `?string[]` | `null` | Headers containing real client IP (e.g., `X-Forwarded-For`, `CF-Connecting-IP`). |
 | `httpProxy` | `?string` | `null` | Proxy for outgoing HTTP requests. Format: `'http://host:port'`. |
@@ -170,9 +170,9 @@ If you change `cpTrigger` mid-project, update bookmarks, external integrations, 
 | `sanitizeSvgUploads` | `bool` | `true` | Strip scripts from SVG uploads. |
 | `sanitizeCpImageUploads` | `bool` | `true` | Sanitize images uploaded in CP (user photos, etc). |
 | `storeUserIps` | `bool` | `false` | Store user IP addresses in the system. (Since 3.1.0) |
-| `enableTwigSandbox` | `bool` | `false` | Sandbox user-defined Twig templates against injection. (Since 5.9.0) |
+| `enableTwigSandbox` | `bool` | `false` | Sandbox user-defined Twig templates against injection. [5.9+] |
 
-`asyncCsrfInputs` must be `true` when using full-page static caching (Blitz). Without it, cached pages serve the original CSRF token which is invalid for other users. The `csrfInput()` Twig function outputs a placeholder `<input>` that is populated via AJAX from `actions/users/session-info`.
+`asyncCsrfInputs` [5.1+] must be `true` when using full-page static caching (Blitz). Without it, cached pages serve the original CSRF token which is invalid for other users. The `csrfInput()` Twig function outputs a placeholder `<input>` that is populated via AJAX from `actions/users/session-info`.
 
 `trustedHosts` at `['any']` trusts all proxy headers -- restrict to your actual load balancer IPs in production. When behind a reverse proxy, you must configure `trustedHosts`, `ipHeaders`, and `secureProtocolHeaders` together:
 
@@ -190,7 +190,7 @@ If you change `cpTrigger` mid-project, update bookmarks, external integrations, 
 
 `enableCsrfProtection` + `enableCsrfCookie` interact: the cookie is the storage mechanism for the CSRF token. If you set `enableCsrfCookie(false)`, every page that needs a CSRF token will start a PHP session, which can impact performance and cacheability.
 
-`enableTwigSandbox` restricts what Twig code can do in user-defined templates (e.g., templates entered in CMS fields). It does not affect templates in the `templates/` directory. Extend the allowlists in `config/twig-sandbox.php` (merged over core's defaults). Craft 5.11.4 closed a gap where `attribute()` bypassed `allowedFunctions`: sandboxed content that relied on it needs `'allowedFunctions' => ['attribute']` there. See `email.md` (Twig sandbox).
+`enableTwigSandbox` [5.9+] restricts what Twig code can do in user-defined templates (e.g., templates entered in CMS fields). It does not affect templates in the `templates/` directory. Extend the allowlists in `config/twig-sandbox.php` (merged over core's defaults). [changed 5.11.4] Before 5.11.4, `attribute()` bypassed `allowedFunctions` in sandboxed content; since 5.11.4 it is blocked unless listed, so content that relied on it needs `'allowedFunctions' => ['attribute']` there. See `email.md` (Twig sandbox).
 
 `preventUserEnumeration` makes the forgot-password and login responses identical whether the email/username exists or not. Without it, an attacker can probe which emails have accounts by observing different error messages. Enable this on public-facing sites.
 
@@ -229,7 +229,7 @@ Production security baseline:
 | `deferPublicRegistrationPassword` | `bool` | `false` | Skip password on registration -- users set it after email verification. |
 | `phpSessionName` | `string` | `'CraftSessionId'` | PHP session cookie name. |
 | `showFirstAndLastNameFields` | `bool` | `false` | Show separate first/last name fields instead of single Full Name field. (Since 4.6.0) |
-| `disable2fa` | `bool` | `false` | Disable two-factor authentication entirely. (Since 5.6.0) |
+| `disable2fa` | `bool` | `false` | Disable two-factor authentication entirely. [5.6+] |
 | `extraLastNamePrefixes` | `string[]` | `[]` | Additional last name prefixes for the name parser (e.g., `['van', 'von']`). (Since 4.3.0) |
 | `extraNameSalutations` | `string[]` | `[]` | Additional name salutations for the name parser (e.g., `['Lady', 'Sire']`). (Since 4.3.0) |
 | `extraNameSuffixes` | `string[]` | `[]` | Additional name suffixes for the name parser (e.g., `['CCNA', 'OBE']`). (Since 4.3.0) |
@@ -293,7 +293,7 @@ When `setPasswordPath` is set, you must also set `invalidUserTokenPath` to handl
 
 `activateAccountSuccessPath` and `verifyEmailSuccessPath` are often confused. `activateAccountSuccessPath` is for brand-new users activating their account for the first time. `verifyEmailSuccessPath` is for existing users verifying a changed email address. Both can be set to the same page, but distinguishing them allows for different messaging.
 
-`setPasswordRequestPath` is used by `.well-known/change-password` -- a standard that password managers use to direct users to your site's password change page. Without this setting, the `.well-known/change-password` redirect does not work. Craft 5.11.0 also answers `.well-known/passkey-endpoints` with an empty `{}` -- it advertises passkey support to browsers and password managers without revealing the control panel URL, and there is nothing to configure.
+`setPasswordRequestPath` is used by `.well-known/change-password` -- a standard that password managers use to direct users to your site's password change page. Without this setting, the `.well-known/change-password` redirect does not work. [5.11+] Craft also answers `.well-known/passkey-endpoints` with an empty `{}` -- it advertises passkey support to browsers and password managers without revealing the control panel URL, and there is nothing to configure.
 
 Complete front-end auth flow configuration:
 
@@ -356,7 +356,7 @@ Note: These defaults only apply when no explicit search options are provided in 
 | Setting | Type | Default | Purpose |
 |---------|------|---------|---------|
 | `maxUploadFileSize` | `int\|string` | `16777216` (16 MB) | Max upload size. Accepts int (bytes) or string (`'64M'`). |
-| `allowedFileExtensions` | `string[]` | (~100 extensions; 97 in 5.11, 100 in 5.12) | File extensions allowed for upload. Replaces the entire default list when set. |
+| `allowedFileExtensions` | `string[]` | (~100 extensions [changed 5.12]: 97 before 5.12, 100 since) | File extensions allowed for upload. Replaces the entire default list when set. |
 | `extraAllowedFileExtensions` | `string[]` | `[]` | Additional extensions beyond the default set. Preferred over overriding `allowedFileExtensions`. |
 | `extraFileKinds` | `array` | `[]` | Define custom file categories. Must pair with `extraAllowedFileExtensions`. (Since 3.0.37) |
 | `filenameWordSeparator` | `string\|false` | `'-'` | Separator for words in uploaded filenames. `false` = leave spaces. |
@@ -397,7 +397,7 @@ Note: These defaults only apply when no explicit search options are provided in 
 | `imageDriver` | `mixed` | `'auto'` | Image processing library: `'auto'`, `'gd'`, or `'imagick'`. |
 | `imageEditorRatios` | `array` | (see below) | Selectable aspect ratios in the image editor. Format: `label => ratio`. |
 | `generateTransformsBeforePageLoad` | `bool` | `false` | `true`: generate missing transforms inside the page request. `false`: output a temporary generate URL and queue a fallback job. |
-| `maxCachedCloudImageSize` | `int` | `0` | Max dimension for cached cloud images. `0` = never cache. Default changed from `2000` to `0` in 5.9.0. |
+| `maxCachedCloudImageSize` | `int` | `0` | Max dimension for cached cloud images. `0` = never cache. [changed 5.9] Default was `2000` before 5.9, `0` since. |
 | `optimizeImageFilesize` | `bool` | `true` | Strip unnecessary image data to reduce file size. |
 | `upscaleImages` | `bool` | `true` | Allow transforms to upscale beyond original dimensions. |
 | `rasterizeSvgThumbs` | `bool` | `false` | Rasterize SVG thumbnails. Requires ImageMagick. |
@@ -426,7 +426,7 @@ Default `imageEditorRatios`:
 
 `imageDriver` at `'auto'` prefers ImageMagick when available, falling back to GD. ImageMagick supports more formats and operations (CMYK, EXIF, SVG rasterization). The `preserveCmykColorspace`, `preserveExifData`, and `rasterizeSvgThumbs` settings only work with ImageMagick.
 
-`maxCachedCloudImageSize` was changed from `2000` to `0` in Craft 5.9.0. At `0`, Craft does not create local copies of remote images -- transforms are applied directly by the filesystem (e.g., S3/CloudFront). Set this to a nonzero value only if your cloud filesystem does not support transforms.
+[changed 5.9] `maxCachedCloudImageSize` defaulted to `2000` before 5.9 and defaults to `0` since; set it explicitly if you support both. At `0`, Craft does not create local copies of remote images -- transforms are applied directly by the filesystem (e.g., S3/CloudFront). Set this to a nonzero value only if your cloud filesystem does not support transforms.
 
 `generateTransformsBeforePageLoad` (docs: "Whether image transforms should be generated before page load") decides who generates a missing transform. Behaviour from `ImageTransformer::getTransformUrl()` in 5.11.5.1:
 

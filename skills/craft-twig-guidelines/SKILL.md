@@ -2,9 +2,16 @@
 name: craft-twig-guidelines
 description: "Twig coding standards and conventions for Craft CMS 5 templates. ALWAYS load this skill when writing, editing, or reviewing any .twig file in a Craft CMS project — even for small edits. Covers: variable naming (camelCase, no abbreviations), null handling (?? operator, ??? with empty-coalesce plugin), whitespace control ({%- trimming, NOT {%- minify -%}), include isolation (always use 'only'), Craft Twig helpers ({% tag %}, tag(), attr(), |attr filter, |parseAttr, |append, svg()), collect() for props and class collections, .implode(), comment headers with ========= separators on component files, and common pitfalls (snake_case, macros as components, hardcoded colors)."
 when_to_use: "Triggers on: Twig template creation, editing, or review; .twig files; {% include %} with 'only'; {% tag %} and polymorphic elements; collect() and props.get(); class string building; attr() and |attr filter; svg() with styling and aria; ?? and ??? null coalescing; whitespace control and blank lines in output; minify alternatives; Twig file headers and comment blocks; variable naming conventions in Twig; currentSite, siteUrl, craft.entries, .eagerly(), .collect in template context; |e('js') aggressive escaping (spaces become \\uXXXX), js escaper, grepping escaped translated strings. NOT for Twig architecture patterns, atomic design structure, or template routing (use craft-site). NOT for PHP code (use craft-php-guidelines). NOT for content modeling or field configuration (use craft-content-modeling)."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Twig Coding Standards — Craft CMS 5
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Coding conventions for Twig templates in Craft CMS 5 projects. These apply to
 all Twig code — atomic components, views, layouts, builders, partials.
@@ -263,7 +270,7 @@ For adding content to an element string:
 Combine with `|attr` for classes and aria attributes. Use `|append` for
 accessible labels inside the SVG.
 
-### `url()` with `false` Params (Craft 5.11+)
+### `url()` with `false` Params [5.11+]
 
 Passing `false` as the second argument strips every query-string param from
 an absolute URL. Canonical links, share URLs, and "clear filters" links:
@@ -277,14 +284,17 @@ An array still merges params in; `false` removes them all. The stripping
 only applies when the passed-in URL is absolute, so feed it a full URL, not a
 path. PHP has the same call as `UrlHelper::url($url, false)`, plus
 `UrlHelper::removeParams($url, [...])` and `UrlHelper::removeAllParams($url)`
-for finer control. Before 5.11, rebuild the clean URL with
+for finer control.
+[5.11+] `false` is new. Before 5.11: rebuild the clean URL with
 `siteUrl(craft.app.request.pathInfo)` instead.
 
-### `heading()` / `h()` / `h1()`…`h6()` — Programmatic Headings (Craft 5.10+)
+### `heading()` / `h()` / `h1()`…`h6()` — Programmatic Headings [5.10+]
 
 Build heading tags from a dynamic level without string-concatenation. Useful in
 components that receive a `level` prop and need to render the matching tag
-without doing `tag('h' ~ level, text)` manually.
+without doing `tag('h' ~ level, { text: title })` manually.
+
+`heading()` and `h()` need [5.10+]. Before 5.10: build the tag from the level yourself. `{{ tag('h' ~ level, { text: title }) }}` (`tag()` takes an attributes array; `text` is encoded, `html` is not) or `{% tag 'h' ~ level with { class: 'text-xl' } %}Subsection{% endtag %}`. Don't ship `heading()` / `h()` to a site below 5.10.
 
 ```twig
 {# heading(level, text-or-attributes) — level is an int 1-6 #}
@@ -305,7 +315,7 @@ tracking. Components that need to thread a level across nested contexts still
 pass it as a prop. `heading()` throws `InvalidArgumentException` when level is
 outside 1-6.
 
-### Filter Additions (Craft 5.10+)
+### Filter Additions [5.10+]
 
 ```twig
 {{ price|number(locale: 'de-DE') }}                   {# locale arg #}
@@ -382,7 +392,7 @@ Never use em-dashes (—) or en-dashes (–) in user-facing copy: template text,
 7. **Macros as components** — wrong scoping, no extends/block support.
 8. **Hardcoded colors in class strings** — `bg-yellow-600` → `bg-brand-accent`.
 9. **String concatenation for classes** — `'flex ' ~ extraClass` → use `collect({})` with named keys.
-10. **`is empty` / `|default` on Craft Models (5.10+)** — any `yii\base\Model` (entries, settings, custom models) is now treated as non-empty regardless of its property values. Means `{{ user|default('Guest') }}` always renders the user object; `{% if entry is empty %}` always false. Check the specific property you care about: `{% if entry.title is empty %}`.
+10. **`is empty` / `|default` on Craft Models** [changed 5.10] — from 5.10 any `yii\base\Model` (entries, settings, custom models) is treated as non-empty regardless of its property values; before 5.10 these checks did not treat every model as non-empty. Means `{{ user|default('Guest') }}` always renders the user object; `{% if entry is empty %}` always false. Check the specific property you care about: `{% if entry.title is empty %}`.
 11. **`options.x` pattern** — old macro convention. Use direct variable names.
 12. **Blocks inside conditionals** — `{% if %}{% block foo %}{% endblock %}{% endif %}` is invalid Twig. Blocks are compile-time structures and cannot be conditionally defined. Move the conditional inside the block: `{% block foo %}{% if condition %}...{% endif %}{% endblock %}`.
 13. **Hardcoded `/admin` CP URL** — `cpTrigger` is configurable via `CRAFT_CP_TRIGGER` env var or `cpTrigger` in general.php. Many projects use `cp` instead of `admin`. Use `cpUrl()` function or check `.env` — never hardcode `/admin/`.

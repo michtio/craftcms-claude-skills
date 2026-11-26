@@ -1,0 +1,7 @@
+{
+    "name": "acme/site",
+    "type": "project",
+    "require": {
+        "craftcms/cms": "^5.0.0"
+    }
+}

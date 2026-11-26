@@ -9,6 +9,8 @@ final answer text against regex assertions:
   - must_match:         every group must match; a group is a list of
                         alternatives, any one of which satisfies it
   - must_not_match:     none of these may match
+  - must_not_match_code: none of these may match inside fenced code blocks
+                        (prose may still mention them, e.g. an upgrade note)
   - must_appear_before: [[a, b], ...] inside fenced code blocks only, the
                         first match of a must precede the first match of b;
                         passes when b never appears in code (the answer
@@ -16,7 +18,11 @@ final answer text against regex assertions:
 
 Cases live in evals/behavior-sets/<skill>.json:
   [{"id", "prompt", "must_match": [[...]], "must_not_match": [...],
-    "must_appear_before": [[a, b]]}, ...]
+    "must_appear_before": [[a, b]], "cwd": "evals/fixtures/..."}, ...]
+"cwd" (optional, relative to the repo root) runs the case inside a fixture
+project, so the skills' Craft version detection sees that project; without
+it the case runs in /tmp. --plugin-dir additionally loads this working tree
+as a plugin, which also runs its SessionStart hook.
 
 Because the skills are symlinked from this working tree, a run measures the
 working tree as it is on disk. Run it before an edit for the baseline and
@@ -30,6 +36,8 @@ Run in the FOREGROUND. Each case is a full agentic answer (it may load the
 skill and read references), so expect a minute or two per case.
 """
 
+from __future__ import annotations
+
 import argparse
 import concurrent.futures
 import json
@@ -41,7 +49,11 @@ import sys
 from pathlib import Path
 
 
-def answer(claude_bin: str, prompt: str, timeout: int, max_turns: int) -> tuple[str, set[str], str]:
+REPO = Path(__file__).resolve().parent.parent
+
+
+def answer(claude_bin: str, prompt: str, timeout: int, max_turns: int,
+           cwd: str = "/tmp", plugin_dir: str | None = None) -> tuple[str, set[str], str]:
     """Runs the prompt through claude -p and returns (final text, skills invoked, error)."""
     env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
 
@@ -53,11 +65,13 @@ def answer(claude_bin: str, prompt: str, timeout: int, max_turns: int) -> tuple[
         "--max-turns", str(max_turns),
         "--allowed-tools", "Skill,Read,Grep,Glob",
     ]
+    if plugin_dir:
+        cmd += ["--plugin-dir", plugin_dir]
 
     try:
         proc = subprocess.run(
             cmd, capture_output=True, timeout=timeout, env=env,
-            stdin=subprocess.DEVNULL, cwd="/tmp",
+            stdin=subprocess.DEVNULL, cwd=cwd,
         )
     except subprocess.TimeoutExpired:
         return "", set(), "timeout"
@@ -109,6 +123,10 @@ def score(case: dict, text: str) -> list[str]:
 
     code = "\n".join(re.findall(r"```[^\n]*\n(.*?)```", text, re.S))
 
+    for pattern in case.get("must_not_match_code", []):
+        if re.search(pattern, code, re.I | re.S):
+            failures.append(f"matched forbidden {pattern} in code")
+
     for first, second in case.get("must_appear_before", []):
         b = re.search(second, code, re.I | re.S)
         if not b:
@@ -129,6 +147,7 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=600, help="Per-run subprocess timeout in seconds (default: 600)")
     parser.add_argument("--max-turns", type=int, default=12, help="Agent turns per run (default: 12)")
     parser.add_argument("--claude-bin", default=None, help="Path to the claude binary (default: autodetect via PATH)")
+    parser.add_argument("--plugin-dir", action="store_true", help="Also load this working tree as a plugin (runs its SessionStart hook)")
     args = parser.parse_args()
 
     claude_bin = args.claude_bin or shutil.which("claude") or "/opt/homebrew/bin/claude"
@@ -140,7 +159,9 @@ def main() -> int:
 
     def run(job):
         case, n = job
-        text, skills, err = answer(claude_bin, case["prompt"], args.timeout, args.max_turns)
+        cwd = str(REPO / case["cwd"]) if case.get("cwd") else "/tmp"
+        text, skills, err = answer(claude_bin, case["prompt"], args.timeout, args.max_turns,
+                                   cwd, str(REPO) if args.plugin_dir else None)
         failures = score(case, text) if text else ["no answer text"]
 
         return {

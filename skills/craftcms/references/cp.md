@@ -842,7 +842,7 @@ All macros live in `_includes/forms.twig`. Import with `{% import '_includes/for
 
 Every `*Field` macro wraps its input in a `<div class="field">` with label, instructions, tip, warning, and error display. The non-`Field` variants (e.g., `forms.text` vs `forms.textField`) render just the input — use these when building custom layouts or embedding inputs in other containers.
 
-`instructions`, `tip`, and `warning` all support Markdown — Craft runs each through `Cp::parseMarkdown()` (`instructions` at `Cp.php:1743`; `tip`/`warning` via `Cp::_noticeHtml()`), so inline links and emphasis render. `tip` and `warning` are just the CSS classes `notice` and `warning` on a `<p>` element (`Cp::_noticeHtml()`, `Cp.php:1859-1860`) — their exact appearance is theme-driven, so describe them by role ("a tip" / "a warning"), not by color.
+`instructions`, `tip`, and `warning` all support Markdown — Craft runs each through `Cp::parseMarkdown()` [5.8.3+] (`instructions` at `Cp.php:1743`; `tip`/`warning` via `Cp::_noticeHtml()`), so inline links and emphasis render. `tip` and `warning` are just the CSS classes `notice` and `warning` on a `<p>` element (`Cp::_noticeHtml()`, `Cp.php:1859-1860`) — their exact appearance is theme-driven, so describe them by role ("a tip" / "a warning"), not by color.
 
 ### Common parameters (all field macros)
 
@@ -874,7 +874,7 @@ Every `*Field` macro wraps its input in a `<div class="field">` with label, inst
 | `forms.checkboxField` | Single checkbox | `checked` (bool), `toggle` (CSS selector) |
 | `forms.checkboxGroupField` | Multiple checkboxes | `options`, `values` (array of checked values) |
 | `forms.radioGroupField` | Radio button group | `options`, `value` |
-| `forms.buttonGroupField` | Button-style option selector (exclusive) | `options`, `value` — see [buttonGroupField](#buttongroupfield) |
+| `forms.buttonGroupField` | Button-style option selector (exclusive) [5.8+] | `options`, `value` — see [buttonGroupField](#buttongroupfield) |
 | `forms.selectizeField` | Searchable / taggable select | `options`, `value`, `multi` (bool — tag mode), `selectizeOptions` |
 | `forms.colorField` | Color picker | `value` (hex string) |
 | `forms.dateTimeField` | Date and time picker | `value` (DateTime object or string) |
@@ -955,7 +955,7 @@ The `toggle` param shows/hides another element based on the switch state:
 
 ### buttonGroupField
 
-Exclusive button selector — visually similar to a segmented control. One option active at a time. Renders a `Craft.Listbox` with `aria-pressed` on each button. Use for settings with 2-5 discrete options where radio buttons feel too heavy.
+[5.8+] Exclusive button selector — visually similar to a segmented control. One option active at a time. Renders a `Craft.Listbox` with `aria-pressed` on each button. Use for settings with 2-5 discrete options where radio buttons feel too heavy.
 
 ```twig
 {{ forms.buttonGroupField({
@@ -971,7 +971,7 @@ Exclusive button selector — visually similar to a segmented control. One optio
 }) }}
 ```
 
-Options can be a flat hash (`{ value: label }`) or an array of objects with `label`, `value`, and optional `class`:
+[5.8+] Options can be a flat hash (`{ value: label }`) or an array of objects with `label`, `value`, and optional `class`:
 
 ```twig
 {{ forms.buttonGroupField({
@@ -987,9 +987,9 @@ Options can be a flat hash (`{ value: label }`) or an array of objects with `lab
 }) }}
 ```
 
-Server-side, the POST value is the selected option's `value` string. The raw variant (`forms.buttonGroup`) renders without the field wrapper — use it inside custom layouts or inline with other inputs.
+Server-side, the POST value is the selected option's `value` string. The raw variant (`forms.buttonGroup`) [5.8+] renders without the field wrapper — use it inside custom layouts or inline with other inputs.
 
-`buttonGroupField` is for simple exclusive selects (display mode, priority level). It is **not** the right tool for tri-state inheritance controls (off/inherit/on) — its hidden input doesn't distinguish empty (inherit) from explicit values, and the uniform button styling doesn't convey state semantics. For inheritance UI, use the webhook table pattern below.
+`buttonGroupField` [5.8+] is for simple exclusive selects (display mode, priority level). It is **not** the right tool for tri-state inheritance controls (off/inherit/on) — its hidden input doesn't distinguish empty (inherit) from explicit values, and the uniform button styling doesn't convey state semantics. For inheritance UI, use the webhook table pattern below.
 
 ### Lightswitch vs checkbox
 
@@ -1298,7 +1298,7 @@ Pass `readOnly` to the template and use it to disable inputs and hide save butto
 
 ### Read-only notice
 
-Show a notice at the top of the page so admins understand why they can't edit. Craft ships a helper for exactly this: the CP Twig function `readOnlyNotice()` (registered in `craft\web\twig\CpExtension`, backed by `Cp::readOnlyNoticeHtml()`), consumed via the `contentNotice` variable that `_layouts/cp` renders in the pane header. This is what core's own settings screens do (e.g. `src/templates/settings/plugins/_settings.twig`):
+Show a notice at the top of the page so admins understand why they can't edit. Craft ships a helper for exactly this: the CP Twig function `readOnlyNotice()` (registered in `craft\web\twig\CpExtension`, backed by `Cp::readOnlyNoticeHtml()` [5.6+]), consumed via the `contentNotice` variable that `_layouts/cp` renders in the pane header. This is what core's own settings screens do (e.g. `src/templates/settings/plugins/_settings.twig`):
 
 ```twig
 {% if readOnly %}

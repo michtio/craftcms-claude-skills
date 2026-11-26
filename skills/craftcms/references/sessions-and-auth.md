@@ -11,7 +11,7 @@ How Craft CMS 5's session and authentication system works under the hood: the du
 
 - Assuming `passwordResetRequired = true` forces immediate logout — it does not. The flag is only checked during authentication (login flow), not on every request. A user with an active session continues normally until the session expires.
 - Thinking Redis/Memcached session storage replaces DB tokens — Craft maintains auth tokens in `Table::SESSIONS` (database) regardless of the PHP session backend. Deleting DB rows invalidates sessions even when PHP sessions live in Redis.
-- Calling `Craft::$app->getUser()->logout()` to invalidate other sessions — this only logs out the current user. On Craft 5.11.4+ call `Craft::$app->getUsers()->destroyOtherSessions($user)` (spares the current request's session only when `$user` is the logged-in user); to kill every session including the current one, or on earlier 5.x, delete their rows from `Table::SESSIONS`.
+- Calling `Craft::$app->getUser()->logout()` to invalidate other sessions — this only logs out the current user. [5.11.4+] Call `Craft::$app->getUsers()->destroyOtherSessions($user)` (spares the current request's session only when `$user` is the logged-in user). Before 5.11.4, or to kill every session including the current one, delete their rows from `Table::SESSIONS`.
 - Setting `elevatedSessionDuration` to `0` in production — this disables the password re-entry requirement for sensitive operations entirely. `getHasElevatedSession()` always returns `true`.
 - Not understanding that `securityKey` change invalidates everything — changing `CRAFT_SECURITY_KEY` invalidates all sessions, password reset tokens, and encrypted field values across all users.
 - Reading `$user->lastPasswordChangeDate` from an element query and getting `null` — `UserQuery::beforePrepare()` intentionally excludes security-sensitive columns (`lastPasswordChangeDate`, `password`, `invalidLoginCount`, `lastInvalidLoginDate`, `verificationCode`, `verificationCodeIssuedDate`, `lastLoginAttemptIp`). Query `Table::USERS` directly: `(new Query())->from(Table::USERS)->where(['id' => $user->id])->one()`.
@@ -41,7 +41,7 @@ The standard PHP session mechanism, stored via whatever backend is configured:
 | Files (default) | No config needed | `craft\web\Session` handles it |
 | Redis | `config/app.web.php` | Requires `yii2-redis` package |
 | Memcached | `config/app.web.php` | Requires `yii2-memcached` package |
-| Database | `config/app.web.php` | `craft\web\DbSession` (5.11+; `yii\web\DbSession` before, which logs "headers already sent" warnings). `Table::PHPSESSIONS` (`{{%phpsessions}}`) is created by `craft setup/php-session-table`, not on install. See `config-app.md`. |
+| Database | `config/app.web.php` | `craft\web\DbSession` [5.11+] (Before 5.11: `yii\web\DbSession`, which logs "headers already sent" warnings). `Table::PHPSESSIONS` (`{{%phpsessions}}`) is created by `craft setup/php-session-table`, not on install. See `config-app.md`. |
 
 PHP sessions hold transient data: flash messages, return URLs, CSRF tokens, form data. They are tied to the browser's session cookie (`CraftSessionId` by default).
 
@@ -109,7 +109,7 @@ Craft checks the `dateUpdated` column against `userSessionDuration` (or `remembe
 When a user's password changes (either self-service or admin-initiated), Craft automatically invalidates all other sessions for that user:
 
 1. During `User::afterSave()`, Craft detects the password changed (and the user isn't new)
-2. Deletes that user's rows from `Table::SESSIONS` — since 5.11.4 by calling `Users::destroyOtherSessions($user)`, before that inline with the same condition
+2. Deletes that user's rows from `Table::SESSIONS` — [5.11.4+] by calling `Users::destroyOtherSessions($user)`. Before 5.11.4: inline with the same condition
 3. The current request's token is spared **only when the saved user is the logged-in user** (`$user->getIsCurrent()`). An admin changing someone else's password deletes *all* of that user's sessions
 4. Result: every other browser/device is immediately logged out on next request
 
@@ -121,7 +121,7 @@ This is automatic — no plugin code needed for password-change invalidation.
 - Admin changes a user's password via their edit screen
 - Password reset flow (user clicks reset link, enters new password)
 - Programmatic: setting `$user->newPassword` and saving
-- Setting up a two-step verification method (Craft 5.11.4+): `Auth::verify()` calls `destroyOtherSessions()` when a method goes from inactive to active, because sessions established before the stronger factor can't be trusted
+- Setting up a two-step verification method [5.11.4+]: `Auth::verify()` calls `destroyOtherSessions()` when a method goes from inactive to active, because sessions established before the stronger factor can't be trusted
 
 ### What does NOT trigger this
 
@@ -194,7 +194,7 @@ Built-in operations that call `requireElevatedSession()`:
 - Managing user groups and permissions
 - Editing GraphQL schemas and tokens
 - Plugin settings changes (when `$requireAdmin` is true)
-- Deleting a passkey (`auth/delete-passkey`, Craft 5.11.4+; before that it needed only a logged-in CP session)
+- Deleting a passkey (`auth/delete-passkey`) [changed 5.11.4]: Before 5.11.4 it needed only a logged-in CP session; now it requires an elevated session
 
 Plugins should call `$this->requireElevatedSession()` in controller actions that modify authentication state, security settings, or access controls.
 
@@ -231,7 +231,7 @@ return !$this->getIsGuest();
 
 The return value is `!getIsGuest()` — **not** whether `beforeLogin()` passed. The actor performing the impersonation is already authenticated, so they are not a guest, so `login()` returns `true` **whether the veto fired or not**. Craft's rollback branch is unreachable in the veto case.
 
-Result: the veto correctly prevents the identity switch, but `__impersonator_id` stays in the session. On the next request `User::getImpersonator()` resolves a real impersonator, and Craft behaves as though an impersonation is in progress — the CP shows the impersonation banner and the "return to your account" flow performs a bogus redirect.
+Result: the veto correctly prevents the identity switch, but `__impersonator_id` stays in the session. On the next request `User::getImpersonator()` [5.6+] resolves a real impersonator, and Craft behaves as though an impersonation is in progress — the CP shows the impersonation banner and the "return to your account" flow performs a bogus redirect.
 
 Clear it at the veto point:
 
@@ -295,7 +295,7 @@ public function invalidateAllSessions(int $userId): void
 
 ### Invalidating all sessions except current
 
-On Craft 5.11.4+ use core: `Craft::$app->getUsers()->destroyOtherSessions($user)`. It takes the `User` element, not an ID, and leaves the current request's session alone only when `$user` is the logged-in user on a web request. Call it after any security-sensitive account change your plugin makes (new auth factor, recovery email swap, API credential rotation). The hand-rolled version below is the pre-5.11.4 equivalent:
+[5.11.4+] Use core: `Craft::$app->getUsers()->destroyOtherSessions($user)`. It takes the `User` element, not an ID, and leaves the current request's session alone only when `$user` is the logged-in user on a web request. Call it after any security-sensitive account change your plugin makes (new auth factor, recovery email swap, API credential rotation). Before 5.11.4, use the hand-rolled equivalent below:
 
 ```php
 use craft\db\Table;

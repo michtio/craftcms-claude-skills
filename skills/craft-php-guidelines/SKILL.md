@@ -2,9 +2,16 @@
 name: craft-php-guidelines
 description: "Craft CMS 5 PHP coding standards and conventions. ALWAYS load when writing, editing, reviewing, or discussing any PHP in a Craft plugin or module — even small edits. Also when running ECS, PHPStan, or scaffolding with ddev craft make. Covers: PHPDoc blocks (@author, @since, @throws chains), section headers (=========), class organization, naming conventions (services, queue jobs, records, events, enums), defineRules() and validation, beforePrepare() and addSelect(), MemoizableArray, DateTimeHelper vs Carbon, strict_types/declare(strict_types=1), short nullable notation (?string), typed properties, void returns, control flow (early returns, match over switch), CP Twig template conventions, form macros, translations (Craft::t), ECS/PHPStan config, scaffolding commands, and the verification checklist."
 when_to_use: "Triggers on: writing service classes, models, controllers, elements, element queries, records, queue jobs, migrations, or any PHP class in a Craft context; PHP code review, refactoring, or style questions; requireAdmin vs requirePermission, manage-settings, settings permission, kebab-case permission handles never camelCase, allowAdminChanges, read-only settings, getCpNavItem dead nav item, permission handle constant on owning controller, App::env() never getenv(), App::parseEnv() for $VAR settings, no-em-dash user-facing copy. NOT for front-end Twig (craft-twig-guidelines), template architecture (craft-site), or CP JavaScript/Garnish (craft-garnish). If you are touching PHP in a Craft context, you need this skill."
+allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 ---
 
 # Craft CMS 5 PHP Guidelines
+
+## Craft Version of This Project
+
+!`sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh`
+
+If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
 Complete PHP coding standards and conventions for Craft CMS 5 plugin and module development. These extend Craft's official coding guidelines with project-specific conventions.
 
@@ -118,8 +125,8 @@ Only include sections that have content. Blank line after the separator, before 
 ## Environment Access
 
 - **`craft\helpers\App::env('VAR')`, never `getenv()`** — in plugin code AND in every config-file example that appears in docs. `getenv()` is not thread-safe, returns `string|false`, and skips values only present in `$_SERVER`; `App::env()` is Craft's own convention, normalizes `'true'`/`'false'` to booleans, and is what core docs show. A config example gets the `use craft\helpers\App;` line.
-- `App::parseEnv()` when the stored value may be a `$VAR` reference or an alias (settings-model getters resolving env-able fields). It resolves a whole-string `$VAR`, a `$VAR/subpath` (5.5+), a `$VAR` in any slash-delimited segment or `${VAR}` anywhere in the string (5.9+); nothing else. Since 5.11.0 a `$` inside free text (`"$58 million"`) is left untouched; 5.0–5.10 stripped the unresolved token out of the string (craftcms/cms#19522), so don't route arbitrary user copy through it on a pre-5.11 install.
-- `Craft::$app->getConfig()->doesEnvVarExist('NAME')` (5.11.0+) before offering to write a variable to the project's `.env`. It greps the file, so it answers "declared in `.env`", not "set in the environment"; use `App::env()` for the latter.
+- `App::parseEnv()` when the stored value may be a `$VAR` reference or an alias (settings-model getters resolving env-able fields). It resolves a whole-string `$VAR`, a `$VAR/subpath` [5.5+], a `$VAR` in any slash-delimited segment or `${VAR}` anywhere in the string [5.9+]; nothing else. [changed 5.11] Before 5.11, a `$` inside free text (`"$58 million"`) had its unresolved token stripped out of the string (craftcms/cms#19522); now it is left untouched. When supporting both, don't route arbitrary user copy through it.
+- `Craft::$app->getConfig()->doesEnvVarExist('NAME')` [5.11+] before offering to write a variable to the project's `.env`. It greps the file, so it answers "declared in `.env`", not "set in the environment"; use `App::env()` for the latter.
 
 ## Database Conventions
 

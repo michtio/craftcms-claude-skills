@@ -27,7 +27,7 @@ Source (the timing and cost claims below come from here):
 - Resave job: https://github.com/nystudio107/craft-imageoptimize/blob/5.0.8/src/jobs/ResaveOptimizedImages.php
 - Console commands: https://github.com/nystudio107/craft-imageoptimize/blob/5.0.8/src/console/controllers/OptimizeController.php
 - Transform methods: https://github.com/nystudio107/craft-imageoptimize-imgix/blob/5.0.0/src/imagetransforms/ImgixImageTransform.php, https://github.com/nystudio107/craft-imageoptimize-sharp/blob/5.0.0/src/imagetransforms/SharpImageTransform.php, https://github.com/nystudio107/craft-imageoptimize-thumbor/blob/5.0.0/src/imagetransforms/ThumborImageTransform.php
-- Craft side (`craftcms/cms` 5.11.5.1): https://github.com/craftcms/cms/blob/5.11.5.1/src/imagetransforms/ImageTransformer.php, https://github.com/craftcms/cms/blob/5.11.5.1/src/queue/Queue.php, https://github.com/craftcms/cms/blob/5.11.5.1/src/services/TemplateCaches.php
+- Craft side (`craftcms/cms` at ref=5.11.5.1): https://github.com/craftcms/cms/blob/5.11.5.1/src/imagetransforms/ImageTransformer.php, https://github.com/craftcms/cms/blob/5.11.5.1/src/queue/Queue.php, https://github.com/craftcms/cms/blob/5.11.5.1/src/services/TemplateCaches.php
 - Craft config: https://craftcms.com/docs/5.x/reference/config/general.html#generatetransformsbeforepageload and https://craftcms.com/docs/5.x/reference/config/general.html#runqueueautomatically
 
 When unsure about an ImageOptimize feature, read the source at the installed tag (`vendor/nystudio107/craft-imageoptimize/src/`) before the docs. The docs still carry Craft 3-era wording in places, and see [Docs vs Source](#docs-vs-source).
@@ -215,7 +215,7 @@ All of it runs in the queue job. In Twig, `createOptimizedImages(asset, variants
 
 ### Settings that decide timing
 
-`config/image-optimize.php` (multi-environment). Defaults are from `Settings.php` / `config.php` at 5.0.8.
+`config/image-optimize.php` (multi-environment). Defaults are from `Settings.php` / `config.php` at v5.0.8.
 
 | Setting | Default | What it controls |
 |---------|---------|------------------|
@@ -280,7 +280,7 @@ Does switching Craft's `generateTransformsBeforePageLoad` to `false` change Imag
 
 ## Docs vs Source
 
-Where they disagree, the source at 5.0.8 wins:
+Where they disagree, the source at v5.0.8 wins:
 
 - configuring.md says imgix is used "for all Asset URLs, including the original image". Source: `Optimize::handleGetAssetUrlEvent()` returns `null` ("let Craft handle it") when no transform is requested, so untransformed originals keep Craft's own URL with every remote method.
 - using.md says "by default the generation of the dominant color palette and the generation of the placeholder silhouette are off". That is true only for `createOptimizedImages()` in Twig. For the field, `createColorPalette` defaults to `true` (`Settings.php`).

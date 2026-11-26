@@ -90,7 +90,7 @@ Changing `slugWordSeparator` or `limitAutoSlugsToAscii` mid-project does NOT upd
 | `maxBackups` | `int\|false` | `20` | Max DB backups before oldest deleted. `false` = keep all. |
 | `backupOnUpdate` | `bool` | `true` | Auto-backup DB before updates. |
 | `backupCommand` | `string\|null\|false\|Closure` | `null` | Custom DB backup command. Supports `{file}`, `{port}`, `{server}`, `{user}`, `{password}`, `{database}`, `{schema}` placeholders. `false` to disable backups. |
-| `backupCommandFormat` | `?string` | `null` | PostgreSQL backup format: `custom`, `directory`, `tar`, `plain`. No effect on MySQL. (Since 5.1.0) |
+| `backupCommandFormat` | `?string` | `null` | PostgreSQL backup format: `custom`, `directory`, `tar`, `plain`. No effect on MySQL. [5.1+] |
 | `restoreCommand` | `string\|null\|false\|Closure` | `null` | Custom DB restore command. Same placeholders as `backupCommand`. `false` to disable restores. |
 | `useFileLocks` | `?bool` | `null` | Use `LOCK_EX` when writing files. Set `false` on NFS. `null` = auto-detect. |
 
@@ -125,7 +125,7 @@ Example custom backup command for MySQL with compression:
 ->backupCommand('mysqldump -h {server} -P {port} -u {user} -p{password} {database} | gzip > {file}')
 ```
 
-`backupCommandFormat` only applies to PostgreSQL. The `custom` format is recommended for large databases as it supports parallel restore:
+`backupCommandFormat` [5.1+] only applies to PostgreSQL. The `custom` format is recommended for large databases as it supports parallel restore:
 
 ```php
 ->backupCommandFormat('custom')
@@ -248,24 +248,24 @@ Brief entries -- see `headless.md` for production guidance, token management, an
 | `maxGraphqlComplexity` | `int` | `0` | Max query complexity. `0` = unlimited -- set a limit in production. |
 | `maxGraphqlDepth` | `int` | `0` | Max query depth. `0` = unlimited -- set a limit in production. |
 | `maxGraphqlResults` | `int` | `0` | Max results per query. `0` = unlimited. |
-| `allowedGraphqlOrigins` | `array\|null\|false` | `null` | CORS origins for GraphQL. Deprecated since 4.11.0 -- use `craft\filters\Cors`. |
+| `allowedGraphqlOrigins` | `array\|null\|false` | `null` | CORS origins for GraphQL. [deprecated 5.3] -- use `craft\filters\Cors` [5.3+]. |
 | `gqlTypePrefix` | `string` | `''` | Prefix for all GraphQL type names. |
 | `prefixGqlRootTypes` | `bool` | `true` | Apply `gqlTypePrefix` to root `query`, `mutation`, `subscription` types. (Since 3.6.6) |
 | `setGraphqlDatesToSystemTimeZone` | `bool` | `false` | Return GraphQL date values in system timezone instead of UTC. |
-| `lazyGqlTypes` | `bool` | `false` | Lazily load GraphQL types to reduce memory on large schemas. (Since 5.3.0) |
-| `disableGraphqlTransformDirective` | `bool` | `false` | Disable `@transform` directive globally. Deprecated since 5.9.0 -- use per-schema settings. |
+| `lazyGqlTypes` | `bool` | `false` | Lazily load GraphQL types to reduce memory on large schemas. [5.3+] |
+| `disableGraphqlTransformDirective` | `bool` | `false` | Disable `@transform` directive globally. [deprecated 5.9] -- use per-schema settings. |
 
 All `maxGraphql*` settings default to `0` (unlimited). In production, set nonzero values to prevent denial-of-service through expensive queries. Recommended starting points: `batchSize: 10`, `complexity: 500`, `depth: 10`, `results: 1000`.
 
 `enableGraphqlIntrospection` at `true` allows clients to discover the schema structure. Disable in production if you don't want the schema exposed to unauthenticated requests. Introspection is always available in the CP's GraphiQL playground regardless.
 
-`lazyGqlTypes` at `true` defers loading GraphQL type definitions until they are actually requested. On schemas with many sections, volumes, and fields, this significantly reduces memory usage and startup time. (Since 5.3.0)
+`lazyGqlTypes` at `true` defers loading GraphQL type definitions until they are actually requested. On schemas with many sections, volumes, and fields, this significantly reduces memory usage and startup time. [5.3+]
 
 `setGraphqlDatesToSystemTimeZone` at `true` returns dates in the system timezone instead of UTC. This can simplify front-end date handling but breaks the convention that APIs return UTC. Document the behavior clearly for API consumers.
 
 `gqlTypePrefix` adds a prefix to all type names. Useful when multiple Craft instances share a federated GraphQL schema and type names would otherwise collide. `prefixGqlRootTypes` controls whether the root types (`query`, `mutation`) also get the prefix.
 
-`allowedGraphqlOrigins` is deprecated since 4.11.0. Use the `craft\filters\Cors` behavior in `config/app.web.php` instead. The filter provides more control (applies to all endpoints, not just GraphQL) and follows the standard Yii2 filter pattern. See `headless.md` for CORS configuration examples.
+`allowedGraphqlOrigins` is [deprecated 5.3]. Use the `craft\filters\Cors` [5.3+] behavior in `config/app.web.php` instead. The filter provides more control (applies to all endpoints, not just GraphQL) and follows the standard Yii2 filter pattern. See `headless.md` for CORS configuration examples.
 
 Production GraphQL hardening:
 
@@ -328,7 +328,7 @@ Note: The front-end application must include the iFrame Resizer content window s
 | `devMode` | `bool` | `false` | Verbose errors, debug toolbar, expanded logging. |
 | `disallowRobots` | `bool` | `false` | Send `X-Robots-Tag: none`. Auto-enabled when `devMode` is on. |
 | `testToEmailAddress` | `mixed` | `null` | Redirect all system emails to this address. Accepts string or array. |
-| `useIdnaNontransitionalToUnicode` | `bool` | `false` | IDNA nontransitional flag for email Unicode conversion. (Since 5.9.0) |
+| `useIdnaNontransitionalToUnicode` | `bool` | `false` | IDNA nontransitional flag for email Unicode conversion. [5.9+] |
 
 `devMode` does several things simultaneously: enables verbose error pages with stack traces, enables the Yii debug toolbar, expands logging to include every SQL query and template render, sets the `X-Robots-Tag: none` header, and disables template caching by default. In production, this exposes sensitive information and generates enormous log files.
 
@@ -365,17 +365,17 @@ Settings that interact in non-obvious ways:
 
 - **`devMode` auto-enables `disallowRobots`** -- even if you explicitly set `disallowRobots(false)`, `devMode(true)` overrides it.
 - **`headlessMode` requires `baseCpUrl`** when CP and site are on different domains -- without it, the CP generates incorrect action URLs, form submissions, and asset URLs.
-- **`allowAdminChanges` vs `safeMode`** -- `safeMode` is stricter, disables plugins entirely. `allowAdminChanges(false)` only prevents schema changes. Do not confuse the two.
-- **`asyncCsrfInputs` must be `true` with full-page static caching** (Blitz) -- otherwise cached pages serve stale CSRF tokens that fail validation on form submission.
+- **`allowAdminChanges` vs `safeMode`** -- `safeMode` [5.1+] is stricter, disables plugins entirely. `allowAdminChanges(false)` only prevents schema changes. Do not confuse the two.
+- **`asyncCsrfInputs` [5.1+] must be `true` with full-page static caching** (Blitz) -- otherwise cached pages serve stale CSRF tokens that fail validation on form submission.
 - **`runQueueAutomatically(false)` requires a separate daemon** -- `craft queue/listen` or a cron job running `craft queue/run`. Without it, queued jobs (transforms, search index updates, email) never execute.
 - **`enableCsrfProtection` + `enableCsrfCookie`** -- the cookie is the storage mechanism. `enableCsrfCookie(false)` forces session-based CSRF storage, requiring a session start on every page that calls `csrfInput()`.
 - **`trustedHosts` + `ipHeaders` + `secureProtocolHeaders`** -- all three must be configured together behind a reverse proxy. Misconfiguring one while setting another leads to incorrect IP detection or HTTPS detection failures.
-- **`staticStatuses` + scheduled publishing** -- statuses won't update dynamically, so scheduled entries won't go live until the `update-statuses` command runs on cron. (Since 5.7.0)
+- **`staticStatuses` + scheduled publishing** -- statuses won't update dynamically, so scheduled entries won't go live until the `update-statuses` command runs on cron. [5.7+]
 - **`allowUpdates` auto-disabled by `allowAdminChanges(false)`** -- even if you explicitly set `allowUpdates(true)`, it has no effect when `allowAdminChanges` is `false`.
 - **`softDeleteDuration(0)` is "never hard-delete"** -- soft-deleted items stay in the DB indefinitely. This is the opposite of what many developers expect (they think `0` means "delete immediately").
 - **`preloadSingles` requires clearing compiled templates** -- changing this setting has no effect until you clear caches from the CP Caches utility.
 - **`generateTransformsBeforePageLoad` + high-traffic pages** -- transforms generated inline block the request. On first load after a cache clear, this can cause request timeouts if the page references many transforms. With `false` (default), every missing transform also queues a job, and with `runQueueAutomatically` on, a site request that queued one gets an inline queue-runner `<script>` with no nonce injected before `</body>`. A strict CSP blocks it.
-- **`maxCachedCloudImageSize` changed default in 5.9.0** -- upgrading to 5.9+ silently changes behavior from caching cloud images at 2000px to not caching them at all. If you relied on the old behavior, set explicitly.
+- **`maxCachedCloudImageSize` changed default** [changed 5.9] -- before 5.9 cloud images were cached at 2000px; since 5.9 they are not cached at all (default `0`), so upgrading silently changes behavior. If you relied on the old behavior, or support both, set it explicitly.
 - **`headlessMode` ignores `loginPath`, `logoutPath`, `setPasswordPath`** -- these front-end paths are not registered, so auth flows must be handled by the front-end application and API calls.
 - **`disabledPlugins` per-environment causes schema mismatches** -- if a plugin is disabled in staging but enabled in production, their schema versions diverge and `project.yaml` changes can't be applied cleanly.
 - **`enableGql(false)` does not remove the GraphQL endpoint route** -- it returns a 400 error instead of a 404. To fully hide the endpoint, also configure `allowedGraphqlOrigins(false)` or remove it via Cors filter.

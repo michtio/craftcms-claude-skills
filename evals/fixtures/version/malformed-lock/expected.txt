@@ -1,0 +1,1 @@
+Craft project (site): Craft version unknown (no readable composer.lock; composer.json requires craftcms/cms ^5.0.0). Check composer.lock or ask before version-specific advice.

@@ -13,7 +13,7 @@ How to send email from Craft CMS 5: system messages, custom messages, programmat
 - Hardcoding `fromEmail` — use `Craft::$app->getProjectConfig()->get('email.fromEmail')` or let the Mailer component handle defaults.
 - Forgetting that system message bodies are rendered as Markdown — HTML tags work, but the body goes through Twig then Markdown (GFM) then the HTML wrapper template.
 - Assuming `SentMessage::getMessage()->toString()` reflects the current message — it's a clone frozen at construction, so post-construction mutations are invisible. Custom transports must serialize after any mutating event, and never reuse an earlier serialization. See [Custom transports](#custom-transports-sentmessage-freezes-the-message-at-construction).
-- Not accounting for per-site email overrides (since 5.6.0) — multi-site installs can have different `fromEmail`, `fromName`, `replyToEmail`, and HTML templates per site.
+- Not accounting for per-site email overrides [5.6+] — multi-site installs can have different `fromEmail`, `fromName`, `replyToEmail`, and HTML templates per site.
 
 ## Contents
 
@@ -184,7 +184,7 @@ class SendNotification extends BaseJob
 | `setHtmlBody()` | `string` | |
 | `setTextBody()` | `string` | Auto-generated from HTML if omitted |
 
-### Per-site email overrides (since 5.6.0)
+### Per-site email overrides [5.6+]
 
 `Mailer::$siteOverrides` allows different `fromEmail`, `fromName`, `replyToEmail`, and HTML template per site. Overrides are keyed by site UID:
 
@@ -224,14 +224,14 @@ Custom template: Set at **Settings > Email > HTML Email Template** (path relativ
 | `user` | `User` | Recipient |
 | `language` | `string` | Message language |
 
-Per-site template overrides are available since Craft 5.6.
+[5.6+] Per-site template overrides are available.
 
 ### Twig sandbox
 
-When `enableTwigSandbox` is enabled in general config, system messages render in a restricted Twig environment. Customizable via `config/twig-sandbox.php`, which is `ArrayHelper::merge()`d over core's `src/config/twig-sandbox.php`, so a list like `'allowedFunctions' => ['attribute']` appends to the defaults rather than replacing them.
+When `enableTwigSandbox` [5.9+] is enabled in general config, system messages render in a restricted Twig environment. Customizable via `config/twig-sandbox.php`, which is `ArrayHelper::merge()`d over core's `src/config/twig-sandbox.php`, so a list like `'allowedFunctions' => ['attribute']` appends to the defaults rather than replacing them.
 
-- **`attribute()` is enforced from Craft 5.11.4.** Earlier versions let `attribute()` through even though it isn't in the default `allowedFunctions`; a sandboxed message using it now throws until you add it.
-- **`create()` is refused in every string template** (system messages included) from 5.11.4, sandbox or not.
+- **`attribute()` is enforced** [changed 5.11.4]. Before 5.11.4, `attribute()` went through even though it isn't in the default `allowedFunctions`; now a sandboxed message using it throws until you add it. When supporting both, add `attribute` to `allowedFunctions` in `config/twig-sandbox.php`.
+- **`create()` is refused in every string template** (system messages included), sandbox or not [changed 5.11.4].
 
 ## Testing Email
 

@@ -21,7 +21,7 @@ When unsure about a Navigation feature, `WebFetch` the docs.
 - Rendering with `craft.navigation.render()` then fighting the HTML — the render function outputs complete `<ul><li>` markup. If you need custom HTML, query nodes and build your own markup instead.
 - Not handling external URLs vs entry-linked nodes — some nodes link to entries (have an element), others are manual URLs. Template code must handle both.
 - Caching navigation without invalidation — navigation rarely changes, but when it does, cached markup is stale. Use `{% cache %}` with a key, or use Blitz which auto-invalidates.
-- Running below 4.0.7 — 4.0.4 closed an information-disclosure advisory, 4.0.5 stopped legacy `{siteUrl}` tokens and invalid author-entered URL templates from erroring on the front end, and 4.0.7 hides menu settings in the builder when `allowAdminChanges` is off (before that they stayed editable on production).
+- Running below [navigation 4.0.7+] — 4.0.4 closed an information-disclosure advisory, 4.0.5 stopped legacy `{siteUrl}` tokens and invalid author-entered URL templates from erroring on the front end, and 4.0.7 hides menu settings in the builder when `allowAdminChanges` is off (before that they stayed editable on production).
 
 ## Twig API
 

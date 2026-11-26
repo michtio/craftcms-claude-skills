@@ -14,7 +14,7 @@ How Craft CMS 5's mini-template system works in CP settings fields: URI formats,
 - Using `{id}` in asset subpaths — `{id}` changes per draft. Use `{canonicalId}` for stable paths that survive draft/revision cycles.
 - Thinking changing an asset subpath format moves existing files — it does not. Existing assets remain at their original filesystem path and become orphaned from the new subpath logic. Migration is manual.
 - Expecting errors at save time — object templates are validated at **render time** (when an element is saved or asset is uploaded), not when the CP settings form is saved.
-- Calling `create()` in a title format, URI format, subpath, or anything they `include` — Craft 5.11.4+ throws `create() cannot be used in string or object templates.` (`View::getIsRenderingStringTemplate()`), so a format that worked on 5.11.3 fails on the next save. Move the logic into a generated field, a Twig extension function, or a template partial rendered from the filesystem.
+- Calling `create()` in a title format, URI format, subpath, or anything they `include` — [changed 5.11.4] Craft now throws `create() cannot be used in string or object templates.` (`View::getIsRenderingStringTemplate()`), so a format that worked before 5.11.4 fails on the next save. Move the logic into a generated field, a Twig extension function, or a template partial rendered from the filesystem.
 
 ## Contents
 
@@ -76,7 +76,7 @@ Both syntaxes go through `craft\web\View::renderObjectTemplate()`. The shortcut 
 | **URI format** | Section site settings | `blog/{slug}` |
 | **Title format** | Entry type settings (when title field is hidden) | `{author.fullName} - {postDate\|date('Y-m-d')}` |
 | **Slug format** | Entry type settings | `{title}` (default) |
-| **uiLabelFormat** | Entry type settings (5.9.0) | `{title} ({status})` |
+| **uiLabelFormat** | Entry type settings [5.9+] | `{title} ({status})` |
 | **Asset upload subpath** | Asset field "Upload Location" | `uploads/{owner.section.handle}/{owner.slug}` |
 | **Asset filename format** | Volume settings | `{slug}-{width}x{height}` |
 | **Preview target URL** | Section preview targets | `https://app.example.com/preview?token={token}&slug={slug}` |
@@ -150,7 +150,7 @@ Available on nested entries. Returns the full parent element with all its attrib
 {owner.myCustomField}      →  parent entry's custom field value
 ```
 
-### rootOwner (top-level ancestor, since 5.4.0)
+### rootOwner [5.4+] (top-level ancestor)
 
 For deeply nested elements (Matrix inside Matrix, etc.), `rootOwner` walks the ownership chain to the top-level canonical entry.
 
@@ -274,7 +274,7 @@ When the asset field is inside a Matrix, the context element is the **Matrix nes
 
 ### What triggers "Invalid subpath" errors
 
-`Assets::resolveSubpath()` throws `InvalidSubpathException` when:
+`Assets::resolveSubpath()` [5.9+] throws `InvalidSubpathException` when:
 - Template rendering fails (Twig syntax error)
 - Rendered result is empty after trimming
 - Result contains whitespace

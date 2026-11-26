@@ -472,7 +472,7 @@ var select = new Garnish.Select($container, $items, {
 | `filter` | `null` | Filter function or selector for valid click targets |
 | `checkboxMode` | `false` | Checkbox-style toggle (Ctrl not required) |
 | `makeFocusable` | `false` | Add `tabindex="0"` to focused item |
-| `waitForDoubleClicks` | `false` | Delay deselection to distinguish double-clicks |
+| `waitForDoubleClicks` | `false` | [5.2+] Delay deselection to distinguish double-clicks |
 | `onSelectionChange` | `$.noop` | Callback |
 
 ### Key Methods
