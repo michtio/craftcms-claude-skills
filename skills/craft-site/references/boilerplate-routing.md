@@ -28,6 +28,7 @@
 - [Views](#views)
 - [Builders](#builders)
 - [Template Directory Structure](#template-directory-structure)
+- [Routing Conventions](#routing-conventions)
 
 ## How Craft Connects to the Template Chain
 
@@ -462,3 +463,11 @@ they follow the plural naming convention.
 - Variants: `component--variant.twig` (no underscore).
 - Routers: `router--{context}.twig`.
 - Views: `view--{type}-{context}.twig`.
+
+## Routing Conventions
+
+PHP handles data, Twig handles presentation. Views receive data through includes — they never query it themselves.
+
+`collect()` is used for both props and class building. The full Collection API is available in Twig via Craft.
+
+The JS boundary follows a decision tree: Twig is the default → Alpine/DataStar for UI state → Vue for application state.

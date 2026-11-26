@@ -1,6 +1,6 @@
 # Agents
 
-Six specialized sub-agents, each with a dedicated model, effort level, and tool scope. Agents are invoked from within Claude Code to handle specific types of work. Each preloads the skills it needs on every run and loads the rest on demand through the Skill tool, and enforces project conventions.
+Six specialized sub-agents, each with a dedicated model, effort level, and tool scope. Agents are invoked from within Claude Code to handle specific types of work. Each preloads its core skills on every run (startup at most 48 KB, about 12K tokens, checked by `bin/agent_budget.py`) and loads the rest on demand through the Skill tool, and enforces project conventions.
 
 Models are set with the `opus` / `sonnet` aliases, so agents follow each family to its current version instead of pinning one. Builders list both `TodoWrite` and the `Task*` tools because a background subagent keeps only `TodoWrite`, while a foreground one inherits whichever the main session has. Agents with a browser-verification step list `mcp__chrome-devtools`; it resolves only when Chrome DevTools MCP is installed (see the `ddev` skill). Plugin subagents ignore `hooks`, `mcpServers`, and `permissionMode`, so none are set. See the [subagents docs](https://code.claude.com/docs/en/sub-agents) for the frontmatter fields.
 
@@ -70,7 +70,7 @@ department relations, salary range, and a full CP edit page.
 
 **Model:** Opus (`high` effort)
 **Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, `mcp__chrome-devtools`
-**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-pest` (on demand: `craft-garnish` for CP JavaScript, `ddev`)
+**Skills preloaded:** `craftcms`, `craft-php-guidelines` (on demand: `craft-pest` before the first test, `craft-garnish` for CP JavaScript, `ddev`)
 
 Builds production-quality plugin code following project architecture. Receives implementation plans and executes them layer by layer.
 
@@ -319,7 +319,7 @@ Review the changes in the job-listings branch before I open a PR.
 
 **Model:** Opus (`xhigh` effort)
 **Tools:** Read, Grep, Glob, Bash, Skill (read-only — Bash for `git diff`/`log`/`show`/`blame` only)
-**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-garnish`, `craft-twig-guidelines`, `craft-site`, `craft-pest` (on demand: `craft-plugin-release` when the branch bumps a version or touches tags/changelog dating, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-mcp`, `craft-plugins`)
+**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-twig-guidelines` (on demand, as soon as the diff reaches them: `craft-site` for template architecture, `craft-garnish` for CP JavaScript, `craft-pest` for tests, `craft-plugin-release` when the branch bumps a version or touches tags/changelog dating, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-mcp`, `craft-plugins`)
 
 The deep-review counterpart to `craft-code-reviewer`. The standard reviewer (Sonnet) catches checklist violations per file; this one (Opus, xhigh) catches what surface pattern-matching misses. Use it when the extra scrutiny is worth the token cost — release branches, security-sensitive code, large architectural changes, migrations, multi-service flows. Use the standard reviewer for daily review.
 

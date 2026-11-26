@@ -24,12 +24,13 @@ modules, PHP), see the `craftcms` skill.
 
 When this skill triggers, also load:
 
-- **`craft-twig-guidelines`** — Twig coding standards: variable naming, null handling, whitespace control, include isolation, Craft helpers. Required for any Twig code.
-- **`craft-content-modeling`** — Sections, entry types, fields, Matrix, relations. Required when deciding what content to query or how templates access data.
-- **`ddev`** — All commands run through DDEV. Required for running Vite, npm, and Craft CLI commands.
-- **`craft-cloud`** — When the site is hosted on Craft Cloud (detect via `craft-cloud.yaml` at the repo root or `craftcms/cloud` in `composer.json`). Required for edge static caching rules, `cloud.esi(...)` dynamic islands inside cached pages, edge image transform constraints, and the `csrfInput()` requirement on cacheable pages.
-- **`servd`** — When the site is hosted on Servd (detect via `servd.yaml` at the repo root or `servd/craft-asset-storage` in `composer.json`). Required for Servd static caching, `{% dynamicInclude %}` islands in cached pages, running Blitz in reverse-proxy mode, and off-server image transforms.
-- **`craft-fortrabbit`** — When the site is hosted on fortrabbit (detect via a `.fortrabbit/deploy.yml` deploy file or `FORTRABBIT_*` variables in config). Required for asset volumes and deployments, the queue and image transforms in a worker job, and the site URL from `FORTRABBIT_MAIN_DOMAIN`.
+- **`craft-twig-guidelines`**: Twig coding standards (naming, null handling, whitespace, include isolation, Craft helpers). Required for any Twig code.
+- **`craft-content-modeling`**: sections, entry types, fields, Matrix, relations. Required when deciding what content to query.
+- **`ddev`**: all Vite, npm and Craft CLI commands run through DDEV.
+- **`craft-cloud`**: when hosted on Craft Cloud (`craft-cloud.yaml` or `craftcms/cloud`). Edge static caching rules, `cloud.esi(...)` islands, edge transform constraints, `csrfInput()` on cacheable pages.
+- **`servd`**: when hosted on Servd (`servd.yaml` or `servd/craft-asset-storage`). Servd static caching, `{% dynamicInclude %}` islands, Blitz in reverse-proxy mode, off-server transforms.
+- **`craft-fortrabbit`**: when hosted on fortrabbit (`.fortrabbit/deploy.yml` or `FORTRABBIT_*` vars). Asset volumes and deployments, queue and transforms in a worker job, site URL from `FORTRABBIT_MAIN_DOMAIN`.
+- **`craft-plugins`**: when the task names a third-party plugin (Formie, SEOmatic, Blitz, ...). Per-plugin configuration, Twig API and pitfalls (see Plugin References below).
 
 ## Documentation
 
@@ -55,6 +56,14 @@ Use `WebFetch` on specific doc pages when a reference file doesn't cover enough 
 - Tracking/analytics inside components — decouple to data attributes at view/page level.
 - Forgetting `project-config/touch` after editing YAML outside the CP — Git pulls, manual edits, and merge conflict resolution don't update `dateModified`. Run `ddev craft project-config/touch` then `ddev craft up`, or `craft up` on other environments won't detect the change.
 
+## Core Conventions
+
+- Element type resolves from props (`url` → `<a>`, `type` → `<button>`, fallback `<span>`); external links are detected from the URL, never passed as a prop. See `atomic-patterns.md` (Component System Conventions).
+- Icons are FontAwesome class strings; [5.12+] custom-set icons (`custom:name`) have no FA class, so branch on `icon.set` and output `icon.svg|raw`.
+- One image atom with config-driven presets; structural skeletons with slots use `{% embed %}`.
+- Multi-brand theming: `data-brand="{{ currentSite.handle }}"` on `<html>`, three token layers. Tailwind v4 cascade layers don't replace named keys. See `tailwind-conventions.md` (CSS & Theming Conventions).
+- `collect()` builds props and classes. JS: Twig → Alpine/DataStar → Vue. See `boilerplate-routing.md` (Routing Conventions).
+
 ## Reference Files
 
 Read the relevant reference file(s) for your task. Multiple files often apply together.
@@ -63,121 +72,47 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Build a new card component" → read `atomic-patterns.md` + `composition-patterns.md` + `component-inventory.md` + `tailwind-conventions.md`
 - "Set up a new project's template structure" → read `boilerplate-routing.md` + `component-inventory.md`
 - "Add a content builder for a Matrix field" → read `boilerplate-routing.md` + `composition-patterns.md`
-- "Handle responsive images" → read `image-presets.md` + `plugins/image-optimize.md`
-- "Cache the nav/footer with `{% cache %}`" → read `template-caching.md`
-- "Scripts blocked by CSP / nonce mismatch after adding `{% cache %}`" → read `template-caching.md` (CSP Nonces)
-- "First page view after upload is slow / why are images `generate-transform` URLs" → read `image-presets.md` (Transform Generation Timing) + `plugins/image-optimize.md`
-- "Add multi-brand theming" → read `tailwind-conventions.md`
+- "Handle responsive images" → read `image-presets.md` + `craft-plugins` → `image-optimize.md` (or `imager-x.md`)
+- "Cache the nav/footer with `{% cache %}`" / "scripts blocked by CSP nonce after adding `{% cache %}`" → read `template-caching.md` (CSP Nonces)
+- "First page view after upload is slow / why are images `generate-transform` URLs" → read `image-presets.md` (Transform Generation Timing) + `craft-plugins` → `image-optimize.md`
+- "Add multi-brand theming" / "compose Tailwind classes without conflicts" → read `tailwind-conventions.md` + `twig-collections.md`
 - "Decide between Alpine and Vue for a feature" → read `javascript-boundaries.md`
-- "Compose Tailwind classes without conflicts" → read `tailwind-conventions.md` + `twig-collections.md`
 - "Understand atomic design methodology" → read `atomic-design.md`
-- "Set up Vite + Tailwind in a new Craft project" → read `vite-buildchain.md`
-- "Debug why assets aren't loading in production" → read `vite-buildchain.md`
-- "Look up a `craft.vite.*` Twig function (asset, register, critical CSS)" → read `plugins/vite.md`
-- "Install GTM/analytics/CMP in a Craft project" → read `third-party-integration.md`
-- "Can't override a plugin's front-end CSS / plugin styles beat mine" → read `third-party-integration.md` (Plugin CSS Loads After Yours)
-- "Replace a plugin's template with my own / plugin widget stopped enhancing" → read `third-party-integration.md` (Hand-Written Templates for Plugin Widgets)
-- "Configure SEOMatic for a section" → read `plugins/seomatic.md`
-- "Set up Blitz caching with Cloudflare" → read `plugins/blitz.md`
-- "Add a form to a page" → read `plugins/formie.md`
-- "Configure CKEditor with nested entries" → read `plugins/ckeditor.md`
-- "Build a navigation menu" → read `plugins/navigation.md`
-- "Add a link field to a component" → read `plugins/hyper.md`
-- "Set up redirects for a site" → read `plugins/retour.md`
-- "Add recurring/repeating dates to entries" → read `plugins/timeloop.md`
-- "Create a JSON API endpoint" → read `plugins/element-api.md`
-- "Debug N+1 queries in templates" → read `plugins/elements-panel.md`
-- "Run a security audit" → read `plugins/sherlock.md`
-- "Embed a YouTube/Vimeo video as an asset" → read `plugins/embedded-assets.md`
-- "Configure email delivery via SES" → read `plugins/amazon-ses.md` + `third-party-integration.md`
-- "Build a language switcher" → read `multi-site-patterns.md`
-- "Add login/registration to the front end" → read `auth-flows.md`
-- "Build a user profile edit page" → read `auth-account.md`
-- "Set up password reset flow" → read `auth-flows.md`
-- "Set up hreflang tags" → read `multi-site-patterns.md`
-- "Plan a multi-language site architecture" → read `multi-site-patterns.md`
-- "Add live search without JavaScript" → read `plugins/sprig.md`
-- "Build reactive filtering or load-more" → read `plugins/sprig.md`
-- "Import data from an external feed" → read `plugins/feed-me.md`
-- "Set up responsive images with Imager-X" → read `plugins/imager-x.md`
-- "Build a search page" → read `search.md`
-- "Configure search settings" → read `search.md` (Search Configuration)
-- "Rebuild the search index" → read `search.md` (Rebuilding)
-- "Create an RSS feed" → read `feeds.md`
-- "Build an XML sitemap" → read `feeds.md` (XML Sitemap)
-- "Create a JSON Feed" → read `feeds.md` (JSON Feed)
-- "Set up a headless Craft CMS with Next.js" → read `headless.md`
-- "Fix GraphQL preview tokens" → read `headless.md`
-- "Consume Craft GraphQL API from a front-end framework" → read `headless.md`
-- "Use entry.render() for reusable card components" → read `element-partials.md`
-- "Set up _partials/ templates for entries" → read `element-partials.md`
-- "Render Matrix blocks with partials" → read `element-partials.md`
-- "Use `{% render %}` / why is `loop` defined in my partial" → read `element-partials.md` (The `{% render %}` Tag)
-- "Let members log in to a headless front end and query as themselves" → read `headless.md` (Signed-In Members over OAuth)
-- "Ship example templates with a plugin (bundle + install command)" → read `example-templates.md`
-- "Build a fluent front-end render/tag builder (craft.<handle>.thing().render())" → read `example-templates.md`
-
+- "Set up Vite + Tailwind" / "debug why assets aren't loading in production" → read `vite-buildchain.md`; `craft.vite.*` functions → `craft-plugins` → `vite.md`
+- "Install GTM/analytics/CMP" / "plugin styles beat mine" (Plugin CSS Loads After Yours) / "replace a plugin's template, widget stopped enhancing" (Hand-Written Templates for Plugin Widgets) → read `third-party-integration.md`
+- "Configure email delivery via SES" → read `third-party-integration.md` + `craft-plugins` → `amazon-ses.md`
+- Plugin tasks → `craft-plugins` skill, `references/<plugin>.md`: SEOmatic for a section (`seomatic.md`), Blitz with Cloudflare (`blitz.md`), add a form (`formie.md`), CKEditor nested entries (`ckeditor.md`), navigation menu (`navigation.md`), link field (`hyper.md`), redirects (`retour.md`), recurring dates (`timeloop.md`), JSON API endpoint (`element-api.md`), N+1 debugging (`elements-panel.md`), security audit (`sherlock.md`), YouTube/Vimeo as asset (`embedded-assets.md`), live search / reactive filtering / load-more (`sprig.md`), import a feed (`feed-me.md`), Imager-X responsive images (`imager-x.md`)
+- "Build a language switcher" / "hreflang tags" / "plan a multi-language architecture" → read `multi-site-patterns.md`
+- "Add login/registration" / "password reset flow" → read `auth-flows.md`; "user profile edit page" → read `auth-account.md`
+- "Build a search page" / "configure search settings" (Search Configuration) / "rebuild the search index" (Rebuilding) → read `search.md`
+- "Create an RSS feed" / "XML sitemap" (XML Sitemap) / "JSON Feed" (JSON Feed) → read `feeds.md`
+- "Headless Craft with Next.js" / "fix GraphQL preview tokens" / "consume Craft GraphQL from a front-end framework" → read `headless.md`; members logging in to a headless front end → `headless.md` (Signed-In Members over OAuth)
+- "Use entry.render() for reusable card components" / "set up `_partials/` templates" / "render Matrix blocks with partials" → read `element-partials.md`; "use `{% render %}` / why is `loop` defined in my partial" → `element-partials.md` (The `{% render %}` Tag)
+- "Ship example templates with a plugin (bundle + install command)" / "fluent render/tag builder (`craft.<handle>.thing().render()`)" → read `example-templates.md`
 
 | Reference | Scope |
 |-----------|-------|
-| `references/atomic-design.md` | Methodology: Brad Frost's atomic design principles, 5-to-3 tier compression, composability, context-agnostic naming, classification problem, decompose-downward workflow. Technology-independent. |
-| `references/atomic-patterns.md` | Individual component construction: props/extends/block pattern, variant file mechanics, button/link/text/icon atom implementations |
-| `references/composition-patterns.md` | Component composition: molecule pattern, organism pattern, structural embed pattern, include/extends/embed decision table, calling conventions, creating new components |
-| `references/component-inventory.md` | Classification methodology: decision tree, naming conventions, file naming, props design, scaffold guidelines, tier promotion, audit checklist |
-| `references/boilerplate-routing.md` | Template chain: layout hierarchy, Craft section template paths, global variables, routers, views, content builders, directory structure |
-| `references/tailwind-conventions.md` | Class composition: named-key collections, standard key names, `utilities` prop, variant-based dark mode, spacing preference. Assumes Tailwind CSS — adapt patterns to your CSS framework. |
-| `references/vite-buildchain.md` | Craft CMS Vite setup: nystudio107 plugin bridge, `config/vite.php`, `vite.config.ts`, `craft.vite.script()`, conditional per-page loading, Tailwind v4 integration, DDEV configuration |
-| `references/image-presets.md` | Image handling: single atom with presets, srcset/sizes, ImageOptimize vs Craft Cloud, hosting strategies, transform generation timing (`generateTransformsBeforePageLoad`) |
-| `references/template-caching.md` | `{% cache %}` tag: keying (per-URL, `globally`, `using key`), parameter order, what may and may not go inside, CSP nonces, nav/footer example with active state and language switcher outside, temporary transform URLs, verification recipe |
+| `references/atomic-design.md` | Methodology: atomic design principles, 5-to-3 tier compression, context-agnostic naming, decompose-downward workflow |
+| `references/atomic-patterns.md` | Component construction: props/extends/block, variant files, button/link/text/icon atoms, component system conventions |
+| `references/composition-patterns.md` | Molecules, organisms, structural embeds, include/extends/embed decision table, calling conventions |
+| `references/component-inventory.md` | Classification decision tree, naming, props design, scaffolding, tier promotion, audit checklist |
+| `references/boilerplate-routing.md` | Layout chain, section template paths, globals, routers, views, content builders, directory structure, routing conventions |
+| `references/tailwind-conventions.md` | Named-key collections, `utilities` prop, dark mode, spacing, CSS & theming conventions (multi-brand tokens) |
+| `references/vite-buildchain.md` | nystudio107 Vite bridge, `config/vite.php`, `vite.config.ts`, `craft.vite.script()`, per-page loading, Tailwind v4, DDEV |
+| `references/image-presets.md` | Image atom with presets, srcset/sizes, ImageOptimize vs Craft Cloud, transform timing (`generateTransformsBeforePageLoad`) |
+| `references/template-caching.md` | `{% cache %}`: keying (`globally`, `using key`), what may go inside, CSP nonces, nav/footer example, transform URLs, verification |
 | `references/javascript-boundaries.md` | JS decision tree: Twig → Alpine/DataStar → Vue, mount points, data handoff, coexistence rules |
 | `references/twig-collections.md` | `collect()` method reference: creating, accessing, transforming, filtering, sorting, slicing, arrow functions |
-| `references/third-party-integration.md` | Script loading order, CMP (UserCentrics/CookieBot), GTM/sGTM data layer, analytics (Fathom/Plausible), AWS SES transport, n8n webhooks, plugin CSS cascade (loads after yours) + hand-written templates for plugin widgets, Blitz compatibility, full head template example |
-| `references/multi-site-patterns.md` | Language switchers, hreflang tags, site architectures (subfolder/domain/subdomain/multi-brand), cross-site queries, static translations, site-specific templates, multi-site forms, site detection |
+| `references/third-party-integration.md` | Script order, CMP, GTM/sGTM, analytics, SES transport, n8n webhooks, plugin CSS cascade, hand-written plugin widget templates, Blitz, head template |
+| `references/multi-site-patterns.md` | Language switchers, hreflang, site architectures, cross-site queries, static translations, multi-site forms |
 | `references/auth-flows.md` | Front-end authentication forms: login, registration, password reset, set new password |
 | `references/auth-account.md` | Account management: edit profile, email verification, navigation partial, access control tags, user session helpers, GeneralConfig auth settings |
 | `references/search.md` | Search: syntax, Twig queries, configuration, indexing, rebuilding, score and ranking |
 | `references/feeds.md` | Feeds: RSS 2.0, Atom, JSON Feed, XML sitemap, custom routes, date filters |
-| `references/headless.md` | Headless & hybrid: headlessMode, GraphQL API, schema resolution and token types, members signing in over OAuth with `currentUser` [5.12+], settings queries, CORS, preview tokens, Next.js/Nuxt/Astro integration |
+| `references/headless.md` | headlessMode, GraphQL schemas and tokens, members over OAuth with `currentUser` [5.12+], CORS, preview tokens, Next.js/Nuxt/Astro |
 | `references/element-partials.md` | Element partials: entry.render(), `{% render %}` tag and collection `render()` [5.12+], _partials/ directory, template lookup, custom variables, eager loading in partials |
-| `references/example-templates.md` | Plugin front-end delivery: Craft Commerce-style example-template bundles (canonical folder, `_private/layouts/` shell, per-page `{% extends %}`/`{% block main %}`, `index.twig` redirect, install console command with rename/`--overwrite`), fluent `craft.<handle>.<thing>({...}).render()` BaseTag builders, progressive-enhancement discipline |
+| `references/example-templates.md` | Plugin example-template bundles and install command, fluent `craft.<handle>.<thing>({...}).render()` BaseTag builders, progressive enhancement |
 
 ### Plugin References
 
-Per-plugin configuration, Twig API, and pitfalls live in the **`craft-plugins`** skill (`skills/craft-plugins/references/<plugin>.md`) — kept there so they're discoverable from back-end, migration, and deployment tasks too, not just front-end ones.
-
-When a front-end task involves a specific plugin — Formie form styling, SEOmatic meta, Blitz caching, Imager-X / ImageOptimize transforms, Sprig components, CKEditor, Hyper links, Navigation, Embedded Assets, Vite, Typogrify, Colour Swatches — load the `craft-plugins` skill and open the matching reference.
-
-
-## Component System Conventions
-
-One canonical component system across all projects. Atoms are context-agnostic — always named by visual treatment, never by parent. HTML element type is resolved from props (`url` → `<a>`, `type` → `<button>`, fallback → `<span>`).
-
-External link detection is derived from the URL, never passed as a prop. Components auto-apply `target="_blank"`, `rel="noopener noreferrer"`, external icon, and sr-only text when a URL is external.
-
-FontAwesome is the universal icon system. Icons are passed as FA class strings. [5.12+] Icon fields can also hold custom-set icons (`custom:name`), which have no FA class: branch on `icon.set` and output `icon.svg|raw` (see `craft-content-modeling` → `field-types.md`, Icon).
-
-Visual variants use extends/block — base template defines structure, variant overrides classes. Never use conditional logic to switch between variant styles. For structural skeletons with content slots, use `{% embed %}` — see `composition-patterns.md`.
-
-Image handling uses a single atom with config-driven presets, not separate variant files per context.
-
-## CSS & Theming Conventions
-
-This skill assumes Tailwind CSS for class composition examples. Adapt patterns
-to your CSS framework — the architectural principles (named keys, additive
-utilities, semantic tokens) are framework-agnostic.
-
-Class collections use named keys per style concern — this is the primary mechanism for preventing conflicts. The `utilities` prop is additive (extending), not overriding. Override specific concerns via named-slot merge.
-
-Multi-brand theming uses CSS custom properties activated by `data-brand="{{ currentSite.handle }}"` on `<html>`. Components reference semantic Tailwind classes (`bg-brand-accent`) resolved via CSS variables. Template-level brand overrides only exist when the HTML structure itself differs between brands — not for color/font/spacing differences.
-
-Token naming follows three layers: primitives (`--brand-{color}-{shade}`), semantics (`--brand-{purpose}`), and framework mapping (`--color-brand-{purpose}`).
-
-Tailwind v4 cascade layers don't fix class conflicts within the same utilities layer. Named-key collections remain necessary.
-
-## Routing Conventions
-
-PHP handles data, Twig handles presentation. Views receive data through includes — they never query it themselves.
-
-`collect()` is used for both props and class building. The full Collection API is available in Twig via Craft.
-
-The JS boundary follows a decision tree: Twig is the default → Alpine/DataStar for UI state → Vue for application state.
+Per-plugin configuration, Twig API and pitfalls live in the **`craft-plugins`** skill (`references/<plugin>.md`), so back-end, migration and deployment tasks find them too. For Formie, SEOmatic, Blitz, Imager-X / ImageOptimize, Sprig, CKEditor, Hyper, Navigation, Embedded Assets, Vite, Typogrify or Colour Swatches, load `craft-plugins` and open the matching reference.

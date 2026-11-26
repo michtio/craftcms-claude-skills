@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.27.0 -- unreleased
+
+Cuts the context the pack costs before it does any work. Every SKILL.md body now fits 12 KB, agents start at 24 to 46 KB (was 41 to 121 KB), and the ten references over 30 KB open with a line-numbered Contents block so a reader loads one section instead of 30 to 70 KB. Nothing a skill teaches was dropped: moved text is verbatim, and every behaviour-eval fact still holds (`bin/check.sh`). Release evals for the changed skills: 14 behaviour cases and the smoke set pass, in 18 model calls.
+
+### Changed
+
+- **SKILL.md bodies at most 12 KB** (enforced by `bin/validate-skills.sh`) -- ten skills moved detail into references and kept the routing, scope and highest-value rules in SKILL.md: `craft-project-setup` 31.4 to 8.1 KB, `craftcms` 28.6 to 10.4 KB, `craft-content-modeling` 28.1 to 11.6 KB, `craft-twig-guidelines` 23.2 to 8.4 KB, `craft-cloud` 18.5 to 10.5 KB, `craft-php-guidelines` 18.4 to 9.2 KB, `craft-site` 16.1 to 11.6 KB, `ddev` 15.4 to 11.5 KB, `craft-pest` 12.7 to 11.5 KB, `craft-plugin-release` 12.4 to 10.5 KB. 17 new reference files (150 in total), among them `craftcms/references/task-routing.md` (the full task-to-reference index), `craft-project-setup/references/detection.md`, `generation.md`, `hybrid-monorepo.md` and `attribution-and-upgrades.md`, and first `references/` directories for `craft-twig-guidelines` and `ddev`.
+- **Agents start at most 48 KB** (about 12K tokens, `bin/agent_budget.py`) -- the deep reviewer preloads `craftcms`, `craft-php-guidelines` and `craft-twig-guidelines` and loads `craft-site`, `craft-garnish` and `craft-pest` when the diff reaches them; the feature builder loads `craft-pest` before its first test. The reviewer's Craft Cloud checklist moved to `craft-cloud/references/review-checklist.md`.
+- **Contents blocks** (`bin/contents.py`) -- `architecture.md`, `cp.md`, `elements.md`, `graphql.md`, `events.md` and five more open with each section's line range; `craftcms` routes readers to read the block, then only the section with `offset`/`limit`. CI fails on a stale block.
+- **Release-time evals** -- trigger queries rerun only when a skill's listing changed, since routing never sees the body.
+- **`skills/craftcms/references/version-table.md`** -- regenerated: 618 rows.
+
 ## 1.26.0 -- 2026-11-26
 
 Moves most quality checking off the model. Every push now runs `sh bin/check.sh`: deterministic gates that check the pack against the `craftcms/cms` 5.12.4 source, the behaviour cases' facts and a lexical routing baseline, with no model calls and no network. AI evals run only at release time, scoped to what changed. The new source checks found 14 errors in the pack (11 symbols that do not exist, 3 wrong defaults), all fixed below. This release's own evals ran through the new runner: 12 behaviour cases (those touched by the fixes) and 3 smoke trigger queries pass, in 21 model calls instead of a full run's ~300.

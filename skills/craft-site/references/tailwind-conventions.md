@@ -41,6 +41,7 @@
 - [Spacing Preference](#spacing-preference)
 - [Dark Mode (Variant-Based)](#dark-mode-variant-based)
 - [craft-tailwind Plugin (Future)](#craft-tailwind-plugin-future)
+- [CSS & Theming Conventions](#css--theming-conventions)
 
 ## Named-Key Collections
 
@@ -197,3 +198,17 @@ The `craft-tailwind` plugin will provide:
 - Tailwind v3 + v4 auto-detection
 
 Until the plugin exists, named-key collections are the primary mechanism.
+
+## CSS & Theming Conventions
+
+This skill assumes Tailwind CSS for class composition examples. Adapt patterns
+to your CSS framework — the architectural principles (named keys, additive
+utilities, semantic tokens) are framework-agnostic.
+
+Class collections use named keys per style concern — this is the primary mechanism for preventing conflicts. The `utilities` prop is additive (extending), not overriding. Override specific concerns via named-slot merge.
+
+Multi-brand theming uses CSS custom properties activated by `data-brand="{{ currentSite.handle }}"` on `<html>`. Components reference semantic Tailwind classes (`bg-brand-accent`) resolved via CSS variables. Template-level brand overrides only exist when the HTML structure itself differs between brands — not for color/font/spacing differences.
+
+Token naming follows three layers: primitives (`--brand-{color}-{shade}`), semantics (`--brand-{purpose}`), and framework mapping (`--color-brand-{purpose}`).
+
+Tailwind v4 cascade layers don't fix class conflicts within the same utilities layer. Named-key collections remain necessary.

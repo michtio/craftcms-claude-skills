@@ -9,7 +9,8 @@ spend as few calls as possible:
     tag (or --since REF), plus the smoke set in evals/smoke.json.
       behaviour case -> the skills named by its "facts" files, its "cwd"
                         fixture, and bin/craft-version.sh / hooks/ for all
-      trigger set    -> skills/<set>/SKILL.md (its listing) changed
+      trigger set    -> the skill's listing (description + when_to_use) changed,
+                        or the query is new
   - Cache: a passing result is stored under evals/.cache/ by a hash of the
     case and every file it depends on; unchanged cases are not rerun.
   - One run per case; a failure is retried once (--retries).
@@ -118,8 +119,13 @@ def old_cases(since: str | None, kind_dir: str, set_name: str, cache: dict = {})
     return cache[key]
 
 
+ASSUME = "assume"  # --assume-changed: only the assumed files count, cases are unchanged
+
+
 def case_changed(c: dict, since: str | None) -> bool:
     """New or edited since `since`. `facts` don't reach the model, so they don't count."""
+    if since == ASSUME:
+        return False
     if not since:
         return True
     if c["kind"] == "behaviour":
@@ -131,6 +137,21 @@ def case_changed(c: dict, since: str | None) -> bool:
     return c["case"] not in (old or [])
 
 
+def listing_changed(skill: str, since: str | None) -> bool:
+    """Routing sees only the listing (description + when_to_use), not the body."""
+    if not since or since == ASSUME:
+        return True
+    sys.path.insert(0, str(REPO / "evals"))
+    from lexical_route import frontmatter_value
+    def listing(text: str) -> tuple[str, str]:
+        head = text.split("\n---", 1)[0]
+        return frontmatter_value(head, "description"), frontmatter_value(head, "when_to_use")
+    path = REPO / "skills" / skill / "SKILL.md"
+    now = listing(path.read_text(encoding="utf-8")) if path.exists() else None
+    before = git("show", f"{since}:skills/{skill}/SKILL.md")
+    return now != (listing(before) if before else None)
+
+
 def select(cases: list[dict], changed: set[str], smoke: set[str], everything: bool,
            since: str | None = None) -> list[dict]:
     out = []
@@ -139,7 +160,10 @@ def select(cases: list[dict], changed: set[str], smoke: set[str], everything: bo
             out.append(c)
         elif c["kind"] == "behaviour" and (touched(c["deps"], changed) or case_changed(c, since)):
             out.append(c)
-        elif c["kind"] == "trigger" and (touched({f"skills/{c['skill']}/SKILL.md"}, changed) or case_changed(c, since)):
+        elif c["kind"] == "trigger" and (
+                (touched({f"skills/{c['skill']}/SKILL.md"}, changed)
+                 and (since is None or listing_changed(c["skill"], since)))
+                or case_changed(c, since)):
             out.append(c)
     return out
 
@@ -289,7 +313,7 @@ def main() -> int:
     smoke = set(json.loads(SMOKE.read_text(encoding="utf-8"))) if SMOKE.exists() else set()
     cases = load_cases()
     chosen = ([c for c in cases if c["id"] in set(args.only.split(","))] if args.only
-              else select(cases, changed, smoke, args.all, None if args.assume_changed else since))
+              else select(cases, changed, smoke, args.all, ASSUME if args.assume_changed else since))
 
     model_key = args.model or "cli-default"
     cache = {} if args.no_cache else load_cache()

@@ -30,65 +30,32 @@ Complete PHP coding standards and conventions for Craft CMS 5 plugin and module 
 
 When unsure about a convention, `WebFetch` the coding guidelines page for the authoritative answer.
 
-## Common Pitfalls
-
-- `addSelect()` is the convention in `beforePrepare()` — safely additive when multiple extensions contribute columns.
-- `$_instances` is not a Craft convention — private properties use underscore prefix but meaningful names like `$_items`, `$_sections`.
-- Records use the **same class name** as models (namespace distinguishes). Alias when importing both: `use ...\records\MyEntity as MyEntityRecord;`.
-- Queue jobs have **no "Job" suffix** — `ResaveElements`, not `ResaveElementsJob`.
-- `declare(strict_types=1)` is NOT used in plugin source files. Only in standalone config files like `ecs.php`.
-- `@author` goes on classes and methods only — never on properties. (Craft *core* puts `@author` at the class level only; placing it on methods too is this project's house convention, not core style.)
-- Don't use `string|null` — use `?string` (short nullable notation).
-- Forget `parent::defineRules()` and you lose all inherited validation.
-- Using `[$this, '_validateFoo']` callable arrays or inline closures in `defineRules()` — Craft core uses string method names: `[['attr'], 'validateAttr']`. The validator method is public, no underscore — Yii invokes it by name.
-- `DateTimeHelper` in elements/queries, `Carbon` in services — never mix in the same class.
-- Parsing a raw DB datetime with `strtotime()` or `new DateTime()` — those columns are naive UTC strings and the process timezone is `system.timeZone`, so the result is off by the full offset on any non-UTC install. Parse with an explicit UTC zone. See Date Handling below.
-- Missing `@throws` chains — document exceptions from called methods too, not just your own throws.
-- Using magic property access (`$plugin->settings`, `$app->view`) instead of explicit getters (`$plugin->getSettings()`, `$app->getView()`) — PHPStan can't resolve `__get()` calls, so magic access passes at runtime but fails static analysis. Always use explicit getters for Yii2 components and Craft plugin properties.
-- Calling Craft-specific methods directly on `Craft::$app` (`Craft::$app->getConfig()`) — PHPStan can't resolve them because the static type is Yii's base union. Narrow with a typed local: `/** @var \craft\web\Application $app */ $app = Craft::$app;`. Don't use `@phpstan-ignore-line`.
-- Duplicating contract constants as `private const` across multiple classes with "keep in lockstep" comments — PHPStan can't detect drift. Declare `public const` on the owning service, reference as `OwnerService::CONSTANT_NAME` everywhere else. This applies specifically to **permission handles**: a handle like `'my-plugin:manage-settings'` is a contract string referenced from registration (`EVENT_REGISTER_PERMISSIONS`), the controller gate (`requirePermission()`), and the nav check (`->can()`); a bare literal drifts silently and a typo passes for admins (who hold every permission) while denying everyone else. Declare it as a `public const` on the controller that enforces it — `SettingsController::PERMISSION_MANAGE_SETTINGS` — and reference the const everywhere. (Craft core uses bare literals here; the const is a deliberately stricter house rule. See the `craftcms` skill's `permissions.md`.)
-- Writing the same authorization check separately in a CP controller, a console command, and a GraphQL resolver — they drift, and the surface that drifts is the one nobody tests. One shared gate method called by every surface, with a test per surface. Console is not exempt (a documented cron path with no permission check is an unauthenticated capability), and GraphQL schema scope is **not** the plugin's permission matrix. See `references/authorization-parity.md`.
-- Assuming Craft prevents self-approval / self-review — it has no such concept, and peer permissions are the opposite axis. Write the guard into the shared gate, orthogonal to role checks, with an explicit bypass permission. See `references/authorization-parity.md`.
-- Shipping `../*` path repositories in a plugin's `composer.json` — resolution works only on the author's disk. Unpublished sibling deps get a `vcs` entry; Packagist deps need nothing; `composer.lock` stays gitignored for plugins. Prove it with `composer config --global repositories` (expect empty) then a no-lock `composer update --dry-run`. See `references/tooling.md` (Composer Hygiene).
-- Using `Db::parseParam()` for a literal comparison — a leading or trailing `*` becomes a SQL `LIKE` wildcard, so a uniqueness check on a stored pattern silently becomes a prefix match. Use a raw `andWhere(['col' => $value])`. See the `craftcms` skill's `architecture.md`.
-- Registering `EVENT_REGISTER_ELEMENT_TYPES` / `EVENT_REGISTER_FIELD_TYPES` inside a `getIsCpRequest()` (or other request-context) branch in `init()` — component-type registration must run in **every** context (CP, console, site) or the type disappears from `getAllElementTypes()` in console/queue requests, and `Gc::hardDeleteElements()` silently stops purging its trashed rows. Register unconditionally; only CP-*rendering*/routing (URL rules, asset bundles, nav) may be gated. See the `craftcms` skill's `events.md` → "Registration scope".
-
 ## Reference Files
 
 Read the relevant reference file(s) for your task:
 
-| Task | Read |
-|------|------|
-| Writing PHPDocs, `@author`, `@since`, `@throws`, `@var`, `@param`, type references | `references/phpdoc-standards.md` |
-| Class structure, section headers, ordering, enums, control flow, comments, whitespace | `references/class-organization.md` |
-| Naming classes, methods, properties, files, services, events, migrations | `references/naming-conventions.md` |
-| CP Twig templates, form macros, translations, file headers, validation | `references/templates-and-patterns.md` |
-| ECS, PHPStan, scaffolding commands, composer hygiene for plugin repos, commit messages | `references/tooling.md` |
-| Authorization parity across CP / console / GraphQL / queue surfaces, self-referential guards, one shared gate | `references/authorization-parity.md` |
+| Task | Read | ~Tokens |
+|------|------|---------|
+| Writing PHPDocs, `@author`, `@since`, `@throws`, `@var`, `@param`, type references; console controller docblocks as `craft help` text | `references/phpdoc-standards.md` | ~1,150 |
+| Class structure, section headers, ordering, shared constants, enums, control flow, comments, whitespace | `references/class-organization.md` | ~2,050 |
+| Naming classes, methods, properties, files, services, events, migrations; quick-reference table; kebab-case permission handles and their constants | `references/naming-conventions.md` | ~1,500 |
+| CP Twig templates, form macros, translations, copy style (no em-dashes), file headers, validation | `references/templates-and-patterns.md` | ~1,350 |
+| `DateTimeHelper` vs `Carbon`, parsing DB datetimes, `App::env()`/`App::parseEnv()`, `UrlHelper::absoluteUrl()` [5.12.2+], `doesEnvVarExist()` [5.11+], DB conventions, `Db::isSafeOrderBy()` [5.12+], component registration scope | `references/dates-env-database.md` | ~1,250 |
+| ECS, PHPStan (`Craft::$app` narrowing, magic property access), scaffolding commands, composer hygiene for plugin repos, commit messages | `references/tooling.md` | ~2,100 |
+| Authorization parity across CP / console / GraphQL / queue surfaces, self-referential guards, one shared gate | `references/authorization-parity.md` | ~2,900 |
 
 ## Critical Rules
 
 1. PHPDocs on everything: classes, methods, properties. No exceptions.
 2. `@throws` chains: document every exception including uncaught from called methods.
-3. `@author` and `@since` at the bottom of class/method docblocks, after a blank line.
+3. `@author` and `@since` at the bottom of class/method docblocks, after a blank line. `@author` goes on classes **and methods**, never on properties. (Craft *core* puts `@author` at the class level only; method-level `@author` is this project's house convention. Don't "fix" it.)
 4. Section headers with `// =========================================================================` on every class. (Craft *core* itself uses dash separators — `// ----` — with functional/domain labels like `// Statuses` or `// Events`. The `=====` separators and visibility labels below are a deliberate house convention for consistency across this project's plugins, not core style.)
-5. `declare(strict_types=1)` is NOT used in plugin source files — Craft's internal type coercion depends on PHP's default weak typing mode.
-6. Private methods/properties prefixed with underscore: `_registerCpUrlRules()`, `$_items`.
+5. `declare(strict_types=1)` is NOT used in plugin source files — Craft's internal type coercion depends on PHP's default weak typing mode. Only standalone config files like `ecs.php` use it.
+6. Private methods/properties prefixed with underscore, with meaningful names: `_registerCpUrlRules()`, `$_items`, `$_sections` (never `$_instances`).
 7. `addSelect()` convention in `beforePrepare()` — additive across extensions, prevents column conflicts.
-8. `DateTimeHelper` in elements/queries, `Carbon` in services — separate concerns prevent mixing date APIs in the same class.
+8. `DateTimeHelper` in elements/queries, `Carbon` in services — never mix them in the same class.
 9. Always scaffold with `ddev craft make <type> --with-docblocks`, then customize.
 10. `ddev composer check-cs` and `ddev composer phpstan` must pass before every commit.
-
-## PHP Standards
-
-- Minimum PHP 8.2 (Craft CMS 5 requirement).
-- PSR-12 baseline with Craft modifications (trailing commas, constant visibility).
-- `craftcms/ecs` with `SetList::CRAFT_CMS_4` preset (covers both Craft 4 and 5).
-- Short nullable notation: `?string` not `string|null`.
-- Always specify `void` return types.
-- Typed properties everywhere. No untyped public properties.
-- Strict comparison always: `$foo === null`, `in_array($x, $y, true)`.
-- Casts over functions: `(int)$foo` not `intval($foo)`.
 
 ## Section Header Order
 
@@ -104,77 +71,38 @@ Read the relevant reference file(s) for your task:
 // Private Methods
 ```
 
-Only include sections that have content. Blank line after the separator, before the first item.
+Only include sections that have content. Blank line after the separator, before the first item. Full example: `references/class-organization.md`.
 
-## Control Flow
+## PHP Standards
 
-- **Happy path last.** Handle error conditions first with early returns.
-- **Avoid `else`** — use early returns instead.
-- **Prefer `match` over `switch`** for value-mapping and returns. The official guideline is "don't use `switch` when a single `if` suffices"; `switch` remains acceptable where it reads more clearly (and is common in core).
-- **Always use curly brackets** even for single statements.
-- **Separate compound conditions** into nested `if` statements for readability.
-- **Named arguments** when calling methods with 3+ parameters.
+- Minimum PHP 8.2 (Craft CMS 5 requirement).
+- PSR-12 baseline with Craft modifications (trailing commas, constant visibility).
+- `craftcms/ecs` with `SetList::CRAFT_CMS_4` preset (covers both Craft 4 and 5).
+- Short nullable notation: `?string` not `string|null`.
+- Always specify `void` return types.
+- Typed properties everywhere. No untyped public properties.
+- Strict comparison always: `$foo === null`, `in_array($x, $y, true)`.
+- Casts over functions: `(int)$foo` not `intval($foo)`.
+- Control flow: happy path last with early returns, no `else`, `match` over `switch` for value-mapping, curly brackets always, compound conditions split into nested `if`s, named arguments at 3+ parameters. See `references/class-organization.md`.
 
-## Date Handling
+## Common Pitfalls
 
-- **Elements and element queries**: `craft\helpers\DateTimeHelper`.
-- **Services** (date arithmetic): `Carbon\Carbon`.
-- Never mix both in the same class.
-- **Name the timezone when parsing a value that came out of the database.** Datetime columns hold naive UTC strings (`Db::prepareDateForDb()` formats in UTC without an offset), while Craft sets the PHP process timezone to `system.timeZone` — so `strtotime()` or bare `new DateTime()` on a raw column value shifts every comparison by the full UTC offset on a non-UTC install, and is silently correct on a UTC one. Use `DateTimeHelper::toDateTime($value)` (naive input is assumed UTC by default) or `Carbon::createFromFormat('Y-m-d H:i:s', $value, 'UTC')`. See the `craftcms` skill's `architecture.md` (Record-to-Model Hydration Boundary → Those strings are naive UTC).
-
-## Environment Access
-
-- **`craft\helpers\App::env('VAR')`, never `getenv()`** — in plugin code AND in every config-file example that appears in docs. `getenv()` is not thread-safe, returns `string|false`, and skips values only present in `$_SERVER`; `App::env()` is Craft's own convention, normalizes `'true'`/`'false'` to booleans, and is what core docs show. A config example gets the `use craft\helpers\App;` line.
-- `App::parseEnv()` when the stored value may be a `$VAR` reference or an alias (settings-model getters resolving env-able fields). It resolves a whole-string `$VAR`, a `$VAR/subpath` [5.5+], a `$VAR` in any slash-delimited segment or `${VAR}` anywhere in the string [5.9+]; nothing else. [changed 5.11] Before 5.11, a `$` inside free text (`"$58 million"`) had its unresolved token stripped out of the string (craftcms/cms#19522); now it is left untouched. When supporting both, don't route arbitrary user copy through it.
-- [5.12.2+] `craft\helpers\UrlHelper::absoluteUrl($url, $baseUrl = null)` to resolve a root-relative or protocol-relative URL (`/uploads/a.png`, `//cdn.example.com/a.png`) against a base URL the way a browser would; the base defaults to the current site's base URL, and the URL comes back unchanged when it's already absolute or the base isn't. Before 5.12.2: prefix `UrlHelper::baseSiteUrl()` yourself, or `UrlHelper::siteUrl()` for site paths.
-- `Craft::$app->getConfig()->doesEnvVarExist('NAME')` [5.11+] before offering to write a variable to the project's `.env`. It greps the file, so it answers "declared in `.env`", not "set in the environment"; use `App::env()` for the latter.
-
-## Database Conventions
-
-- `[[column]]` quoting in Yii2 join conditions.
-- `addSelect()` in `beforePrepare()` — safely additive.
-- `postDate` and `expiryDate` in `addSelect()` and indexed on element tables.
-- `Db::parseParam()` for query parameters. `Db::parseDateParam()` for dates. But **not** for literal comparison — it treats a leading/trailing `*` as a `LIKE` wildcard; use a raw `andWhere(['col' => $value])` when comparing stored values exactly.
-- Foreign keys with explicit `CASCADE` / `SET NULL` behavior.
-- [5.12+] Forwarding a request-, template- or settings-supplied `orderBy` into a query: accept it only when `craft\helpers\Db::isSafeOrderBy($orderBy)` is true (an `ExpressionInterface`, a comma-separated column list with optional `asc`/`desc`, or an array of columns set to `SORT_ASC`/`SORT_DESC`). Craft applies the same check to eager-loading criteria. Before 5.12: allow-list the column names yourself.
-
-## Permission Handles
-
-**Permission handles are kebab-case (`handle:manage-settings`); never camelCase.** Both halves are lowercase kebab — `savepoint:manage-settings`, `multiplayer:take-over-field`, not `savepoint:manageSettings`.
-
-Craft lowercases permission names into `userpermissions.name`, so case is discarded on the way to storage: `manageSettings` collapses to `managesettings`, while `manage-settings` keeps its word boundaries and stays readable in the database, in exports, and in debug output.
-
-**Craft core's own permissions are camelCase** (`accessCp`, `editUsers`, `viewPeerEntries`). This is a deliberate divergence for plugin-owned handles — don't "correct" plugin handles back to camelCase for consistency with core, and don't rewrite core's handles.
-
-The PHP constant holding the handle stays `SCREAMING_SNAKE_CASE` (`PERMISSION_MANAGE_SETTINGS`); only the string value is kebab. Full mechanics in the `craftcms` skill's `permissions.md`.
-
-## Naming Quick-Reference
-
-| Thing | Convention | Example |
-|-------|-----------|---------|
-| Services (resource) | Plural | `Entries`, `Volumes`, `Users` |
-| Services (utility) | Domain noun | `Auth`, `Search`, `Gc` |
-| Queue jobs | Action verb, no suffix | `ResaveElements`, `UpdateSearchIndex` |
-| Records | Same name as model | Namespace distinguishes |
-| Events | Three patterns | `SectionEvent`, `RegisterUrlRulesEvent`, `DefineHtmlEvent` |
-| Element actions | Action verb, no suffix | `Delete`, `Duplicate`, `SetStatus` |
-| Enums | PascalCase cases, string/int backed | `PropagationMethod`, `CmsEdition` |
-
-For the complete naming reference including file structure conventions, read `references/naming-conventions.md`.
-
-## Copy style
-
-Never use em-dashes (—) or en-dashes (–) in user-facing copy: field labels and instructions, `Craft::t()` strings, CP notices and flash messages, console command output, plugin/module README, and docs. Use commas, periods, colons, or parentheses instead; for ranges write "4 to 10" or a plain ASCII hyphen ("4-10"). Plain hyphens are fine. Code comments and PHPDoc are exempt. Grep for `—` and `–` in your `Craft::t()` strings, templates, and docs before finishing. (Front-end Twig copy: see the `craft-twig-guidelines` skill, which carries the same rule for `|t` strings and template text.)
-
-## Console controller docblocks are terminal help
-
-Yii renders console controller docblocks VERBATIM as operator-facing help, with no inline-tag resolution: the class docblock's second line becomes the command summary in `craft help`, the prose up to the first `@tag` becomes the `help <command>` body, each action method's docblock first line becomes that action's description, and option properties' `@var` text becomes `--option` help. Therefore, in every class extending `yii\console\Controller`: no `{@see}`/`{@link}`/`{@inheritdoc}` in class/property docblocks or action-method first lines (write command ids as plain text instead), no `=========` section-header rule as docblock line 2 (it prints as the command summary), no hanging-indent continuation lines on option `@var` tags (they render as ragged indents; match `craftcms/cms` `ResaveController`'s flush style), and the summary sentence goes on line 2. Verify with `ddev craft help <plugin>` — `craft help | grep '{@'` must return nothing.
-
-Three specifics that survive that rule and still bite:
-
-- **The summary is docblock line 2 *physically*, not the first sentence.** `parseDocCommentSummary()` (`yii\console\Controller`) returns `trim($docLines[1])` and nothing more — a first sentence that wraps onto line 3 prints only the fragment on line 2 (real summaries truncated at "and writes", "whether every row", "prints the new"). Keep the whole summary sentence on one physical line, even if it exceeds the usual wrap width.
-- **A scaffolded `* Class FooController` on line 2 becomes the `craft help` summary verbatim.** Replace generator boilerplate with a real summary before shipping.
-- **`getHelpSummary()` / `getHelp()` overrides make the docblock dead code.** Once a class overrides them, the docblock and the printed help are two sources of truth that disagree silently — and if `getHelp()` returns the summary verbatim, the command has no help body at all. Prefer docblocks alone; if an override exists (or you add one), delete or align the prose it shadows, and check `help <command>` prints an actual body.
+- Records use the **same class name** as models (namespace distinguishes). Alias when importing both: `use ...\records\MyEntity as MyEntityRecord;`.
+- Queue jobs have **no "Job" suffix** — `ResaveElements`, not `ResaveElementsJob`. Element actions likewise (`Delete`, `SetStatus`).
+- Forget `parent::defineRules()` and you lose all inherited validation.
+- Using `[$this, '_validateFoo']` callable arrays or inline closures in `defineRules()` — Craft core uses string method names: `[['attr'], 'validateAttr']`. The validator method is public, no underscore — Yii invokes it by name.
+- Parsing a raw DB datetime with `strtotime()` or `new DateTime()`: the column is naive UTC and the process timezone is `system.timeZone`. Use `DateTimeHelper::toDateTime($value)` or Carbon with `'UTC'`. See `references/dates-env-database.md`.
+- Magic property access (`$plugin->settings`, `$app->view`) fails PHPStan; use explicit getters (`getSettings()`, `getView()`). See `references/tooling.md`.
+- Calling Craft-specific methods directly on `Craft::$app` — narrow with a typed local: `/** @var \craft\web\Application $app */ $app = Craft::$app;`. Don't use `@phpstan-ignore-line`.
+- Contract constants (permission handles, wire formats) duplicated as `private const` drift silently: one `public const` on the owner, e.g. `SettingsController::PERMISSION_MANAGE_SETTINGS`. See `references/naming-conventions.md`.
+- **Permission handles are kebab-case (`handle:manage-settings`); never camelCase**, though Craft core's own are camelCase. The PHP constant stays `SCREAMING_SNAKE_CASE`. See `references/naming-conventions.md`.
+- **`App::env('VAR')`, never `getenv()`**, in plugin code and in every config example (with `use craft\helpers\App;`). `App::parseEnv()` for settings that may hold a `$VAR` or alias. See `references/dates-env-database.md`.
+- The same authorization check written separately in a CP controller, a console command, and a GraphQL resolver drifts: one shared gate called by every surface, a test per surface. Console is not exempt; GraphQL schema scope is not the plugin's permission matrix. Craft has no self-approval guard either. See `references/authorization-parity.md`.
+- `../*` path repositories in a plugin's `composer.json` resolve only on the author's disk. See `references/tooling.md` (Composer Hygiene).
+- `Db::parseParam()` for a literal comparison turns a leading/trailing `*` into a `LIKE` wildcard. Use `andWhere(['col' => $value])`.
+- Registering `EVENT_REGISTER_ELEMENT_TYPES` / `EVENT_REGISTER_FIELD_TYPES` inside a `getIsCpRequest()` branch hides the type from console/queue requests (and `Gc` stops purging it). Register unconditionally. See `references/dates-env-database.md`.
+- Console controller docblocks print verbatim as `craft help`: the summary is physical docblock line 2, so no `=========` rule there, no `{@see}`/`{@link}`/`{@inheritdoc}`, no scaffolded `* Class FooController`. See `references/phpdoc-standards.md`.
+- **Copy style**: no em-dashes (—) or en-dashes (–) in user-facing copy (`Craft::t()` strings, labels, CP notices, console output, README, docs). Code comments and PHPDoc are exempt. See `references/templates-and-patterns.md`.
 
 ## Verification Checklist
 

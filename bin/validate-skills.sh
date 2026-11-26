@@ -15,6 +15,8 @@
 #   - description: 1-1024 chars (spec limit)
 #   - description + " - " + when_to_use: <= 1536 chars (Claude Code truncates
 #     the combined text in the skill listing beyond this)
+#   - SKILL.md body (after the frontmatter) <= 12 KB: it loads in full with the
+#     skill, so detail lives in references/
 #   - scripts/craft-version.sh is byte-identical to bin/craft-version.sh
 #     (bin/sync-version-script.sh writes the copies)
 #   - SKILL.md runs it with the `!` line (pre-approved in allowed-tools),
@@ -34,6 +36,7 @@ status=0
 ruby -ryaml - "$REPO_ROOT"/skills/*/SKILL.md <<'RUBY' || status=1
 ALLOWED = %w[name description license compatibility metadata allowed-tools when_to_use]
 DESC_MAX = 1024
+BODY_MAX = 12 * 1024 # bytes after the frontmatter (R10, ~3K tokens); detail belongs in references/
 LISTING_MAX = 1536
 SEPARATOR = " - "
 
@@ -71,6 +74,11 @@ ARGV.each do |path|
     elsif fm
       errors << "frontmatter is not a mapping"
     end
+  end
+
+  if parts.length >= 3
+    body = parts[2].bytesize
+    errors << "SKILL.md body is #{body} bytes (max #{BODY_MAX}); move detail into references/" if body > BODY_MAX
   end
 
   if errors.empty?

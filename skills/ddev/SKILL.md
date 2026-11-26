@@ -129,7 +129,7 @@ Composer scripts auto-run `craft up` after install/update:
 }
 ```
 
-No need to manually run `ddev craft migrate/all` or `ddev craft project-config/apply` — `ddev craft up` does both, and it auto-runs after `ddev composer install/update`.
+So `ddev craft up` (migrations plus project config) auto-runs after `ddev composer install/update`.
 
 ## Add-ons
 
@@ -164,117 +164,16 @@ Place scripts in `.ddev/commands/web/` (container) or `.ddev/commands/host/` (ho
 cd /var/www/html && composer check-cs
 ```
 
-Note: omit `#ddev-generated` on custom commands you maintain — DDEV overwrites files with that comment during updates. Only add-on-managed commands should include it.
+## Plugin Development and Plugin Test Suites
 
-## Composer Path Repos and Volume Mounts
+- **Composer path repos** need a matching volume mount: the `url` in `composer.json` is the host path, and `.ddev/docker-compose.mounts.yaml` mounts that same path at the same location in the container, or the symlink in `vendor/` points nowhere. Never set `config.platform.php` in `composer.json`; DDEV owns the PHP version.
+- **Run a symlinked plugin's Pest suite from its own directory**: `ddev exec --dir /var/www/html/vendor/acme/my-plugin vendor/bin/pest`. `markhuot/craft-pest-core` reads `getcwd().'/phpunit.xml(.dist)'` only and ignores `--configuration=`, so `ddev craft pest -- --configuration=vendor/acme/my-plugin/phpunit.xml.dist` runs the tests against the project's live database. Treat that shared-root form as unsafe.
 
-When developing plugins locally, Composer path repos symlink the plugin into `vendor/`. For this to work inside DDEV's Docker container, the host path must be volume-mounted so the symlink resolves.
-
-### Setup
-
-1. **composer.json** — use the local host path:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "path",
-            "url": "/Users/Shared/dev/craft-plugins/v5/*"
-        }
-    ]
-}
-```
-
-2. **docker-compose override** — mount the same path into the container. Create `.ddev/docker-compose.mounts.yaml`:
-
-```yaml
-services:
-  web:
-    volumes:
-      - /Users/Shared/dev/craft-plugins:/Users/Shared/dev/craft-plugins
-```
-
-The mount path inside the container must match the host path exactly — Composer creates absolute symlinks that must resolve in both contexts. Replace `/Users/Shared/dev/craft-plugins` with your actual plugin directory path.
-
-3. **Require the plugin**: `ddev composer require vendor/plugin-handle:@dev`
-
-### Common mistakes
-
-- Using a Docker-internal path in `composer.json` `url` — the path must be the host filesystem path, not `/var/www/...`
-- Forgetting the volume mount — `ddev composer install` succeeds but the symlink points nowhere inside the container
-- Setting `"platform": {"php": "8.3"}` in `composer.json` `config` — don't. DDEV handles the PHP version via `.ddev/config.yaml`. Platform overrides cause dependency resolution mismatches between host and container, and prevent DDEV from managing version upgrades cleanly.
-
-## Browser Debugging with Chrome DevTools MCP
-
-The Chrome DevTools MCP server gives Claude Code direct browser access — inspect pages, read console logs, check network requests, capture screenshots, and interact with the DOM.
-
-### Installation
-
-```bash
-claude mcp add chrome-devtools -- npx chrome-devtools-mcp@latest
-```
-
-Quit and reopen Claude Code to load the new MCP server. Requires Chrome or Chromium running — the MCP server handles the DevTools Protocol connection automatically.
-
-### What it enables
-
-| Capability | Use Case |
-|-----------|----------|
-| **Page inspection** | Check rendered HTML, verify template output, inspect meta tags |
-| **Console logs** | Catch Twig errors, JS exceptions, Garnish initialization failures |
-| **Network requests** | Debug 404 assets, failed AJAX calls, Sprig/htmx swaps |
-| **DOM queries** | Verify form markup, check field rendering, validate ARIA attributes |
-| **Screenshots** | Visual verification of CP templates, responsive testing |
-| **Navigation & login** | Authenticate into the CP, navigate to plugin settings/edit pages |
-
-### When to use
-
-- **Front-end template debugging** — 404s, missing assets, broken layouts, SEOmatic meta tag verification
-- **CP template verification** — plugin settings pages render correctly, editable tables work, slideout editors load
-- **Garnish/JS debugging** — modals, drag-sort, disclosure menus initialize without console errors
-- **Sprig/htmx debugging** — watch network requests for htmx swaps, verify response HTML fragments
-- **Auth flow testing** — walk through login, registration, password reset end-to-end
-- **Read-only mode verification** — confirm settings pages display correctly with `allowAdminChanges` off
-- **Visual regression** — screenshot before/after template changes
-
-### CP authentication pattern
-
-DDEV sites are accessible at `https://{project}.ddev.site`. To inspect CP pages:
-
-1. Navigate to `https://{project}.ddev.site/{cpTrigger}`
-2. Log in with admin credentials
-3. Navigate to the plugin/settings page to inspect
-4. Check console for JS errors, inspect DOM for correct markup
-
-### Project setup
-
-The `craft-project-setup` skill offers to install Chrome DevTools MCP during scaffolding. If installed later, run `claude mcp add chrome-devtools -- npx chrome-devtools-mcp@latest` from the project root — this writes to the project's `.claude.json`, keeping it project-level.
+Setup steps, mount example and the full test-suite mechanism: `references/plugin-development.md`; isolation checklist and CI: the `craft-pest` skill (`references/isolation.md`).
 
 ## Craft's Own MCP Server [5.12+]
 
-Craft 5.12 ships its own MCP server, so an MCP client can read and edit the local site's content as a Craft user. Not the same thing as Chrome DevTools MCP above. Setup (OAuth keys, Settings → MCP, the `claude mcp add --transport http` command, the stdio variant `ddev craft mcp/serve --user=<username>`), mkcert trust for the client and plugin tools live in the **`craft-mcp`** skill; load it instead of improvising. Two DDEV-specific facts: the HTTP endpoint only accepts the CP and site hosts (`*.ddev.site`, `localhost`), so a `ddev share` URL is rejected unless it is also a site base URL, and Craft MCP needs Craft 5.12 or later [5.12+] (Before 5.12: nothing to connect to; upgrade first).
-
-## Running a Plugin's Own Test Suite
-
-When a plugin is symlinked into a host project, run its suite **from the plugin's own directory** inside the container:
-
-```bash
-ddev exec --dir /var/www/html/vendor/acme/my-plugin vendor/bin/pest
-ddev exec --dir /var/www/html/vendor/acme/my-plugin composer test
-```
-
-`--dir` sets the working directory, and that is the load-bearing part. `markhuot/craft-pest-core` reads its environment overrides from `getcwd().'/phpunit.xml(.dist)'` only — it does **not** parse a `--configuration=` flag. So the shared-root form:
-
-```bash
-# UNSAFE — runs the tests, but against the project's live database
-ddev craft pest -- --configuration=vendor/acme/my-plugin/phpunit.xml.dist
-```
-
-…discovers and executes the plugin's tests while silently ignoring the plugin's own `CRAFT_DB_DATABASE` pin. Combined with a suite that hasn't bound the `RefreshesDatabase` trait (rollback is opt-in), that writes test data permanently into your development database. Treat the shared-root invocation as unsafe for any craft-pest-core suite.
-
-The full mechanism, the isolation checklist, and the CI equivalent are in the `craft-pest` skill (`references/isolation.md`).
-
-For plugins mounted via a Composer path repo, the `--dir` path is the symlink target inside the container — see [Composer Path Repos and Volume Mounts](#composer-path-repos-and-volume-mounts) for making that path resolve.
+Craft 5.12 ships its own MCP server, so an MCP client can read and edit the local site's content as a Craft user. Not the same thing as Chrome DevTools MCP (`references/browser-debugging.md`). Setup (OAuth keys, Settings → MCP, the `claude mcp add --transport http` command, the stdio variant `ddev craft mcp/serve --user=<username>`), mkcert trust for the client and plugin tools live in the **`craft-mcp`** skill; load it instead of improvising. Two DDEV-specific facts: the HTTP endpoint only accepts the CP and site hosts (`*.ddev.site`, `localhost`), so a `ddev share` URL is rejected unless it is also a site base URL, and Craft MCP needs Craft 5.12 or later [5.12+] (Before 5.12: nothing to connect to; upgrade first).
 
 ## Troubleshooting
 
@@ -295,3 +194,12 @@ Two symptoms and fixes:
 - **A `.env` change reverts after restart.** If you edited `.ddev/.env.web` by hand, it's regenerated on restart — put durable overrides in `.ddev/config.yaml` (`web_environment`) or set `disable_settings_management: true` to own the file yourself.
 
 When a config value "won't change," check the resolved environment (`ddev exec printenv | grep CRAFT_`, and `.ddev/.env.web`) before editing PHP again.
+
+## Reference Files
+
+| Reference | ~Tokens | Scope |
+|-----------|---------|-------|
+| `references/plugin-development.md` | ~850 | Composer path repos and volume mounts for local plugin development; running a plugin's own Pest suite with `ddev exec --dir` and why `--configuration=` is unsafe. |
+| `references/browser-debugging.md` | ~680 | Chrome DevTools MCP: installation, capabilities, when to use it, logging into the CP on a DDEV site, project-level setup. |
+
+Task examples: "symlink a local plugin into the project" or "run my plugin's tests" → `plugin-development.md`; "inspect the CP / check console errors in a browser" → `browser-debugging.md`.
