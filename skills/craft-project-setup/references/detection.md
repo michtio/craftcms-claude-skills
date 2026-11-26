@@ -101,6 +101,7 @@ Confirm the detected type and gather project-specific details. Keep it short —
 
 **For all types:**
 - Confirm detected tooling: ECS, PHPStan, Pest (from `composer.json` scripts)
+- Gate tests: **only when the project has an isolated Pest suite** (`tests/Pest.php` exists and `phpunit.xml.dist` pins `CRAFT_DB_DATABASE`); with no suite, don't ask and write nothing. Ask once: **"Should builds lock their gate tests (written first from the acceptance criteria by a separate agent, then not changed by the builder)? (yes/no, default yes)"** Write exactly one line into the generated CLAUDE.md: `Gate tests: locked` on yes, `Gate tests: builder-written` on no. The `craft-feature-builder` agent reads that line.
 - Git workflow: main branch name, PR-based workflow?
 - Chrome DevTools MCP: offer installation if not already in `.claude.json`
 - Dev root folder: "Where is your development root? (e.g., `~/dev/`)" — this is the parent folder where the planner can clone public repos for research and audits. Detect by looking at the project's parent directory. Store in the generated CLAUDE.md as `devRootPath`.

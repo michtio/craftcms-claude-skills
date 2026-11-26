@@ -1,0 +1,7 @@
+{
+  "name": "acme/craft-sync",
+  "type": "craft-plugin",
+  "require": {"php": "^8.2", "craftcms/cms": "^5.12.0"},
+  "autoload": {"psr-4": {"acme\\sync\\": "src/"}},
+  "extra": {"handle": "sync", "name": "Sync", "class": "acme\\sync\\Plugin"}
+}

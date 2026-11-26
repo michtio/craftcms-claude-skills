@@ -47,6 +47,18 @@ Nothing gets built without an approved spec: a `prd.md` (what and why: numbered 
 3. Run `ddev composer check-cs` and `ddev composer phpstan` to confirm the project is clean.
 4. If anything fails, fix it first or flag it.
 
+## Gate tests (before the build)
+
+**Which flow.** Locked gate tests apply when all three hold: `tests/Pest.php` exists, `phpunit.xml.dist` pins `CRAFT_DB_DATABASE`, and the project's `CLAUDE.md` has no `Gate tests: builder-written` line. Otherwise use the builder-written flow (your own tests, fail first; see Testing). The hand-back opens with `Gate flow: locked (<gate commit>)` or `Gate flow: builder-written (<reason>)`, for example `(no Pest suite)`, `(no test database pinned)`, `(CLAUDE.md opts out)`.
+
+**Locked flow.**
+1. Before any implementation, start `craft-gate-writer` (`craftcms-claude-skills:craft-gate-writer` when the pack is a plugin). Its brief: the slice id, the R ids with their acceptance criteria copied verbatim from the PRD, the Craft version, the plugin root and the Pest command. Nothing else: no design, class names you plan, or hints. Pass no `model`.
+2. It hands back a commit `test(gate): <slice id>` with the gate test files, each red with its reason. Copy that table into your hand-back; it replaces Fail first for these tests.
+3. Build against those tests. You may add tests of your own (fail first). You never edit, rename or delete a gate test file.
+4. A gate test you believe is wrong (asserts a value the spec does not state, or one the spec contradicts): do not change it. Stop at a passing gate and report the test, the line and the reason.
+5. Before hand-back, run and paste both exit codes (0 means untouched): `git diff --quiet <gate commit> HEAD -- <gate files>` and `git diff --quiet -- <gate files>`.
+6. No `Agent` tool: use the builder-written flow and say `Gate flow: builder-written (no Agent tool)`.
+
 ## Build feature by feature — explicit verification gates
 
 Build one feature at a time as a vertical slice. Each feature uses whatever layers it needs — not every feature touches every layer. Don't write five files and verify at the end — that compounds debugging complexity and wastes tokens on confused rework.
@@ -81,7 +93,7 @@ Build one feature at a time as a vertical slice. Each feature uses whatever laye
 4. **Simplification pass, then final check** → see below; it ends with `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
 5. **Checker gate** → see below: one independent checker on your diff before you hand back.
 
-A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Never plaster over a failed gate by writing the next layer.
+A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Stop after 3 rounds and hand back the open findings (the failing gate, each attempt and its result) when one gate is still red after 3 fix attempts. Never plaster over a failed gate by writing the next layer.
 
 If you must stop early (budget, context, or a blocking question), stop at a passing gate — never mid-layer with a red tree. Report the exact remainder: files, steps, and gates left, so the next session resumes without re-deriving scope.
 
@@ -161,18 +173,18 @@ After all gates pass and before you declare done, do one sweep on files you just
 - Verify section headers present and imports/properties/methods alphabetized.
 - Confirm PHPDocs complete, `@throws` chains accurate.
 
-After the sweep, re-run `ddev composer check-cs` and `ddev composer phpstan`. If anything changed behavior, revert that specific change — simplification is style, not refactor.
+After the sweep, re-run `ddev composer check-cs` and `ddev composer phpstan`. A re-sweep only follows a check that fails; at most 2 re-sweeps. Stop after 3 rounds and hand back the open findings. If anything changed behavior, revert that specific change — simplification is style, not refactor.
 
 ## Checker gate (before hand-back)
 
-After the final check, one independent checker reads your diff. At most 3 agents per run: the checker, plus up to two re-checks after Critical fixes.
+After the final check, one independent checker reads your diff. At most 4 agents per run: the gate writer, the checker, plus up to two re-checks after Critical fixes.
 
 1. **Size it.** `git diff --numstat <base>` (the branch point; `HEAD` for uncommitted work) for changed lines, `git diff <base>` for what it touches. Sensitive: controllers or actions, permission or access checks, request input (`getBodyParam`, `getQueryParam`, route params), migrations, `|raw` or `attr()` output, MCP tools or OAuth, `config/` files.
    - Under 50 lines, nothing sensitive: skip the checker.
    - Under 50 lines, anything sensitive: security lens only.
    - 50 lines or more: security and conventions, in one checker.
 2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` when the pack is a plugin: use the name your agent list shows) with the lens brief(s) below, the Craft version, the changed files with the diff command, and your check-cs and phpstan result. Pass no `model`: the checker runs on its own (Sonnet).
-3. **Act.** Critical: fix, re-run the affected gates, start one re-check on the fix. Important: fix, or list it with the reason. Suggestions: list only.
+3. **Act.** Critical: fix, re-run the affected gates, start one re-check on the fix. Stop after 3 rounds and hand back the open findings after the second re-check. Important: fix, or list it with the reason. Suggestions: list only.
 4. **No `Agent` tool** (nesting off or at its limit): report "Checker: not run (no Agent tool)". Never skip silently.
 
 Lens briefs:
@@ -194,7 +206,7 @@ Before writing a helper, service, utility or Twig helper, look for one that exis
 
 ## Testing
 
-- **Fail first.** Write each new test before the code it covers, run it with `--filter`, and see it fail for the reason you expect (missing method, wrong value, 403), not a bootstrap or syntax error. Then write the code and see it pass. A test that passes before its code exists tests nothing: rewrite it. The hand-back lists each new test as `red (<failure reason>) → green`.
+- **Fail first.** In the locked flow the gate tests come red from the gate writer; this rule covers every test you add yourself. Write each new test before the code it covers, run it with `--filter`, and see it fail for the reason you expect (missing method, wrong value, 403), not a bootstrap or syntax error. Then write the code and see it pass. A test that passes before its code exists tests nothing: rewrite it. The hand-back lists each new test as `red (<failure reason>) → green`.
 - Write tests alongside the code, not after. The service test is written in the same gate as the service. The controller test is written in the same gate as the controller. If you're about to move to the next layer and haven't written a test for the current one, stop — a service without tests is not a completed gate.
 - Follow the `craft-pest` isolation checklist (load the skill first) when a suite is new or you touch `tests/Pest.php`, `tests/bootstrap.php`, or `phpunit.xml.dist`: `RefreshesDatabase` bound, DB pins in place, plugin installed explicitly.
 - Use `->site('*')` in test queries to avoid site-context issues.

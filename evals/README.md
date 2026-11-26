@@ -33,6 +33,13 @@ than a skill case: `deep-review-team-planted` runs the deep reviewer and its che
 a planted diff (`fixtures/review/orders-plugin`); `builder-checker-small-sensitive` runs the
 feature builder on a small controller change and expects one security-only checker. `--out` keeps each answer for reading
 a failure.
+Repeated runs: a read-only agent case on a fixture may set `"runs": 2` or `3`; `--runs N`
+(at most 3) then repeats it, only when the case is selected (its files changed, or `--only`),
+with no retries, and prints `passed n/N` and the tokens per run. A plain release run runs
+every case once. `review-weakened-tests` (a reviewer on weakened gate tests) and
+`debugger-hypotheses` (a bug with two plausible causes) opt in. A builder case never repeats:
+`facts_check.py` fails CI when a case that expects `craft-feature-builder` or
+`craft-site-builder` sets `runs` above 1.
 Never run AI evals in CI, nightly or on API credit.
 
 | Tool | Tier | Makes model calls? |

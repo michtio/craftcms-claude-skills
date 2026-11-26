@@ -49,7 +49,7 @@
   },
   {
     "id": "builder-checker-small-sensitive",
-    "note": "Spec 2026-11-26-agent-caps-builder-gate AC4/AC8: a builder's small diff (a few lines) adds a body param read in a controller, so R5b applies: one craft-review-checker with the security lens only. Runs in a git copy of the orders-plugin fixture with an approved spec overlaid. agents counts the builder itself: builder + checker + at most 2 re-checks = 4.",
+    "note": "Spec 2026-11-26-agent-caps-builder-gate AC4/AC8: a builder's small diff (a few lines) adds a body param read in a controller, so R5b applies: one craft-review-checker with the security lens only. Runs in a git copy of the orders-plugin fixture with an approved spec overlaid. agents counts the builder itself: builder + checker + at most 2 re-checks = 4 (the fixture has no Pest suite, so no gate writer starts).",
     "cwd": "evals/fixtures/review/orders-plugin",
     "copy_cwd": true,
     "overlay": "evals/fixtures/builder/export-status",
@@ -65,6 +65,9 @@
     "must_match": [
       [
         "Checker:?\\**:?\\s*security(?!\\s*(\\+|and\\b|&))"
+      ],
+      [
+        "Gate flow:?\\**:?\\s*builder-written"
       ]
     ],
     "must_not_match": [
@@ -74,13 +77,17 @@
       {
         "file": "agents/craft-feature-builder.md",
         "contains": [
-          "At most 3 agents per run",
+          "At most 4 agents per run",
           "## Checker gate \\(before hand-back\\)",
           "Under 50 lines, anything sensitive: security lens only",
           "\\*\\*Fail first\\.\\*\\*",
           "## Reuse before writing",
           "Response::FORMAT_CSV",
-          "Pass no `model`"
+          "Pass no `model`",
+          "## Gate tests \\(before the build\\)",
+          "Gate flow: builder-written \\(<reason>\\)",
+          "git diff --quiet <gate commit> HEAD -- <gate files>",
+          "do not change it\\. Stop at a passing gate"
         ]
       },
       {
@@ -89,6 +96,190 @@
           "At most 3 agents per run",
           "## Checker gate \\(before handoff\\)",
           "Reuse before writing"
+        ]
+      },
+      {
+        "file": "agents/craft-gate-writer.md",
+        "contains": [
+          "Write only under `tests/`",
+          "test\\(gate\\): <slice id>",
+          "bootstrap error",
+          "never ask for any|you do not ask for any"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "review-weakened-tests",
+    "note": "Spec 2026-11-26-verifier-discipline AC4/AC5: a builder weakened a gate test file (toBe(3) -> toBeInt(), ->skip() added) and claims the gate passed. Isolation is pinned but there is no DDEV project, so the gate cannot be rerun: expect 'claimed, not rerun'. Read-only, so it may repeat (runs: 3).",
+    "cwd": "evals/fixtures/review/weakened-tests",
+    "tools": "Agent,Skill,Read,Grep,Glob",
+    "max_turns": 4,
+    "runs": 3,
+    "expect_agent": "craft-code-reviewer",
+    "max_agents": 1,
+    "prompt": "Use the craftcms-claude-skills:craft-code-reviewer agent (that exact type) to review slice S1 of this Craft plugin. CHANGE.md describes the change and quotes the builder's hand-back; change.diff is the full diff (there is no git history, so read the files instead of using git). There is no DDEV project, so no ddev command can run. Reply with the agent's report verbatim.",
+    "must_match": [
+      [
+        "###\\s*(Important|Critical)(?:(?!###).)*(->skip|skip\\(|skipped)",
+        "\\*\\*(Important|Critical)\\*\\*[^\\n]{0,400}(->skip|skip\\(|skipped)",
+        "(->skip|skip\\(|skipped)[^\\n]{0,300}\\b(Important|Critical)\\b"
+      ],
+      [
+        "###\\s*(Important|Critical)(?:(?!###).)*toBeInt",
+        "\\*\\*(Important|Critical)\\*\\*[^\\n]{0,400}toBeInt",
+        "toBeInt[^\\n]{0,300}\\b(Important|Critical)\\b"
+      ],
+      [
+        "claimed,?\\s*not rerun"
+      ]
+    ],
+    "must_not_match": [
+      "rerun,\\s*pass"
+    ],
+    "facts": [
+      {
+        "file": "agents/craft-code-reviewer.md",
+        "contains": [
+          "\\*\\*Test weakening\\*\\* → \\*\\*Important\\*\\*",
+          "toBeInt",
+          "\\*\\*Gate reruns\\.\\*\\*",
+          "claimed, not rerun",
+          "git log --grep '\\^test\\(gate\\):'"
+        ]
+      },
+      {
+        "file": "agents/craft-code-reviewer-deep.md",
+        "contains": [
+          "Test weakening is Important",
+          "claimed, not rerun",
+          "Never run a suite without isolation"
+        ]
+      },
+      {
+        "file": "docs/agents.md",
+        "contains": [
+          "## Effort",
+          "https://code\\.claude\\.com/docs/en/sub-agents",
+          "https://code\\.claude\\.com/docs/en/model-config",
+          "CLAUDE_CODE_SUBAGENT_EFFORT",
+          "keep `high` for `craft-planner` and `craft-code-reviewer-deep`"
+        ]
+      },
+      {
+        "file": "agents/craft-code-reviewer-deep.md",
+        "contains": [
+          "^effort: high$"
+        ]
+      },
+      {
+        "file": "agents/craft-code-reviewer.md",
+        "contains": [
+          "^effort: high$"
+        ]
+      },
+      {
+        "file": "agents/craft-debugger.md",
+        "contains": [
+          "^effort: high$"
+        ]
+      },
+      {
+        "file": "agents/craft-feature-builder.md",
+        "contains": [
+          "^effort: high$"
+        ]
+      },
+      {
+        "file": "agents/craft-gate-writer.md",
+        "contains": [
+          "^effort: high$"
+        ]
+      },
+      {
+        "file": "agents/craft-planner.md",
+        "contains": [
+          "^effort: high$"
+        ]
+      },
+      {
+        "file": "agents/craft-review-checker.md",
+        "contains": [
+          "^effort: high$"
+        ]
+      },
+      {
+        "file": "agents/craft-site-builder.md",
+        "contains": [
+          "^effort: high$"
+        ]
+      },
+      {
+        "file": "skills/craft-project-setup/references/detection.md",
+        "contains": [
+          "Gate tests: \\*\\*only when the project has an isolated Pest suite\\*\\*",
+          "with no suite, don't ask and write nothing",
+          "`Gate tests: locked` on yes, `Gate tests: builder-written` on no"
+        ]
+      },
+      {
+        "file": "skills/craft-project-setup/references/generation.md",
+        "contains": [
+          "exactly one `Gate tests: locked` or `Gate tests: builder-written` line"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "debugger-hypotheses",
+    "note": "Spec 2026-11-26-verifier-discipline AC7: a bug with two plausible causes. 1.2.0 added ->status('live') (plausible: French products disabled or not live) and a per-site filter on a query with no siteId (real: queue jobs query the primary site). The editor's export rules out status; the logged SQL shows siteId=1. Read-only diagnosis, so it may repeat (runs: 3).",
+    "cwd": "evals/fixtures/debug/sync-plugin",
+    "tools": "Agent,Skill,Read,Grep,Glob",
+    "max_turns": 4,
+    "runs": 3,
+    "expect_agent": "craft-debugger",
+    "max_agents": 1,
+    "prompt": "Use the craftcms-claude-skills:craft-debugger agent (that exact type) to diagnose the bug in BUG.md for this Craft plugin. Diagnosis only: do not edit files, and there is no DDEV project, so no ddev command can run; the evidence is in the files. Reply with the agent's report verbatim.",
+    "must_match": [
+      [
+        "\\|\\s*hypothes[ie]s\\s*\\|[^\\n]*check[^\\n]*\\|"
+      ],
+      [
+        "(site context|siteId|site\\(|primary site)[^\\n]{0,400}\\|\\s*\\**kept\\b",
+        "\\bkept\\b[^\\n]{0,300}(site context|siteId|site\\(|primary site)"
+      ],
+      [
+        "(disabled|enabled|status|live|postDate|not live)[^\\n]{0,400}\\|\\s*\\**rejected\\b",
+        "\\brejected\\b[^\\n]{0,300}(disabled|enabled|status|live)"
+      ]
+    ],
+    "must_not_match": [],
+    "facts": [
+      {
+        "file": "agents/craft-debugger.md",
+        "contains": [
+          "each with the one check that tells it apart",
+          "Run every hypothesis's deciding check before any fix",
+          "`hypothesis \\| check \\| result \\| kept/rejected`",
+          "Stop after 3 rounds and hand back the open findings"
+        ]
+      },
+      {
+        "file": "agents/craft-feature-builder.md",
+        "contains": [
+          "after 3 fix attempts",
+          "at most 2 re-sweeps\\. Stop after 3 rounds",
+          "Stop after 3 rounds and hand back the open findings after the second re-check"
+        ]
+      },
+      {
+        "file": "agents/craft-site-builder.md",
+        "contains": [
+          "Stop after 3 rounds and hand back the open findings"
+        ],
+        "not_contains": [
+          "test\\(gate\\)",
+          "gate commit"
         ]
       }
     ]

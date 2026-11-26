@@ -1,6 +1,6 @@
 # Agents
 
-Six specialized sub-agents, each with a dedicated model, effort level, and tool scope. Agents are invoked from within Claude Code to handle specific types of work. Each preloads its core skills on every run (startup at most 48 KB, about 12K tokens, checked by `bin/agent_budget.py`) and loads the rest on demand through the Skill tool, and enforces project conventions.
+Eight specialized sub-agents, each with a dedicated model, effort level, and tool scope. Agents are invoked from within Claude Code to handle specific types of work. Each preloads its core skills on every run (startup at most 48 KB, about 12K tokens, checked by `bin/agent_budget.py`) and loads the rest on demand through the Skill tool, and enforces project conventions.
 
 Models are set with the `opus` / `sonnet` aliases, so agents follow each family to its current version instead of pinning one. Builders list both `TodoWrite` and the `Task*` tools because a background subagent keeps only `TodoWrite`, while a foreground one inherits whichever the main session has. Agents with a browser-verification step list `mcp__chrome-devtools`; it resolves only when Chrome DevTools MCP is installed (see the `ddev` skill). Plugin subagents ignore `hooks`, `mcpServers`, and `permissionMode`, so none are set. See the [subagents docs](https://code.claude.com/docs/en/sub-agents) for the frontmatter fields.
 
@@ -74,7 +74,7 @@ department relations, salary range, and a full CP edit page.
 
 Builds production-quality plugin code following project architecture. Receives implementation plans and executes them layer by layer.
 
-Every new test runs red before its code and green after; the hand-back lists both, with the failure reason. Before hand-writing a helper it checks Craft's helpers, services and response formats (CSV via `Response::FORMAT_CSV`), `Craft::createGuzzleClient()` and the packages in `composer.lock`, and names anything it wrote that already existed. See [Checker gate](#checker-gate-builders) for the last step.
+When the project has an isolated Pest suite, the slice's gate tests are written first by `craft-gate-writer` from the acceptance criteria alone and committed as `test(gate): <slice id>`; the builder may not change them, checks the lock with git before hand-back, and stops on a gate test it believes is wrong (see [Gate tests](#craft-gate-writer)). Every test it adds itself runs red before its code and green after; the hand-back lists both, with the failure reason. Before hand-writing a helper it checks Craft's helpers, services and response formats (CSV via `Response::FORMAT_CSV`), `Craft::createGuzzleClient()` and the packages in `composer.lock`, and names anything it wrote that already existed. See [Checker gate](#checker-gate-builders) for the last step.
 
 ### The Build-Verify Gate Pattern
 
@@ -208,8 +208,8 @@ Systematic bug investigation with a hypothesis-driven approach.
 ### Debugging workflow
 
 1. **Reproduce** -- understand the exact steps, read error logs and queue failures
-2. **Hypothesize** -- form 2-3 possible explanations before reading code
-3. **Investigate** -- read relevant code, check `storage/logs/`, run targeted tests
+2. **Hypothesize** -- form 2-3 possible explanations before reading code, each with the one check that tells it apart (failing test, query log, stack trace, `git bisect`)
+3. **Investigate** -- run every deciding check before any fix, then read the code the surviving hypothesis points at; the report ends with a `hypothesis | check | result | kept/rejected` table
 4. **Isolate** -- write a minimal failing test that captures the bug
 5. **Fix** -- make the smallest change that fixes the issue
 6. **Verify** -- regression test red before the fix and green after, then ECS, PHPStan, and the full test suite (run from the plugin's own root)
@@ -381,9 +381,38 @@ Before handing back, `craft-feature-builder` and `craft-site-builder` size their
 
 A Critical finding is fixed, gates re-run, and the fix re-checked; Important findings are fixed or listed. When agents cannot start agents (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`), the hand-back says the checker did not run.
 
-### Agent caps
+## craft-gate-writer
 
-Every agent that can start agents declares a cap, checked in CI by `bin/agent_budget.py`: at most 5 for the deep reviewer, 3 for each builder, 0 for every agent without the `Agent` tool. The cap line in the agent file reads `At most N agents per <run|review>`; a missing line or a cap above 5 fails the build.
+**Model:** Sonnet (`high` effort)
+**Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill (no `Agent`)
+**Skills preloaded:** `craft-pest`
+
+Writes a slice's gate tests before the build, from the acceptance criteria alone, so the builder does not grade its own homework. Started by `craft-feature-builder`; not for direct use.
+
+1. **When.** The gate flow is used when `tests/Pest.php` exists, `phpunit.xml.dist` pins `CRAFT_DB_DATABASE`, and `CLAUDE.md` has no `Gate tests: builder-written` line. Otherwise the builder writes its own tests, red first, and the hand-back opens with `Gate flow: builder-written (<reason>)`.
+2. **Write and run red.** One test per acceptance criterion, under `tests/` only, each run red for a reason the missing feature explains (a bootstrap or syntax error does not count).
+3. **Commit.** Only the test files, as `test(gate): <slice id>`. The hand-back lists the commit, the files and each test's red reason.
+4. **Lock.** The builder never edits those files and pastes the exit codes of `git diff --quiet <gate commit> HEAD -- <gate files>` and `git diff --quiet -- <gate files>`. A gate test it disputes is reported, not changed. The reviewers flag any change to a gate file.
+
+The lock is checked with git, not hooks: plugin subagents ignore the `hooks`, `mcpServers` and `permissionMode` frontmatter fields (https://code.claude.com/docs/en/sub-agents).
+
+## Agent caps
+
+Every agent that can start agents declares a cap, checked in CI by `bin/agent_budget.py`: at most 5 for the deep reviewer, 4 for the feature builder (gate writer, checker, two re-checks), 3 for the site builder, 0 for every agent without the `Agent` tool. The cap line in the agent file reads `At most N agents per <run|review>`; a missing line or a cap above 5 fails the build.
+
+## Round caps
+
+Every fix or refinement loop stops after 3 rounds and hands back the open findings: the feature builder's fix attempts on one red gate, its simplification pass (one sweep plus at most two re-sweeps) and its checker re-checks; the site builder's fix loops; the debugger's fix attempts; the gate writer's attempts to make one test fail for the right reason.
+
+## Test checks in review
+
+Both reviewers treat a builder's PASS lines as claims. When the suite is isolated (`tests/Pest.php` plus `CRAFT_DB_DATABASE` pinned in `phpunit.xml.dist`) they rerun each named gate with its `--filter` and report the result; otherwise they report `claimed, not rerun`. They flag test weakening as Important: a changed or deleted file from a `test(gate):` commit, an added `->skip()`, `->todo()`, `->only()` or `markTestSkipped`, a deleted test, fewer assertions in a test, or an exact matcher (`toBe(3)`) replaced by a looser one (`toBeInt()`).
+
+## Effort
+
+Every agent ships with `effort: high`. The `effort` frontmatter field sets the effort level while the subagent is active and overrides the session effort level, but not the `CLAUDE_CODE_EFFORT_LEVEL` environment variable; options are `low`, `medium`, `high`, `xhigh` and `max` (https://code.claude.com/docs/en/sub-agents). Without it, Opus 5.5 and Sonnet 5.5 run at `medium` (https://code.claude.com/docs/en/model-config).
+
+Recommendation: keep `high` for `craft-planner` and `craft-code-reviewer-deep`, where depth is the point. `medium` is a reasonable option for the builders, the gate writer, `craft-code-reviewer`, `craft-review-checker` and `craft-debugger` when you want cheaper runs. To change it, copy the agent file into your project's `.claude/agents/`, edit `effort` and use that copy, or set `CLAUDE_CODE_SUBAGENT_EFFORT` for every subagent. The pack does not change its defaults on this: the builders cannot be measured cheaply enough to prove `medium` holds up.
 
 ---
 

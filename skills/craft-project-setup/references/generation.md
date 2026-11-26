@@ -35,6 +35,8 @@ CLAUDE.md                          # Project overview, commands, structure
     migrations.md                 # Migration rules (plugin/module) — generate from project conventions
 ```
 
+When Step 2 asked the gate-tests question (isolated Pest suite only), the generated `CLAUDE.md` holds exactly one `Gate tests: locked` or `Gate tests: builder-written` line, next to the test commands. No suite: no line.
+
 ## Step 3b: Generate permissions
 
 Generate `.claude/settings.local.json` with pre-approved permissions for commands the agents run repeatedly. Without this, every `ddev composer check-cs` or `ddev craft up` triggers a permission prompt, breaking the autonomous flow.

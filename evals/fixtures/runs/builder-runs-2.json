@@ -1,0 +1,10 @@
+[
+  {
+    "id": "self-test-builder-runs-2",
+    "note": "Self-test: a builder case with runs 2 must fail facts_check (builder cases run once per release).",
+    "prompt": "unused",
+    "expect_agent": "craftcms-claude-skills:craft-feature-builder",
+    "runs": 2,
+    "facts": [{"file": "agents/craft-feature-builder.md", "contains": ["craft-feature-builder"]}]
+  }
+]

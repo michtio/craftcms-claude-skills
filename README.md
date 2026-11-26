@@ -140,11 +140,12 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | `craft-planner` | Opus | Decompose features into vertical slices with verification gates. Can research/audit public plugins via `gh` and `git clone`. |
-| `craft-feature-builder` | Opus | Build plugin code feature by feature with automated + manual test gates, tests red before green, one independent checker before hand-back |
+| `craft-feature-builder` | Opus | Build plugin code feature by feature with automated + manual test gates, gate tests written and locked first by `craft-gate-writer` (or its own tests red before green), one independent checker before hand-back |
 | `craft-site-builder` | Opus | Site templates and components feature by feature with build-verify gates, one independent checker before hand-back |
 | `craft-debugger` | Sonnet | Systematic bug investigation |
 | `craft-code-reviewer` | Sonnet | Full-stack review against a structured checklist: PHP, Twig, JS, CSS, config |
 | `craft-code-reviewer-deep` | Opus | Deep review for high-stakes PRs (release branches, security, migrations, multi-service flows) as a small team: read-only checkers chosen by the diff, PHPStan/ECS as evidence, one challenge round per serious finding, one merged report. Small diffs get a single pass. |
+| `craft-gate-writer` | Sonnet | Writes a slice's gate tests from its acceptance criteria before the build, runs them red, commits them as the gate commit the builder may not change. Started by `craft-feature-builder`, not for direct use. |
 | `craft-review-checker` | Sonnet | One lens of a deep review (conventions, security, performance, migrations, CP JavaScript, release and hosting). Started by `craft-code-reviewer-deep` and the builders, not for direct use. |
 
 Agents build feature by feature (vertical slices), not layer by layer. Tests are written alongside each layer, not batched at the end. Manual testing gates (required + optional) are identified per feature. The builder's prevention rules map directly to the reviewer's checklist across PHP, Twig, JS, and CSS; `craft-code-reviewer-deep` goes further for high-stakes changes with a team of checkers. See [docs/agents.md](docs/agents.md) for details.
@@ -192,7 +193,7 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | [Getting Started](docs/getting-started.md) | Installation, project setup, how skills auto-trigger, first steps |
 | [Skills Overview](docs/skills-overview.md) | All 15 skills with triggers, companion skills, reference counts, boundaries |
 | [Prompt Guide](docs/prompt-guide.md) | 40+ real-world prompts organized by task type |
-| [Agents](docs/agents.md) | 7 agents with tools, gate patterns, composition examples |
+| [Agents](docs/agents.md) | 8 agents with tools, gate patterns, composition examples |
 | [Contributing](docs/contributing.md) | Adding plugin references, improving skills, reporting issues |
 | [Code of Conduct](CODE_OF_CONDUCT.md) | Contributor Covenant 2.1 — expected behavior and enforcement |
 | [Security Policy](SECURITY.md) | Supported versions, private vulnerability reporting, what's in and out of scope |

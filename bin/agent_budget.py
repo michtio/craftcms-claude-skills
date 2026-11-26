@@ -15,6 +15,7 @@ Agent caps (spec 2026-11-26-agent-caps-builder-gate, R1-R3):
   - an agent without Agent in `tools` has cap 0;
   - an agent with Agent declares `At most N agents per <run|review>`, N <= 5;
   - craft-review-checker never has Agent (teams do not nest further).
+  - craft-gate-writer never has Agent either (spec 2026-11-26-verifier-discipline, R1).
 
 Usage:
     python3 bin/agent_budget.py                 # table; exit 1 on any violation
@@ -32,7 +33,7 @@ REPO = Path(__file__).resolve().parent.parent
 BUDGET = 48 * 1024
 CAPS = {"craft-review-checker": 16 * 1024}
 NO_PRELOAD = {"craft-code-reviewer-deep"}
-NO_AGENT = {"craft-review-checker"}
+NO_AGENT = {"craft-review-checker", "craft-gate-writer"}
 MAX_AGENTS = 5
 CAP_LINE = re.compile(r"At most (\d+) agents per (?:run|review)\b")
 
