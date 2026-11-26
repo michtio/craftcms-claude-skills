@@ -24,6 +24,13 @@
 - Using margins between siblings instead of `gap` — prefer `gap-*` on the
   flex/grid parent over individual `mb-*` on children. Fewer classes, no
   last-child edge case.
+- CMS-driven brand colours built by string concatenation [changed 5.12]: a
+  Color field can return 8-digit hex once translucent colours are allowed, so
+  `{{ entry.brand }}80` breaks. Hand the colour to CSS as channels and let the
+  utility add alpha: `style="--brand: {{ entry.brand.rgbChannels }}"` [5.12+]
+  with `rgb(var(--brand) / 20%)`, or `entry.brand.oklch` [5.12+] for an OKLCH
+  token. [5.12+] Before 5.12: `--brand: {{ entry.brand.getHex(false) }}` with
+  `color-mix(in srgb, var(--brand) 20%, transparent)`.
 - Missing dark mode variants when the project uses them — if existing
   components use `dark:`, new components must too.
 

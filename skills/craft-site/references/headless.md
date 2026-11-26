@@ -6,6 +6,7 @@
 - GraphQL API: https://craftcms.com/docs/5.x/development/graphql.html
 - Preview targets: https://craftcms.com/docs/5.x/reference/element-types/entries.html#preview-targets
 - CORS filter: https://docs.craftcms.com/api/v5/craft-filters-cors.html
+- Authenticating as a user (OAuth, PATs): https://craftcms.com/docs/5.x/development/graphql.html#authenticating-as-a-user
 
 ## Common Pitfalls
 
@@ -17,6 +18,9 @@
 - Not sending the `X-Craft-Site` header for multi-site API consumers — Craft defaults to the primary site, silently returning wrong-language content.
 - Leaving the public GraphQL schema enabled without auditing its scope — it exposes content to unauthenticated requests.
 - Selecting `author`, `authors`, or `uploader` from a schema without **Query for users** — [changed 5.11] those fields (plus `authorId`, `authorIds`, `draftCreator`, `revisionCreator`, `uploaderId`) only exist in schemas with the Users → "Query for users" scope (`usergroups.everyone`). Before 5.11, read access to any one user group was enough (`Gql::canQueryUsers()`); from 5.11 it takes the all-users scope (`Gql::canQueryAllUsers()` [5.11+]), so a schema scoped to specific user groups loses these fields and a front end that worked on 5.10 fails query validation. When supporting both, grant **Query for users**. Grant the scope on the private schema the front end uses (not the public one, unless author accounts are meant to be public) or stop selecting author data.
+- Querying a Color field created in 5.12 as a plain string: [5.12+] new Color fields default to GraphQL Mode "Full data", which returns an object, so `{ accentColor }` fails with "must have a selection of subfields". Select subfields (`accentColor { hex rgba }`) or set the field to "Hex only". Existing fields stay Hex only, and hex can be 8-digit for translucent colours [changed 5.12]. Before 5.12: always a 6-digit hex string.
+- Using OAuth tokens for build-time fetching [5.12+]: no client-credentials grant and a 1-hour lifetime. Keep a schema token for SSG/ISR builds; OAuth is for members acting as themselves.
+- Sending an OAuth access token or personal access token in `X-Craft-Authorization` [5.12+]: it gets a 401. Only schema tokens can use that header.
 - Relying on `allowedGraphqlOrigins` — [deprecated 5.3] (already deprecated in 4.11.0). Use the `craft\filters\Cors` filter [5.3+] instead; before 5.3 `allowedGraphqlOrigins` is the only option.
 
 ## Contents
@@ -27,6 +31,7 @@
 - [Preview with External Front-Ends](#preview-with-external-front-ends)
 - [Hybrid Patterns](#hybrid-patterns)
 - [Authentication for API Consumers](#authentication-for-api-consumers)
+- [Signed-In Members over OAuth](#signed-in-members-over-oauth-512)
 - [Front-End Framework Patterns](#front-end-framework-patterns)
 
 ## headlessMode Configuration
@@ -62,23 +67,38 @@ The default endpoint is `actions/graphql/api`. When using the `verbs` route patt
 
 ### Authentication and Schema Resolution
 
-Craft resolves which GraphQL schema to use in this order (`GraphqlController::_schema()`, `Request::getBearerToken()` [5.1+]):
+Craft resolves which GraphQL schema to use in this order (`GraphqlController::_schema()`, https://github.com/craftcms/cms/blob/5.12.4/src/controllers/GraphqlController.php):
 
-1. **`X-Craft-Gql-Schema` header** — admin sessions only (`requireAdmin`); a schema UID, or `*` for the full schema. This is what the CP GraphiQL playground uses.
-2. **`X-Craft-Authorization: Bearer <token>`** — checked *before* `Authorization`. Use it where the web server or a proxy strips `Authorization`.
-3. **`Authorization: Bearer <token>`** — only read when `X-Craft-Authorization` is absent.
-4. **Public schema** — used when no token is sent and the public schema is enabled.
+1. **`X-Craft-Gql-Schema` header**: admin sessions only (`requireAdmin`); a schema UID, or `*` for the full schema. This is what the CP GraphiQL playground uses.
+2. **A JWT bearer token** [5.12+]: an OAuth access token or personal access token (detected by exactly two dots; schema tokens have none). Craft authenticates it from the `Authorization` header, runs the request as that user, and builds a per-user schema from their permissions. An invalid or expired JWT is a 401, never a fallback to public data. Before 5.12: no such step.
+3. **A schema token**: `X-Craft-Authorization: Bearer <token>` is read *before* `Authorization: Bearer <token>` (`Request::getBearerToken()` [5.1+]). Use `X-Craft-Authorization` where the web server or a proxy strips `Authorization`.
+4. **Public schema**: used when no recognised token is sent and the public schema is enabled.
 
-A bearer token Craft doesn't recognise is not an error: Craft silently falls back to the public schema, so a typo'd token returns public data instead of failing. With no public schema, the response is `Missing Authorization header`, even though a header was sent. An expired or disabled token fails with `Invalid Authorization header`.
+The header order in step 3 applies to schema tokens only. [5.12+] An OAuth access token or PAT must go in `Authorization`; sent only in `X-Craft-Authorization` it gets a 401 (observed in a runtime check; `OAuth::authenticate()` reads only `Authorization`).
+
+A schema token Craft doesn't recognise is not an error: Craft silently falls back to the public schema, so a typo'd token returns public data instead of failing. With no public schema, the response is `Missing Authorization header`, even though a header was sent. An expired or disabled token fails with `Invalid Authorization header`.
 
 ```
 GET /api
 Authorization: Bearer abc123def456
 ```
 
-Private tokens are created in the CP under Settings > GraphQL > Tokens. Each token is scoped to one schema.
+Private schema tokens are created in the CP under Settings > GraphQL > Tokens. Each token is scoped to one schema. The full authentication table (lifetimes, who each credential acts as, which core components a signed-in user gets) is in the `craftcms` skill's `graphql.md`.
 
-Schema scopes decide which fields *exist*, not just which return data. [changed 5.11] The user-related fields (`author`, `authors`, `uploader`, and their id variants) are absent from any schema without **Query for users**. Before 5.11, read access to any one user group was enough; a schema with no user scope never had them. Selecting them is a validation error, not an empty result. The `craftcms` skill's `graphql.md` (the 5.11 additions section) has the full list.
+Schema scopes decide which fields *exist*, not just which return data. [changed 5.11] The user-related fields (`author`, `authors`, `uploader`, and their id variants) are absent from any schema without **Query for users**. Before 5.11, read access to any one user group was enough; a schema with no user scope never had them. Selecting them is a validation error, not an empty result. The `craftcms` skill's `graphql.md` (the 5.11 additions section) has the full list. [changed 5.12.1] For OAuth/PAT requests, field layout conditions apply too: a field hidden from the user by a user condition is not in their schema (`Cannot query field …`), and a field hidden by an element condition resolves to `null`. Before 5.12.1: authenticated requests ignored layout conditions.
+
+### Settings Queries for Site-Aware Front Ends [5.12+]
+
+Enable **Query for sites** on the schema and the front end can build language switchers and hreflang without hardcoding sites:
+
+```graphql
+{
+  sites { handle language baseUrl primary }
+  entry(slug: "about") { title site { handle language } }
+}
+```
+
+`sections`/`entryTypes`/`volumes` queries exist too, but they list every section, entry type or volume regardless of the schema's content scope. Keep them off the public schema. [5.12+] Before 5.12: hardcode the site list in the front end, or expose it through a global set. Per-site content still needs `X-Craft-Site` or the `site:` argument.
 
 ### Rate Limiting
 
@@ -254,13 +274,47 @@ Entries propagate to both sites. The `web` site uses templates. The `api` site h
 
 ### Token Types
 
-| Token Type | Header | Lifetime | Use Case |
-|------------|--------|----------|----------|
-| GraphQL Bearer token | `Authorization: Bearer <token>` | Permanent (until revoked) | Server-to-server API calls |
-| GraphQL Bearer token | `X-Craft-Authorization: Bearer <token>` | Permanent (until revoked) | Same, when `Authorization` is stripped |
-| Public schema | None | Always active (if enabled) | Public content, no auth needed |
-| Preview token | `X-Craft-Token: <token>` | Configurable (`previewTokenDuration`) | CP preview of drafts |
-| Admin direct schema | `X-Craft-Gql-Schema: <schema-uid>` | Session-based | CP GraphiQL playground |
+| Token Type | Header | Lifetime | Acts as | Use Case |
+|------------|--------|----------|---------|----------|
+| GraphQL schema token | `Authorization: Bearer <token>`, or `X-Craft-Authorization: Bearer <token>` (read first) | Until its optional expiry, or until disabled | Nobody; the token's schema decides access | Server-to-server calls, build pipelines (SSG/ISR), server-side routes |
+| OAuth access token [5.12+] | `Authorization: Bearer <jwt>` only | 1 hour; refresh token 30 days, rotated on use | The signed-in user, within their permissions | SPA or native app where members sign in ("Log in with Craft") |
+| Personal access token [5.12+] | `Authorization: Bearer <jwt>` only | 7, 30, 90 or 365 days; shown once | The user who created it in My Account > Tokens | Scripts that should act as a named user |
+| Public schema | None | Always active (if enabled) | Nobody | Public content, no auth needed |
+| Preview token | `X-Craft-Token: <token>` | Configurable (`previewTokenDuration`) | Adds draft content to the credential above | CP preview of drafts |
+| Admin direct schema | `X-Craft-Gql-Schema: <schema-uid>` | Session-based | The logged-in admin | CP GraphiQL playground |
+
+[5.12+] Before 5.12: only schema tokens, the public schema, preview tokens and the admin header exist.
+
+**Headless builds keep schema tokens.** Craft's OAuth server has no client-credentials grant (only `authorization_code` with PKCE and `refresh_token`), access tokens expire after an hour, and OAuth requests never see globals, categories or tags. A build server or server-side data layer that reads content with no user involved should keep using a schema token.
+
+### Signed-In Members over OAuth [5.12+]
+
+For a front end where members sign in and query or edit content as themselves. The OAuth server setup on the Craft side (signing keys on every environment, `config/oauth.php`, redirect domains, registration rate limit) is in the `craft-mcp` skill.
+
+1. **Discover.** Call the API without a token: the 401's `WWW-Authenticate` header carries `resource_metadata="…/.well-known/oauth-protected-resource/…"`. That metadata names the authorization server; its metadata lists the endpoints. [changed 5.12.1] For GraphQL these are site action URLs (`/actions/oauth/authorize?oauthResource=graphql`, `…/token`, `…/register`), and metadata is served only from `.well-known` URLs. Before 5.12.1: discovery advertised CP URLs.
+2. **Register a client** through the registration endpoint (dynamic client registration; public clients, no client secret). Registration is rate-limited per IP.
+3. **Authorize** with authorization code + PKCE (`S256`), requesting `graphql:read`, or `graphql:write` for mutations. Signed-out members are sent to the front-end `loginPath` (or `actions/users/login`), because the `graphql` resource doesn't require control panel access.
+4. **Exchange the code** at the token endpoint. Store the access token (1 hour) and refresh token (30 days, rotated on each refresh, so always keep the newest one).
+5. **Query as the member** with `Authorization: Bearer <access token>`:
+
+```graphql
+{
+  currentUser { id fullName email }
+  entries(section: "savedRecipes") { title }
+}
+```
+
+What the member's schema contains is decided by their permissions, not by a saved schema:
+
+- `currentUser` exists only on OAuth/PAT requests. With a schema token it's a validation error.
+- Members need **View entries** on each section they query (and save/create/delete permissions for mutations, plus the `graphql:write` scope).
+- On a multi-site install they need a site permission for at least one site, or every request fails with `403 Schema doesn't have access to the "…" site`.
+- Drafts, revisions, disabled elements and the sections/entry types/volumes settings queries need control panel access.
+- Globals, categories and tags are never available. Fetch them with a schema token on the server.
+- [5.12.3+] While the system is offline, OAuth requests work only for users allowed to access the site (or CP) when the system is off. Before 5.12.3: OAuth GraphQL requests failed while offline.
+- Results are cached separately per user.
+
+The authorization flow (code exchange, refresh) belongs on a server or BFF where possible; a pure SPA must keep the refresh token in memory or secure storage, never in `localStorage`.
 
 ### Multi-Site Routing
 
@@ -283,6 +337,8 @@ This returns entries from the `french` site with French titles and field values.
 - Scope each token's schema to only the sections, volumes, and global sets that consumer needs.
 - Never expose a private token in client-side JavaScript — use it in server-side API routes or build scripts only.
 - Disable the public schema unless you explicitly need unauthenticated access.
+- [5.12+] OAuth is not a replacement for server tokens: there's no client-credentials grant, and globals, categories and tags aren't available to OAuth requests.
+- [5.12+] Members sign in through OAuth; never hand a front end a personal access token or a schema token with mutation access.
 - Set `maxGraphqlComplexity`, `maxGraphqlDepth`, and `maxGraphqlResults` to nonzero values.
 
 ## Front-End Framework Patterns

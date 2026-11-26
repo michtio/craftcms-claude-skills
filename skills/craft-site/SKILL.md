@@ -112,6 +112,8 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Use entry.render() for reusable card components" → read `element-partials.md`
 - "Set up _partials/ templates for entries" → read `element-partials.md`
 - "Render Matrix blocks with partials" → read `element-partials.md`
+- "Use `{% render %}` / why is `loop` defined in my partial" → read `element-partials.md` (The `{% render %}` Tag)
+- "Let members log in to a headless front end and query as themselves" → read `headless.md` (Signed-In Members over OAuth)
 - "Ship example templates with a plugin (bundle + install command)" → read `example-templates.md`
 - "Build a fluent front-end render/tag builder (craft.<handle>.thing().render())" → read `example-templates.md`
 
@@ -135,8 +137,8 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 | `references/auth-account.md` | Account management: edit profile, email verification, navigation partial, access control tags, user session helpers, GeneralConfig auth settings |
 | `references/search.md` | Search: syntax, Twig queries, configuration, indexing, rebuilding, score and ranking |
 | `references/feeds.md` | Feeds: RSS 2.0, Atom, JSON Feed, XML sitemap, custom routes, date filters |
-| `references/headless.md` | Headless & hybrid: headlessMode, GraphQL API, CORS, preview tokens, Next.js/Nuxt/Astro integration |
-| `references/element-partials.md` | Element partials: entry.render(), _partials/ directory, template lookup, custom variables, eager loading in partials |
+| `references/headless.md` | Headless & hybrid: headlessMode, GraphQL API, schema resolution and token types, members signing in over OAuth with `currentUser` [5.12+], settings queries, CORS, preview tokens, Next.js/Nuxt/Astro integration |
+| `references/element-partials.md` | Element partials: entry.render(), `{% render %}` tag and collection `render()` [5.12+], _partials/ directory, template lookup, custom variables, eager loading in partials |
 | `references/example-templates.md` | Plugin front-end delivery: Craft Commerce-style example-template bundles (canonical folder, `_private/layouts/` shell, per-page `{% extends %}`/`{% block main %}`, `index.twig` redirect, install console command with rename/`--overwrite`), fluent `craft.<handle>.<thing>({...}).render()` BaseTag builders, progressive-enhancement discipline |
 
 ### Plugin References
@@ -152,7 +154,7 @@ One canonical component system across all projects. Atoms are context-agnostic �
 
 External link detection is derived from the URL, never passed as a prop. Components auto-apply `target="_blank"`, `rel="noopener noreferrer"`, external icon, and sr-only text when a URL is external.
 
-FontAwesome is the universal icon system. Icons are passed as FA class strings.
+FontAwesome is the universal icon system. Icons are passed as FA class strings. [5.12+] Icon fields can also hold custom-set icons (`custom:name`), which have no FA class: branch on `icon.set` and output `icon.svg|raw` (see `craft-content-modeling` → `field-types.md`, Icon).
 
 Visual variants use extends/block — base template defines structure, variant overrides classes. Never use conditional logic to switch between variant styles. For structural skeletons with content slots, use `{% embed %}` — see `composition-patterns.md`.
 

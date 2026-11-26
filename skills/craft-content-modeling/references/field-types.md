@@ -4,6 +4,7 @@ All built-in field types in Craft CMS 5 with settings, Twig access, and query sy
 
 ## Contents
 
+- [Settings Every Field Has](#settings-every-field-has) (Default Tip / Default Warning)
 - [Text & Input](#text--input) (Plain Text, Email, Link)
 - [Number & Money](#number--money) (Number, Money, Range)
 - [Date & Time](#date--time) (Date/Time, Time)
@@ -19,6 +20,10 @@ All built-in field types in Craft CMS 5 with settings, Twig access, and query sy
 - Custom fields system: https://craftcms.com/docs/5.x/system/fields.html
 
 Use `WebFetch` on specific field type doc pages for full setting details.
+
+## Settings Every Field Has
+
+- **Default Tip / Default Warning** [5.12+]: a tip or warning shown under the field in every layout it's placed in (project config keys `tip` and `warning` on the field; `new PlainText(['tip' => '…', 'warning' => '…'])` from a migration or `saveField()`). A Tip or Warning set on the field layout element overrides it; left blank, the layout element falls back to the default, translated with the `site` category. The layout designer shows the defaults as placeholders. Before 5.12: set the tip or warning on each field layout element.
 
 ## Text & Input
 
@@ -166,40 +171,79 @@ Returns `bool`. Settings: default value, ON/OFF labels.
 
 ### Color
 
-Returns `ColorData|null`. Settings: predefined palette [5.6+], allow custom colors.
+Returns `ColorData|null` (`craft\fields\data\ColorData`). Settings: predefined palette [5.6+] (palette colours can be translucent [5.12+]), allow custom colors, allow opacity for custom colors (`allowCustomAlpha`, default off) [5.12+], GraphQL Mode (`fullGraphqlData`) [5.12+].
 
 ```twig
-{{ entry.myField }}        {# hex: #ff0000 #}
-{{ entry.myField.hex }}
-{{ entry.myField.rgb }}    {# rgb(255,0,0) #}
-{{ entry.myField.hsl }}
-{{ entry.myField.luma }}   {# 0-1 luminance for contrast decisions #}
+{{ entry.myField }}                {# hex: #ff0000, or #ff000080 when translucent [changed 5.12] #}
+{{ entry.myField.hex }}            {# same as above #}
+{{ entry.myField.getHex(false) }}  {# always 6-digit, every version #}
+{{ entry.myField.rgb }}            {# rgb(255,0,0); ignores alpha #}
+{{ entry.myField.hsl }}            {# ignores alpha #}
+{{ entry.myField.luma }}           {# 0-1 luminance; ignores alpha #}
+
+{# [5.12+] alpha-aware output #}
+{{ entry.myField.alpha }}          {# 0.5 (1.0 for opaque) #}
+{{ entry.myField.rgba }}           {# rgba(255,0,0,0.5) #}
+{{ entry.myField.hsla }}
+{{ entry.myField.oklch }}          {# oklch(... / 0.5); alpha part only when < 1 #}
+{{ entry.myField.rgbChannels }}    {# 255 0 0, for rgb(var(--x) / 50%) #}
+{{ entry.myField.contrastColor }}  {# #000000 or #ffffff (WCAG 2, ignores alpha) #}
+{{ entry.myField.contrastRatio('#ffffff') }}  {# 1-21; PHP: getContrastRatio() #}
 ```
+
+**Alpha and storage** [changed 5.12]: values are normalized to lowercase hex; 3/4-digit shorthand is expanded and a fully opaque `ff` alpha is stripped, so opaque colours stay 6-digit and only translucent ones are stored as `#rrggbbaa`. Existing values don't change, and nothing turns 8-digit until an editor picks a translucent palette colour or a field allows opacity. Before 5.12: always `#rrggbb`. A translucent value submitted from a front-end form or GraphQL mutation is rejected unless it's a palette colour or the field allows custom opacity.
+
+**What breaks with 8-digit hex** [changed 5.12]:
+
+- Appending alpha by concatenation: `{{ entry.brand }}80`, `entry.brand.hex ~ '1a'`, or `|slice(1)` to strip the `#` all produce an invalid 10-digit colour. Use `style="--brand: {{ entry.brand.rgbChannels }}"` with `rgb(var(--brand) / 50%)` in CSS, or `entry.brand.rgba` [5.12+]. `entry.brand.getHex(false) ~ '80'` works on every version.
+- `<input type="color" value="{{ entry.brand }}">` accepts only `#rrggbb`: use `getHex(false)`.
+- HTML email, JS libraries, SVG attributes and regexes like `/^#[0-9a-f]{6}$/` that expect six digits: use `getHex(false)` plus a separate opacity, or `rgba`.
+- `rgb`, `hsl`, `luma` and the contrast helpers ignore alpha, so a translucent colour renders opaque and `contrastColor` is computed as if it were opaque. Use `rgba`/`hsla` when alpha matters.
+- Supporting older releases [5.12+]: `alpha`, `rgba`, `hsla`, `oklch`, `rgbChannels`, `contrastColor` and `contrastRatio()` don't exist before 5.12 (with Dev Mode on, strict variables make them throw). `getHex(false)` is safe everywhere (older `getHex()` ignores the extra argument).
+
+**GraphQL Mode** [5.12+]: Full data (a `ColorData` object) is the default for fields created in 5.12, including fields created through `saveField()` or migrations without `fullGraphqlData`; existing fields stay Hex only (a string, which can be 8-digit). A headless query written as `{ brandColor }` against a new field fails with "must have a selection of subfields". Before 5.12: always a hex string. See the `craftcms` skill's `graphql.md` (Field Type GraphQL Modes).
 
 ### Icon
 
-Returns `IconData|null` (`craft\fields\data\IconData`) [5.8+]. Two properties: `name` (string, e.g., `'heart'`, `'arrow-right'`) and `styles` (array of available Font Awesome styles). Stored as a string in the database — the `styles` array is reconstructed at runtime from Craft's icon index.
+Returns `IconData|null` (`craft\fields\data\IconData`) [5.8+]. Properties: `name` (string, e.g., `'heart'`), `styles` (array of available Font Awesome styles; empty for custom icons) and `set` [5.12+] (`null` for Font Awesome, otherwise the set handle). Methods [5.12+]: `getSvg()` (`icon.svg`, a sanitized SVG string or `null` if the icon no longer exists) and `getKeywords()` (`icon.keywords`).
 
-Settings: `includeProIcons` (bool, whether to show Font Awesome Pro icons in the picker).
+Settings: `includeProIcons` (bool, Font Awesome Pro icons; applies only when Font Awesome is selected), `iconSets` [5.12+] (which sets the picker offers; defaults to `['fontawesome']`, shown only when a custom set is registered).
+
+**Custom icon sets** [5.12+]:
+
+- `customIconPath` [5.12+] in `config/general.php` (env `CRAFT_CUSTOM_ICON_PATH`), for example `->customIconPath('@root/icons')`, registers a set with handle `custom`. Only `*.svg` files directly in that directory count; the filename without `.svg` is the icon name.
+- Plugins and modules register sets through `Icons::EVENT_REGISTER_ICON_SETS`. Handles match `/^[a-zA-Z][\w\-]*$/`; `fontawesome` is reserved.
+- Existing Icon fields keep offering Font Awesome only until the field's Icon Sets setting is edited (a project config change).
+- Custom-set icons are stored as `set:name` (`custom:rocket`); Font Awesome icons stay a bare name. `{{ entry.myField }}` still prints only the name, without the set.
+- Renaming or deleting an SVG orphans stored values: `svg` returns `null` and nothing validates it.
+
+[5.12+] Before 5.12: Font Awesome only, stored as the bare name, with only `name` and `styles`.
 
 ```twig
-{# Icon name (IconData stringifies to the name) #}
+{# Icon name (IconData stringifies to the name, without the set) #}
 {{ entry.myField }}            {# 'heart' #}
 {{ entry.myField.name }}       {# 'heart' #}
 
-{# Available styles #}
+{# Available Font Awesome styles #}
 {{ entry.myField.styles|join(', ') }}   {# 'solid, regular, light' #}
 
-{# Render as FontAwesome element #}
-{{ tag('i', { class: 'fa-solid fa-' ~ entry.myField.name }) }}
+{# Render either kind [5.12+]: branch on the set #}
+{% set icon = entry.myField %}
+{% if icon and icon.set is null %}
+    {{ tag('i', { class: 'fa-solid fa-' ~ icon.name, aria: { hidden: 'true' } }) }}
+{% elseif icon %}
+    {{ icon.svg|raw }}
+{% endif %}
 
-{# Render as inline SVG from Craft's icon set #}
+{# Font Awesome only (every version, or fields without custom sets) #}
 {% if entry.myField %}
     {{ svg("@appicons/#{entry.myField.name}.svg") }}
 {% endif %}
 ```
 
-Query: queryable as a string — `.myField('heart')`, `.myField(':notempty:')`.
+Templates that assume Font Awesome (`'fa-solid fa-' ~ name`, `svg("@appicons/…")`) break for custom-set icons [changed 5.12]: they output a non-existent class or find no file. Branch on `set` as above. In templates that also run before 5.12, write `entry.myField.set ?? null` (the property doesn't exist there). `icon.svg` returns a plain string, so it needs `|raw`; it carries `aria-hidden="true"`.
+
+Query: queryable as a string, `.myField('heart')`, `.myField(':notempty:')`. Custom-set icons are stored with their prefix, so query `.myField('custom:rocket')`. GraphQL: Full data mode adds `set`, `svg` and `keywords` [5.12+]; name-only mode can't distinguish sets.
 
 ### Country
 
@@ -241,6 +285,8 @@ Returns `EntryQuery`. Sources filter by section. Settings: Maintain Hierarchy, B
 ### Assets
 
 Returns `AssetQuery`. Sources filter by volume. Settings: restrict upload location, allowed file types, min/max.
+
+File kinds for "allowed file types" include **Markdown** [5.12+] (`markdown`: `.md`, `.markdown`), and both extensions are in the default `allowedFileExtensions`. Projects that override `allowedFileExtensions` don't get them; add them to `extraAllowedFileExtensions` instead. Before 5.12: `.md` uploads were rejected by default and had kind `unknown`.
 
 ```twig
 {% set image = entry.myField.one() %}

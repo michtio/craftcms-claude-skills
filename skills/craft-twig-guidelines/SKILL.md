@@ -143,6 +143,29 @@ Every `{% include %}` MUST use `only`. No exceptions.
 Without `only`, a component can silently depend on variables from its parent
 scope, creating invisible coupling.
 
+The same rule covers `{% render %}` [5.12+], which takes the same `with … only`
+grammar (or `only` alone). Without `only` the element partial receives the whole
+parent context:
+
+```twig
+{# Correct #}
+{%- render entry.contentBlocks with { theme: 'dark' } only -%}
+
+{# Wrong: every parent variable leaks into each partial #}
+{%- render entry.contentBlocks with { theme: 'dark' } -%}
+```
+
+[5.12+] Before 5.12: the tag doesn't exist and fails the whole template at compile time,
+so on older sites (or templates shared with them) use `{{ entry.contentBlocks.render({ theme: 'dark' }) }}`,
+which passes only the given variables. Inside the partial, `entry` is the rendered
+element, never the page entry: pass the page in `with` when the partial needs it.
+Partial lookup, `loop` and the collection `render()` method: `craft-site`
+(`references/element-partials.md`).
+
+`include_only()` [5.12+] (Twig 3.29) is the function form of an isolated include:
+`{{ include_only('_atoms/badge', { text: label }) }}`. [5.12+] Before 5.12:
+`{{ include('_atoms/badge', { text: label }, with_context = false) }}`.
+
 ## No Macros for Components
 
 Never use `{% macro %}` for UI components. Macros don't support extends/block
@@ -324,6 +347,59 @@ outside 1-6.
 {{ maybeNull|timestamp }}                              {# returns "now" for null/empty #}
 ```
 
+### Case Filters Follow the Site Language [changed 5.12]
+
+Craft overrides Twig's `upper`, `lower`, `title` and `capitalize` filters with
+ICU casing for the current app language (the site's language on front-end
+requests, the user's CP language in the CP), and NFC-normalizes the string.
+[changed 5.12] Before 5.12: they were Twig's locale-neutral `mb_*` versions. No template changes,
+but output does on some languages. Observed in a runtime check:
+
+| Site language | Template | Output | With `('en')` |
+|---|---|---|---|
+| `tr` | `'istanbul'\|upper` | `İSTANBUL` | `ISTANBUL` |
+| `tr` | `'ISTANBUL'\|lower` | `ıstanbul` | `istanbul` |
+| `nl` | `'ijsland'\|title` | `IJsland` | `Ijsland` |
+| `el` | `'άλφα'\|upper` | `ΑΛΦΑ` (accent dropped) | `ΆΛΦΑ` |
+
+Other languages with their own ICU casing rules (Azerbaijani, Lithuanian) can
+change too. Each filter takes an optional `language` argument [5.12+]:
+
+```twig
+{{ product.sku|upper('en') }}         {# locale-neutral codes and identifiers #}
+{{ heading|upper }}                   {# site language: right for display copy #}
+{{ heading|title(currentSite.language) }}
+```
+
+- Pass a neutral language (`'en'`) for codes, SKUs, handles, CSS-class or
+  ID fragments built with `|lower`, and anything compared against stored values.
+- Leave display copy on the default: the new casing is what the language expects.
+- [5.12+] Before 5.12: the filters take no argument, so templates shared with older sites
+  can't pass one. Audit `|upper`/`|lower` on tr/az/nl/el/lt sites when upgrading.
+
+### Twig 3.29 to 3.31 [5.12+]
+
+Craft 5.12.0 ships Twig 3.30 and [5.12.3+] Twig 3.31.1 (before 5.12: Twig 3.28).
+What template authors see:
+
+- **Macro deprecations** (Twig 3.29, errors in Twig 4): calling a macro without
+  parentheses (`{{ forms.field }}` → `{{ forms.field() }}`), calling it with a
+  different letter case than its definition, defining the same macro twice in a
+  template, passing unknown extra arguments to a macro without a variadic
+  argument, and omitting an argument that has no default.
+- **`include()`'s `sandboxed` argument** is deprecated (Twig 3.29).
+- **`matches`** throws on a PCRE error instead of returning false (Twig 3.29).
+- **`split`, `random`, `shuffle`, `reverse`** throw a clear error on invalid
+  UTF-8 (Twig 3.30).
+- **`spaceless`**: the `{% spaceless %}` tag doesn't exist in Twig 3 (unknown tag,
+  hard error, not a change in Craft). The `|spaceless` filter (and
+  `{% apply spaceless %}`) still works but has been deprecated since Twig 3.12;
+  Craft's own CP templates are the last core user of it [5.12.4+]. Use `{%-`/`-%}`
+  whitespace control instead.
+- Twig's `E_USER_DEPRECATED` notices are not recorded in Craft's deprecation
+  log (confirmed for `|spaceless` in a runtime check), so these deprecations are
+  silent until Twig 4. Grep for them instead of waiting for warnings.
+
 ### Filtering and Mapping — Default to `collect()`
 
 For data manipulation in templates, **default to `collect()`** — one consistent, chainable API (`where`, `firstWhere`, `groupBy`, `keyBy`, `unique`, `pluck`, `map`, `filter`, `sortByDesc`) instead of mixing idioms:
@@ -399,4 +475,8 @@ Never use em-dashes (—) or en-dashes (–) in user-facing copy: template text,
 14. **Em/en-dashes in user-facing copy**: don't put `—` or `–` in template text or `|t` strings. Use commas, colons, parentheses, or a plain hyphen; write ranges as "4 to 10". See the Copy style section.
 15. **Twig has no `instanceof`** — PHP that scopes behaviour per class (e.g. `match (true)` over `instanceof` checks in a controller) has no direct template equivalent, and the two silently drift when the template approximates it. Branch on a capability instead (`object.hasProperty('handle')`, `object.hasMethod(...)`), or have PHP pass an explicit discriminator (`type: 'entry'`) into the template.
 16. **Per-request output inside `{% cache %}`**: the tag stores the body and replays the `{% js %}`, `{% script %}` and `{% css %}` it captured, so a CSP nonce, `csrfInput()`, `aria-current`/active classes or language-switcher URLs inside it are frozen at the first render. Cache the query and its markup; keep those outside. Parameters go in one order only (`globally`, `using key`, `for 1 hour`/`until`, `if`/`unless`), and there is no `tag()`. See the `craft-site` skill's `template-caching.md`.
-15. **Grepping output for a `|e('js')`-escaped phrase** — the JS escaper turns every space into ` `, so a translated multi-word string never appears verbatim in rendered JS. Grep/assert on a single token or raw identifier. See the Safe Output and Inline Assets section and the `craftcms` skill's `testing.md`.
+17. **Grepping output for a `|e('js')`-escaped phrase** — the JS escaper turns every space into ` `, so a translated multi-word string never appears verbatim in rendered JS. Grep/assert on a single token or raw identifier. See the Safe Output and Inline Assets section and the `craftcms` skill's `testing.md`.
+18. **`{% render %}` on a site below 5.12** [5.12+]: unknown tag, the whole template fails to compile. Use `.render()` where the template must also run on older releases.
+19. **Appending alpha to a colour** [changed 5.12]: `{{ entry.brand }}80` or `entry.brand.hex ~ '1a'` breaks once a Color field returns an 8-digit hex (translucent palette colours, or custom colours with opacity allowed). Use `rgb({{ entry.brand.rgbChannels }} / 50%)` [5.12+] or `entry.brand.rgba` [5.12+]; `entry.brand.getHex(false) ~ '80'` works on every version. Before 5.12: hex was always 6-digit.
+20. **Macros called without parentheses** [5.12+]: `{{ macros.label }}` is deprecated in Twig 3.29 and a syntax error in Twig 4. Write `{{ macros.label() }}`.
+21. **`|upper`/`|lower` on identifiers** [changed 5.12]: casing follows the site language, so a Turkish site lowercases `I` to `ı`. Pass `('en')` for codes and handles.
