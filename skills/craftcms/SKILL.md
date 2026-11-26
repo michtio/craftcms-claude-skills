@@ -194,6 +194,8 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 
 Load only the reference files your task needs — each file costs input tokens on every turn.
 
+**Large files: read the Contents block, then only the section.** `architecture.md`, `config-general.md`, `controllers.md`, `cp.md`, `cp-ui-patterns.md`, `element-index.md`, `elements.md`, `events.md`, `graphql.md` and `permissions.md` start with a Contents block that gives each section's line range. Read the first 40 lines, then Read only the section you need with `offset`/`limit`, never the whole file.
+
 | Task | Read | ~Tokens |
 |------|------|--------:|
 | Element core: lifecycle, queries, status, authorization, drafts, revisions, propagation, field layouts, user edit screens, events | `references/elements.md` | 8.4K |

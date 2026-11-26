@@ -9,6 +9,7 @@
 #   frontmatter       bin/validate-skills.sh (YAML, listing cap, version-script wiring)
 #   version-script    bin/test-craft-version.sh golden outputs (sh)
 #   tag-lint          version tags in skills/, plus the linter and floor self-tests
+#   contents          references > 30 KB start with a current line-numbered Contents block
 #   symbols           every Craft symbol named in skills/ exists in craftcms/cms (bin/craft_source.py)
 #   tables            MCP tool catalogue and config defaults match the source
 #   facts             every behaviour case's facts hold (evals/facts_check.py)
@@ -74,6 +75,7 @@ gate      "tag-lint skills/"               python3 bin/craft_tags.py lint skills
 must_fail "tag-lint self-test (untagged craft\\filters\\Cors)" python3 bin/craft_tags.py lint evals/fixtures/tags/untagged-cors.md
 grep_ok   "tag-lint self-test (3 invalid tags)" '^3 finding(s)' python3 bin/craft_tags.py lint evals/fixtures/tags/grammar.md
 grep_ok   "floor self-test (patch-release security bullets)" '^5\.12\.3	' python3 bin/craft_tags.py floor --changelog evals/fixtures/tags/changelog-floor.md
+gate      "contents blocks (references > 30 KB)" python3 bin/contents.py --check
 gate      "symbols skills/"                python3 bin/craft_source.py verify
 must_fail "symbols self-test (craft\\services\\Mcp::getTools())" python3 bin/craft_source.py verify evals/fixtures/symbols/bad-symbol.md
 gate      "tables (MCP catalogue, config defaults)" python3 bin/craft_source.py tables
