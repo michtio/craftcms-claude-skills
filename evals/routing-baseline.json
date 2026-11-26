@@ -1,0 +1,1102 @@
+{
+ "craft-cloud\tCraft Cloud keeps giving my preview environment a robots.txt that blocks everything, is that expected?": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tHelp me plan the content model for a multi-language news site — sections, entry types, and propagation": {
+  "rank": 13,
+  "top": "craft-content-modeling"
+ },
+ "craft-cloud\tHow do I configure an SMTP mail adapter in config/app.php for a generic Craft install?": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tHow do I schedule a recurring command on Craft Cloud? I need it to run every 15 minutes": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tI need to add an ESI island inside a page we're statically caching at the edge on Craft Cloud": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tI need to deploy our Craft site to Servd — how do I set up the asset storage plugin?": {
+  "rank": 4,
+  "top": "servd"
+ },
+ "craft-cloud\tI want to add a GitHub Actions workflow that runs PHPStan and Pest on every pull request for our plugin": {
+  "rank": 7,
+  "top": "ddev"
+ },
+ "craft-cloud\tI'm making our plugin Cloud-compatible — what do I need to check for the ephemeral filesystem?": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tI'm setting up craft-cloud.yaml for a new project — what php-version and node-version keys do I need, and how do redirects work?": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tMy plugin writes a cache file to storage/runtime and it's gone on the next request after we deployed to Craft Cloud. What's happening?": {
+  "rank": 2,
+  "top": "servd"
+ },
+ "craft-cloud\tOur custom domain on Craft Cloud won't issue an SSL cert — what DNS records does it need?": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tSet up Blitz static caching with Cloudflare purging for our self-hosted Craft site": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tWe deploy Craft to fortrabbit and need a deploy file that keeps the uploads folder": {
+  "rank": 4,
+  "top": "craft-fortrabbit"
+ },
+ "craft-cloud\tWe migrated our self-hosted Craft site to Craft Cloud but our table prefix broke everything during the Migrate phase": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-cloud\tWe're getting 429s from our Next.js build pulling GraphQL data from our Craft Cloud backend. How do I fix that?": {
+  "rank": 3,
+  "top": "craft-project-setup"
+ },
+ "craft-cloud\tWe're on DDEV locally and want to match the PHP and MySQL versions production uses on our own Forge server": {
+  "rank": 6,
+  "top": "ddev"
+ },
+ "craft-cloud\tWhat happens during the Build, Migrate, Release pipeline on Craft Cloud, and can I set env vars that only apply at build time?": {
+  "rank": 1,
+  "top": "craft-cloud"
+ },
+ "craft-content-modeling\tAfter I restored the production database locally, git status shows a bunch of deleted files under config/project. What happened and how do I get them back safely?": {
+  "rank": 8,
+  "top": "craft-fortrabbit"
+ },
+ "craft-content-modeling\tCan you set up a GitHub Actions workflow that runs ECS and PHPStan on pull requests for our Craft plugin?": {
+  "rank": 9,
+  "top": "craft-php-guidelines"
+ },
+ "craft-content-modeling\tHelp me decide between CKEditor with nested entries vs Matrix for a page builder. Our editors want to write flowing text with occasional callouts, image blocks, and CTAs mixed in — not a strict block-by-block layout": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tHelp me optimize our Craft site for Core Web Vitals — our LCP is 4.2 seconds and CLS is 0.15. Most of the delay seems to be from images loading above the fold": {
+  "rank": 2,
+  "top": "craft-plugins"
+ },
+ "craft-content-modeling\tHow do I configure the Vite dev server to work with DDEV and hot module replacement? I keep getting connection refused errors": {
+  "rank": 12,
+  "top": "ddev"
+ },
+ "craft-content-modeling\tI need to build a Twig component for rendering cards with different layouts — image on top, horizontal, and text-only. Using atomic design pattern with extends/block": {
+  "rank": 3,
+  "top": "craft-site"
+ },
+ "craft-content-modeling\tI need to plan the field layout for our 'Event' entry type. Each event has a date range (start and end), a venue (related entry from Venues section), a ticket price with currency, capacity, and a registration URL. Some of these feel like they might collide with reserved handles": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tI want to add a 'relatedArticles' field to our blog entry type. Should I use an Entries field with sources limited to the blog section, or is there a better pattern for manual content curation?": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tI want to add a Matrix field to our blog posts for flexible content — text blocks, image galleries, pull quotes, and embedded videos. How should I configure the entry types and what view mode works best for editors?": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tI'm about to run ddev craft project-config/write and commit config/project. Anything I should check first?": {
+  "rank": 4,
+  "top": "craft-project-setup"
+ },
+ "craft-content-modeling\tI'm trying to set up eager loading for a listing page that shows entries with their hero image, category, and author. I keep getting N+1 queries even though I'm using .with(). The template loops through entries and accesses entry.heroImage.one(), entry.topics.all(), and entry.author": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tI'm writing a custom field type plugin that stores JSON data and renders a custom input in the CP. How do I extend craft\\base\\Field and register it?": {
+  "rank": 7,
+  "top": "craft-garnish"
+ },
+ "craft-content-modeling\tShould I use globals or singles for site-wide settings like footer content, social media links, and the company address? We're starting a new Craft 5 project": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tWe need to add custom permissions to our Craft plugin so that only editors in the 'Content Managers' group can access our plugin's CP section": {
+  "rank": 2,
+  "top": "craft-php-guidelines"
+ },
+ "craft-content-modeling\tWe need to migrate our existing category groups to entries before upgrading to Craft 6. We have 'Topics' (hierarchical, ~50 items) and 'Tags' (flat, ~200 items). What's the entrification process?": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tWe need to plan a multi-language site with English and French. How does propagation work for entries — can some fields be translated while others stay the same across sites? And what happens with Matrix blocks?": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tWe're building a corporate website with about 30 pages. I need help planning the content model — which sections should be singles vs channels vs structures, and how should I handle the team page where each member has a bio, photo, role, and social links?": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-content-modeling\tWhat field type should I use for a color picker that lets editors choose from our 6 brand colors? I don't want them entering arbitrary hex values, just selecting from predefined options": {
+  "rank": 1,
+  "top": "craft-content-modeling"
+ },
+ "craft-fortrabbit\tAfter importing my local database on fortrabbit, Craft throws decryption errors on plugin settings": {
+  "rank": 2,
+  "top": "servd"
+ },
+ "craft-fortrabbit\tConfigure Blitz static caching with the Cloudflare purger for a self-hosted site": {
+  "rank": 13,
+  "top": "craft-cloud"
+ },
+ "craft-fortrabbit\tConnect TablePlus to the MySQL database of our Craft environment on fortrabbit": {
+  "rank": 3,
+  "top": "servd"
+ },
+ "craft-fortrabbit\tCraft can't connect to the database on our frbit.app environment, what should CRAFT_DB_DSN look like with FORTRABBIT_DB_HOST?": {
+  "rank": 1,
+  "top": "craft-fortrabbit"
+ },
+ "craft-fortrabbit\tHow do I install the servd/craft-asset-storage plugin for our Servd project?": {
+  "rank": 2,
+  "top": "servd"
+ },
+ "craft-fortrabbit\tHow do I pull the production database from en-k3x9q2 into my local DDEV Craft project?": {
+  "rank": 3,
+  "top": "servd"
+ },
+ "craft-fortrabbit\tI added a .fortrabbit/deploy.yml to our Craft repo and now all uploads in web/uploads are gone after the deploy": {
+  "rank": 1,
+  "top": "craft-fortrabbit"
+ },
+ "craft-fortrabbit\tSet up DDEV locally with Redis caching for our Craft project": {
+  "rank": 7,
+  "top": "craft-project-setup"
+ },
+ "craft-fortrabbit\tSet up a cron on fortrabbit that runs a Craft console command every night": {
+  "rank": 2,
+  "top": "craft-cloud"
+ },
+ "craft-fortrabbit\tSync the Craft asset volume between my laptop and ssh.eu-w1a.frbit.app with rsync": {
+  "rank": 1,
+  "top": "craft-fortrabbit"
+ },
+ "craft-fortrabbit\tThe Craft queue blocks our site on fortrabbit when editors upload images, how do I move it into a worker job?": {
+  "rank": 1,
+  "top": "craft-fortrabbit"
+ },
+ "craft-fortrabbit\tWe're deploying our Craft site to fortrabbit — which post-deploy commands should run after a git push?": {
+  "rank": 1,
+  "top": "craft-fortrabbit"
+ },
+ "craft-fortrabbit\tWe're deploying to Craft Cloud and need to configure craft-cloud.yaml's cache rules": {
+  "rank": 5,
+  "top": "craft-cloud"
+ },
+ "craft-fortrabbit\tWhy can't I change fields in the control panel of our Craft site hosted on fortrabbit?": {
+  "rank": 2,
+  "top": "craft-garnish"
+ },
+ "craft-fortrabbit\tWrite a deploy script for Laravel Forge that runs craft up with zero downtime": {
+  "rank": 3,
+  "top": "craft-project-setup"
+ },
+ "craft-fortrabbit\tWrite a queue job class that resaves entries in batches": {
+  "rank": 5,
+  "top": "craftcms"
+ },
+ "craft-garnish\tCan you help me configure Blitz caching with Cloudflare for our high-traffic Craft site?": {
+  "rank": 12,
+  "top": "craft-plugins"
+ },
+ "craft-garnish\tHelp me plan the content model for a multi-language e-commerce site with products, categories, and a checkout flow": {
+  "rank": 11,
+  "top": "craft-content-modeling"
+ },
+ "craft-garnish\tHow do I build a Twig card component with 3 visual variants using the extends/block pattern?": {
+  "rank": 3,
+  "top": "craft-site"
+ },
+ "craft-garnish\tHow do I create a disclosure menu (the ... kebab menu pattern) in the Craft CP? I need it on each row of a custom table with options like Edit, Duplicate, Delete": {
+  "rank": 3,
+  "top": "craftcms"
+ },
+ "craft-garnish\tI need a HUD (heads-up display) popover that shows inline editing fields when the user clicks on an element in our CP table. Similar to how Craft's inline editing works": {
+  "rank": 1,
+  "top": "craft-garnish"
+ },
+ "craft-garnish\tI need to add a Select widget to my CP page where users can click to select multiple items from a grid, like how Craft's asset manager works": {
+  "rank": 3,
+  "top": "craftcms"
+ },
+ "craft-garnish\tI need to add a modal dialog to my Craft plugin's CP page. When the user clicks 'Add Item', a modal should open with a form, and closing it should return focus to the trigger button": {
+  "rank": 1,
+  "top": "craft-garnish"
+ },
+ "craft-garnish\tI need to write a migration that adds a new database column to our custom element type's table": {
+  "rank": 6,
+  "top": "craftcms"
+ },
+ "craft-garnish\tI want to handle keyboard shortcuts in my plugin's CP interface — ESC to close my panel, Enter to confirm. But I need it to work correctly when a modal is open on top of my panel": {
+  "rank": 1,
+  "top": "craft-garnish"
+ },
+ "craft-garnish\tI'm building a custom field type that needs drag-to-reorder on a list of items in the CP. How do I use Garnish.DragSort to make the items sortable?": {
+  "rank": 1,
+  "top": "craft-garnish"
+ },
+ "craft-garnish\tI'm building a front-end search feature with Alpine.js that filters entries as the user types. It calls an Element API endpoint": {
+  "rank": 4,
+  "top": "craft-site"
+ },
+ "craft-garnish\tI'm trying to extend Garnish.Base for a custom CP widget class. How does the init/settings/destroy lifecycle work? And what's this.base() for?": {
+  "rank": 1,
+  "top": "craft-garnish"
+ },
+ "craft-garnish\tMy plugin's CP JavaScript is leaking memory — every time the user opens and closes the slideout editor, the event listeners accumulate. I'm using jQuery .on() for click handlers": {
+  "rank": 1,
+  "top": "craft-garnish"
+ },
+ "craft-garnish\tOur plugin's webpack config bundles Garnish which adds 134KB to our JS output. How do I configure it to use the global Garnish that Craft already loads?": {
+  "rank": 1,
+  "top": "craft-garnish"
+ },
+ "craft-garnish\tWe need to set up PHPStan at level 8 for our Craft plugin and fix all the type errors in the service layer": {
+  "rank": 10,
+  "top": "craft-php-guidelines"
+ },
+ "craft-garnish\tWhat's the difference between Garnish.DisclosureMenu and Garnish.MenuBtn? I see both used in Craft's source and I'm not sure which to use for a dropdown button with options": {
+  "rank": 1,
+  "top": "craft-garnish"
+ },
+ "craft-mcp\tAdd 'Sign in with Google' (OIDC) to the front-end login of our Craft site": {
+  "rank": 2,
+  "top": "craft-site"
+ },
+ "craft-mcp\tAdd requirePermission checks to my plugin's controller actions for editing invoices": {
+  "rank": 4,
+  "top": "craftcms"
+ },
+ "craft-mcp\tCan I use a personal access token from My Account → Tokens to connect Cursor to our Craft MCP server?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tConnect Claude Code to my local DDEV Craft 5.12 site over MCP": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tCraft says the OAuth private key file doesn't exist, run php craft oauth/generate-keys. Where do these keys go on Craft Cloud?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tCreate a GraphQL schema token for our Next.js frontend and send it in the Authorization header": {
+  "rank": 2,
+  "top": "craft-project-setup"
+ },
+ "craft-mcp\tDeploy our Craft site to Craft Cloud and configure craft-cloud.yaml cache rules": {
+  "rank": 6,
+  "top": "craft-cloud"
+ },
+ "craft-mcp\tExpose our Craft blog posts to any AI agent without login using the public MCP server": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tHow do I run Craft's stdio MCP server with ddev craft mcp/serve for a specific editor user?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tI ran claude mcp add --transport http against https://mysite.ddev.site/admin/mcp and get a 401 invalid_token, what URL should I use?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tInstall the Chrome DevTools MCP server so Claude can inspect my DDEV site's console errors": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tMake my custom Craft field type return a nicer value to MCP clients with McpOutputFieldInterface": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tOur CI can't install a private Composer package from GitHub; where do I put the personal access token for composer auth?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tOur Craft site is on Servd; how should CRAFT_OAUTH_PRIVATE_KEY and CRAFT_OAUTH_PUBLIC_KEY be set so MCP works on every instance?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tOur notes use dotted MCP tool names but the Craft MCP server only shows elements_list, did the tool names change?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tRate-limit the authenticated MCP endpoint in Craft with config/mcp.php filters": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tRegister an MCP tool from my Craft plugin that lists a customer's orders": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tSet up the fortrabbit MCP server to read deployment logs for our app": {
+  "rank": 2,
+  "top": "craft-fortrabbit"
+ },
+ "craft-mcp\tWe're on Craft 5.11, how do we let Claude read and edit our entries over MCP?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tWhich config/oauth.php settings control token lifetimes and redirectDomains in Craft 5.12?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tWhy can't my AI assistant create sections through Craft's MCP server on production?": {
+  "rank": 1,
+  "top": "craft-mcp"
+ },
+ "craft-mcp\tWrite a Craft queue job that resaves entries in batches": {
+  "rank": 5,
+  "top": "craftcms"
+ },
+ "craft-pest\tEntry::find()->title(['like', 'draft-%'])->all() returns an empty array every time, but I can see entries with those titles in the CP. craft 5, no exception thrown": {
+  "rank": 9,
+  "top": "craftcms"
+ },
+ "craft-pest\tI have a test that grants a section-scoped permission to a user group and asserts the user can view entries. it passes when I run it alone with --filter but fails when the whole suite runs. the permission just isn't there after saveGroupPermissions. any idea?": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tI need a staging environment where the client can test content changes before they go live, with a password prompt so google doesn't index it. craft 5, hosted on servd": {
+  "rank": 6,
+  "top": "craft-plugins"
+ },
+ "craft-pest\tI need to find all entries whose slug starts with a given prefix in a craft 5 maintenance command. what's the right query syntax": {
+  "rank": 7,
+  "top": "craft-plugins"
+ },
+ "craft-pest\tI need to write a GitHub Actions workflow that runs PHPStan and Pest tests on every pull request": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tI need two extra sites for the multi-site tests in our craft plugin. should I create them once in the bootstrap so every test can use them, or per test? and how do I clean them up": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tI'm contributing a patch to craft core itself (craftcms/cms) for a bug in the Assets service. there's an existing codeception suite in tests/. how do I add a unit test in the style core already uses": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tadd a php 8.4 leg to the plugin's code-analysis workflow and cache composer between runs. also bump actions/checkout to v5": {
+  "rank": 4,
+  "top": "craft-plugin-release"
+ },
+ "craft-pest\tddev import-db keeps failing halfway through with a 2006 MySQL server has gone away on a 4GB dump. project is craftcms type, mysql 8.0": {
+  "rank": 6,
+  "top": "ddev"
+ },
+ "craft-pest\thow do I create a bunch of entries with specific field values in a craft plugin test, and then assert a row landed in my plugin's own table? using Entry::factory() but not sure about the db assertion side": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\thow do I test that my email actually sends? want to see the rendered html of the order confirmation before we go live. we're on ddev": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tin a craft plugin service, what's the correct way to turn myplugin_items.dateUpdated (raw ActiveRecord value) into something I can compare against a Carbon instance? the column is a datetime": {
+  "rank": 2,
+  "top": "craft-php-guidelines"
+ },
+ "craft-pest\tin a craft plugin, is there any way to make my integration tests not need a real database at all? most of what I'm testing is a scoring algorithm that takes an array in and gives a number out": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tinstalling our plugin now fails with 'Too many keys specified; max 64 keys allowed' on myplugin_items. it worked last week. Install.php has createIndex and addForeignKey calls in safeUp": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tmy tests/Pest.php has uses(TestCase::class)->in(__DIR__) — is that enough or am I missing something? using markhuot/craft-pest-core 3.2": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tneed to add a Playwright end-to-end test that logs into the control panel and checks that our plugin's settings page saves correctly. we already have the CI runner set up for node": {
+  "rank": 4,
+  "top": "ddev"
+ },
+ "craft-pest\tok so this is bad. i just noticed our shared dev craft install has like 8000 entries in a section called 'Test Blog' that nobody created manually. pretty sure it's coming from the plugin test suite in cms/vendor/acme/craft-warden. how do i figure out what's happening and stop it": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tour compliance plugin writes audit rows and I keep finding rows in the audit table with test-looking data. I already call Audit::setSinks([]) in beforeEach so I don't get it": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tour github actions workflow for the plugin only runs ecs right now. I want to add the php 8.2/8.3/8.4 matrix and composer caching to it": {
+  "rank": 15,
+  "top": "ddev"
+ },
+ "craft-pest\tour importer deletes a site when a market is decommissioned. after deleteSite() runs, getSectionByHandle still comes back with siteSettings pointing at the site I just removed, and saving a category group throws 'missing site settings'": {
+  "rank": 10,
+  "top": "craftcms"
+ },
+ "craft-pest\tour pest suite has an afterEach that sweeps up fixture entries by title prefix and deletes them, but the shared test install has hundreds of leftover 'test-' entries so clearly it never matched anything. the suite is green": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tour plugin has a 'records changed since your last export' filter. it reads dateUpdated straight off the ActiveRecord and does strtotime() on it, then compares to the cutoff. works on my machine, but on the client's server (they're in Los Angeles) it's picking up rows 7 hours out. craft 5": {
+  "rank": 7,
+  "top": "ddev"
+ },
+ "craft-pest\tour plugin's Install.php creates three tables. I want to add a new column to one of them and ship it to existing installs. do I edit Install.php, write a migration, or both": {
+  "rank": 2,
+  "top": "craft-project-setup"
+ },
+ "craft-pest\tour suite passes locally every time and fails on github actions with an integrity constraint violation on myplugin_items.categoryId. only on CI": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tour token expiry tests fail maybe 1 in 3 runs. a token we seed as already-expired comes back as still valid. plugin is craft 5, suite is pest with a tests/bootstrap.php we wrote ourselves. dateExpired is a datetime column": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tphpstan is throwing 'Call to an undefined method yii\\console\\Application::getConfig()' all over our plugin src. level 5. what's the correct fix, I don't want to litter the code with ignore comments": {
+  "rank": 10,
+  "top": "craft-php-guidelines"
+ },
+ "craft-pest\treviewing a PR for one of our craft plugins. code-analysis.yaml runs phpstan and fix-cs, there are 74 tests in tests/ but I don't see them running anywhere in the workflow. what should this look like": {
+  "rank": 2,
+  "top": "craft-php-guidelines"
+ },
+ "craft-pest\tsetting up a test suite for a craft 5 plugin i'm building (handle is share-links). want pest, and i want it to run against its own database not the ddev one. what do i need in tests/ and phpunit.xml.dist?": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\ttest file passes when I run it with --filter on its own but fails when the whole suite runs. our service caches rows in a MemoizableArray and it looks like it's returning data from an earlier test": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\tthe plugin is symlinked into cms/vendor/acme/craft-ledger in my ddev project. what's the right command to run just that plugin's suite from inside the container": {
+  "rank": 2,
+  "top": "ddev"
+ },
+ "craft-pest\tthe plugin suite connects fine when I run it in ddev but on github actions it can't reach mysql at all. phpunit.xml.dist has CRAFT_DB_SERVER set to db. someone suggested adding an /etc/hosts entry on the runner?": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\twe want to A/B test two versions of the pricing page copy on our craft site and measure signups. what's a sane way to split traffic in twig without wrecking blitz caching": {
+  "rank": 3,
+  "top": "craft-plugin-release"
+ },
+ "craft-pest\twhat timezone should I configure for a craft site whose editors are in Brussels but whose readers are worldwide, and does it affect how postDate is stored": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\twhat's the right way to set the default timezone for a craft 5 site so entry postDates display in Brussels local time for editors but stay UTC in the database": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-pest\twrite the service class for bulk-approving submissions in our workflow plugin. it needs a permission check, should fire before/after events, and push a queue job per submission": {
+  "rank": 3,
+  "top": "craftcms"
+ },
+ "craft-pest\twriting a console command for our plugin that provisions a new site plus its sections from a config file. after it creates the site, entry queries in the same command are returning entries from every site, not the one I asked for": {
+  "rank": 9,
+  "top": "craftcms"
+ },
+ "craft-pest\twrote a fixture with a raw insert using NOW() for dateExpired and my 'rejects expired tokens' test says the token is still valid. the row is definitely in the past?": {
+  "rank": 1,
+  "top": "craft-pest"
+ },
+ "craft-php-guidelines\tCan you write a Python script that processes our product images, resizes them to 3 sizes, and converts to WebP format?": {
+  "rank": 10,
+  "top": "craft-site"
+ },
+ "craft-php-guidelines\tHelp me plan the content model for a recipe website — sections for recipes, ingredients, and cuisines with proper relations between them": {
+  "rank": 4,
+  "top": "craft-content-modeling"
+ },
+ "craft-php-guidelines\tHow do I set up DDEV with Redis caching for our Craft site? I need to configure the cache component in config/app.php": {
+  "rank": 5,
+  "top": "craft-project-setup"
+ },
+ "craft-php-guidelines\tI keep forgetting the section header order for Craft plugin classes — traits, constants, properties, methods. Can you show me the full template with the ========= separators?": {
+  "rank": 1,
+  "top": "craft-php-guidelines"
+ },
+ "craft-php-guidelines\tI need to document the exceptions my service method can throw — it calls Craft::$app->elements->saveElement() which can throw various exceptions. How deep should the @throws chain go?": {
+  "rank": 1,
+  "top": "craft-php-guidelines"
+ },
+ "craft-php-guidelines\tI need to set up PHPStan for our Craft plugin. What level should I use, and how do I create a baseline for existing violations? Also, do I need the craftcms/phpstan package?": {
+  "rank": 2,
+  "top": "craft-project-setup"
+ },
+ "craft-php-guidelines\tI want to add a custom JavaScript widget to the Craft CP that shows a sortable table with drag-to-reorder. How do I use Garnish.DragSort?": {
+  "rank": 2,
+  "top": "craft-garnish"
+ },
+ "craft-php-guidelines\tI'm building a card component in Twig with atomic design patterns. How should I structure the props file and the variant files?": {
+  "rank": 9,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-php-guidelines\tI'm scaffolding a new controller with ddev craft make controller but the generated file is missing PHPDocs. What's the standard for documenting action methods in Craft plugins?": {
+  "rank": 1,
+  "top": "craft-php-guidelines"
+ },
+ "craft-php-guidelines\tI'm writing a new service class for our Craft plugin — can you review the PHPDoc blocks and make sure they follow the right conventions? I need to know what goes in @author, @since, and @throws": {
+  "rank": 1,
+  "top": "craft-php-guidelines"
+ },
+ "craft-php-guidelines\tOur Craft site is slow — pages take 3+ seconds to load. How do I set up Blitz caching with Cloudflare purging?": {
+  "rank": 11,
+  "top": "craft-cloud"
+ },
+ "craft-php-guidelines\tOur ECS is failing on a bunch of files after I refactored the plugin. I'm getting errors about trailing commas, constant visibility, and nullable notation. How do I configure it correctly for Craft 5?": {
+  "rank": 1,
+  "top": "craft-php-guidelines"
+ },
+ "craft-php-guidelines\tShould I use DateTimeHelper or Carbon in my element query class? I have a custom date range filter and I'm doing date arithmetic to calculate 'last 30 days'": {
+  "rank": 1,
+  "top": "craft-php-guidelines"
+ },
+ "craft-php-guidelines\tWe need to add a beforePrepare() method to our element query. Should I use addSelect() or select()? And how do I handle the column quoting for Yii2 join conditions?": {
+  "rank": 1,
+  "top": "craft-php-guidelines"
+ },
+ "craft-php-guidelines\tWhat's the naming convention for queue jobs in Craft? Should it be SyncProductsJob or SyncProducts? And what about the file structure — does it go in src/jobs/ or src/queue/?": {
+  "rank": 2,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-php-guidelines\twhat's the correct way to use declare strict_types in a Craft plugin? I've been adding it to every file but someone said that's wrong": {
+  "rank": 1,
+  "top": "craft-php-guidelines"
+ },
+ "craft-plugin-release\tCan you write a changelog entry for this bug fix — what's the right phrasing and format for the Unreleased section?": {
+  "rank": 3,
+  "top": "craft-content-modeling"
+ },
+ "craft-plugin-release\tHow do I verify a plugin release's tag actually matches what's in composer.json, not just what's on the branch?": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tI accidentally moved an existing git tag that Packagist had already served — what's the blast radius?": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tI need to cut a new release for our Craft plugin — bump composer.json version, tag it, and make sure Packagist actually serves it": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tI need to promote develop to main for a plugin release — how do I check if it's safe without trusting my local refs?": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tI need to purge an accidentally committed API key from our plugin's git history before releasing": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tI need to write a migration that adds a new column to our plugin's items table": {
+  "rank": 3,
+  "top": "craft-php-guidelines"
+ },
+ "craft-plugin-release\tOur create-release.yml workflow failed with a 422 already_exists when the Plugin Store tried to create the GitHub release": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tOur plugin's Pest suite fails in CI but works locally — what's wrong with our database isolation?": {
+  "rank": 4,
+  "top": "craft-pest"
+ },
+ "craft-plugin-release\tPackagist isn't showing our new 2.3.0 tag even though we pushed it and the webhook returned 202": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tSet up a GitHub Actions workflow that runs PHPStan and ECS on every pull request for our plugin": {
+  "rank": 2,
+  "top": "craft-php-guidelines"
+ },
+ "craft-plugin-release\tWe have a shared SDK library that several of our plugins depend on — what order should I release them in?": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tWe use path repositories for local development across three plugins that share a library — one of them keeps resolving to dev-main instead of a real version": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugin-release\tWe want to list our plugin in the Craft Plugin Store for the first time — what does the submission need?": {
+  "rank": 2,
+  "top": "craft-plugins"
+ },
+ "craft-plugin-release\tWhat's the right section header format and PHPDoc conventions for a new service class in our plugin?": {
+  "rank": 5,
+  "top": "craft-php-guidelines"
+ },
+ "craft-plugin-release\tgh release edit wiped out the tag_name on our release and now it shows as untagged-<hash>": {
+  "rank": 1,
+  "top": "craft-plugin-release"
+ },
+ "craft-plugins\tBuild a card component with atomic design and Tailwind utility classes": {
+  "rank": 8,
+  "top": "craft-site"
+ },
+ "craft-plugins\tHelp me plan the content model for sections, entry types, and Matrix fields for a new site": {
+  "rank": 3,
+  "top": "craft-content-modeling"
+ },
+ "craft-plugins\tHow do I register a Warp passwordless login flow with magic links for our members area?": {
+  "rank": 1,
+  "top": "craft-plugins"
+ },
+ "craft-plugins\tHow do I set up Amazon SES as the mail transport with SNS bounce tracking?": {
+  "rank": 1,
+  "top": "craft-plugins"
+ },
+ "craft-plugins\tHow do I set up DDEV with PHP 8.3 and MySQL 8 for a new Craft project?": {
+  "rank": 14,
+  "top": "craft-project-setup"
+ },
+ "craft-plugins\tHow do I set up a Formie form inside a content migration so it ships with the plugin install?": {
+  "rank": 3,
+  "top": "craft-content-modeling"
+ },
+ "craft-plugins\tHow do I use Imager-X's ppimg Power Pack markup to generate a responsive picture tag?": {
+  "rank": 1,
+  "top": "craft-plugins"
+ },
+ "craft-plugins\tI need SEOmatic to pull OpenGraph images from our hero field and generate JSON-LD for articles": {
+  "rank": 2,
+  "top": "craft-site"
+ },
+ "craft-plugins\tI need to configure Knock Knock to password-protect our staging environment": {
+  "rank": 1,
+  "top": "craft-plugins"
+ },
+ "craft-plugins\tI need to write a custom element type from scratch for our plugin, no third-party plugin involved": {
+  "rank": 8,
+  "top": "craftcms"
+ },
+ "craft-plugins\tI want to deploy our Craft install to Craft Cloud — what does craft-cloud.yaml need?": {
+  "rank": 10,
+  "top": "craft-cloud"
+ },
+ "craft-plugins\tI'm importing a CSV of 10,000 products with Feed Me — how do I map a relation field during import?": {
+  "rank": 1,
+  "top": "craft-plugins"
+ },
+ "craft-plugins\tOur Navigation plugin nodes aren't rendering custom fields in GraphQL — what am I missing?": {
+  "rank": 5,
+  "top": "ddev"
+ },
+ "craft-plugins\tWe need to add Retour redirects in bulk from a CSV of old URLs": {
+  "rank": 1,
+  "top": "craft-plugins"
+ },
+ "craft-plugins\tWhat's the PHPDoc convention for @throws chains in a service method?": {
+  "rank": 14,
+  "top": "craft-php-guidelines"
+ },
+ "craft-plugins\tWhat's the right Blitz refresh mode for a site with Sprig components that shouldn't be cached?": {
+  "rank": 3,
+  "top": "craft-site"
+ },
+ "craft-project-setup\tCan you create a .claude directory with rules for our next.js project? We use TypeScript, Tailwind, and Prisma": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-project-setup\tDoes this project have a CLAUDE.md? If not, can you create one that covers our Craft plugin development workflow?": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-project-setup\tHelp me plan a content migration from WordPress to Craft CMS — we have about 500 blog posts with categories and featured images": {
+  "rank": 3,
+  "top": "craft-content-modeling"
+ },
+ "craft-project-setup\tHow do I configure a Matrix field with nested entry types and set up the front-end rendering with chunk iteration?": {
+  "rank": 4,
+  "top": "craft-content-modeling"
+ },
+ "craft-project-setup\tI just started working on a new Craft CMS plugin project and I need to set up Claude Code for it. Can you generate a CLAUDE.md and the rules files?": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-project-setup\tI need to build a custom element type for our Craft plugin that tracks customer orders with status workflows": {
+  "rank": 13,
+  "top": "craft-plugin-release"
+ },
+ "craft-project-setup\tI need to write PHPDocs for all the classes in my plugin. What are the conventions for @author, @since, and section headers?": {
+  "rank": 11,
+  "top": "craft-php-guidelines"
+ },
+ "craft-project-setup\tI want to configure Claude Code for our Craft project. We have a monorepo with the site in packages/site/ and a plugin in packages/plugin/. How should the CLAUDE.md be structured?": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-project-setup\tI'm onboarding a new developer to our Craft CMS site project. Can you scaffold the Claude Code config so they have all the right context when working with our codebase?": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-project-setup\tI'm trying to set up Blitz caching for our multi-site Craft installation with 3 language variants": {
+  "rank": 3,
+  "top": "craft-content-modeling"
+ },
+ "craft-project-setup\tOur Craft site is slow — LCP is over 4 seconds. Help me diagnose and fix the performance issues": {
+  "rank": 11,
+  "top": "ddev"
+ },
+ "craft-project-setup\tWe have a Craft site project with custom modules alongside it. Help me bootstrap the Claude configuration so the AI knows about our coding standards and project structure": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-project-setup\tinitialize CLAUDE.md for our Craft CMS site — we're using atomic design, Tailwind v4, DDEV, and have a custom module in modules/": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-project-setup\tscaffold project config for our new Craft site — we need DDEV with PHP 8.3, MySQL 8, and Node 20. Also set up the Vite buildchain": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-project-setup\tset up claude for this craft project — it's a plugin with custom element types, we use Pest for testing and have ECS + PHPStan configured": {
+  "rank": 1,
+  "top": "craft-project-setup"
+ },
+ "craft-site\tCan you help me configure SEOmatic for our blog section? I need custom meta titles using the entry title + site name, OpenGraph images from the hero image field, and JSON-LD Article markup": {
+  "rank": 2,
+  "top": "craft-plugins"
+ },
+ "craft-site\tCan you help me plan the content model for a recipe website? I need sections for recipes, ingredients, cuisines, and dietary tags. Recipes should have prep time, cook time, servings, and step-by-step instructions with photos": {
+  "rank": 7,
+  "top": "craft-content-modeling"
+ },
+ "craft-site\tHelp me set up Formie with Tailwind styling for a contact form — I need custom theme config that outputs our utility classes instead of the default Formie markup": {
+  "rank": 1,
+  "top": "craft-site"
+ },
+ "craft-site\tHow do I write a Craft migration that adds a new column to our custom element's database table and updates all existing records?": {
+  "rank": 15,
+  "top": "craftcms"
+ },
+ "craft-site\tHow should I handle responsive images in our Craft site? We have hero banners (full-width), content images (max 800px), and card thumbnails (fixed 400x300). I want srcset with WebP fallbacks and lazy loading": {
+  "rank": 1,
+  "top": "craft-site"
+ },
+ "craft-site\tI need a Python script that scrapes product data from a website and exports it to a CSV file for importing into Craft via Feed Me": {
+  "rank": 2,
+  "top": "craft-plugins"
+ },
+ "craft-site\tI need to build a card component with 3 variants — default with image on top, horizontal with image on the left, and a minimal text-only version. We're using Tailwind and the atomic design pattern from our other pages": {
+  "rank": 1,
+  "top": "craft-site"
+ },
+ "craft-site\tI need to build a custom element type for tracking support tickets in our Craft plugin — with statuses, custom fields, and a CP index page with filtering": {
+  "rank": 8,
+  "top": "craft-garnish"
+ },
+ "craft-site\tI want to add Blitz static caching to our Craft site but we have a few pages with Sprig components (live search, filtering). How do I make the cached pages work with the dynamic parts?": {
+  "rank": 1,
+  "top": "craft-site"
+ },
+ "craft-site\tI'm building a tabs component that switches content panels — should I use Alpine.js, DataStar, or vanilla JS? The content is static (no API calls), just showing/hiding panels": {
+  "rank": 1,
+  "top": "craft-site"
+ },
+ "craft-site\tI'm setting up Vite + Tailwind v4 for a new Craft CMS project running in DDEV. The dev server works but the production build isn't generating the CSS. My vite.config.ts uses the nystudio107 plugin but I think the paths are wrong": {
+  "rank": 2,
+  "top": "ddev"
+ },
+ "craft-site\tNeed to set up front-end user authentication for our membership site — login form, registration, password reset, and an edit profile page. Using Craft 5 with email as username": {
+  "rank": 1,
+  "top": "craft-site"
+ },
+ "craft-site\tOur content builder template needs to handle 8 different Matrix block types — hero, text, image gallery, CTA, testimonial, stats, FAQ accordion, and video embed. How should I structure the _builders/ directory and handle the rendering loop?": {
+  "rank": 1,
+  "top": "craft-site"
+ },
+ "craft-site\tWe need a language switcher component for our multi-site Craft setup — 3 languages (EN, FR, DE), subdomain-based (en.example.com, fr.example.com, de.example.com). It should show the current language and link to the same entry in other languages, falling back to the homepage if no translation exists": {
+  "rank": 2,
+  "top": "craft-content-modeling"
+ },
+ "craft-site\tWe need to register a custom EVENT_BEFORE_SAVE handler in our module that validates entries before they're saved and prevents saving if certain business rules aren't met": {
+  "rank": 13,
+  "top": "craftcms"
+ },
+ "craft-site\tWe're getting PHPStan errors in our plugin's service class — something about MemoizableArray return types not matching the interface. Level 8 analysis": {
+  "rank": 14,
+  "top": "craft-php-guidelines"
+ },
+ "craft-twig-guidelines\tCan I use {% macro %} for reusable UI components in Craft? I have a button that appears in 5 different templates and I want to avoid duplication": {
+  "rank": 2,
+  "top": "craft-project-setup"
+ },
+ "craft-twig-guidelines\tCan you help me configure DDEV with a custom Node version and expose the Vite dev server port for HMR?": {
+  "rank": 15,
+  "top": "ddev"
+ },
+ "craft-twig-guidelines\tHelp me plan the template architecture for our new Craft site — we're using atomic design with atoms, molecules, and organisms in a specific directory structure": {
+  "rank": 2,
+  "top": "craft-site"
+ },
+ "craft-twig-guidelines\tHow do I add classes and aria attributes to an inline SVG in Craft Twig? I'm using svg() to load the file but need to add styling": {
+  "rank": 1,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-twig-guidelines\tHow do I configure a Matrix field with 5 entry types and set it to cards view mode? I want editors to drag and reorder blocks": {
+  "rank": 7,
+  "top": "craft-site"
+ },
+ "craft-twig-guidelines\tHow do I render a comment header at the top of each Twig component file? I want a consistent format with the ========= separator style we use in PHP": {
+  "rank": 1,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-twig-guidelines\tHow do I use the {% tag %} helper in Craft 5? I want to render a polymorphic element that's an <a> when it has a URL and a <span> otherwise": {
+  "rank": 1,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-twig-guidelines\tI need to build a custom element type for our Craft plugin that tracks inventory items with quantities and locations": {
+  "rank": 13,
+  "top": "craft-php-guidelines"
+ },
+ "craft-twig-guidelines\tI need whitespace control in my Twig templates — the output has tons of blank lines between elements. What's the best approach? I've seen people use minify tags": {
+  "rank": 1,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-twig-guidelines\tI'm getting PHPStan errors in my plugin's service class about nullable return types. How do I fix the type annotations?": {
+  "rank": 4,
+  "top": "craft-php-guidelines"
+ },
+ "craft-twig-guidelines\tI'm using the ??? operator in my templates but getting an error. Do I need a plugin for that? I have SEOmatic installed": {
+  "rank": 1,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-twig-guidelines\tI'm writing a Twig include for a hero component and I keep getting variables leaking from the parent template. How do I properly isolate includes in Craft?": {
+  "rank": 1,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-twig-guidelines\tShould I use camelCase or snake_case for Twig variable names? And what about abbreviations — is 'el' ok for element or should I spell it out?": {
+  "rank": 1,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-twig-guidelines\tWe need to set up front-end auth — login, registration, password reset forms with proper CSRF handling": {
+  "rank": 10,
+  "top": "craft-site"
+ },
+ "craft-twig-guidelines\tWhat's the collect() function in Craft Twig? I need to build a class string from multiple named concerns (layout, color, hover, utilities) without conflicts": {
+  "rank": 1,
+  "top": "craft-twig-guidelines"
+ },
+ "craft-twig-guidelines\tWhat's the correct way to handle null values in Twig templates? I've been using {% if entry.heading is defined and entry.heading is not null %} but that feels verbose": {
+  "rank": 2,
+  "top": "craft-garnish"
+ },
+ "craftcms\tCan you help me model a blog with categories, tags, and a featured posts section? I want the homepage to show the 3 most recent featured posts and the sidebar to show category counts": {
+  "rank": 2,
+  "top": "craft-content-modeling"
+ },
+ "craftcms\tCan you write a Python script that reads a CSV file and generates a bar chart showing monthly sales totals? The CSV has columns date, product, quantity, price": {
+  "rank": 4,
+  "top": "craft-plugins"
+ },
+ "craftcms\tHelp me plan the content model for a multi-language corporate site — we have 3 languages, about 40 pages organized hierarchically, plus a news section and team member profiles": {
+  "rank": 4,
+  "top": "craft-site"
+ },
+ "craftcms\tHow do I configure the Vite buildchain with Tailwind v4 in my Craft project? I keep getting HMR errors in the DDEV container": {
+  "rank": 9,
+  "top": "craft-site"
+ },
+ "craftcms\tHow do I register a custom dashboard widget for our Craft plugin? I want it to show a chart of recent submissions from our custom element type": {
+  "rank": 1,
+  "top": "craftcms"
+ },
+ "craftcms\tI need to build a custom element type for our plugin that tracks customer orders — each order has a status workflow (pending, processing, shipped, delivered) and needs to appear in the CP with sortable columns and bulk actions": {
+  "rank": 1,
+  "top": "craftcms"
+ },
+ "craftcms\tI need to create a queue job that syncs product data from our ERP system every night — it should process items in batches of 50 and report progress, and I need a console command to trigger it manually": {
+  "rank": 3,
+  "top": "craft-php-guidelines"
+ },
+ "craftcms\tI need to set up the Twig templates for our new portfolio site — we're using atomic design with a card component that has 3 variants (default, featured, minimal) and a content builder for Matrix blocks": {
+  "rank": 6,
+  "top": "craft-site"
+ },
+ "craftcms\tI need to write a migration that creates a new section called 'Resources' with two entry types and a Matrix field — is it better to do this in Install.php or a content migration?": {
+  "rank": 2,
+  "top": "craft-content-modeling"
+ },
+ "craftcms\tI ran a quick php -r script that bootstraps Craft and calls Craft::$app->getFields()->saveField() with an updated layout. It returned true but nothing changed in config/project. Why?": {
+  "rank": 1,
+  "top": "craftcms"
+ },
+ "craftcms\tI want to register a custom Twig extension from my plugin that adds a |currency filter and a {% priceTable %} tag pair": {
+  "rank": 1,
+  "top": "craftcms"
+ },
+ "craftcms\tI'm trying to optimize my Craft site's image loading — should I use ImageOptimize or Imager-X? We have about 2000 product images that need srcset with WebP": {
+  "rank": 12,
+  "top": "craft-site"
+ },
+ "craftcms\tMy local Craft DB is a restore of last night's production dump and I edited a field in the CP. Is it safe to run craft project-config/write before I commit, or will it overwrite something?": {
+  "rank": 3,
+  "top": "ddev"
+ },
+ "craftcms\tOur site module adds a required rule to one entry type with Event::on(Entry::class, Element::EVENT_DEFINE_RULES), and since then adding any nested entry in the CP fails with \"Either `sectionId` or `fieldId` + `ownerId` must be set on the entry.\" How should the handler be written?": {
+  "rank": 1,
+  "top": "craftcms"
+ },
+ "craftcms\tSetting up Pest tests for a Craft plugin — how do I test a controller action that requires a logged-in admin user and verify it creates the right database records?": {
+  "rank": 6,
+  "top": "craft-pest"
+ },
+ "craftcms\tWe need to add PHPStan to our Craft plugin's CI pipeline and I'm not sure what level to use or how to set up the baseline. Also need ECS configured with the Craft preset": {
+  "rank": 7,
+  "top": "craft-php-guidelines"
+ },
+ "craftcms\tWe need to add SEOmatic meta tags to our blog section and configure the sitemap to exclude draft entries. Also want to add JSON-LD for articles": {
+  "rank": 7,
+  "top": "craft-plugins"
+ },
+ "craftcms\tWe're getting a weird error in our plugin's afterSave handler — the nested entries aren't propagating to the other site and I'm not sure if I need to use EVENT_AFTER_PROPAGATE or EVENT_AFTER_SAVE for cross-site updates": {
+  "rank": 1,
+  "top": "craftcms"
+ },
+ "craftcms\tWhat's the right way to add a custom permission for our plugin so that only certain user groups can access the settings page? And how do I check that permission in the controller?": {
+  "rank": 4,
+  "top": "craft-php-guidelines"
+ },
+ "craftcms\thow do I set up a Sprig component for live search that filters entries as the user types? I want it to debounce and show a loading indicator": {
+  "rank": 5,
+  "top": "craft-project-setup"
+ },
+ "craftcms\tour plugin needs a webhook endpoint that stripe can POST to for payment confirmations. how do I set up a controller action that bypasses CSRF and handles the JSON payload?": {
+  "rank": 1,
+  "top": "craftcms"
+ },
+ "ddev\tCan you help me set up eager loading for a listing page that queries blog posts with their featured images and categories?": {
+  "rank": 15,
+  "top": "craft-content-modeling"
+ },
+ "ddev\tHelp me configure SEOmatic meta tags for our blog section with custom OpenGraph images": {
+  "rank": 12,
+  "top": "craft-site"
+ },
+ "ddev\tHow do I create a custom ddev command that runs our ECS check? I want to type 'ddev check-cs' instead of the full composer command": {
+  "rank": 2,
+  "top": "craft-project-setup"
+ },
+ "ddev\tHow do I switch my DDEV project to PHP 8.3 and MySQL 8.0? Also need Node 20 for our build tools": {
+  "rank": 3,
+  "top": "craft-php-guidelines"
+ },
+ "ddev\tHow do I write a custom element type for our Craft plugin? I need it to have its own database table and CP index page": {
+  "rank": 7,
+  "top": "craftcms"
+ },
+ "ddev\tI accidentally ran npm install on my host machine instead of through ddev npm. Now there's a node_modules with the wrong architecture. What do I do?": {
+  "rank": 1,
+  "top": "ddev"
+ },
+ "ddev\tI just cloned a Craft CMS project and need to get the local environment running. There's a .ddev folder already. How do I start, import the database, and get everything running?": {
+  "rank": 1,
+  "top": "ddev"
+ },
+ "ddev\tI need to add Redis to my DDEV-based Craft project for caching. How do I install the add-on and what do I put in config/app.php?": {
+  "rank": 1,
+  "top": "ddev"
+ },
+ "ddev\tI need to build a card component with 3 visual variants using Twig extends/block pattern": {
+  "rank": 15,
+  "top": "craft-site"
+ },
+ "ddev\tI need to enable Xdebug for debugging a tricky issue in my Craft plugin. How do I turn it on in DDEV and connect it to VS Code?": {
+  "rank": 1,
+  "top": "ddev"
+ },
+ "ddev\tI need to write a GitHub Actions workflow that runs PHPStan and Pest tests on every pull request": {
+  "rank": 2,
+  "top": "craft-pest"
+ },
+ "ddev\tI'm getting 'Class not found' errors after pulling from git. I think I need to run composer install and migrations but I always forget the right commands": {
+  "rank": 6,
+  "top": "craft-php-guidelines"
+ },
+ "ddev\tMy DDEV project won't start — says port 443 is already in use. How do I debug this and is there a way to stop all other DDEV projects?": {
+  "rank": 1,
+  "top": "ddev"
+ },
+ "ddev\tOur DDEV site works locally but I need to share it with a client for review. Is there a way to create a temporary public URL?": {
+  "rank": 1,
+  "top": "ddev"
+ },
+ "ddev\tThe Vite dev server keeps failing in my DDEV container — I think I need to expose port 5173 but I'm not sure if I should use web_extra_exposed_ports or ports in the config": {
+  "rank": 1,
+  "top": "ddev"
+ },
+ "ddev\tWe need to deploy our Craft site to a DigitalOcean droplet with Nginx and Let's Encrypt SSL": {
+  "rank": 5,
+  "top": "craft-cloud"
+ },
+ "servd\tHelp me build a multi-brand Tailwind token system for our front-end components": {
+  "rank": 12,
+  "top": "craft-site"
+ },
+ "servd\tHow do I configure native Imager-X transforms with Power Pack markup for a self-hosted site?": {
+  "rank": 4,
+  "top": "craft-plugins"
+ },
+ "servd\tHow do I connect to our Servd database locally? I think it needs an SSH tunnel": {
+  "rank": 1,
+  "top": "servd"
+ },
+ "servd\tHow do I install the servd/craft-asset-storage plugin and point it at the right CDN?": {
+  "rank": 1,
+  "top": "servd"
+ },
+ "servd\tHow do I pull the production database and assets down to my local DDEV environment from Servd?": {
+  "rank": 1,
+  "top": "servd"
+ },
+ "servd\tHow do I run the Craft queue in a fortrabbit worker job instead of web requests?": {
+  "rank": 4,
+  "top": "craft-fortrabbit"
+ },
+ "servd\tI need a dynamicInclude island in a page that's being statically cached on Servd": {
+  "rank": 1,
+  "top": "servd"
+ },
+ "servd\tOur Project Config changes made directly on Servd staging aren't syncing back to production": {
+  "rank": 2,
+  "top": "craft-fortrabbit"
+ },
+ "servd\tOur uploaded assets keep disappearing after each deploy on Servd": {
+  "rank": 1,
+  "top": "servd"
+ },
+ "servd\tSet up DDEV locally with Redis caching for our Craft project": {
+  "rank": 2,
+  "top": "craft-project-setup"
+ },
+ "servd\tShould we host this Craft project on Servd or Craft Cloud? We need SSH access for one-off scripts": {
+  "rank": 2,
+  "top": "craft-fortrabbit"
+ },
+ "servd\tWe want to run Blitz alongside Servd's static caching — does that work, and how?": {
+  "rank": 1,
+  "top": "servd"
+ },
+ "servd\tWe're deploying our Craft site to Servd — what goes in servd.yaml for the Node build step?": {
+  "rank": 1,
+  "top": "servd"
+ },
+ "servd\tWe're deploying to Craft Cloud and need to configure craft-cloud.yaml's cache rules": {
+  "rank": 2,
+  "top": "craft-cloud"
+ },
+ "servd\tWhat's the difference between Servd's Dedicated Queue Runner and just letting queue jobs run on AJAX?": {
+  "rank": 1,
+  "top": "servd"
+ },
+ "servd\tWhat's the right PHPDoc style for a new queue job class in our plugin?": {
+  "rank": 7,
+  "top": "craft-php-guidelines"
+ },
+ "servd\tWrite a migration that adds a new column and backfills existing rows": {
+  "rank": 15,
+  "top": "craft-project-setup"
+ }
+}
