@@ -68,14 +68,18 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.5+` | `NestedElementQueryTrait` | an empty array meant "no filter" and returned every nested element. `Entry::find()->ownerId($ids)` with an empty `$ids` is the classic case; guard it with an early `return []`. | `craftcms/references/elements.md` |
 | `5.5+` | `RegisterElementCardAttributesEvent` |  | `craftcms/references/element-index.md` |
 | `5.5+` | `RegisterElementDefaultCardAttributesEvent` |  | `craftcms/references/element-index.md` |
+| `5.5+` | `craft resave/all --update-search-index` |  | `craftcms/references/deployment.md` |
 | `5.5+` | `craft resave/all` |  | `craftcms/references/console-commands.md` |
 | `5.5+` | `craft users/remove-2fa` |  | `craftcms/references/console-commands.md` |
 | `5.5+` | `ddev craft resave/all --update-search-index` |  | `craft-site/references/search.md` |
+| `5.5+` | `ddev craft resave/all --update-search-index` |  | `craftcms/references/config-app.md` |
 | `5.5+` | `defaultIndexViewMode` |  | `craft-content-modeling/references/field-types.md` |
 | `5.5+` | `defineCardAttributes()` |  | `craftcms/references/element-index.md` |
 | `5.5+` | `indexViewModes()` |  | `craftcms/references/element-index.md` |
 | `5.5+` | `int\|float\|null` |  | `craft-content-modeling/references/field-types.md` |
 | `5.5+` | `resave/all --update-search-index` |  | `craft-site/references/search.md` |
+| `5.5+` | `resave/all --update-search-index` |  | `craftcms/references/fields.md` |
+| `5.5+` | `resave/entries --update-search-index` | `resave/entries --update-search-index`, per element type. | `craftcms/references/config-app.md` |
 | `5.5+` | `setCardView()` |  | `craftcms/references/element-index.md` |
 | `5.5+` | `staticRows` |  | `craft-content-modeling/references/field-types.md` |
 | `5.5+` | `url: '$PRIMARY_SITE_URL/uploads'` |  | `craft-content-modeling/references/infrastructure.md` |

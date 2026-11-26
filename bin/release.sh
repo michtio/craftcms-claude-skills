@@ -70,9 +70,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Refuse to bump anything while a SKILL.md frontmatter is invalid or over the
 # spec/listing limits — a broken frontmatter ships silently otherwise.
-echo "Validating SKILL.md frontmatter"
-if ! bash "$REPO_ROOT/bin/validate-skills.sh"; then
-  echo "error: fix the SKILL.md frontmatter above before releasing." >&2
+echo "Running every deterministic gate (bin/check.sh)"
+if ! sh "$REPO_ROOT/bin/check.sh"; then
+  echo "error: fix the failing gates above before releasing." >&2
   exit 65
 fi
 echo
