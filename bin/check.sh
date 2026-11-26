@@ -10,7 +10,7 @@
 #   version-script    bin/test-craft-version.sh golden outputs (sh)
 #   tag-lint          version tags in skills/, plus the linter and floor self-tests
 #   agent-budget      each agent file + its preloaded SKILL.md files <= 48 KB; checker <= 16 KB,
-#                     deep reviewer preloads nothing, no reviewer on effort xhigh (bin/agent_budget.py)
+#                     deep reviewer preloads nothing, no reviewer on effort xhigh, declared agent caps (bin/agent_budget.py)
 #   contents          references > 30 KB start with a current line-numbered Contents block
 #   symbols           every Craft symbol named in skills/ exists in craftcms/cms (bin/craft_source.py)
 #   tables            MCP tool catalogue and config defaults match the source
@@ -77,8 +77,11 @@ gate      "tag-lint skills/"               python3 bin/craft_tags.py lint skills
 must_fail "tag-lint self-test (untagged craft\\filters\\Cors)" python3 bin/craft_tags.py lint evals/fixtures/tags/untagged-cors.md
 grep_ok   "tag-lint self-test (3 invalid tags)" '^3 finding(s)' python3 bin/craft_tags.py lint evals/fixtures/tags/grammar.md
 grep_ok   "floor self-test (patch-release security bullets)" '^5\.12\.3	' python3 bin/craft_tags.py floor --changelog evals/fixtures/tags/changelog-floor.md
-gate      "agent startup budget (48 KB; checker 16 KB; no xhigh reviewers)" python3 bin/agent_budget.py
+gate      "agent startup budget (48 KB; checker 16 KB; no xhigh reviewers; agent caps <= 5)" python3 bin/agent_budget.py
 must_fail "agent gate self-test (xhigh reviewer)" python3 bin/agent_budget.py --agents evals/fixtures/agents/xhigh-reviewer
+must_fail "agent cap self-test (Agent tool, no cap line)" python3 bin/agent_budget.py --agents evals/fixtures/agents/no-cap
+must_fail "agent cap self-test (cap 6)" python3 bin/agent_budget.py --agents evals/fixtures/agents/cap-6
+must_fail "agent cap self-test (checker with Agent)" python3 bin/agent_budget.py --agents evals/fixtures/agents/checker-with-agent
 gate      "contents blocks (references > 30 KB)" python3 bin/contents.py --check
 gate      "symbols skills/"                python3 bin/craft_source.py verify
 must_fail "symbols self-test (craft\\services\\Mcp::getTools())" python3 bin/craft_source.py verify evals/fixtures/symbols/bad-symbol.md

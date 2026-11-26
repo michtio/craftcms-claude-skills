@@ -1,6 +1,6 @@
 ---
 name: craft-review-checker
-description: One lens of a deep review (conventions, security, performance, migrations, CP JavaScript, release and hosting), started by craft-code-reviewer-deep with a lens brief; also challenges other checkers' findings. Read-only. Not for direct use: ask for craft-code-reviewer or craft-code-reviewer-deep instead.
+description: One lens of a deep review (conventions, security, performance, migrations, CP JavaScript, release and hosting), started by craft-code-reviewer-deep or by a builder before it hands back, with a lens brief; also challenges other checkers' findings. Read-only. Not for direct use: ask for craft-code-reviewer or craft-code-reviewer-deep instead.
 tools: Read, Grep, Glob, Bash, Skill
 model: sonnet
 effort: high

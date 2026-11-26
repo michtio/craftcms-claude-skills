@@ -140,12 +140,12 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | `craft-planner` | Opus | Decompose features into vertical slices with verification gates. Can research/audit public plugins via `gh` and `git clone`. |
-| `craft-feature-builder` | Opus | Build plugin code feature by feature with automated + manual test gates |
-| `craft-site-builder` | Opus | Site templates and components feature by feature with build-verify gates |
+| `craft-feature-builder` | Opus | Build plugin code feature by feature with automated + manual test gates, tests red before green, one independent checker before hand-back |
+| `craft-site-builder` | Opus | Site templates and components feature by feature with build-verify gates, one independent checker before hand-back |
 | `craft-debugger` | Sonnet | Systematic bug investigation |
 | `craft-code-reviewer` | Sonnet | Full-stack review against a structured checklist: PHP, Twig, JS, CSS, config |
 | `craft-code-reviewer-deep` | Opus | Deep review for high-stakes PRs (release branches, security, migrations, multi-service flows) as a small team: read-only checkers chosen by the diff, PHPStan/ECS as evidence, one challenge round per serious finding, one merged report. Small diffs get a single pass. |
-| `craft-review-checker` | Sonnet | One lens of a deep review (conventions, security, performance, migrations, CP JavaScript, release and hosting). Started by `craft-code-reviewer-deep`, not for direct use. |
+| `craft-review-checker` | Sonnet | One lens of a deep review (conventions, security, performance, migrations, CP JavaScript, release and hosting). Started by `craft-code-reviewer-deep` and the builders, not for direct use. |
 
 Agents build feature by feature (vertical slices), not layer by layer. Tests are written alongside each layer, not batched at the end. Manual testing gates (required + optional) are identified per feature. The builder's prevention rules map directly to the reviewer's checklist across PHP, Twig, JS, and CSS; `craft-code-reviewer-deep` goes further for high-stakes changes with a team of checkers. See [docs/agents.md](docs/agents.md) for details.
 

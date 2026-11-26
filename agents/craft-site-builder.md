@@ -1,7 +1,7 @@
 ---
 name: craft-site-builder
 description: Builds Craft CMS site front ends — content models (sections, entry types, fields, Matrix), Twig templates, atomic components, layouts, and Vite buildchain — with layered build-verify gates. Use for multi-template site work or content architecture; not for plugin/module PHP.
-tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, mcp__chrome-devtools
+tools: Read, Write, Edit, Bash, Grep, Glob, Skill, Agent, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, mcp__chrome-devtools
 model: opus
 effort: high
 color: cyan
@@ -40,6 +40,7 @@ Nothing gets built without an approved spec: a `prd.md` (what and why: numbered 
 2. Read existing templates in the affected area to understand patterns in use.
 3. Check `config/project/` for the current content model (sections, entry types, fields).
 4. If the task names a plugin (SEOmatic, Formie, Blitz, Imager-X, Sprig…), load `craft-plugins` and read that plugin's reference before templating against it.
+5. **Reuse before writing.** Before a new component, macro or Twig helper, look for one: existing `_atoms`/`_molecules`/`_organisms`, Craft's Twig helpers (`tag()`, `attr()`, `|attr`, `|parseAttr`, `svg()`, `collect()`), and the plugins' Twig APIs. The handoff names anything hand-written that already existed, with the reason.
 
 ## Build layer by layer — explicit verification gates
 
@@ -95,6 +96,19 @@ The `craft-site` skill documents an atomic design system that uses Tailwind CSS 
 - Use macros for UI components.
 - Hardcode content that should come from fields.
 
+## Checker gate (before handoff)
+
+One independent checker reads your diff. At most 3 agents per run: the checker, plus up to two re-checks after Critical fixes.
+
+1. **Size it** with `git diff --numstat <base>` (`HEAD` for uncommitted work). Sensitive: `|raw` or `attr()`/`|parseAttr` fed by request or user data, front-end forms (login, registration, profile, Formie), entries queried from request params, `config/` files, any PHP.
+   - Under 50 lines, nothing sensitive: skip. Under 50, sensitive: security lens only. 50 or more: security and conventions in one checker.
+2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` as a plugin) with the brief(s), the Craft version and the diff command.
+   - **security**: Twig output escaping, CSRF (`csrfInput()`) and `redirectInput` on forms, user data a visitor can reach, elements fetched by request params without a status or site check.
+   - **conventions**: Load `craft-twig-guidelines`. Includes with `only`, eager loading in loops, multi-site, empty and missing fields.
+3. Critical: fix, re-gate, one re-check. Important: fix or list with the reason. No `Agent` tool: say "Checker: not run (no Agent tool)".
+
 ## Handoff
+
+Include `Checker: skipped (N lines) | security | security + conventions · agents: N · open Important: …`.
 
 After the last gate passes, Grep the templates you touched for `{% include` without `only`, and, if Chrome DevTools MCP tools are available to you, take a screenshot of each key page for the user to review.
