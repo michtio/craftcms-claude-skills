@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.25.0
+## 1.25.0 -- 2026-11-26
 
 Brings the pack up to Craft 5.12.4: a new skill for Craft's MCP servers, OAuth server and personal access tokens, a rewrite of the GraphQL authentication docs, and every 5.12 behaviour change the pack touches, each with a version tag so 5.10 and 5.11 projects keep getting advice that works on their version. Verified on 2026-11-26 against the `craftcms/cms` 5.12.4 source, Craft's CHANGELOG through 5.12.4, and a throwaway 5.12.4 install for the runtime claims. Measured with `evals/behavior_check.py --runs 2 --plugin-dir`: the 14 new 5.12 cases pass 28 of 28 and the 7 version-awareness cases 14 of 14; `trigger_check.py` routes 14 of 14 `craft-mcp` prompts to the skill and none of the 8 negatives.
 
