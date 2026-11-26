@@ -39,6 +39,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 from pathlib import Path
 
@@ -84,6 +85,8 @@ def behaviour_deps(case: dict) -> set[str]:
         deps.add(f"skills/{s}/" if s else fact["file"])
     if case.get("cwd"):
         deps.add(case["cwd"].rstrip("/") + "/")
+    if case.get("overlay"):
+        deps.add(case["overlay"].rstrip("/") + "/")
     return deps
 
 
@@ -209,7 +212,8 @@ class Runner:
         self.stopped = threading.Event()
         self.lock = threading.Lock()
 
-    def claude(self, prompt: str, cwd: str, tools: str, max_turns: int) -> tuple[str, set[str], str, list[str]]:
+    def claude(self, prompt: str, cwd: str, tools: str, max_turns: int,
+               timeout: int | None = None) -> tuple[str, set[str], str, list[str]]:
         """One claude -p call: (answer text, skills invoked, error class or '', agent types started)."""
         with self.lock:
             self.calls += 1
@@ -225,7 +229,7 @@ class Runner:
             cmd += ["--plugin-dir", str(REPO)]
         env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
         try:
-            proc = subprocess.run(cmd, capture_output=True, timeout=self.timeout, env=env,
+            proc = subprocess.run(cmd, capture_output=True, timeout=timeout or self.timeout, env=env,
                                   stdin=subprocess.DEVNULL, cwd=cwd)
         except subprocess.TimeoutExpired:
             return "", set(), "harness: timeout", []
@@ -259,9 +263,25 @@ class Runner:
         if c["kind"] == "behaviour":
             case = c["case"]
             cwd = str(REPO / case["cwd"]) if case.get("cwd") else "/tmp"
-            # An agent case sets its own tools and turns (e.g. "Agent,Skill,Read,Grep,Glob,SendMessage").
-            text, skills, err, agents = self.claude(case["prompt"], cwd, case.get("tools", "Skill,Read,Grep,Glob"),
-                                                    case.get("max_turns", 12))
+            tmp = None
+            if case.get("copy_cwd"):
+                # A builder case writes files: run in a throwaway git copy of the fixture
+                # (plus an optional overlay, e.g. an approved spec), so the repo stays clean
+                # and the builder can diff its own work against one commit.
+                tmp = tempfile.mkdtemp(prefix="release-eval-")
+                cwd = shutil.copytree(cwd, os.path.join(tmp, "project"))
+                if case.get("overlay"):
+                    shutil.copytree(REPO / case["overlay"], cwd, dirs_exist_ok=True)
+                for git in (["init", "-q"], ["add", "-A"],
+                            ["-c", "user.name=eval", "-c", "user.email=eval@example.com", "commit", "-qm", "fixture"]):
+                    subprocess.run(["git", *git], cwd=cwd, check=True, capture_output=True)
+            # An agent case sets its own tools and turns (e.g. "Agent,Skill,Read,Grep,Glob").
+            try:
+                text, skills, err, agents = self.claude(case["prompt"], cwd, case.get("tools", "Skill,Read,Grep,Glob"),
+                                                        case.get("max_turns", 12), case.get("timeout"))
+            finally:
+                if tmp:
+                    shutil.rmtree(tmp, ignore_errors=True)
             if err:
                 return {"status": "error", "error": err}
             if not text.strip():
@@ -269,8 +289,9 @@ class Runner:
             failures = score(case, text)
             if "max_agents" in case and len(agents) > case["max_agents"]:
                 failures.append(f"started {len(agents)} agents, at most {case['max_agents']} allowed: {agents}")
-            if case.get("expect_agent") and case["expect_agent"] not in agents:
-                failures.append(f"agent {case['expect_agent']} never started (started: {agents or 'none'})")
+            for want in ([case["expect_agent"]] if case.get("expect_agent") else []) + case.get("expect_agents", []):
+                if want not in agents:
+                    failures.append(f"agent {want} never started (started: {agents or 'none'})")
             return {"status": "fail" if failures else "pass", "failures": failures, "skills": sorted(skills),
                     "agents": agents, "answer": text}
         q = c["case"]

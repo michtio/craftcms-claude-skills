@@ -19,14 +19,19 @@ cached by content hash (`.cache/`, never committed), each case runs once with on
 retry, a usage-limit message stops the run and counts as an error rather than a
 failure, and the call count is printed. Always `--dry-run` first. For listing
 changes, run `scenario_check.py`: the realistic prompts in `scenarios.json`, each inside
-a fixture project, passing when an expected skill loads (one call each). It replaces a
+a fixture project, passing when an expected skill loads (one call each, stopped at the routing decision
+after one turn). `--changed` runs only the scenarios whose expected skills' listings
+(SKILL.md frontmatter) changed since the last tag. It replaces a
 full `route.py` A/B (about 800 calls) as the release gate; `route.py --changed-only`
 stays for a deliberate A/B.
 Agent cases (`behavior-sets/agents.json`) set their own `tools` and `max_turns`, and can
-require an agent (`expect_agent`) and cap the agents started (`max_agents`, counting nested
-ones). One such case is one `claude -p` call that runs several agents, so it costs more
+require agents (`expect_agent`, `expect_agents`) and cap the agents started (`max_agents`,
+counting nested ones). A case whose agent writes files sets `copy_cwd` (runs in a throwaway
+git copy of the fixture) and optionally an `overlay` copied on top, such as an approved spec;
+`timeout` overrides the per-call limit. One such case is one `claude -p` call that runs several agents, so it costs more
 than a skill case: `deep-review-team-planted` runs the deep reviewer and its checkers on
-a planted diff (`fixtures/review/orders-plugin`). `--out` keeps each answer for reading
+a planted diff (`fixtures/review/orders-plugin`); `builder-checker-small-sensitive` runs the
+feature builder on a small controller change and expects one security-only checker. `--out` keeps each answer for reading
 a failure.
 Never run AI evals in CI, nightly or on API credit.
 

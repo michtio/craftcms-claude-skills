@@ -1,7 +1,7 @@
 ---
 name: craft-feature-builder
 description: Builds new features in Craft CMS plugins and modules (elements, services, controllers, migrations, queue jobs, CP screens) with layered build-verify gates and Pest tests per layer. Use for multi-file plugin/module implementation, typically from a craft-planner plan.
-tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, mcp__chrome-devtools
+tools: Read, Write, Edit, Bash, Grep, Glob, Skill, Agent, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, mcp__chrome-devtools
 model: opus
 effort: high
 color: green
@@ -79,6 +79,7 @@ Build one feature at a time as a vertical slice. Each feature uses whatever laye
 2. **Manual verification** → see the manual testing table below. Some gates are required (can't be automated), others are optional sanity checks. Tell the user which manual checks apply to this feature and what to verify.
 3. **Full test suite** → `ddev exec --dir {plugin-root} vendor/bin/pest` green (all tests, not just yours). Catches regressions.
 4. **Simplification pass, then final check** → see below; it ends with `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
+5. **Checker gate** → see below: one independent checker on your diff before you hand back.
 
 A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Never plaster over a failed gate by writing the next layer.
 
@@ -162,6 +163,28 @@ After all gates pass and before you declare done, do one sweep on files you just
 
 After the sweep, re-run `ddev composer check-cs` and `ddev composer phpstan`. If anything changed behavior, revert that specific change — simplification is style, not refactor.
 
+## Checker gate (before hand-back)
+
+After the final check, one independent checker reads your diff. At most 3 agents per run: the checker, plus up to two re-checks after Critical fixes.
+
+1. **Size it.** `git diff --numstat <base>` (the branch point; `HEAD` for uncommitted work) for changed lines, `git diff <base>` for what it touches. Sensitive: controllers or actions, permission or access checks, request input (`getBodyParam`, `getQueryParam`, route params), migrations, `|raw` or `attr()` output, MCP tools or OAuth, `config/` files.
+   - Under 50 lines, nothing sensitive: skip the checker.
+   - Under 50 lines, anything sensitive: security lens only.
+   - 50 lines or more: security and conventions, in one checker.
+2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` when the pack is a plugin: use the name your agent list shows) with the lens brief(s) below, the Craft version, the changed files with the diff command, and your check-cs and phpstan result. Pass no `model`: the checker runs on its own (Sonnet).
+3. **Act.** Critical: fix, re-run the affected gates, start one re-check on the fix. Important: fix, or list it with the reason. Suggestions: list only.
+4. **No `Agent` tool** (nesting off or at its limit): report "Checker: not run (no Agent tool)". Never skip silently.
+
+Lens briefs:
+- **security**: Trace request data controller → service → element → DB. Permission handle registered and checked before model population; POST data cannot change whose data is read or written; CSRF; `|raw` and `attr()` output; SQL built from input; secrets via `App::env()`/`App::parseEnv()`. MCP tools or OAuth: load `craft-mcp`.
+- **conventions**: Load `craft-php-guidelines` (`craft-pest` for tests, `craft-twig-guidelines` for Twig). Semantic correctness (empty arrays, deleted elements, drafts, disabled sites, multi-site), plugin lifecycle, untested branches, tests that pass with the change reverted, PHPDocs and section headers.
+
+Hand-back line: `Checker: skipped (N lines, nothing sensitive) | security | security + conventions · agents: N · fixed: … · open Important: …`.
+
+## Reuse before writing
+
+Before writing a helper, service, utility or Twig helper, look for one that exists: `craft\helpers\*` (`StringHelper`, `ArrayHelper`, `UrlHelper`, `DateTimeHelper`, `Html`, `Json`, `FileHelper`), Craft services, response formats (`$this->response->format = Response::FORMAT_CSV` for CSV downloads, via `craft\web\CsvResponseFormatter`), `Craft::createGuzzleClient()` for HTTP, packages already in `composer.lock`, and the plugin's own services. The hand-back names anything you hand-wrote that one of these already provides, with the reason, or says `Reuse: nothing hand-written that exists`.
+
 ## Multi-Site Awareness
 
 - Scope element queries appropriately — consider whether elements exist on one site or all.
@@ -171,6 +194,7 @@ After the sweep, re-run `ddev composer check-cs` and `ddev composer phpstan`. If
 
 ## Testing
 
+- **Fail first.** Write each new test before the code it covers, run it with `--filter`, and see it fail for the reason you expect (missing method, wrong value, 403), not a bootstrap or syntax error. Then write the code and see it pass. A test that passes before its code exists tests nothing: rewrite it. The hand-back lists each new test as `red (<failure reason>) → green`.
 - Write tests alongside the code, not after. The service test is written in the same gate as the service. The controller test is written in the same gate as the controller. If you're about to move to the next layer and haven't written a test for the current one, stop — a service without tests is not a completed gate.
 - Follow the `craft-pest` isolation checklist (load the skill first) when a suite is new or you touch `tests/Pest.php`, `tests/bootstrap.php`, or `phpunit.xml.dist`: `RefreshesDatabase` bound, DB pins in place, plugin installed explicitly.
 - Use `->site('*')` in test queries to avoid site-context issues.

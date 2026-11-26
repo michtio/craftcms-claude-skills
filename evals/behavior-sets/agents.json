@@ -9,20 +9,88 @@
     "max_agents": 6,
     "prompt": "Use the craftcms-claude-skills:craft-code-reviewer-deep agent (that exact type) to deep-review the 1.1.0 change in this Craft plugin. CHANGE.md lists what changed. There is no git history here, so read the files directly instead of using git, and there is no DDEV project, so skip the static checks. Reply with the agent's report verbatim.",
     "must_match": [
-      ["Mode:\\s*team"],
-      ["agents:\\s*[1-5]\\b"],
-      ["ExportController[\\s\\S]{0,800}(customerId|IDOR|insecure direct object|another customer|other customers|any customer|any user)", "(customerId|IDOR|insecure direct object|another customer|other customers|any customer)[\\s\\S]{0,400}ExportController"],
-      ["(OrdersService|exportRows)[\\s\\S]{0,800}(N\\+1|eager|per order|inside the loop|in the loop|in a loop)", "(N\\+1)[\\s\\S]{0,400}(OrdersService|exportRows)"]
+      [
+        "Mode:\\s*team"
+      ],
+      [
+        "agents:\\s*[1-5]\\b"
+      ],
+      [
+        "ExportController[\\s\\S]{0,800}(customerId|IDOR|insecure direct object|another customer|other customers|any customer|any user)",
+        "(customerId|IDOR|insecure direct object|another customer|other customers|any customer)[\\s\\S]{0,400}ExportController"
+      ],
+      [
+        "(OrdersService|exportRows)[\\s\\S]{0,800}(N\\+1|eager|per order|inside the loop|in the loop|in a loop)",
+        "(N\\+1)[\\s\\S]{0,400}(OrdersService|exportRows)"
+      ]
     ],
     "must_not_match": [
       "###\\s*Critical(?:(?!###\\s*(Suggestions|Dropped)).)*NotesController",
       "challenge[^\\n]{0,40}(did not|didn't|could not|couldn't) (finish|complete|run)"
     ],
     "facts": [
-      {"file": "agents/craft-code-reviewer-deep.md",
-       "contains": ["At most 5 agents per review", "## 4\\. Challenge \\(one round\\)", "Mode: single pass", "Dropped after challenge"]},
-      {"file": "agents/craft-review-checker.md",
-       "contains": ["## Challenge mode", "Refute only with a citation"]}
+      {
+        "file": "agents/craft-code-reviewer-deep.md",
+        "contains": [
+          "At most 5 agents per review",
+          "## 4\\. Challenge \\(one round\\)",
+          "Mode: single pass",
+          "Dropped after challenge"
+        ]
+      },
+      {
+        "file": "agents/craft-review-checker.md",
+        "contains": [
+          "## Challenge mode",
+          "Refute only with a citation"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "builder-checker-small-sensitive",
+    "note": "Spec 2026-11-26-agent-caps-builder-gate AC4/AC8: a builder's small diff (a few lines) adds a body param read in a controller, so R5b applies: one craft-review-checker with the security lens only. Runs in a git copy of the orders-plugin fixture with an approved spec overlaid. agents counts the builder itself: builder + checker + at most 2 re-checks = 4.",
+    "cwd": "evals/fixtures/review/orders-plugin",
+    "copy_cwd": true,
+    "overlay": "evals/fixtures/builder/export-status",
+    "tools": "Agent,Skill,Read,Grep,Glob,Edit,Write,Bash(git:*)",
+    "max_turns": 4,
+    "timeout": 1200,
+    "expect_agents": [
+      "craft-feature-builder",
+      "craft-review-checker"
+    ],
+    "max_agents": 4,
+    "prompt": "Use the craftcms-claude-skills:craft-feature-builder agent (that exact type) to build slice S1 of specs/2026-11-26-export-status/plan.md (R1, AC1 and AC2; both documents approved). There is no DDEV project here, so skip every ddev, Pest, check-cs and phpstan gate and say so; git works. Reply with the agent's hand-back verbatim.",
+    "must_match": [
+      [
+        "Checker:?\\**:?\\s*security(?!\\s*(\\+|and\\b|&))"
+      ]
+    ],
+    "must_not_match": [
+      "Checker:?\\**:?\\s*(skipped|not run)"
+    ],
+    "facts": [
+      {
+        "file": "agents/craft-feature-builder.md",
+        "contains": [
+          "At most 3 agents per run",
+          "## Checker gate \\(before hand-back\\)",
+          "Under 50 lines, anything sensitive: security lens only",
+          "\\*\\*Fail first\\.\\*\\*",
+          "## Reuse before writing",
+          "Response::FORMAT_CSV",
+          "Pass no `model`"
+        ]
+      },
+      {
+        "file": "agents/craft-site-builder.md",
+        "contains": [
+          "At most 3 agents per run",
+          "## Checker gate \\(before handoff\\)",
+          "Reuse before writing"
+        ]
+      }
     ]
   }
 ]

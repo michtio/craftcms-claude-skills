@@ -69,10 +69,12 @@ department relations, salary range, and a full CP edit page.
 ## craft-feature-builder
 
 **Model:** Opus (`high` effort)
-**Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, `mcp__chrome-devtools`
+**Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, Agent, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, `mcp__chrome-devtools`
 **Skills preloaded:** `craftcms`, `craft-php-guidelines` (on demand: `craft-pest` before the first test, `craft-garnish` for CP JavaScript, `ddev`)
 
 Builds production-quality plugin code following project architecture. Receives implementation plans and executes them layer by layer.
+
+Every new test runs red before its code and green after; the hand-back lists both, with the failure reason. Before hand-writing a helper it checks Craft's helpers, services and response formats (CSV via `Response::FORMAT_CSV`), `Craft::createGuzzleClient()` and the packages in `composer.lock`, and names anything it wrote that already existed. See [Checker gate](#checker-gate-builders) for the last step.
 
 ### The Build-Verify Gate Pattern
 
@@ -148,10 +150,10 @@ Gate: ddev craft migrate/up succeeds and the JobListingServiceTest Pest filter i
 ## craft-site-builder
 
 **Model:** Opus (`high` effort)
-**Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, `mcp__chrome-devtools`
+**Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, Agent, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, `mcp__chrome-devtools`
 **Skills preloaded:** `craft-site`, `craft-twig-guidelines`, `craft-content-modeling` (on demand: `craft-plugins`, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-mcp`, `ddev`)
 
-Builds site templates, content architecture, and component systems following atomic design principles.
+Builds site templates, content architecture, and component systems following atomic design principles. Reuses existing components and Craft's Twig helpers before writing new ones, and ends with the [checker gate](#checker-gate-builders).
 
 ### The Build-Verify Gate Pattern (Site Edition)
 
@@ -365,7 +367,23 @@ the asset filesystem, and the permission layer.
 **Tools:** Read, Grep, Glob, Bash, Skill (read-only)
 **Skills preloaded:** `craftcms` (others on demand, per lens)
 
-One lens of a deep review, started by `craft-code-reviewer-deep` with a lens brief, the Craft version, the files and the static-check lines for them. Also answers challenge rounds: upholds, refutes with a citation, or marks a finding unsure. It starts at about 14 KB (the everyday reviewer starts at about 39 KB), so each extra lens stays cheap. Not for direct use.
+One lens of a deep review, started by `craft-code-reviewer-deep` (or by a builder, see below) with a lens brief, the Craft version, the files and the static-check lines for them. Also answers challenge rounds: upholds, refutes with a citation, or marks a finding unsure. It starts at about 14 KB (the everyday reviewer starts at about 39 KB), so each extra lens stays cheap. Not for direct use. It never has the `Agent` tool, so teams never nest further.
+
+### Checker gate (builders)
+
+Before handing back, `craft-feature-builder` and `craft-site-builder` size their diff and start one `craft-review-checker`:
+
+| Diff | Checker |
+|---|---|
+| Under 50 changed lines, nothing sensitive | Skipped, and the hand-back says so |
+| Under 50 lines, touching controllers, permissions, request input, migrations, `\|raw`/`attr()` output, MCP or OAuth, or `config/` | Security lens only |
+| 50 lines or more | Security and conventions |
+
+A Critical finding is fixed, gates re-run, and the fix re-checked; Important findings are fixed or listed. When agents cannot start agents (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`), the hand-back says the checker did not run.
+
+### Agent caps
+
+Every agent that can start agents declares a cap, checked in CI by `bin/agent_budget.py`: at most 5 for the deep reviewer, 3 for each builder, 0 for every agent without the `Agent` tool. The cap line in the agent file reads `At most N agents per <run|review>`; a missing line or a cap above 5 fails the build.
 
 ---
 
