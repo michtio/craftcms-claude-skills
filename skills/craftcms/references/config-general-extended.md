@@ -167,7 +167,7 @@ The `--delete-all-trashed` flag hard-deletes all soft-deleted items regardless o
 |---------|------|---------|---------|
 | `defaultCpLanguage` | `?string` | `null` | Override CP language for all users. `null` = per-user preference. |
 | `defaultCpLocale` | `?string` | `null` | Override CP locale for date/number formatting. `null` = follows CP language. |
-| `extraAppLocales` | `string[]` | `[]` | Additional locales beyond installed sites. |
+| `extraAppLocales` | `string[]\|null` | `null` | Additional locales beyond installed sites. |
 | `localeAliases` | `array` | `[]` | Custom locale aliases with `id`, `aliasOf`, and optional `displayName`. (Since 5.0.0) |
 
 `defaultCpLanguage` forces a single language for the entire CP. Individual users cannot override it. Use when all CP users share a language.

@@ -419,7 +419,7 @@ Configure these in `config/general.php`. All settings below use their default va
 | `activateAccountSuccessPath` | `''` | Redirect after first-time account activation via email link. |
 | `verifyEmailPath` | `''` | Email verification handler path. Craft intercepts requests here to verify the token. |
 | `verifyEmailSuccessPath` | `''` | Redirect after successful email verification. |
-| `invalidUserTokenPath` | `''` | Redirect when a verification/reset token is expired or invalid. If empty, Craft shows a generic error. |
+| `invalidUserTokenPath` | `null` | Redirect when a verification/reset token is expired or invalid. If not set, Craft shows a generic error. |
 | `postLoginRedirect` | `''` | Default redirect after login when no `redirectInput` is specified. |
 | `postLogoutRedirect` | `''` | Default redirect after logout. |
 | `useEmailAsUsername` | `false` | When `true`, email is the login identifier. No separate username field. |
