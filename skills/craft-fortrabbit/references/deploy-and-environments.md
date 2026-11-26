@@ -132,6 +132,8 @@ Other rules:
 - Change ENV vars in the dashboard, with the CLI or MCP `update_environment`. They reach PHP after a restart (`frbit environments restart <env>`) or the next deployment.
 - A `$` is only allowed inside a `${…}` reference. Encode other values containing `$` with the dashboard's Base64 helper.
 
+**OAuth signing keys** [5.12+]. Craft's MCP server and OAuth GraphQL need a key pair. Set the PEM contents as ENV vars `CRAFT_OAUTH_PRIVATE_KEY` and `CRAFT_OAUTH_PUBLIC_KEY` on each environment (a single-line PEM works if its line breaks became spaces; stripped whitespace or literal `\n` fails), so keys stay out of git and survive a `replace` deployment. Running `php craft oauth/generate-keys` over SSH also works, because it writes to `storage/` on the persistent storage, as long as the deploy strategy doesn't wipe it. Setup: the `craft-mcp` skill.
+
 ## Production settings
 
 | Setting | Template value | Why |

@@ -55,6 +55,7 @@ Every public property on `GeneralConfig` maps to a `CRAFT_{UPPER_SNAKE_CASE}` en
 | `handleCasing` | `string` | `GeneralConfig::CAMEL_CASE` | Casing for auto-generated handles. Options: `CAMEL_CASE`, `PASCAL_CASE`, `SNAKE_CASE`. (Since 3.6.0) |
 | `preloadSingles` | `bool` | `false` | Preload Single entries as Twig globals based on variable references. Clear compiled templates after changing. (Since 4.4.0) |
 | `staticStatuses` | `bool` | `false` | Entry statuses only update on save or via `update-statuses` command, not dynamically. [5.7+] |
+| `customIconPath` | `?string` | `null` | Directory of SVGs (alias allowed, e.g. `@config/icons`) registered as icon set handle `custom` ("Custom") in icon pickers; selected icons store as `custom:icon-name`. `CRAFT_CUSTOM_ICON_PATH`. [5.12+] |
 | `partialTemplatesPath` | `string` | `'_partials'` | Path within `templates/` for element partial templates used by `entry.render()`. (Since 5.0.0) |
 | `errorTemplatePrefix` | `string` | `''` | Prefix for error template paths. E.g., `'_'` makes 404 look for `_404.twig`. |
 | `translationDebugOutput` | `bool` | `false` | Wrap translated strings with `@@@` symbols to identify untranslated text. |
@@ -158,6 +159,8 @@ If you change `cpTrigger` mid-project, update bookmarks, external integrations, 
 | `permissionsPolicyHeader` | `?string` | `null` | Sets Permissions-Policy header. [deprecated 5.3] -- use `craft\filters\Headers` [5.3+]. |
 | `trustedHosts` | `array` | `['any']` | Hosts trusted for proxy headers. Default trusts all -- restrict in production. |
 | `ipHeaders` | `?string[]` | `null` | Headers containing real client IP (e.g., `X-Forwarded-For`, `CF-Connecting-IP`). |
+| `defaultRateLimit` | `int\|false` | `10` | Requests per IP within `defaultRateLimitDuration` for `users/login` (POST), `users/send-password-reset-email`, `auth/verify-totp`, `auth/verify-recovery-code`, `mcp/catalog`, `mcp/server-card`, each tracked separately; over the limit Craft returns 429. `false` disables. `CRAFT_DEFAULT_RATE_LIMIT`. [5.12+] |
+| `defaultRateLimitDuration` | `mixed` | `60` | Window for `defaultRateLimit`, in seconds or any `ConfigHelper::durationInSeconds()` format. `CRAFT_DEFAULT_RATE_LIMIT_DURATION`. [5.12+] |
 | `httpProxy` | `?string` | `null` | Proxy for outgoing HTTP requests. Format: `'http://host:port'`. |
 | `enableBasicHttpAuth` | `bool` | `false` | Support HTTP Basic auth on front-end. Deprecated since 4.13.0. |
 | `requireMatchingUserAgentForSession` | `bool` | `true` | Require matching user agent when restoring session from cookie. |
@@ -184,7 +187,7 @@ If you change `cpTrigger` mid-project, update bookmarks, external integrations, 
 ])
 ```
 
-`securityKey` must be identical across all servers in the same environment. If it changes, all sessions, encrypted field values, and password reset tokens become invalid. Use `CRAFT_SECURITY_KEY` env var and never commit it to version control.
+`securityKey` must be identical across all servers in the same environment. If it changes, all sessions, encrypted field values, and password reset tokens become invalid. [5.12+] It also derives the OAuth server's encryption key, so rotating it invalidates OAuth refresh tokens and pending authorization codes (MCP clients and PAT holders must authorize again); see the `craft-mcp` skill. Use `CRAFT_SECURITY_KEY` env var and never commit it to version control.
 
 `blowfishHashCost` at `13` means each password hash takes ~0.1s on modern hardware. Increasing to `14` doubles that to ~0.2s. Going above `15` is rarely justified -- it slows logins noticeably without meaningful security gain against offline attacks.
 
@@ -237,6 +240,8 @@ Production security baseline:
 Duration settings accept several formats: integer seconds (`3600`), `DateInterval` string (`'PT1H'`), or human-readable shorthand (`'1 hour'`). Craft normalizes all of these via `ConfigHelper::durationInSeconds()`.
 
 `elevatedSessionDuration` controls the window after re-entering a password during which Craft allows sensitive operations (changing passwords, managing user groups). Set to `0` to disable elevated sessions entirely -- not recommended for production.
+
+`defaultRateLimit` [5.12+] complements `maxInvalidLogins`: the rate limit counts requests per IP per action (data cache), lockout counts failed logins per account. Behind a proxy or load balancer, set `trustedHosts` and `ipHeaders`, or every visitor shares the proxy's IP bucket and one office NAT can hit 429 on login.
 
 `cooldownDuration` at `0` means indefinite lockout. The user must be manually unlocked by an admin or wait for the `invalidLoginWindowDuration` to expire and reset the counter.
 

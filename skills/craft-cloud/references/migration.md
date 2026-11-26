@@ -56,7 +56,7 @@ Goal: get the codebase Cloud-deployable, without touching production yet.
    # node-version: "20"   # uncomment if you have a JS build
    ```
 3. **Audit `config/app.php`** — remove or environment-scope anything that overrides cache, mutex, queue, session, or assetManager. Cloud's extension overrides these automatically; conflicting local config can break the wiring.
-4. **Convert local filesystems** in the CP (Settings → Filesystems). Create a new filesystem with the Cloud type, set the Subpath (e.g. `assets/`), copy your old Base Path and Base URL into the **Local Filesystem** section for dev-environment parity. Update asset volumes to point at the new filesystem.
+4. **Convert local filesystems** in the CP (Settings → Assets → Filesystems [changed 5.12]; Before 5.12: Settings → Filesystems). Create a new filesystem with the Cloud type, set the Subpath (e.g. `assets/`), copy your old Base Path and Base URL into the **Local Filesystem** section for dev-environment parity. Update asset volumes to point at the new filesystem.
 5. **Move env vars** out of `.env` and into the Cloud Console UI per environment. `.env` is for local dev only on Cloud — production env vars live in Console.
 6. **Audit asset bundle paths** in any custom plugins/modules. `sourcePath` must use an alias, not a hardcoded `__DIR__` path.
 7. **Push to a feature branch** connected to a Cloud staging environment. Verify the build phase succeeds end-to-end before touching production.

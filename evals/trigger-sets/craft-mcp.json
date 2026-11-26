@@ -1,0 +1,22 @@
+[
+  {"query": "Connect Claude Code to my local DDEV Craft 5.12 site over MCP", "should_trigger": true},
+  {"query": "I ran claude mcp add --transport http against https://mysite.ddev.site/admin/mcp and get a 401 invalid_token, what URL should I use?", "should_trigger": true},
+  {"query": "How do I run Craft's stdio MCP server with ddev craft mcp/serve for a specific editor user?", "should_trigger": true},
+  {"query": "Craft says the OAuth private key file doesn't exist, run php craft oauth/generate-keys. Where do these keys go on Craft Cloud?", "should_trigger": true},
+  {"query": "Our Craft site is on Servd; how should CRAFT_OAUTH_PRIVATE_KEY and CRAFT_OAUTH_PUBLIC_KEY be set so MCP works on every instance?", "should_trigger": true},
+  {"query": "Can I use a personal access token from My Account → Tokens to connect Cursor to our Craft MCP server?", "should_trigger": true},
+  {"query": "Register an MCP tool from my Craft plugin that lists a customer's orders", "should_trigger": true},
+  {"query": "Make my custom Craft field type return a nicer value to MCP clients with McpOutputFieldInterface", "should_trigger": true},
+  {"query": "Expose our Craft blog posts to any AI agent without login using the public MCP server", "should_trigger": true},
+  {"query": "Which config/oauth.php settings control token lifetimes and redirectDomains in Craft 5.12?", "should_trigger": true},
+  {"query": "Why can't my AI assistant create sections through Craft's MCP server on production?", "should_trigger": true},
+  {"query": "Our notes use dotted MCP tool names but the Craft MCP server only shows elements_list, did the tool names change?", "should_trigger": true},
+  {"query": "Rate-limit the authenticated MCP endpoint in Craft with config/mcp.php filters", "should_trigger": true},
+  {"query": "We're on Craft 5.11, how do we let Claude read and edit our entries over MCP?", "should_trigger": true},
+  {"query": "Install the Chrome DevTools MCP server so Claude can inspect my DDEV site's console errors", "should_trigger": false},
+  {"query": "Create a GraphQL schema token for our Next.js frontend and send it in the Authorization header", "should_trigger": false},
+  {"query": "Deploy our Craft site to Craft Cloud and configure craft-cloud.yaml cache rules", "should_trigger": false},
+  {"query": "Add requirePermission checks to my plugin's controller actions for editing invoices", "should_trigger": false},
+  {"query": "Set up the fortrabbit MCP server to read deployment logs for our app", "should_trigger": false},
+  {"query": "Write a Craft queue job that resaves entries in batches", "should_trigger": false}
+]

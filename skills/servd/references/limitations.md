@@ -25,6 +25,10 @@ The practical rule: **do not rely on `\Craft::$app->path->getStoragePath()` (or 
 
 Plugin and module PHP that creates files at runtime must use one of these. Code that writes to `getStoragePath()` and reads it back later is silently broken on Servd even though it works locally.
 
+### OAuth signing keys [5.12+]
+
+Craft's MCP server and OAuth-authenticated GraphQL sign tokens with keys that `php craft oauth/generate-keys` writes to `storage/`, which resets and isn't shared between instances. Generate the pair locally and set the contents as env vars `CRAFT_OAUTH_PRIVATE_KEY` and `CRAFT_OAUTH_PUBLIC_KEY` per environment, with the same security key on every instance. MCP HTTP sessions and rate-limit counters live in the data cache, which Servd maps to Redis, so they work across instances. Setup: the `craft-mcp` skill.
+
 ## Plugin and feature constraints
 
 There is **no official Servd plugin-compatibility matrix.** Servd documents a small number of concrete points; everything beyond them is inference.

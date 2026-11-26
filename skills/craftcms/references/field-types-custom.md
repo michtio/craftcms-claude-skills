@@ -27,6 +27,7 @@ Complete reference for building custom field types in Craft CMS 5: class structu
 - [Validation](#validation)
 - [Search Keywords](#search-keywords)
 - [GraphQL Integration](#graphql-integration)
+- [MCP Integration](#mcp-integration-512)
 - [Preview and Static HTML](#preview-and-static-html)
 - [Element Lifecycle Hooks](#element-lifecycle-hooks)
 - [Relation Fields](#relation-fields)
@@ -418,6 +419,39 @@ public function includeInGqlSchema(GqlSchema $schema): bool
 }
 ```
 
+## MCP Integration [5.12+]
+
+Craft's MCP tools (see the `craft-mcp` skill) read and write custom field values. Two optional interfaces control how your field takes part.
+
+### InputSchemaFieldInterface [5.12+]
+
+`craft\base\InputSchemaFieldInterface extends FieldInterface` has one method, `getInputSchema(): array`, returning the JSON Schema of the values the field accepts. MCP clients use it to write valid values through `elements_create` / `elements_update`. Without it, Craft infers a schema from `getContentGqlMutationArgumentType()` (via `craft\gql\GqlInputSchema::fromType()`), and if that throws the field accepts anything (`[]`). A field with no meaningful GraphQL mutation type gives MCP clients nothing to go on.
+
+```php
+use craft\base\Field;
+use craft\base\InputSchemaFieldInterface;
+
+class Rating extends Field implements InputSchemaFieldInterface
+{
+    public function getInputSchema(): array
+    {
+        return ['type' => 'integer', 'minimum' => 1, 'maximum' => 5];
+    }
+}
+```
+
+Core implementers include Plain Text, Email, Link, Number, Money, Lightswitch (`['type' => 'boolean']`), Date, Time, Color, Country, Table and the option fields.
+
+### McpOutputFieldInterface [5.12.1+]
+
+`craft\base\McpOutputFieldInterface extends FieldInterface` controls how MCP tools return the field's value:
+
+```php
+public function getMcpValue(mixed $value, ElementInterface $element, McpOutputContext $context): mixed;
+```
+
+`craft\mcp\McpOutputContext` [5.12.1+] has two readonly bools: `public` (the value is going to the public MCP server, so return only what anonymous callers may see) and `requested` (the field was named in the tool's `fields` argument, rather than included because all fields were requested). Elements, element queries and element collections anywhere in the returned value are expanded or summarized as nested elements, subject to the user's permissions. Without the interface, MCP returns `serializeValue($value, $element)`. MCP only returns fields the field layout's conditions show for that element. Before 5.12.1: only `serializeValue()` shapes MCP output.
+
 ## Preview and Static HTML
 
 ```php
@@ -567,6 +601,10 @@ If generated via `craft make field-type` for a plugin, registration is added to 
 | `translationKeyFormat` | `?string` | `null` | Custom translation key pattern |
 | `layoutElement` | `?CustomField` | `null` | The field layout element wrapping this field |
 | `static` | `bool` | `false` | Whether the field displays in read-only mode |
+| `tip` | `?string` | `null` | The field's "Default Tip" setting, shown under the input; stored in project config as `tip` [5.12+] |
+| `warning` | `?string` | `null` | The field's "Default Warning" setting; project config key `warning` [5.12+] |
+
+A field layout instance can override `tip`/`warning` like it overrides instructions. Custom field layout elements (subclasses of `craft\fieldlayoutelements\BaseField`) can supply fallbacks with `protected function defaultTip(?ElementInterface $element = null, bool $static = false): ?string` and `defaultWarning()` with the same signature [5.12+], used when the element's own `tip`/`warning` is null; `CustomField` returns the field's translated default. Before 5.12: only layout-element tips and warnings existed, no field-level defaults.
 
 Translation methods:
 | Constant | Behavior |

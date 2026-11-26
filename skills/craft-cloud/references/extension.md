@@ -89,6 +89,10 @@ if (App::isEphemeral()) {
 }
 ```
 
+### OAuth signing keys for MCP and OAuth GraphQL [5.12+]
+
+`php craft oauth/generate-keys` writes to `storage/`, which doesn't survive on Cloud. Generate the pair once locally (`ddev craft oauth/generate-keys`), then set the file contents as the environment variables `CRAFT_OAUTH_PRIVATE_KEY` and `CRAFT_OAUTH_PUBLIC_KEY` in Console; Craft restores a PEM whose line breaks were flattened into spaces, but a value with all whitespace stripped or literal `\n` sequences fails. Never commit the key files. Every environment keeps one stable `CRAFT_SECURITY_KEY`, since rotating it invalidates OAuth refresh tokens. Full setup: the `craft-mcp` skill.
+
 ### Path service for transient writes
 
 When you do need a transient write (a temp file for processing, a scratch directory for an export, etc.), use Craft's Path service. On Cloud, these paths are backed by the appropriate filesystem types — temp files go to `TmpFs`, runtime storage goes to `StorageFs`, etc.
