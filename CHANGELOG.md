@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.31.0
+
+The builder no longer grades its own homework. When a plugin has an isolated Pest suite, a separate agent writes the gate tests from the acceptance criteria before the build, and the builder may not change them. Reviewers treat PASS lines as claims, every fix loop stops after 3 rounds, and read-only agent cases can be measured over a few repeated runs.
+
+### Added
+
+- **`craft-gate-writer` agent** -- writes a slice's gate tests from its acceptance criteria alone (no implementation notes), runs each red for a reason the missing feature explains, and commits only `tests/` as `test(gate): <slice id>`. Sonnet, preloads `craft-pest` (15.8 KB at startup), no `Agent` tool. Started by `craft-feature-builder`, not for direct use.
+- **Locked gate tests (`craft-feature-builder`)** -- with `tests/Pest.php`, `CRAFT_DB_DATABASE` pinned in `phpunit.xml.dist` and no `Gate tests: builder-written` line in `CLAUDE.md`, the builder starts the gate writer first, builds against its commit, never edits a gate file, checks the lock with `git diff --quiet` (committed and uncommitted) before hand-back, and stops on a gate test it believes is wrong. The hand-back opens with `Gate flow: locked (<commit>)` or `Gate flow: builder-written (<reason>)`. Cap 3 to 4 agents per run.
+- **Test-weakening checks (both reviewers)** -- Important: a changed or deleted gate-commit file, added `->skip()`, `->todo()`, `->only()` or `markTestSkipped`, a deleted test, fewer assertions, or an exact matcher replaced by a looser one (`toBe(3)` to `toBeInt()`).
+- **Gate reruns (both reviewers)** -- a builder's PASS lines are claims: with an isolated suite the reviewer reruns each named gate with its `--filter`; otherwise it reports `claimed, not rerun`.
+- **Gate-tests question (`craft-project-setup`)** -- asked only when the project has an isolated Pest suite; writes `Gate tests: locked` or `Gate tests: builder-written` into the generated `CLAUDE.md`.
+- **Repeated eval runs** -- `release_evals.py --runs N` (at most 3) repeats read-only cases that opt in with `"runs"`, with no retries, and prints the pass count and tokens per run. New cases `review-weakened-tests` and `debugger-hypotheses` (3 of 3 each). `facts_check.py` fails CI when a builder case sets `runs` above 1, with a self-test.
+- **Effort guidance (`docs/agents.md`)** -- every agent stays at `high`; `medium` is documented as the cheaper option for the builders, reviewer, checker, gate writer and debugger, set in a copied agent file or with `CLAUDE_CODE_SUBAGENT_EFFORT`.
+
+### Changed
+
+- **Round caps** -- every fix loop stops after 3 rounds and hands back the open findings: a builder's attempts on one red gate, the simplification pass (one sweep plus at most two re-sweeps), checker re-checks, the site builder's fix loops and the debugger's fix attempts.
+- **`craft-debugger`** -- each of its 2 or 3 hypotheses gets the one check that tells it apart, run before any fix; the report ends with a `hypothesis | check | result | kept/rejected` table.
+
 ## 1.30.0 -- 2026-11-26
 
 Builders check their own work before handing back, and every agent that can start agents has a cap CI enforces.
