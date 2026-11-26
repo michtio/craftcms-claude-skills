@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.28.1 -- unreleased
+
+### Fixed
+
+- **`craft-site` routing for Sprig** -- the v1.28.0 listing cut dropped "Sprig, htmx" from the triggers, and a Sprig live-search prompt could load `craft-plugins` without `craft-site`. "Sprig/htmx live search" is back (listing 1,277 characters). All 8 routing scenarios pass; the Sprig one passed 4 of 4 runs.
+
+### Changed
+
+- **Release gate for listing changes** -- `evals/scenario_check.py` (8 real-life scenarios, one call each) replaces a full `route.py` A/B; `bin/release.sh` and `evals/README.md` say so.
+
 ## 1.28.0 -- 2026-11-26
 
 Sharper skill listings. Every listing (description + when_to_use) now fits 1,300 characters, about 15% under Claude Code's 1,536-character cap, so there is room to fix a routing miss without truncation. The 14 listings over budget dropped repeated and low-signal terms (21,465 to 17,494 characters) and kept every "Always use when" and "Do NOT trigger" clause. Routing measured without a full A/B: the lexical check shows no regression (recall@1 130 to 131 of 165, recall@3 158 of 165), and 8 real-life scenario prompts run inside fixture projects all load the right skills, in 8 model calls.

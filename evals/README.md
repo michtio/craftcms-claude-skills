@@ -18,7 +18,10 @@ cases that depend on files changed since the last tag, plus `smoke.json`. Passes
 cached by content hash (`.cache/`, never committed), each case runs once with one
 retry, a usage-limit message stops the run and counts as an error rather than a
 failure, and the call count is printed. Always `--dry-run` first. For listing
-changes, add `route.py --changed-only` (A/B against the last tag, changed skills only).
+changes, run `scenario_check.py`: the realistic prompts in `scenarios.json`, each inside
+a fixture project, passing when an expected skill loads (one call each). It replaces a
+full `route.py` A/B (about 800 calls) as the release gate; `route.py --changed-only`
+stays for a deliberate A/B.
 Never run AI evals in CI, nightly or on API credit.
 
 | Tool | Tier | Makes model calls? |
@@ -26,7 +29,8 @@ Never run AI evals in CI, nightly or on API credit.
 | `facts_check.py` | every push | No |
 | `lexical_route.py` | every push | No |
 | `release_evals.py` | release | **Yes** (`--dry-run`: no) |
-| `route.py --changed-only` | release, listing changes only | **Yes** (`--dry-run`: no) |
+| `scenario_check.py` | release, listing changes | **Yes**, one per scenario (`--dry-run`: no) |
+| `route.py --changed-only` | deliberate A/B only | **Yes** (`--dry-run`: no) |
 | `behavior_check.py`, `trigger_check.py` | ad hoc, one set at a time | **Yes** |
 
 ## What each tool measures
