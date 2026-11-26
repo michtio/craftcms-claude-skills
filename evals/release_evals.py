@@ -191,6 +191,10 @@ class Runner:
             self.calls += 1
         cmd = [self.claude_bin, "-p", prompt, "--output-format", "stream-json", "--verbose",
                "--max-turns", str(max_turns), "--allowed-tools", tools]
+        if tools == "Skill":
+            # Routing only: with no other built-in tools the first move is a skill or an
+            # answer, not two turns of Bash exploration that end the run before routing.
+            cmd += ["--tools", "Skill"]
         if self.model:
             cmd += ["--model", self.model]
         if self.plugin_dir:
