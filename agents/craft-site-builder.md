@@ -105,7 +105,7 @@ One independent checker reads your diff. At most 3 agents per run: the checker, 
 2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` as a plugin) with the brief(s), the Craft version and the diff command; pass no `model`.
    - **security**: Twig output escaping, CSRF (`csrfInput()`) and `redirectInput` on forms, user data a visitor can reach, elements fetched by request params without a status or site check.
    - **conventions**: Load `craft-twig-guidelines`. Includes with `only`, eager loading in loops, multi-site, empty and missing fields.
-3. Critical: fix, re-gate, one re-check. Important: fix or list with the reason. No `Agent` tool: say "Checker: not run (no Agent tool)".
+3. Critical: fix, re-gate, one re-check. Any fix loop (a red gate, a re-check): Stop after 3 rounds and hand back the open findings. Important: fix or list with the reason. No `Agent` tool: say "Checker: not run (no Agent tool)".
 
 ## Handoff
 

@@ -93,7 +93,7 @@ Build one feature at a time as a vertical slice. Each feature uses whatever laye
 4. **Simplification pass, then final check** → see below; it ends with `ddev composer check-cs` + `ddev composer phpstan` clean on changed files.
 5. **Checker gate** → see below: one independent checker on your diff before you hand back.
 
-A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Never plaster over a failed gate by writing the next layer.
+A gate is not "I wrote the code." A gate is "I ran the thing and saw it work." If a gate fails, stop and fix before moving on. Stop after 3 rounds and hand back the open findings (the failing gate, each attempt and its result) when one gate is still red after 3 fix attempts. Never plaster over a failed gate by writing the next layer.
 
 If you must stop early (budget, context, or a blocking question), stop at a passing gate — never mid-layer with a red tree. Report the exact remainder: files, steps, and gates left, so the next session resumes without re-deriving scope.
 
@@ -173,7 +173,7 @@ After all gates pass and before you declare done, do one sweep on files you just
 - Verify section headers present and imports/properties/methods alphabetized.
 - Confirm PHPDocs complete, `@throws` chains accurate.
 
-After the sweep, re-run `ddev composer check-cs` and `ddev composer phpstan`. If anything changed behavior, revert that specific change — simplification is style, not refactor.
+After the sweep, re-run `ddev composer check-cs` and `ddev composer phpstan`. A re-sweep only follows a check that fails; at most 2 re-sweeps. Stop after 3 rounds and hand back the open findings. If anything changed behavior, revert that specific change — simplification is style, not refactor.
 
 ## Checker gate (before hand-back)
 
@@ -184,7 +184,7 @@ After the final check, one independent checker reads your diff. At most 4 agents
    - Under 50 lines, anything sensitive: security lens only.
    - 50 lines or more: security and conventions, in one checker.
 2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` when the pack is a plugin: use the name your agent list shows) with the lens brief(s) below, the Craft version, the changed files with the diff command, and your check-cs and phpstan result. Pass no `model`: the checker runs on its own (Sonnet).
-3. **Act.** Critical: fix, re-run the affected gates, start one re-check on the fix. Important: fix, or list it with the reason. Suggestions: list only.
+3. **Act.** Critical: fix, re-run the affected gates, start one re-check on the fix. Stop after 3 rounds and hand back the open findings after the second re-check. Important: fix, or list it with the reason. Suggestions: list only.
 4. **No `Agent` tool** (nesting off or at its limit): report "Checker: not run (no Agent tool)". Never skip silently.
 
 Lens briefs:
