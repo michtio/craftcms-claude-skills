@@ -1,62 +1,40 @@
 name: skills-validation
 
-# Validates every skills/*/SKILL.md frontmatter on each push and pull request
-# that touches a skill or its tooling: strict YAML parse, known keys only, the spec's
-# 1024-character description limit, and Claude Code's 1536-character listing
-# cap for description + when_to_use. See bin/validate-skills.sh.
+# Runs every deterministic quality gate of the pack through one command,
+# bin/check.sh, the same command maintainers run locally: SKILL.md frontmatter
+# and listing cap, the version-detection golden tests, version-tag lint, Craft
+# symbols and tables checked against the craftcms/cms source index
+# (bin/data/craft-source-index.tsv), behaviour-case fact assertions and the
+# lexical routing baseline. No model calls and no network: AI evals run only
+# at release time, locally (evals/README.md).
 
 on:
   push:
     paths:
       - 'skills/**'
+      - 'agents/**'
       - 'bin/**'
       - 'hooks/**'
-      - 'evals/fixtures/**'
+      - 'evals/**'
       - '.github/workflows/skills-validation.yml'
   pull_request:
     paths:
       - 'skills/**'
+      - 'agents/**'
       - 'bin/**'
       - 'hooks/**'
-      - 'evals/fixtures/**'
+      - 'evals/**'
       - '.github/workflows/skills-validation.yml'
 
 permissions:
   contents: read
 
 jobs:
-  validate-frontmatter:
-    name: SKILL.md frontmatter
+  check:
+    name: bin/check.sh
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      - name: Validate frontmatter and version-detection wiring
-        run: bash bin/validate-skills.sh
-
-  craft-version:
-    name: Craft version detection
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Golden-output tests (sh, dash, bash --posix)
-        run: sh bin/test-craft-version.sh
-
-  version-tags:
-    name: Craft version tags
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Linter self-test (an untagged craft\filters\Cors must fail)
-        run: "! python3 bin/craft_tags.py lint evals/fixtures/tags/untagged-cors.md"
-
-      - name: Linter self-test (the grammar fixture has exactly 3 invalid tags)
-        run: python3 bin/craft_tags.py lint evals/fixtures/tags/grammar.md | grep -q '^3 finding(s)'
-
-      - name: Floor self-test (flat security bullets in a patch release count)
-        run: python3 bin/craft_tags.py floor --changelog evals/fixtures/tags/changelog-floor.md | grep -q '^5\.12\.3	'
-
-      - name: Lint the pack
-        run: python3 bin/craft_tags.py lint skills
+      - name: All deterministic gates
+        run: sh bin/check.sh

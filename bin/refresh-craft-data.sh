@@ -11,6 +11,10 @@
 #   4. regenerates skills/craftcms/references/version-table.md from the tags
 #   5. syncs scripts/craft-version.sh into every skill and, when the floor
 #      moved, rewrites the golden outputs of bin/test-craft-version.sh
+#   6. rebuilds the source index bin/craft_source.py checks against
+#      (bin/data/craft-source-index.tsv) from the latest 5.x release's source,
+#      plus the yii2 and yii2-queue versions in that release's composer.lock.
+#      A moved pin can make bin/check.sh fail: that is the point, fix the pack.
 #
 #   sh bin/refresh-craft-data.sh [path/to/CHANGELOG.md]   # optional local copy
 #
@@ -61,5 +65,28 @@ if [ "$floor_moved" -eq 1 ]; then
     echo "golden outputs rewritten for the new floor: review evals/fixtures/version/*/expected.txt in the diff"
 fi
 sh bin/test-craft-version.sh
+
+if [ $# -lt 1 ]; then
+    tag=$(tail -n 1 bin/data/craft-releases.txt)
+    mkdir -p "$tmp/cms" "$tmp/yii2" "$tmp/yii2-queue"
+    gh api "repos/craftcms/cms/tarball/$tag" | tar -xzf - -C "$tmp/cms" --strip-components=1
+    # composer.lock is not in the release tarball; read it from the tag.
+    gh api -H 'Accept: application/vnd.github.raw' "repos/craftcms/cms/contents/composer.lock?ref=$tag" > "$tmp/cms/composer.lock"
+    versions=$(python3 -c '
+import json, sys
+lock = json.load(open(sys.argv[1]))
+v = {p["name"]: p["version"] for p in lock["packages"]}
+print(v["yiisoft/yii2"], v["yiisoft/yii2-queue"])' "$tmp/cms/composer.lock")
+    yii=${versions% *}
+    queue=${versions#* }
+    gh api "repos/yiisoft/yii2/tarball/$yii" | tar -xzf - -C "$tmp/yii2" --strip-components=1
+    gh api "repos/yiisoft/yii2-queue/tarball/$queue" | tar -xzf - -C "$tmp/yii2-queue" --strip-components=1
+    python3 bin/craft_source.py index "$tmp/cms" --tag "$tag" \
+        --lib "$tmp/yii2/framework" --lib "$tmp/yii2-queue/src" \
+        --lib-versions "yii2 $yii, yii2-queue $queue"
+    sh bin/check.sh || echo "check.sh fails against craftcms/cms $tag: fix the pack before releasing"
+else
+    echo "source index not rebuilt (local CHANGELOG given); run without arguments to rebuild it"
+fi
 
 echo "done; review: git diff -- bin/ skills/craftcms/references/version-table.md evals/fixtures/version"

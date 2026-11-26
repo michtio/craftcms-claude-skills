@@ -72,7 +72,7 @@ A migration that calls `Craft::$app->getCache()->flush()` — or any broad cache
 **Rules:**
 
 - **Never** call `Craft::$app->getCache()->flush()`, `clear-caches/all`, or any global cache wipe from a migration.
-- Invalidate **only what changed** — `Craft::$app->getElements()->invalidateCachesForElement($element)`, tag-based invalidation, or `TemplateCaches::invalidateCachesByElementId()`.
+- Invalidate **only what changed** — `Craft::$app->getElements()->invalidateCachesForElement($element)`, or tag-based invalidation (`craft invalidate-tags/...`, `TagDependency::invalidate()`).
 - If a deploy genuinely needs a full cache clear, do it as a separate post-deploy step via the Console command runner (`clear-caches/all`), not inside the migration that runs during the Migrate phase.
 - Recovering from a *failed* migration is the one time you touch the table directly: `TRUNCATE cache` clears stale mutex locks that block retries (run it via the Console command runner). That's a manual recovery action, not something a migration should ever do to itself.
 

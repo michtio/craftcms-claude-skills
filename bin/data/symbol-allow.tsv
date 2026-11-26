@@ -1,0 +1,14 @@
+# Symbols bin/craft_source.py verify must not report, one per line: symbol<TAB>reason.
+# Only for names that are not in craftcms/cms on purpose (plugins, hypothetical examples).
+# A key of the form path.md:LINE allows one line instead of a symbol everywhere.
+EVENT_BEFORE_UP	craftcms/cloud UpController (cloud-extension-yii2 src/cli/controllers/UpController.php)
+EVENT_BEFORE_SEND_DATA	Element API plugin (craftcms/element-api)
+EVENT_MODIFY_TWIG_ENVIRONMENT	Formie plugin (verbb/formie)
+EVENT_BEFORE_SAVE_ITEM	hypothetical plugin event used as a naming example
+EVENT_AFTER_SAVE_ITEM	hypothetical plugin event used as a naming example
+EVENT_AFTER_RECORD	hypothetical plugin event used as an architecture example
+craft\contentmigrations	namespace of content migrations in a project (migrations/), not in cms src
+Container::EVENT_INCLUDE_CONTAINER	SEOmatic nystudio107\seomatic\base\Container, not yii\di\Container
+Craft::$app->getSomeService()	placeholder in an example
+Craft::$app->getXxx()	placeholder in an example
+skills/craft-mcp/references/plugin-extension.md:271	negative example: "Inventing Craft::$app->getMcp()"

@@ -362,7 +362,7 @@ Note: These defaults only apply when no explicit search options are provided in 
 |---------|------|---------|---------|
 | `maxUploadFileSize` | `int\|string` | `16777216` (16 MB) | Max upload size. Accepts int (bytes) or string (`'64M'`). |
 | `allowedFileExtensions` | `string[]` | (~100 extensions [changed 5.12]: 97 before 5.12, 100 since) | File extensions allowed for upload. Replaces the entire default list when set. |
-| `extraAllowedFileExtensions` | `string[]` | `[]` | Additional extensions beyond the default set. Preferred over overriding `allowedFileExtensions`. |
+| `extraAllowedFileExtensions` | `string[]\|null` | `null` | Additional extensions beyond the default set. Preferred over overriding `allowedFileExtensions`. |
 | `extraFileKinds` | `array` | `[]` | Define custom file categories. Must pair with `extraAllowedFileExtensions`. (Since 3.0.37) |
 | `filenameWordSeparator` | `string\|false` | `'-'` | Separator for words in uploaded filenames. `false` = leave spaces. |
 | `convertFilenamesToAscii` | `bool` | `false` | Transliterate Unicode to ASCII in uploaded filenames (e.g., cafe.jpg). |

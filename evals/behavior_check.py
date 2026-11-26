@@ -16,6 +16,9 @@ final answer text against regex assertions:
                         passes when b never appears in code (the answer
                         never runs that step)
 
+Each case also carries "facts": the reference text its answer depends on,
+checked without a model by evals/facts_check.py (run in CI).
+
 Cases live in evals/behavior-sets/<skill>.json:
   [{"id", "prompt", "must_match": [[...]], "must_not_match": [...],
     "must_appear_before": [[a, b]], "cwd": "evals/fixtures/..."}, ...]

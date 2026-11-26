@@ -266,8 +266,8 @@ def lint_file(path: Path, symbols: dict[str, str], sym_re: list, releases: set[s
         best = max((vkey(v) for k, v in covering if k == "added"), default=None)
         hit = None
         for s, rx in sym_re:
-            if s in allow_syms:
-                continue
+            if s not in line or s in allow_syms:
+                continue  # substring test first: the regex only confirms word boundaries
             if rx.search(line):
                 if hit is None or len(s) > len(hit):
                     hit = s

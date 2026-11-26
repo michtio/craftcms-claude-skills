@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.26.0 -- unreleased
+
+Moves most quality checking off the model. Every push now runs `sh bin/check.sh`: deterministic gates that check the pack against the `craftcms/cms` 5.12.4 source, the behaviour cases' facts and a lexical routing baseline, with no model calls and no network. AI evals run only at release time, scoped to what changed. The new source checks found 14 errors in the pack (11 symbols that do not exist, 3 wrong defaults), all fixed below. This release's own evals ran through the new runner: 12 behaviour cases (those touched by the fixes) and 3 smoke trigger queries pass, in 21 model calls instead of a full run's ~300.
+
+### Added
+
+- **`bin/check.sh`** -- one command for every deterministic gate, run by CI and `bin/release.sh`: frontmatter, version-script golden tests, tag lint, symbols, tables, facts and routing. Each check also runs against a bad fixture that must fail, so a check that stops checking fails CI.
+- **Symbol verifier** (`bin/craft_source.py verify`) -- every Craft class, method, constant, event, service chain (`Craft::$app->getX()->y()`) and console command named in `skills/` must exist in the source index `bin/data/craft-source-index.tsv` (craftcms/cms 5.12.4 plus yii2 2.0.55 and yii2-queue 2.3.8, so members inherited from Yii resolve). Deliberate exceptions (plugin events, placeholders) live in `bin/data/symbol-allow.tsv` with a reason.
+- **Table checks** (`bin/craft_source.py tables`) -- every tool, resource and prompt in the MCP tool catalogue (name, OAuth scope, gate, URI), and the default column of config tables against `GeneralConfig`, `McpConfig` and `OAuthConfig`.
+- **Fact assertions** (`evals/facts_check.py`) -- every behaviour case names the reference text its answer depends on, checked without a model.
+- **Lexical routing check** (`evals/lexical_route.py`) -- BM25 of every trigger query against every listing, against a recorded baseline (recall@1 130/165, recall@3 158/165).
+- **Release-time evals** (`evals/release_evals.py`) -- runs `claude -p` only for cases that depend on files changed since the last tag, plus a smoke set; caches passes, runs each case once with one retry, stops at the first usage-limit message and reports it as an error, and prints the call count. `route.py --changed-only` A/Bs only changed listings. Trigger runs (here and in `trigger_check.py`) now offer only the Skill tool, so a build-style query can't spend its two turns exploring the filesystem before routing.
+
+### Fixed
+
+- **Console commands** -- `craft db/search-indexes` doesn't exist: rebuild with `resave/all --update-search-index` [5.5+] (4 files). `craft users/list` doesn't exist (`users/list-admins` does).
+- **Logging** (`config-app.md`) -- Craft 5 has no `App::logConfig()`. The `log` component is configured as an array: `craft\log\Dispatcher` merges its default Monolog targets with `targets`, and `monologTargetConfig` sets `except` on the defaults.
+- **Element APIs** -- custom condition rules extend a `Base*ConditionRule` class and implement `ElementConditionRuleInterface` (there is no `ElementConditionRule`); the example now implements `elementType()` and `matchElement()`. There is no `EVENT_REGISTER_FIELD_LAYOUT_TYPES`: custom elements get custom fields through a saved field layout. Field groups (gone since 5.0) removed from a migration example. Sessions are validated by `craft\elements\User::validateAuthKey()`, not a `validateToken()`.
+- **Smaller symbols** -- `Craft::getLogger()` (not `Craft::$app->getLogger()`), `UrlHelper::cpUrl()` (not `Cp::cpUrl()`), no `TemplateCaches::invalidateCachesByElementId()`, no `BaseYii::createApplication()`.
+- **Config defaults** -- `invalidUserTokenPath`, `extraAppLocales` and `extraAllowedFileExtensions` default to `null`.
+
+### Changed
+
+- **CI** -- `skills-validation` is one job that runs `sh bin/check.sh`, and now also runs on `agents/**` and `evals/**`. Tag lint is 15 times faster with the same output.
+- **`bin/refresh-craft-data.sh`** -- also rebuilds the source index from the latest Craft release, then runs `bin/check.sh`.
+- **`skills/craftcms/references/version-table.md`** -- regenerated: 591 rows.
+
 ## 1.25.0 -- 2026-11-26
 
 Brings the pack up to Craft 5.12.4: a new skill for Craft's MCP servers, OAuth server and personal access tokens, a rewrite of the GraphQL authentication docs, and every 5.12 behaviour change the pack touches, each with a version tag so 5.10 and 5.11 projects keep getting advice that works on their version. Verified on 2026-11-26 against the `craftcms/cms` 5.12.4 source, Craft's CHANGELOG through 5.12.4, and a throwaway 5.12.4 install for the runtime claims. Measured with `evals/behavior_check.py --runs 2 --plugin-dir`: the 14 new 5.12 cases pass 28 of 28 and the 7 version-awareness cases 14 of 14; `trigger_check.py` routes 14 of 14 `craft-mcp` prompts to the skill and none of the 8 negatives.

@@ -66,6 +66,9 @@ def skills_invoked(claude_bin: str, query: str, timeout: int,
         "--verbose",
         "--max-turns", "2",
         "--allowed-tools", "Skill",
+        # Only the Skill tool exists, so the model routes or answers instead of
+        # spending its two turns exploring the filesystem with Bash.
+        "--tools", "Skill",
     ]
     if plugin_dir:
         cmd += ["--plugin-dir", plugin_dir]

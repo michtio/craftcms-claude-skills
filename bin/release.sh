@@ -70,9 +70,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Refuse to bump anything while a SKILL.md frontmatter is invalid or over the
 # spec/listing limits — a broken frontmatter ships silently otherwise.
-echo "Validating SKILL.md frontmatter"
-if ! bash "$REPO_ROOT/bin/validate-skills.sh"; then
-  echo "error: fix the SKILL.md frontmatter above before releasing." >&2
+echo "Running every deterministic gate (bin/check.sh)"
+if ! sh "$REPO_ROOT/bin/check.sh"; then
+  echo "error: fix the failing gates above before releasing." >&2
   exit 65
 fi
 echo
@@ -213,8 +213,13 @@ fi
 CURRENT_BRANCH="$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)"
 
 echo
-echo "Before tagging, refresh the Craft data (symbol map, minimum safe version, version table):"
+echo "Before tagging, refresh the Craft data (symbol map, minimum safe version, version table, source index):"
 echo "  sh bin/refresh-craft-data.sh"
+echo
+echo "Then the release-time AI evals, scoped to what changed since the last tag (check the call count first):"
+echo "  python3 evals/release_evals.py --dry-run"
+echo "  python3 evals/release_evals.py"
+echo "  python3 evals/route.py --changed-only --dry-run   # A/B only when a listing changed"
 echo
 echo "Done. Review the diff:"
 echo "  git diff -- .claude-plugin/ CHANGELOG.md"

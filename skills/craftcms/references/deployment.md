@@ -233,7 +233,7 @@ Vite produces content-hashed filenames — no need for `revAssetUrls`. Commit th
 | Clear caches | `craft clear-caches/all` | Every deploy |
 | Restart queue | `supervisorctl restart craft-queue` | Every deploy |
 | Rebuild search index | `craft resave/entries --update-search-index --queue` | After content modeling changes |
-| Full search rebuild | `craft db/search-indexes` | After changing search component config |
+| Full search rebuild | `craft resave/all --update-search-index` [5.5+] | After changing search component config |
 | Asset indexing | `craft index-assets/all` | After adding files outside Craft |
 | Cache warming | Blitz cache warmer or custom | After Blitz purge |
 

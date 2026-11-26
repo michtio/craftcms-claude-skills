@@ -14,7 +14,8 @@
     "must_not_match_code": [
       "\\{\\{\\s*heading\\(",
       "\\{\\{\\s*h\\("
-    ]
+    ],
+    "facts": [{"file": "skills/craft-twig-guidelines/SKILL.md", "contains": ["`heading\\(\\)` and `h\\(\\)` need \\[5\\.10\\+\\]\\. Before 5\\.10:"]}]
   },
   {
     "id": "v-plugin-deletion-blockers-56",
@@ -28,7 +29,8 @@
         "\\^5\\.10",
         "minimum"
       ]
-    ]
+    ],
+    "facts": [{"file": "skills/craftcms/references/elements.md", "contains": ["Deletion Blockers \\[5\\.10\\+\\]"]}, {"file": "bin/craft-version.sh", "contains": ["constraint bump", "runtime guard"]}]
   },
   {
     "id": "v-safe-floor-510",
@@ -41,7 +43,8 @@
         "advisor",
         "vulnerab"
       ]
-    ]
+    ],
+    "facts": [{"file": "bin/craft-version.sh", "contains": ["^CRAFT_SAFE_FLOOR=\"5\\.12\\.3\"$", "is below the minimum safe Craft version"]}]
   },
   {
     "id": "v-no-floor-warning-at-floor",
@@ -51,7 +54,8 @@
       "minimum safe",
       "below (the )?(minimum|safe|security)",
       "GHSA-"
-    ]
+    ],
+    "facts": [{"file": "bin/craft-version.sh", "contains": ["^CRAFT_SAFE_FLOOR=\"5\\.12\\.3\"$"]}]
   },
   {
     "id": "v-craft4-eol",
@@ -65,7 +69,8 @@
         "no longer (receives|gets|supported)",
         "unsupported"
       ]
-    ]
+    ],
+    "facts": [{"file": "bin/craft-version.sh", "contains": ["is end of life \\(Craft 4 security support ended 2026-04-30\\)"]}]
   },
   {
     "id": "v-eagerly-limit-512",
@@ -88,7 +93,8 @@
         "did not apply",
         "before"
       ]
-    ]
+    ],
+    "facts": [{"file": "skills/craftcms/references/upgrade-5.12.md", "contains": ["Before 5\\.12 they were ignored in loops"]}, {"file": "skills/craft-content-modeling/references/relations-and-eager-loading.md", "contains": ["`limit`, `offset`, `orderBy` on `\\.eagerly\\(\\)`\\*\\* \\[changed 5\\.12\\]"]}]
   },
   {
     "id": "v-lock-vendor-drift",
@@ -104,6 +110,7 @@
       [
         "composer install"
       ]
-    ]
+    ],
+    "facts": [{"file": "bin/craft-version.sh", "contains": ["Drift: vendor/ does not match composer\\.lock; run \\\\`ddev composer install\\\\`"]}]
   }
 ]

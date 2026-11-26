@@ -3,86 +3,100 @@
     "id": "c512-mcp-on-511",
     "cwd": "evals/fixtures/projects/site-5.11.5",
     "prompt": "I want my AI assistant to read and edit entries on this Craft site over MCP. How do I set that up? Answer in your reply; don't create files.",
-    "must_match": [["5\\.12"], ["upgrad"]]
+    "must_match": [["5\\.12"], ["upgrad"]],
+    "facts": [{"file": "skills/craft-mcp/SKILL.md", "contains": ["On 5\\.11 or older there is no MCP server", "Before 5\\.12: upgrade first"]}]
   },
   {
     "id": "c512-mcp-ddev-claude-code",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "Connect Claude Code to the MCP server of this Craft site running locally in DDEV. Give me the steps; don't run anything.",
     "must_match": [["oauth/generate-keys", "CRAFT_OAUTH_PRIVATE_KEY", "generate.{0,20}keys"], ["claude mcp add"], ["--transport http", "--transport=http", "transport http"]],
-    "must_not_match": ["personal access token for (the )?MCP"]
+    "must_not_match": ["personal access token for (the )?MCP"],
+    "facts": [{"file": "skills/craft-mcp/references/client-setup.md", "contains": ["claude mcp add --transport http \\S+ https://\\S+/admin/mcp/auth"]}, {"file": "skills/craft-mcp/SKILL.md", "contains": ["oauth/generate-keys"]}]
   },
   {
     "id": "c512-mcp-cloud-keys",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "MCP works locally but on Craft Cloud every request fails with an OAuth key error. What's wrong? Answer in your reply.",
-    "must_match": [["CRAFT_OAUTH_PRIVATE_KEY"], ["CRAFT_OAUTH_PUBLIC_KEY"], ["ephemeral", "storage/"]]
+    "must_match": [["CRAFT_OAUTH_PRIVATE_KEY"], ["CRAFT_OAUTH_PUBLIC_KEY"], ["ephemeral", "storage/"]],
+    "facts": [{"file": "skills/craft-mcp/SKILL.md", "contains": ["ephemeral or load-balanced host.*CRAFT_OAUTH_PRIVATE_KEY.*CRAFT_OAUTH_PUBLIC_KEY"]}, {"file": "skills/craft-mcp/references/oauth-server.md", "contains": ["return \\["], "not_contains": ["return OAuthConfig::create\\(\\["]}]
   },
   {
     "id": "c512-mcp-pat",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "Can I just create a personal access token in Craft and paste it into my MCP client config? Answer in your reply.",
-    "must_match": [["can.?t", "won.?t", "cannot", "not carry", "no MCP scope", "don't include", "do not include", "not support"], ["OAuth", "stdio", "mcp/serve"]]
+    "must_match": [["can.?t", "won.?t", "cannot", "not carry", "no MCP scope", "don't include", "do not include", "not support"], ["OAuth", "stdio", "mcp/serve"]],
+    "facts": [{"file": "skills/craft-mcp/SKILL.md", "contains": ["personal access token cannot carry MCP scopes; use OAuth or stdio"]}]
   },
   {
     "id": "c512-mcp-plugin-tool",
     "cwd": "evals/fixtures/projects/plugin-5.12",
     "prompt": "Add an MCP tool to this Craft plugin that lists the current user's saved reports. Show the PHP in your reply; don't create files.",
     "must_match": [["readOnlyHint"], ["reports_\\w+", "acme_reports_\\w+"]],
-    "must_not_match_code": ["name:\\s*'[a-z-]+\\.[a-z]", "name:\\s*\"[a-z-]+\\.[a-z]"]
+    "must_not_match_code": ["name:\\s*'[a-z-]+\\.[a-z]", "name:\\s*\"[a-z-]+\\.[a-z]"],
+    "facts": [{"file": "skills/craft-mcp/SKILL.md", "contains": ["A plugin tool without `readOnlyHint: true`"]}, {"file": "skills/craft-mcp/references/plugin-extension.md", "contains": ["snake_case, prefixed with the plugin handle", "readOnlyHint: true"]}]
   },
   {
     "id": "c512-gql-build-server",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "Our Next.js build server fetches content from Craft GraphQL with a schema token. Should we switch it to OAuth now that Craft 5.12 has an OAuth server? Answer in your reply.",
-    "must_match": [["client.credentials", "no machine", "acts as a user", "on behalf of a user", "user-based", "per-user"], ["keep", "stay with", "stick with", "continue"]]
+    "must_match": [["client.credentials", "no machine", "acts as a user", "on behalf of a user", "user-based", "per-user"], ["keep", "stay with", "stick with", "continue"]],
+    "facts": [{"file": "skills/craft-site/references/headless.md", "contains": ["no client-credentials grant", "Keep a schema token"]}]
   },
   {
     "id": "c512-gql-hidden-field",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "A GraphQL query authenticated with a personal access token can't see the `internalNotes` field, but our schema-token query can. The field has a condition in the field layout. Why? Answer in your reply.",
-    "must_match": [["field layout condition", "condition"], ["5\\.12\\.1", "excluded", "hidden fields", "null"]]
+    "must_match": [["field layout condition", "condition"], ["5\\.12\\.1", "excluded", "hidden fields", "null"]],
+    "facts": [{"file": "skills/craftcms/references/upgrade-5.12.md", "contains": ["\\[changed 5\\.12\\.1\\] \\*\\*GraphQL over OAuth or personal access tokens respects field layout conditions"]}, {"file": "skills/craft-mcp/references/personal-access-tokens.md", "contains": ["Field layout conditions \\| Respected \\[5\\.12\\.1\\+\\]"]}]
   },
   {
     "id": "c512-render-on-511",
     "cwd": "evals/fixtures/projects/site-5.11.5",
     "prompt": "Render the entries in `entries` with their own partial templates per entry type in this Craft site. Write the Twig in your reply; don't create files.",
-    "must_not_match_code": ["\\{%-?\\s*render\\s"]
+    "must_not_match_code": ["\\{%-?\\s*render\\s"],
+    "facts": [{"file": "skills/craft-twig-guidelines/SKILL.md", "contains": ["`\\{% render %\\}` on a site below 5\\.12"]}, {"file": "skills/craft-site/SKILL.md", "contains": ["entry\\.render\\(\\)"]}]
   },
   {
     "id": "c512-render-on-512",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "Render the entries in `entries` with their own partial templates per entry type in this Craft site, using the newest Craft way. Write the Twig in your reply; don't create files.",
-    "must_match": [["\\{%-?\\s*render"]]
+    "must_match": [["\\{%-?\\s*render"]],
+    "facts": [{"file": "skills/craft-twig-guidelines/SKILL.md", "contains": ["\\{%- render entry\\.contentBlocks with \\{ theme: 'dark' \\} only -%\\}"]}]
   },
   {
     "id": "c512-color-alpha",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "Review this Twig from our Craft site: `<div style=\"background: {{ entry.brandColor }}80\">`. Editors just started picking translucent colours. Answer in your reply.",
-    "must_match": [["8.digit", "eight.digit", "alpha"], ["rgba", "rgbChannels", "rgb\\("]]
+    "must_match": [["8.digit", "eight.digit", "alpha"], ["rgba", "rgbChannels", "rgb\\("]],
+    "facts": [{"file": "skills/craft-twig-guidelines/SKILL.md", "contains": ["Appending alpha to a colour", "8-digit hex", "rgbChannels", "entry\\.brand\\.rgba"]}, {"file": "skills/craft-content-modeling/references/field-types.md", "contains": ["What breaks with 8-digit hex"]}]
   },
   {
     "id": "c512-volume-new-site",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "We added a French site to our single-site Craft install. French entries show no hero images, and the Assets field isn't translatable. Why? Answer in your reply.",
-    "must_match": [["propagat"], ["all sites", "All sites", "Custom"]]
+    "must_match": [["propagat"], ["all sites", "All sites", "Custom"]],
+    "facts": [{"file": "skills/craft-site/references/multi-site-patterns.md", "contains": ["Assets missing on a site.*Custom propagation"]}, {"file": "skills/craft-content-modeling/references/infrastructure.md", "contains": ["Propagation Method", "Custom on single-site installs"]}]
   },
   {
     "id": "c512-upgrade-checklist",
     "cwd": "evals/fixtures/projects/site-5.11.5",
     "prompt": "We're upgrading this Craft site to 5.12. Give me a checklist of what to watch for. Answer in your reply.",
-    "must_match": [["propagationMethod", "propagation"], ["eagerly"], ["upper", "lower", "case filter", "casing", "ICU"]]
+    "must_match": [["propagationMethod", "propagation"], ["eagerly"], ["upper", "lower", "case filter", "casing", "ICU"]],
+    "facts": [{"file": "skills/craftcms/references/upgrade-5.12.md", "contains": ["propagation", "`\\.eagerly\\(\\)` now honours `limit`", "\\*\\*Case filters\\*\\* \\(`upper`, `lower`"]}]
   },
   {
     "id": "c512-web-installer",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "We deployed a fresh Craft site to production (Dev Mode off) and /admin/install doesn't show the installer anymore. How do we install it? Answer in your reply.",
-    "must_match": [["Dev Mode", "devMode", "dev mode"], ["craft install", "craft\\s+install"]]
+    "must_match": [["Dev Mode", "devMode", "dev mode"], ["craft install", "craft\\s+install"]],
+    "facts": [{"file": "skills/craftcms/references/deployment.md", "contains": ["web-based installer only runs when Dev Mode is on"]}, {"file": "skills/craftcms/references/upgrade-5.12.md", "contains": ["craft install --interactive=0"]}]
   },
   {
     "id": "c512-eagerly-alias",
     "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "My blog listing does `entry.gallery.eagerly().limit(3).all()` in a loop and later `entry.gallery.eagerly().all()` for a lightbox. The lightbox only shows 3 images. Why? Answer in your reply.",
-    "must_match": [["alias", "eagerly\\('"], ["first", "shared", "same"]]
+    "must_match": [["alias", "eagerly\\('"], ["first", "shared", "same"]],
+    "facts": [{"file": "skills/craft-content-modeling/references/relations-and-eager-loading.md", "contains": ["shares the alias `eagerly:<handle>`", "\\.eagerly\\('ctaChildren'\\)"]}]
   }
 ]

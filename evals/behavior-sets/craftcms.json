@@ -11,7 +11,8 @@
       "static\\s+(fn|function)\\s*\\(\\s*(string\\s+)?\\$attribute",
       "->typeId\\s*[!=]==?\\s*null",
       "\\[\\s*'summary'\\s*\\]\\s*,\\s*'required'"
-    ]
+    ],
+    "facts": [{"file": "skills/craftcms/references/events.md", "contains": ["isset\\(\\$entry->fieldId\\) \\|\\| isset\\(\\$entry->sectionId\\)", "'when' => fn\\(Entry \\$entry\\)"]}]
   },
   {
     "id": "project-config-write-gate",
@@ -24,6 +25,7 @@
     "must_appear_before": [
       ["craft up|project-config/apply", "project-config/write"],
       ["project-config/diff", "project-config/write"]
-    ]
+    ],
+    "facts": [{"file": "skills/craftcms/SKILL.md", "contains": ["`project-config/write` empties `config/project/`", "Run `craft up` first"]}, {"file": "skills/craftcms/references/deployment.md", "contains": ["git diff --stat -- config/project"]}]
   }
 ]

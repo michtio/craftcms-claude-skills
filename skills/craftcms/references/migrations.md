@@ -272,7 +272,6 @@ if (!Craft::$app->getEntries()->saveSection($section)) {
 use craft\fields\PlainText;
 
 $field = new PlainText([
-    'groupId' => Craft::$app->getFields()->getAllGroups()[0]->id,
     'name' => 'Subtitle',
     'handle' => 'subtitle',
     'translationMethod' => 'none',

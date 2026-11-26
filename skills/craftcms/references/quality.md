@@ -167,7 +167,7 @@ Run: `ddev composer phpstan`
 The `craftcms/phpstan` stubs declare `Craft::$app` as `\craft\web\Application|\craft\console\Application` — a non-nullable union. That assertion holds during normal request handling but is wrong in two situations:
 
 1. **Unit tests that don't bootstrap a full Craft app.** A Pest/PHPUnit test that instantiates a service directly to test a pure-PHP method may run with `Craft::$app === null`.
-2. **Very early bootstrap**, before `BaseYii::createApplication()` has run.
+2. **Very early bootstrap**, before `bootstrap/web.php` / `bootstrap/console.php` has created the application.
 
 If your code carries defensive guards like:
 
