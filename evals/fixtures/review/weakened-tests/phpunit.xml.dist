@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php" colors="true">
+    <testsuites>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="CRAFT_DB_DATABASE" value="carts_test" force="true"/>
+        <env name="CRAFT_DB_TABLE_PREFIX" value="" force="true"/>
+        <env name="CRAFT_ENVIRONMENT" value="test" force="true"/>
+    </php>
+</phpunit>

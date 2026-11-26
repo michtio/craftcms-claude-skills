@@ -14,6 +14,11 @@ spend as few calls as possible:
   - Cache: a passing result is stored under evals/.cache/ by a hash of the
     case and every file it depends on; unchanged cases are not rerun.
   - One run per case; a failure is retried once (--retries).
+  - Repeated runs (--runs N, at most 3): only cases that opt in with "runs": N
+    run more than once, and only when selected (diff-scoped or --only). The
+    result shows the pass count out of N and the tokens per run; a repeated case
+    passes only when every run passes, with no retries. Builder cases never opt
+    in (evals/facts_check.py fails CI when one does).
   - A usage-limit message is an ERROR, not a failure: the run stops at the
     first one and reports what didn't run. Timeouts and empty answers are
     harness errors, also not failures.
@@ -24,6 +29,7 @@ Usage:
     python3 evals/release_evals.py                    # run it
     python3 evals/release_evals.py --since v1.25.0 --no-cache
     python3 evals/release_evals.py --all --dry-run    # every case (no diff scoping)
+    python3 evals/release_evals.py --only review-weakened-tests --runs 3
 
 Route A/B for changed listings is separate: python3 evals/route.py --changed-only
 Python 3.9+, standard library only.
@@ -50,6 +56,7 @@ from behavior_check import score  # noqa: E402  (same assertions as the standalo
 CACHE = REPO / "evals" / ".cache" / "release-evals.json"
 SMOKE = REPO / "evals" / "smoke.json"
 GLOBAL_DEPS = ("bin/craft-version.sh", "hooks/")
+MAX_RUNS = 3
 LIMIT_RE = re.compile(
     r"(hit your (?:\d+-hour |weekly |session )?limit|usage limit|rate[ _-]?limit(?:ed)?|"
     r"limit (?:reached|resets)|overloaded_error|quota exceeded)", re.I)
@@ -185,8 +192,14 @@ def file_digest(path: Path, h) -> None:
         h.update(path.read_bytes())
 
 
-def case_key(c: dict, model: str) -> str:
+def runs_for(c: dict, runs: int) -> int:
+    """Runs for a selected case: --runs applies only to cases that opt in with "runs"."""
+    return max(1, min(runs, int(c["case"].get("runs", 1)), MAX_RUNS)) if c["kind"] == "behaviour" else 1
+
+
+def case_key(c: dict, model: str, runs: int = 1) -> str:
     h = hashlib.sha256()
+    h.update(f"runs={runs}".encode())
     h.update(json.dumps(c["case"], sort_keys=True).encode())
     h.update(model.encode())
     for d in sorted(c["deps"]):
@@ -205,16 +218,30 @@ def load_cache() -> dict:
 # running
 # ----------------------------------------------------------------------------
 
+def result_tokens(ev: dict) -> int:
+    """Input (cache included) plus output tokens from a stream-json result event."""
+    keys = ("inputTokens", "outputTokens", "cacheReadInputTokens", "cacheCreationInputTokens")
+    per_model = ev.get("modelUsage") or {}
+    if per_model:
+        return sum(int(u.get(k, 0) or 0) for u in per_model.values() for k in keys)
+    u = ev.get("usage") or {}
+    return sum(int(u.get(k, 0) or 0) for k in
+               ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
+
+
 class Runner:
     def __init__(self, claude_bin: str, model: str | None, timeout: int, plugin_dir: bool):
         self.claude_bin, self.model, self.timeout, self.plugin_dir = claude_bin, model, timeout, plugin_dir
         self.calls = 0
         self.stopped = threading.Event()
         self.lock = threading.Lock()
+        self.tokens: dict[int, int] = {}
 
     def claude(self, prompt: str, cwd: str, tools: str, max_turns: int,
                timeout: int | None = None) -> tuple[str, set[str], str, list[str]]:
-        """One claude -p call: (answer text, skills invoked, error class or '', agent types started)."""
+        """One claude -p call: (answer text, skills invoked, error class or '', agent types started).
+
+        Tokens for the call (every model, nested agents included) land in self.tokens[thread]."""
         with self.lock:
             self.calls += 1
         cmd = [self.claude_bin, "-p", prompt, "--output-format", "stream-json", "--verbose",
@@ -243,6 +270,7 @@ class Runner:
                 continue
             if ev.get("type") == "result":
                 result = ev.get("result") or ""
+                self.tokens[threading.get_ident()] = result_tokens(ev)
             elif ev.get("type") == "assistant":
                 for item in ev.get("message", {}).get("content", []):
                     if item.get("type") == "text":
@@ -293,7 +321,7 @@ class Runner:
                 if want not in agents:
                     failures.append(f"agent {want} never started (started: {agents or 'none'})")
             return {"status": "fail" if failures else "pass", "failures": failures, "skills": sorted(skills),
-                    "agents": agents, "answer": text}
+                    "agents": agents, "answer": text, "tokens": self.tokens.pop(threading.get_ident(), 0)}
         q = c["case"]
         text, skills, err, _ = self.claude(q["query"], "/tmp", "Skill", 2)
         if err:
@@ -303,7 +331,34 @@ class Runner:
         return {"status": "pass" if ok else "fail", "skills": sorted(skills),
                 "failures": [] if ok else [f"expected trigger={q['should_trigger']}, got {sorted(skills) or 'none'}"]}
 
-    def attempt(self, c: dict, retries: int) -> dict:
+    def repeat(self, c: dict, runs: int) -> dict:
+        """N independent runs, no retries: pass only when every run passes."""
+        results = []
+        for _ in range(runs):
+            if self.stopped.is_set():
+                break
+            r = self.run_case(c)
+            results.append(r)
+            if r["status"] == "error" and r["error"] == "usage limit":
+                self.stopped.set()
+                break
+        passed = sum(r["status"] == "pass" for r in results)
+        if not results:
+            return {"status": "not run"}
+        errors = [r for r in results if r["status"] == "error"]
+        failed = any(r["status"] == "fail" for r in results)
+        status = "pass" if passed == runs else "fail" if failed else "error" if errors else "not run"
+        out = {"status": status, "runs": runs, "passed": passed, "tokens": [r.get("tokens", 0) for r in results],
+               "failures": [f"run {i + 1}: {f}" for i, r in enumerate(results) for f in r.get("failures", [])],
+               "agents": results[-1].get("agents", []), "results": results}
+        if errors:
+            out["error"] = errors[0]["error"]
+            out["failures"] += [f"run {results.index(r) + 1}: {r['error']}" for r in errors]
+        return out
+
+    def attempt(self, c: dict, retries: int, runs: int = 1) -> dict:
+        if runs > 1:
+            return self.repeat(c, runs)
         r = {"status": "not run"}
         for n in range(1 + retries):
             if self.stopped.is_set():
@@ -325,6 +380,8 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="list what would run and the call count; zero model calls")
     ap.add_argument("--no-cache", action="store_true", help="ignore cached passes")
     ap.add_argument("--retries", type=int, default=1, help="retries for a failed case (default: 1)")
+    ap.add_argument("--runs", type=int, default=1,
+                    help=f"repeat cases that opt in with \"runs\" up to N times (max {MAX_RUNS}; default 1)")
     ap.add_argument("--workers", type=int, default=3, help="concurrent claude -p calls (default: 3)")
     ap.add_argument("--timeout", type=int, default=600)
     ap.add_argument("--model", default=None, help="model alias for claude -p (default: the CLI default)")
@@ -336,6 +393,8 @@ def main() -> int:
     ap.add_argument("--out", help="write full results JSON here")
     args = ap.parse_args()
 
+    if not 1 <= args.runs <= MAX_RUNS:
+        ap.error(f"--runs must be between 1 and {MAX_RUNS}")
     since = args.since or last_tag()
     if args.assume_changed:
         changed = set(args.assume_changed.split(","))
@@ -348,7 +407,8 @@ def main() -> int:
 
     model_key = args.model or "cli-default"
     cache = {} if args.no_cache else load_cache()
-    keys = {c["id"]: case_key(c, model_key) for c in chosen}
+    runs = {c["id"]: runs_for(c, args.runs) for c in chosen}
+    keys = {c["id"]: case_key(c, model_key, runs[c["id"]]) for c in chosen}
     cached = [c for c in chosen if cache.get(keys[c["id"]], {}).get("status") == "pass"]
     to_run = [c for c in chosen if c not in cached]
 
@@ -357,10 +417,13 @@ def main() -> int:
     nb = sum(c["kind"] == "behaviour" for c in to_run)
     print(f"selected {len(chosen)} case(s) ({len([c for c in chosen if c['id'] in smoke])} smoke), "
           f"{len(cached)} cached pass(es), {len(to_run)} to run: {nb} behaviour, {len(to_run) - nb} trigger")
-    print(f"model calls: {len(to_run)} minimum, {len(to_run) * (1 + args.retries)} at most (retries {args.retries})")
+    once = [c for c in to_run if runs[c["id"]] == 1]
+    repeated = sum(runs[c["id"]] for c in to_run if runs[c["id"]] > 1)
+    print(f"model calls: {len(once) + repeated} minimum, {len(once) * (1 + args.retries) + repeated} at most "
+          f"(retries {args.retries}; repeated runs are not retried)")
     if args.dry_run:
         for c in to_run:
-            print(f"  {c['kind']:9} {c['id']}")
+            print(f"  {c['kind']:9} {c['id']}" + (f"  runs: {runs[c['id']]}" if c["kind"] == "behaviour" else ""))
         return 0
     if not to_run:
         print("nothing to run")
@@ -369,7 +432,7 @@ def main() -> int:
     claude_bin = str(Path(args.claude_bin).resolve()) if args.claude_bin else (shutil.which("claude") or "/opt/homebrew/bin/claude")
     runner = Runner(claude_bin, args.model, args.timeout, not args.no_plugin_dir)
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
-        results = dict(zip([c["id"] for c in to_run], pool.map(lambda c: runner.attempt(c, args.retries), to_run)))
+        results = dict(zip([c["id"] for c in to_run], pool.map(lambda c: runner.attempt(c, args.retries, runs[c["id"]]), to_run)))
 
     for c in to_run:
         r = results[c["id"]]
@@ -386,11 +449,17 @@ def main() -> int:
         r = results[c["id"]]
         counts[r["status"]] += 1
         limit_errors += r.get("error") == "usage limit"
-        if r["status"] != "pass":
+        if r.get("runs", 1) > 1:
+            tokens = ", ".join(f"{n:,}" for n in r["tokens"])
+            print(f"  {r['status'].upper():8} {c['kind']:9} {c['id']}  passed {r['passed']}/{r['runs']} | tokens per run: {tokens}")
+            for f in r.get("failures", []):
+                print(f"           {f}")
+        elif r["status"] != "pass":
             detail = r.get("error") or "; ".join(r.get("failures", []))
             print(f"  {r['status'].upper():8} {c['kind']:9} {c['id']}  {detail}")
         elif r.get("agents"):
-            print(f"  PASS     {c['kind']:9} {c['id']}  agents started: {len(r['agents'])} ({', '.join(r['agents'])})")
+            print(f"  PASS     {c['kind']:9} {c['id']}  agents started: {len(r['agents'])} ({', '.join(r['agents'])})"
+                  + (f" | tokens: {r['tokens']:,}" if r.get("tokens") else ""))
     if args.out:
         Path(args.out).write_text(json.dumps({c["id"]: results[c["id"]] for c in to_run}, indent=2), encoding="utf-8")
 

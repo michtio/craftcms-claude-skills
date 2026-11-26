@@ -24,7 +24,7 @@ Run only what the project configures, from the plugin or project root (`ddev exe
 - `phpstan.neon` or `phpstan.neon.dist` exists: `ddev exec vendor/bin/phpstan analyse --no-progress --error-format=raw`
 - `ecs.php` exists: `ddev exec vendor/bin/ecs check --no-progress-bar`
 
-Keep only lines for changed files. Pest runs only when the brief asks for it (a suite can write to a database). Any other Bash stays read-only: `git diff`, `git log`, `git show`, `git blame`. Never `--fix`, never a write.
+Keep only lines for changed files. A builder's PASS lines are claims: when the suite is isolated (`tests/Pest.php` plus `CRAFT_DB_DATABASE` pinned in `phpunit.xml.dist`), rerun each gate command the hand-back or plan names, with its `--filter`, and report `Gate <command>: rerun, pass|fail`; otherwise `Gate <command>: claimed, not rerun (<reason>)`. Never run a suite without isolation (it can write to a real database). Any other Bash stays read-only: `git diff`, `git log`, `git show`, `git blame`. Never `--fix`, never a write.
 
 ## 3. Checkers (team mode)
 
@@ -32,7 +32,7 @@ Start each checker as the `craft-review-checker` agent (`craftcms-claude-skills:
 
 Always: **conventions** and **security**. Add at most two of the others, the ones the diff reaches most; when more apply, hand two lens briefs to one checker. At most 5 agents per review, including the challenge.
 
-- **conventions** (Sonnet): Load `craft-php-guidelines`; `craft-twig-guidelines` for Twig; `craft-pest` for tests. Semantic correctness (empty arrays, deleted or soft-deleted elements, drafts, disabled sites, multi-site), plugin lifecycle (settings merged once, events wired before they fire, no DB in service constructors), architecture (right service, right abstraction), untested branches and tests that pass with the change reverted; a suite that can reach a real database is Critical. PHPDocs and section headers.
+- **conventions** (Sonnet): Load `craft-php-guidelines`; `craft-twig-guidelines` for Twig; `craft-pest` for tests. Semantic correctness (empty arrays, deleted or soft-deleted elements, drafts, disabled sites, multi-site), plugin lifecycle (settings merged once, events wired before they fire, no DB in service constructors), architecture (right service, right abstraction), untested branches and tests that pass with the change reverted; a suite that can reach a real database is Critical. Test weakening is Important: a changed or deleted file from a gate commit (`git log --grep '^test(gate):' --name-only`), added `->skip(`/`->todo(`/`->only(`/`markTestSkipped`, a deleted test, fewer `expect(`/`assert` calls in a test, or an exact matcher (`toBe`, `toEqual`, `assertSame`) replaced by a looser one (`toBeInt`, `toBeTruthy`, `not->toBeNull`). PHPDocs and section headers.
 - **security** (pass `model: opus`): Trace request data controller → service → element → DB across files. Permission handle registered and checked before model population; POST data cannot escalate context (TOCTOU); CSRF; `|raw` and `attr()` output; SQL built from input; secrets via `App::env()`/`App::parseEnv()`. MCP tools or OAuth resources: load `craft-mcp` (snake_case plugin-prefixed names, `readOnlyHint`, scopes, what a client can reach).
 - **performance** (Sonnet): N+1 at production volume, including element queries inside services called in loops; eager loading (`.with()`, `.eagerly()`); caches and invalidation; queue jobs batched for real volumes; missing indexes for new query paths. Front-end: load `craft-site`.
 - **migrations** (Sonnet): Columns on large tables, long migrations without batching, read-then-write without locks, transaction boundaries, element resaves in loops, project-config writes, rollback (`safeDown`), idempotent Install migrations, race conditions in jobs that assume one worker.
@@ -55,7 +55,7 @@ Review the diff yourself through the same lenses, loading the skills each lens n
 
 ## 6. Report
 
-First line: `Mode: team (conventions, security, performance) · agents: 4 · static checks: phpstan 2 in changed files, ecs clean` (or `Mode: single pass (<reason>)`).
+First line: `Mode: team (conventions, security, performance) · agents: 4 · static checks: phpstan 2 in changed files, ecs clean` (or `Mode: single pass (<reason>)`). Then one line per gate: rerun with its result, or claimed, not rerun.
 
 Then findings, merged and de-duplicated. Each finding is one block: severity, file:line, what is wrong, how to fix, why it matters (one sentence), and `[phpstan]`/`[ecs]` when a check backs it. A finding backed by a check ranks above one that is not.
 

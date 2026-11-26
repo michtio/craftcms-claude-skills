@@ -1,0 +1,8 @@
+{
+  "name": "acme/craft-carts",
+  "type": "craft-plugin",
+  "require": {"php": "^8.2", "craftcms/cms": "^5.12.0"},
+  "require-dev": {"markhuot/craft-pest-core": "^2.0"},
+  "autoload": {"psr-4": {"acme\\carts\\": "src/"}},
+  "extra": {"handle": "carts", "name": "Carts", "class": "acme\\carts\\Plugin"}
+}
