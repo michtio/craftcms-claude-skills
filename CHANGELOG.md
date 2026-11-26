@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.28.2 -- 2026-11-26
+
+### Changed
+
+- **Routing scenarios: 8 to 18** (`evals/scenarios.json`) -- every skill now has at least one real-life scenario: flaky tests that leave entries in the dev database (`craft-pest`), a Dutch and French site with shared prices (`craft-content-modeling`), letting a colleague ask Claude about site content (`craft-mcp`), shipping a plugin version (`craft-plugin-release`), drag-sorting rows in a custom field's CP JavaScript (`craft-garnish`), onboarding a developer who uses Claude Code (`craft-project-setup`), field changes missing after a fortrabbit deploy (`craft-fortrabbit`), CDN images and a live basket count on Servd (`servd`), a stale Blitz-cached homepage and a wrong SEOmatic share image (`craft-plugins`). All 18 pass, in 18 model calls; each new one also passed a second run.
+
 ## 1.28.1 -- 2026-11-26
 
 ### Fixed
