@@ -35,7 +35,7 @@ Breaks large tasks into scoped implementation steps that can each be completed i
 2. Identifies all affected areas (elements, queries, services, controllers, migrations, templates, project config, tests)
 3. Maps dependencies -- what must be built first
 4. Breaks work into steps of roughly equal size
-5. Returns the plan, headed with its intended path `docs/plans/{feature-name}.md`, for the caller to save (the planner has no Write tool)
+5. Requires an approved PRD (`prd.md`) first, then returns `plan.md`, headed with its intended path `specs/YYYY-MM-DD-<slug>/plan.md` (or a git-ignored folder for a public package), for the caller to save (the planner has no Write tool)
 
 ### Plan format
 
@@ -136,7 +136,7 @@ After all gates pass, the builder does one sweep on files it just wrote (while c
 ### Example delegation
 
 ```
-Build the Job Listings element type following the plan in docs/plans/job-listings.md
+Build slice S1 of specs/2026-10-09-job-listings/plan.md (requirements R1-R3)
 ```
 
 ---
@@ -360,10 +360,10 @@ This means code built by the `craft-feature-builder` agent passes the `craft-cod
 The most common pattern. Plan first to break down complexity, then build layer by layer.
 
 ```
-1. Delegate to craft-planner: "Plan the implementation of..."
-2. Review the plan, adjust if needed
-3. Save the returned plan to docs/plans/{feature-name}.md
-4. Delegate to craft-feature-builder: "Build following the plan in docs/plans/..."
+1. Write and approve the PRD: specs/{date-slug}/prd.md
+2. Delegate to craft-planner: "Plan the implementation of specs/{date-slug}/prd.md"
+3. Review and approve the returned plan, save it as specs/{date-slug}/plan.md
+4. Delegate to craft-feature-builder, one slice at a time: "Build slice S1 of specs/{date-slug}/plan.md"
 ```
 
 ### Build then review
