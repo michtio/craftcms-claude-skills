@@ -102,7 +102,7 @@ One independent checker reads your diff. At most 3 agents per run: the checker, 
 
 1. **Size it** with `git diff --numstat <base>` (`HEAD` for uncommitted work). Sensitive: `|raw` or `attr()`/`|parseAttr` fed by request or user data, front-end forms (login, registration, profile, Formie), entries queried from request params, `config/` files, any PHP.
    - Under 50 lines, nothing sensitive: skip. Under 50, sensitive: security lens only. 50 or more: security and conventions in one checker.
-2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` as a plugin) with the brief(s), the Craft version and the diff command.
+2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` as a plugin) with the brief(s), the Craft version and the diff command; pass no `model`.
    - **security**: Twig output escaping, CSRF (`csrfInput()`) and `redirectInput` on forms, user data a visitor can reach, elements fetched by request params without a status or site check.
    - **conventions**: Load `craft-twig-guidelines`. Includes with `only`, eager loading in loops, multi-site, empty and missing fields.
 3. Critical: fix, re-gate, one re-check. Important: fix or list with the reason. No `Agent` tool: say "Checker: not run (no Agent tool)".

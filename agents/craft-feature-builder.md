@@ -171,7 +171,7 @@ After the final check, one independent checker reads your diff. At most 3 agents
    - Under 50 lines, nothing sensitive: skip the checker.
    - Under 50 lines, anything sensitive: security lens only.
    - 50 lines or more: security and conventions, in one checker.
-2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` when the pack is a plugin: use the name your agent list shows) with the lens brief(s) below, the Craft version, the changed files with the diff command, and your check-cs and phpstan result.
+2. **Start** `craft-review-checker` (`craftcms-claude-skills:craft-review-checker` when the pack is a plugin: use the name your agent list shows) with the lens brief(s) below, the Craft version, the changed files with the diff command, and your check-cs and phpstan result. Pass no `model`: the checker runs on its own (Sonnet).
 3. **Act.** Critical: fix, re-run the affected gates, start one re-check on the fix. Important: fix, or list it with the reason. Suggestions: list only.
 4. **No `Agent` tool** (nesting off or at its limit): report "Checker: not run (no Agent tool)". Never skip silently.
 

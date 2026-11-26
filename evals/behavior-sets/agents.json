@@ -64,12 +64,11 @@
     "prompt": "Use the craftcms-claude-skills:craft-feature-builder agent (that exact type) to build slice S1 of specs/2026-11-26-export-status/plan.md (R1, AC1 and AC2; both documents approved). There is no DDEV project here, so skip every ddev, Pest, check-cs and phpstan gate and say so; git works. Reply with the agent's hand-back verbatim.",
     "must_match": [
       [
-        "Checker:\\s*security(?!\\s*\\+)"
+        "Checker:?\\**:?\\s*security(?!\\s*(\\+|and\\b|&))"
       ]
     ],
     "must_not_match": [
-      "Checker:\\s*skipped",
-      "Checker:\\s*not run"
+      "Checker:?\\**:?\\s*(skipped|not run)"
     ],
     "facts": [
       {
@@ -80,7 +79,8 @@
           "Under 50 lines, anything sensitive: security lens only",
           "\\*\\*Fail first\\.\\*\\*",
           "## Reuse before writing",
-          "Response::FORMAT_CSV"
+          "Response::FORMAT_CSV",
+          "Pass no `model`"
         ]
       },
       {

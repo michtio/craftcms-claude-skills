@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.30.0 -- 2026-11-26
+
+Builders check their own work before handing back, and every agent that can start agents has a cap CI enforces.
+
+### Added
+
+- **Checker gate in `craft-feature-builder` and `craft-site-builder`** -- before handing back, a builder sizes its diff: under 50 changed lines touching nothing sensitive skips the checker; under 50 lines touching controllers, permissions, request input, migrations, `|raw`/`attr()` output, MCP or OAuth, or `config/` gets a security-only `craft-review-checker`; 50 lines or more gets security and conventions. Critical findings are fixed, gates re-run and the fix re-checked; at most 3 agents per run. When agents cannot start agents, the hand-back says the checker did not run.
+- **Fail-first tests (`craft-feature-builder`)** -- every new test runs red for the expected reason before its code, then green; the hand-back lists both.
+- **Reuse before writing (both builders)** -- before hand-writing a helper, check Craft's helpers, services and response formats (CSV via `Response::FORMAT_CSV`), `Craft::createGuzzleClient()`, `composer.lock` packages and existing components; the hand-back names anything hand-written that already existed.
+- **Builder eval case** -- `builder-checker-small-sensitive` runs the feature builder on a small controller change in a throwaway git copy of a fixture and expects one security-only checker. `release_evals.py` adds `copy_cwd`, `overlay`, `expect_agents` and a per-case `timeout`.
+
+### Changed
+
+- **Agent gate** (`bin/agent_budget.py`) -- prints each agent's cap; an agent with the `Agent` tool must declare `At most N agents per <run|review>` with N at most 5, and `craft-review-checker` must never have `Agent`. Three self-tests.
+- **`scenario_check.py`** -- stops each scenario at the routing decision (one turn instead of three), adds `--changed` to run only scenarios whose skills' listings changed since the last tag, and prints results as they arrive.
+
 ## 1.29.0 -- 2026-11-26
 
 Deep review runs as a team. `craft-code-reviewer-deep` no longer does one long `xhigh` pass: it runs PHPStan and ECS (check mode) as evidence, starts read-only checkers for the lenses the diff reaches, has every Critical and Important finding challenged once by a fresh checker, and merges one report. Small diffs, and sessions where agents cannot start agents, get a single pass.
