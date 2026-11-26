@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.27.0 -- unreleased
+## 1.27.0 -- 2026-11-26
 
 Cuts the context the pack costs before it does any work. Every SKILL.md body now fits 12 KB, agents start at 24 to 46 KB (was 41 to 121 KB), and the ten references over 30 KB open with a line-numbered Contents block so a reader loads one section instead of 30 to 70 KB. Nothing a skill teaches was dropped: moved text is verbatim, and every behaviour-eval fact still holds (`bin/check.sh`). Release evals for the changed skills: 14 behaviour cases and the smoke set pass, in 18 model calls.
 
