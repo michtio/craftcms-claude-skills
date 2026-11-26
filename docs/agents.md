@@ -74,7 +74,7 @@ department relations, salary range, and a full CP edit page.
 
 Builds production-quality plugin code following project architecture. Receives implementation plans and executes them layer by layer.
 
-Every new test runs red before its code and green after; the hand-back lists both, with the failure reason. Before hand-writing a helper it checks Craft's helpers, services and response formats (CSV via `Response::FORMAT_CSV`), `Craft::createGuzzleClient()` and the packages in `composer.lock`, and names anything it wrote that already existed. See [Checker gate](#checker-gate-builders) for the last step.
+When the project has an isolated Pest suite, the slice's gate tests are written first by `craft-gate-writer` from the acceptance criteria alone and committed as `test(gate): <slice id>`; the builder may not change them, checks the lock with git before hand-back, and stops on a gate test it believes is wrong (see [Gate tests](#craft-gate-writer)). Every test it adds itself runs red before its code and green after; the hand-back lists both, with the failure reason. Before hand-writing a helper it checks Craft's helpers, services and response formats (CSV via `Response::FORMAT_CSV`), `Craft::createGuzzleClient()` and the packages in `composer.lock`, and names anything it wrote that already existed. See [Checker gate](#checker-gate-builders) for the last step.
 
 ### The Build-Verify Gate Pattern
 
@@ -381,9 +381,24 @@ Before handing back, `craft-feature-builder` and `craft-site-builder` size their
 
 A Critical finding is fixed, gates re-run, and the fix re-checked; Important findings are fixed or listed. When agents cannot start agents (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`), the hand-back says the checker did not run.
 
+## craft-gate-writer
+
+**Model:** Sonnet (`high` effort)
+**Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill (no `Agent`)
+**Skills preloaded:** `craft-pest`
+
+Writes a slice's gate tests before the build, from the acceptance criteria alone, so the builder does not grade its own homework. Started by `craft-feature-builder`; not for direct use.
+
+1. **When.** The gate flow is used when `tests/Pest.php` exists, `phpunit.xml.dist` pins `CRAFT_DB_DATABASE`, and `CLAUDE.md` has no `Gate tests: builder-written` line. Otherwise the builder writes its own tests, red first, and the hand-back opens with `Gate flow: builder-written (<reason>)`.
+2. **Write and run red.** One test per acceptance criterion, under `tests/` only, each run red for a reason the missing feature explains (a bootstrap or syntax error does not count).
+3. **Commit.** Only the test files, as `test(gate): <slice id>`. The hand-back lists the commit, the files and each test's red reason.
+4. **Lock.** The builder never edits those files and pastes the exit codes of `git diff --quiet <gate commit> HEAD -- <gate files>` and `git diff --quiet -- <gate files>`. A gate test it disputes is reported, not changed. The reviewers flag any change to a gate file.
+
+The lock is checked with git, not hooks: plugin subagents ignore the `hooks`, `mcpServers` and `permissionMode` frontmatter fields (https://code.claude.com/docs/en/sub-agents).
+
 ### Agent caps
 
-Every agent that can start agents declares a cap, checked in CI by `bin/agent_budget.py`: at most 5 for the deep reviewer, 3 for each builder, 0 for every agent without the `Agent` tool. The cap line in the agent file reads `At most N agents per <run|review>`; a missing line or a cap above 5 fails the build.
+Every agent that can start agents declares a cap, checked in CI by `bin/agent_budget.py`: at most 5 for the deep reviewer, 4 for the feature builder (gate writer, checker, two re-checks), 3 for the site builder, 0 for every agent without the `Agent` tool. The cap line in the agent file reads `At most N agents per <run|review>`; a missing line or a cap above 5 fails the build.
 
 ---
 
