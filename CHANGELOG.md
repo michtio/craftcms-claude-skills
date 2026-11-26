@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.26.0 -- unreleased
+## 1.26.0 -- 2026-11-26
 
 Moves most quality checking off the model. Every push now runs `sh bin/check.sh`: deterministic gates that check the pack against the `craftcms/cms` 5.12.4 source, the behaviour cases' facts and a lexical routing baseline, with no model calls and no network. AI evals run only at release time, scoped to what changed. The new source checks found 14 errors in the pack (11 symbols that do not exist, 3 wrong defaults), all fixed below. This release's own evals ran through the new runner: 12 behaviour cases (those touched by the fixes) and 3 smoke trigger queries pass, in 21 model calls instead of a full run's ~300.
 
