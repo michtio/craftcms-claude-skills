@@ -1,6 +1,6 @@
 # Agents
 
-Six specialized sub-agents, each with a dedicated model, effort level, and tool scope. Agents are invoked from within Claude Code to handle specific types of work. Each preloads its core skills on every run (startup at most 48 KB, about 12K tokens, checked by `bin/agent_budget.py`) and loads the rest on demand through the Skill tool, and enforces project conventions.
+Eight specialized sub-agents, each with a dedicated model, effort level, and tool scope. Agents are invoked from within Claude Code to handle specific types of work. Each preloads its core skills on every run (startup at most 48 KB, about 12K tokens, checked by `bin/agent_budget.py`) and loads the rest on demand through the Skill tool, and enforces project conventions.
 
 Models are set with the `opus` / `sonnet` aliases, so agents follow each family to its current version instead of pinning one. Builders list both `TodoWrite` and the `Task*` tools because a background subagent keeps only `TodoWrite`, while a foreground one inherits whichever the main session has. Agents with a browser-verification step list `mcp__chrome-devtools`; it resolves only when Chrome DevTools MCP is installed (see the `ddev` skill). Plugin subagents ignore `hooks`, `mcpServers`, and `permissionMode`, so none are set. See the [subagents docs](https://code.claude.com/docs/en/sub-agents) for the frontmatter fields.
 
@@ -208,8 +208,8 @@ Systematic bug investigation with a hypothesis-driven approach.
 ### Debugging workflow
 
 1. **Reproduce** -- understand the exact steps, read error logs and queue failures
-2. **Hypothesize** -- form 2-3 possible explanations before reading code
-3. **Investigate** -- read relevant code, check `storage/logs/`, run targeted tests
+2. **Hypothesize** -- form 2-3 possible explanations before reading code, each with the one check that tells it apart (failing test, query log, stack trace, `git bisect`)
+3. **Investigate** -- run every deciding check before any fix, then read the code the surviving hypothesis points at; the report ends with a `hypothesis | check | result | kept/rejected` table
 4. **Isolate** -- write a minimal failing test that captures the bug
 5. **Fix** -- make the smallest change that fixes the issue
 6. **Verify** -- regression test red before the fix and green after, then ECS, PHPStan, and the full test suite (run from the plugin's own root)
@@ -396,9 +396,23 @@ Writes a slice's gate tests before the build, from the acceptance criteria alone
 
 The lock is checked with git, not hooks: plugin subagents ignore the `hooks`, `mcpServers` and `permissionMode` frontmatter fields (https://code.claude.com/docs/en/sub-agents).
 
-### Agent caps
+## Agent caps
 
 Every agent that can start agents declares a cap, checked in CI by `bin/agent_budget.py`: at most 5 for the deep reviewer, 4 for the feature builder (gate writer, checker, two re-checks), 3 for the site builder, 0 for every agent without the `Agent` tool. The cap line in the agent file reads `At most N agents per <run|review>`; a missing line or a cap above 5 fails the build.
+
+## Round caps
+
+Every fix or refinement loop stops after 3 rounds and hands back the open findings: the feature builder's fix attempts on one red gate, its simplification pass (one sweep plus at most two re-sweeps) and its checker re-checks; the site builder's fix loops; the debugger's fix attempts; the gate writer's attempts to make one test fail for the right reason.
+
+## Test checks in review
+
+Both reviewers treat a builder's PASS lines as claims. When the suite is isolated (`tests/Pest.php` plus `CRAFT_DB_DATABASE` pinned in `phpunit.xml.dist`) they rerun each named gate with its `--filter` and report the result; otherwise they report `claimed, not rerun`. They flag test weakening as Important: a changed or deleted file from a `test(gate):` commit, an added `->skip()`, `->todo()`, `->only()` or `markTestSkipped`, a deleted test, fewer assertions in a test, or an exact matcher (`toBe(3)`) replaced by a looser one (`toBeInt()`).
+
+## Effort
+
+Every agent ships with `effort: high`. The `effort` frontmatter field sets the effort level while the subagent is active and overrides the session effort level, but not the `CLAUDE_CODE_EFFORT_LEVEL` environment variable; options are `low`, `medium`, `high`, `xhigh` and `max` (https://code.claude.com/docs/en/sub-agents). Without it, Opus 5.5 and Sonnet 5.5 run at `medium` (https://code.claude.com/docs/en/model-config).
+
+Recommendation: keep `high` for `craft-planner` and `craft-code-reviewer-deep`, where depth is the point. `medium` is a reasonable option for the builders, the gate writer, `craft-code-reviewer`, `craft-review-checker` and `craft-debugger` when you want cheaper runs. To change it, copy the agent file into your project's `.claude/agents/`, edit `effort` and use that copy, or set `CLAUDE_CODE_SUBAGENT_EFFORT` for every subagent. The pack does not change its defaults on this: the builders cannot be measured cheaply enough to prove `medium` holds up.
 
 ---
 

@@ -88,6 +88,7 @@ must_fail "symbols self-test (craft\\services\\Mcp::getTools())" python3 bin/cra
 gate      "tables (MCP catalogue, config defaults)" python3 bin/craft_source.py tables
 must_fail "tables self-test (project_config_status at read)" python3 bin/craft_source.py tables --catalogue evals/fixtures/tables/catalogue-wrong-scope.md evals/fixtures/symbols
 gate      "facts (behaviour cases)"        python3 evals/facts_check.py
+must_fail "facts self-test (builder case with runs 2)" python3 evals/facts_check.py evals/fixtures/runs/builder-runs-2.json
 gate      "routing (lexical baseline)"     python3 evals/lexical_route.py
 must_fail "routing self-test (flooded listing)" python3 evals/lexical_route.py --self-test
 grep_ok   "release-evals self-test (stops at a usage limit, stub claude)" 'errors: 1 (1 usage limit).*model calls: 1$' \

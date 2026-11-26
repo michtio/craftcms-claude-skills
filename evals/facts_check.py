@@ -12,6 +12,10 @@ Patterns are Python regexes, matched with re.MULTILINE against the whole file.
 A case without "facts" fails: every behaviour case must pin the facts it tests,
 so an edit that drops or contradicts them fails CI before any model run.
 
+Repeated runs (spec 2026-11-26-verifier-discipline, R8): "runs" is at most 3,
+and a case that starts a builder (expect_agent or expect_agents names
+craft-feature-builder or craft-site-builder) never sets runs above 1.
+
 Usage:
     python3 evals/facts_check.py                       # every set
     python3 evals/facts_check.py evals/behavior-sets/craft-5.12.json
@@ -28,6 +32,22 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+BUILDERS = {"craft-feature-builder", "craft-site-builder"}
+MAX_RUNS = 3
+
+
+def check_runs(case: dict) -> list[str]:
+    cid = case.get("id", "?")
+    runs = case.get("runs", 1)
+    if not isinstance(runs, int) or runs < 1:
+        return [f"{cid}: runs must be a positive integer"]
+    if runs > MAX_RUNS:
+        return [f"{cid}: runs {runs} is above the maximum of {MAX_RUNS}"]
+    agents = {a.split(":")[-1] for a in ([case["expect_agent"]] if case.get("expect_agent") else [])
+              + case.get("expect_agents", [])}
+    if runs > 1 and agents & BUILDERS:
+        return [f"{cid}: runs {runs} on a builder case (builder cases run once per release)"]
+    return []
 
 
 def check_case(case: dict, root: Path) -> list[str]:
@@ -65,7 +85,7 @@ def main() -> int:
     for s in sets:
         for case in json.loads(s.read_text(encoding="utf-8")):
             cases += 1
-            errors += check_case(case, root)
+            errors += check_case(case, root) + check_runs(case)
     for e in errors:
         print(e)
     print(f"{len(errors)} fact failure(s) across {cases} case(s)")
