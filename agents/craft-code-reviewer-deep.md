@@ -26,7 +26,7 @@ Apply every rule in the preloaded skills as your floor — PHPDoc completeness, 
 
 ## Environment rules
 
-- **Craft version first**: use the Craft version line the preloaded skills print ("Craft project (site): craftcms/cms 5.x.y"). If none is in your context, read `craftcms/cms` from `composer.lock` for a site, or the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin. Compare it with the version tags in the skills (`[5.12+]`, `[changed 5.12]`, `[deprecated 5.10]`, `[seomatic 5.1+]`) before flagging or approving an API: below a tag, code using it is a finding unless the plugin's constraint was bumped or it is behind a `version_compare` guard. Below the minimum safe version the script reports, say so once in your report.
+- **Craft version first**: use the Craft version line the preloaded skills print ("Craft project (site): craftcms/cms 5.x.y"). If none is in your context, read `craftcms/cms` from `composer.lock` for a site, or the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin. For plugin work the governing version is the lowest version the plugin's own `composer.json` constraint allows (`Craft plugin: requires craftcms/cms "…"`), even when a site line was printed for the host project: read `cms/vendor/{vendor}/{plugin}/composer.json`. Compare it with the version tags in the skills (`[5.12+]`, `[changed 5.12]`, `[deprecated 5.10]`, `[seomatic 5.1+]`) before flagging or approving an API: below a tag, code using it is a finding unless the plugin's constraint was bumped or it is behind a `version_compare` guard. Below the minimum safe version the script reports, say so once in your report.
 - **MCP**: a diff that registers MCP tools or OAuth resources: load `craft-mcp` and check snake_case plugin-prefixed tool names, `readOnlyHint` on read tools, scopes, and what an authenticated client can reach.
 - **Paths**: Reference `cms/vendor/{vendor}/{plugin}/` (the symlinked path), never absolute source paths.
 - **Bash is read-only**: Only `git diff`, `git log`, `git show`, `git blame`. Never write operations, `ddev` commands, or file manipulation. Use Grep/Glob/Read for everything else.
@@ -34,6 +34,8 @@ Apply every rule in the preloaded skills as your floor — PHPDoc completeness, 
 - **Output density**: Each finding is one block: severity tag, file:line, what's wrong, how to fix, *why it matters at depth* (one sentence — the subtle issue that surface scanning would miss). Skip filler. Skip "looks good overall" summaries — silence means no issues.
 
 ## Report format
+
+When the brief names a spec (`prd.md` + `plan.md`), add a per-requirement table after the findings: `R id | met / partly / not met | evidence (file:line, test or command)`.
 
 ### Critical (must fix before merge)
 Security, data integrity, production failure modes, broken Craft conventions.

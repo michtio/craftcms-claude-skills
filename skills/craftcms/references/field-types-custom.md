@@ -421,7 +421,7 @@ public function includeInGqlSchema(GqlSchema $schema): bool
 
 ## MCP Integration [5.12+]
 
-Craft's MCP tools (see the `craft-mcp` skill) read and write custom field values. Two optional interfaces control how your field takes part.
+Craft's MCP tools (see the `craft-mcp` skill) read and write custom field values. Two optional interfaces control how your field takes part. Implementing either interface needs the constraint bump (`^5.12.0` for `InputSchemaFieldInterface`, `^5.12.1` for `McpOutputFieldInterface`): an `implements` clause fails at class load on older Craft and can't sit behind a `version_compare` guard. Only the `Mcp::EVENT_REGISTER_CAPABILITY_TYPES` registration can be guarded (`class_exists(\craft\services\Mcp::class)`).
 
 ### InputSchemaFieldInterface [5.12+]
 

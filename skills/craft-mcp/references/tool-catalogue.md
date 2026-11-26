@@ -22,7 +22,7 @@ Ask the server rather than this list when it matters: `info_get` returns the liv
 
 | Column | Meaning |
 |---|---|
-| Scope | Minimum OAuth level on HTTP: `read` (`readOnlyHint: true`), `write`, `admin` |
+| Scope | Minimum OAuth level on HTTP: `admin` for any tool with an `Admin` or `AdminChanges` gate, whatever its `readOnlyHint`; otherwise `read` (`readOnlyHint: true`) or `write` |
 | Gate | `Admin` = `#[RequiresAdmin]`; `AdminChanges` = `#[RequiresAdminChanges]` (admin and `allowAdminChanges`, so gone on production); a permission handle = `#[RequiresPermission]`; blank = any user, with record-level checks inside |
 
 ## Content Tools
@@ -76,17 +76,17 @@ Configuration types: `sections`, `entry-types`, `fields`, `volumes`, `sites`, `s
 
 | Tool | Scope | Gate | Does |
 |---|---|---|---|
-| `configuration_schema` | read | Admin | Types, operations and input schemas |
-| `configuration_list` | read | Admin | Records of one type, each with its `revision` [5.12.1+] |
-| `configuration_get` | read | Admin | One record with its `revision` [5.12.1+] |
+| `configuration_schema` | admin | Admin | Types, operations and input schemas |
+| `configuration_list` | admin | Admin | Records of one type, each with its `revision` [5.12.1+] |
+| `configuration_get` | admin | Admin | One record with its `revision` [5.12.1+] |
 | `configuration_create` | admin | AdminChanges | Create a record |
 | `configuration_update` | admin | AdminChanges | Update supplied attributes; `expectedRevision` [5.12.1+] |
 | `configuration_delete` | admin | AdminChanges | Delete with the type's content effects; `expectedRevision` [5.12.1+] |
-| `users_field_layout_get` | read | Admin | User field layout |
+| `users_field_layout_get` | admin | Admin | User field layout |
 | `users_field_layout_update` | admin | AdminChanges | Update it |
-| `addresses_field_layout_get` | read | Admin | Address field layout |
+| `addresses_field_layout_get` | admin | Admin | Address field layout |
 | `addresses_field_layout_update` | admin | AdminChanges | Update it |
-| `content_model_audit` | read | Admin | Unused fields and entry types, empty sections, duplicate field candidates, images missing alt text |
+| `content_model_audit` | admin | Admin | Unused fields and entry types, empty sections, duplicate field candidates, images missing alt text |
 
 **`expectedRevision`** [5.12.1+]: pass the `revision` you last read or wrote to `configuration_update` / `configuration_delete`. If the record changed since, nothing is changed and the call fails; read again and redo the change. Without it, newer changes can be overwritten. Writes go through project config like CP edits, so commit the resulting `config/project/` YAML.
 
@@ -94,18 +94,18 @@ Configuration types: `sections`, `entry-types`, `fields`, `volumes`, `sites`, `s
 
 | Tool | Scope | Gate | Does |
 |---|---|---|---|
-| `project_config_get` | read | Admin | A loaded or external project config value |
-| `project_config_status` | read | Admin | Pending YAML changes and write issues |
-| `project_config_diff` | read | Admin | Diff of pending YAML changes (sensitive values redacted) |
+| `project_config_get` | admin | Admin | A loaded or external project config value |
+| `project_config_status` | admin | Admin | Pending YAML changes and write issues |
+| `project_config_diff` | admin | Admin | Diff of pending YAML changes (sensitive values redacted) |
 | `project_config_apply` | admin | AdminChanges | Apply YAML to the database |
 | `project_config_write` | admin | AdminChanges | Write loaded config to YAML, overwriting files |
 | `project_config_rebuild` | admin | Admin | Rebuild from the database (not gated on `allowAdminChanges`) |
-| `plugins_list` | read | Admin | Plugins, versions, license and update status |
+| `plugins_list` | admin | Admin | Plugins, versions, license and update status |
 | `plugins_install` | admin | AdminChanges | Install a Composer-installed plugin |
 | `plugins_enable` | admin | AdminChanges | Enable a plugin |
 | `plugins_disable` | admin | AdminChanges | Disable a plugin |
 | `plugins_uninstall` | admin | AdminChanges | Uninstall, removing its data |
-| `system_status_get` | read | Admin | Whether the system is live |
+| `system_status_get` | admin | Admin | Whether the system is live |
 | `system_status_enable` | admin | AdminChanges | Turn the system on |
 | `system_status_disable` | admin | AdminChanges | Turn it off |
 | `caches_list` | read | `utility:clear-caches` | Clearable caches |

@@ -26,7 +26,7 @@ Sources: [`src/controllers/McpController.php`](https://github.com/craftcms/cms/b
    # --scope project writes .mcp.json for the team; the default (local) is just you
    ```
 
-5. **Authorize**: in Claude Code run `/mcp`, pick the server, authenticate. The browser opens Craft's login (2FA applies), then the consent screen; pick Read only, Read and write, or Full access (admins). Claude Code receives the code on its `http://localhost` loopback redirect, which the default `redirectDomains` allows. `claude mcp login my-site` does the same from the shell.
+5. **Authorize**: in Claude Code run `/mcp`, pick the server, authenticate. The browser opens Craft's login (2FA applies), then the consent screen; pick Read only, Read and write, or Full access (admins). Claude Code receives the code on its `http://localhost` loopback redirect, which the default `redirectDomains` allows.
 
 The user needs "Access the control panel" for the default CP endpoint. Tools appear per that user's permissions and the chosen level (`tool-catalogue.md`).
 
@@ -40,7 +40,7 @@ DDEV serves HTTPS with a mkcert CA that `mkcert -install` puts in the OS trust s
 export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
 ```
 
-Claude Code applies its CA settings to MCP sign-in requests (network-config docs). For `claude mcp login`, set the variable in the shell or `~/.claude/settings.json`, not project settings.
+Claude Code applies its CA settings to MCP sign-in requests (network-config docs). For MCP sign-in, set the variable in the shell or `~/.claude/settings.json`, not project settings.
 
 ## stdio via ddev craft mcp/serve
 

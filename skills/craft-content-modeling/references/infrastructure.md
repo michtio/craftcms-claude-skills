@@ -100,7 +100,7 @@ plugins, permissions) are stored as YAML in `config/project/`.
 4. Deploy to staging/production
 5. Run `ddev craft up` (applies migrations + project config)
 
-[5.12+] `craft project-config/check` verifies that the YAML's Craft and plugin schema versions match the installed code without applying anything, and exits non-zero when they don't. Run it before `craft up` in a deploy to fail fast on YAML written by a newer Craft (5.12 YAML fails it on a 5.11 box). It needs database access; `--require-yaml=0` exits 0 when there's no `project.yaml`. Details: the `craftcms` skill's `deployment.md`.
+[5.12+] `craft project-config/check` verifies that the YAML's Craft and plugin schema versions match the installed code without applying anything, and exits non-zero when they don't. Run it before `craft up` in a deploy to fail fast when the YAML needs a newer Craft or plugin schema than the release ships (for example `composer.lock` and `config/project/` out of sync). The command only exists on 5.12+, so add the step after the upgrade has shipped. It needs database access; `--require-yaml=0` exits 0 when there's no `project.yaml`. Details: the `craftcms` skill's `deployment.md`.
 
 ### Rules
 

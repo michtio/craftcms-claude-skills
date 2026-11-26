@@ -19,7 +19,7 @@
 - [ ] [5.12.3+] **Target 5.12.4, not 5.12.0.** 5.12.3 is the pack's minimum safe version (5.12.1 to 5.12.3 fix the web-installer advisory GHSA-pcf5-h66c-9wxw, an RCE, an SSRF and several authorization bypasses). A project below it gets a warning from the skills' version check.
 - [ ] [5.12+] PHP stays `^8.2`; no hosting bump. `mcp/sdk` needs `ext-fileinfo`, which Craft itself doesn't require: check CI images and minimal hosts. `deployment.md` → "Composer Notes for 5.12".
 - [ ] [5.12+] New dependency `league/oauth2-server` ^9 brings `lcobucci/jwt` ^5. A project or plugin pinning `lcobucci/jwt` ^4 will likely conflict.
-- [ ] [5.12+] `php-http/discovery` (a Composer plugin, via `mcp/sdk`) is optional, so Composer silently skips it when `config.allow-plugins` doesn't list it. No prompt, no CI failure. Adding `"php-http/discovery": true` only makes the choice explicit. `deployment.md` → "Composer Notes for 5.12".
+- [ ] [5.12+] `php-http/discovery` (a Composer plugin, via `mcp/sdk`) is optional: when `config.allow-plugins` doesn't list it, non-interactive runs skip it silently (no CI failure), and an interactive `ddev composer update` asks once and writes the answer to `composer.json` (commit it). Adding `"php-http/discovery": true` up front avoids the prompt. `deployment.md` → "Composer Notes for 5.12".
 
 ## Run the upgrade locally
 
@@ -46,7 +46,7 @@
 - [ ] [changed 5.12] Saving a nested entry on its own bumps its owners' `dateUpdated`, which moves "recently updated" listings, feeds and sitemap `lastmod`. `drafts-revisions.md` → "`createRevision()` skips silently when `dateUpdated` didn't move".
 - [ ] [changed 5.12] Addresses support drafts; raw SQL on `addresses` must exclude draft rows. `drafts-revisions.md` → Common Pitfalls.
 - [ ] [changed 5.12] Default `allowedFileExtensions` gains `jxl`, `md` and `markdown`. A project overriding the setting doesn't get them. `config-general.md`.
-- [ ] [changed 5.12] DB config arrays now parse DSNs, so a MySQL `charset => 'utf8'` connects as `utf8mb4` (craftcms/cms#20248).
+- [ ] [changed 5.12] a DSN set inside a database config array is now parsed, so a MySQL `charset=utf8` in it is normalised to `utf8mb4` (craftcms/cms#20248).
 - [ ] [changed 5.12] CP navigation: Assets settings moved to the Settings page's "Content" section, the "Media" section is gone, and filesystems live at **Settings → Assets → Filesystems** (the old `settings/filesystems` URLs still resolve). Update internal docs and runbooks.
 
 ## Silent behaviour changes: plugin and module code
@@ -72,6 +72,6 @@
 
 ## Deploy
 
-- [ ] [5.12+] Add `php craft project-config/check` before `craft up`: it fails fast when YAML written on 5.12 reaches a box still running 5.11. `deployment.md` → "Project Config Commands".
+- [ ] [5.12+] Add `php craft project-config/check` before `craft up`: it fails fast when the YAML needs a newer Craft or plugin schema than the release ships (`composer.lock` and `config/project/` out of sync). The command doesn't exist on 5.11, so add the step once 5.12 is deployed. `deployment.md` → "Project Config Commands".
 - [ ] [changed 5.12.1] New environments install with `php craft install --interactive=0 …`; the web installer only runs in Dev Mode. `deployment.md` → "First Install on a New Environment".
 - [ ] [changed 5.12.2] CP updates (built-in `composer.phar` 2.11.2) no longer fall back to cloning a package's source when its zip download fails. Private packages need a working dist. `deployment.md` → "Composer Notes for 5.12".

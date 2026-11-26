@@ -82,7 +82,7 @@ class OrderTools
         description: 'Lists the signed-in user’s most recent orders.',
         annotations: new ToolAnnotations(readOnlyHint: true),
     )]
-    #[RequiresPermission('my-plugin-view-orders')]
+    #[RequiresPermission('my-plugin:view-orders')]
     public function list(#[Schema(minimum: 1)] int $limit = 20): array
     {
         $user = Craft::$app->getUser()->getIdentity();
@@ -136,7 +136,7 @@ use craft\services\Mcp;
 
 Event::on(Mcp::class, Mcp::EVENT_DISCOVERING_CAPABILITY, function(DiscoveringCapability $event) {
     // $event->reference (Mcp\Capability\Registry\ElementReference), $event->user (?User)
-    if ($event->user && !$event->user->can('my-plugin-use-ai')) {
+    if ($event->user && !$event->user->can('my-plugin:use-ai')) {
         $event->allowed = false;
     }
 });
@@ -146,7 +146,7 @@ It fires for each capability that passed Craft's own checks on the authenticated
 
 ## Custom Field Types
 
-Both interfaces extend `craft\base\FieldInterface`.
+Both interfaces extend `craft\base\FieldInterface`. Implementing either interface needs the constraint bump (`^5.12.0` for `InputSchemaFieldInterface`, `^5.12.1` for `McpOutputFieldInterface`): an `implements` clause fails at class load on older Craft and can't sit behind a `version_compare` guard. Only the `Mcp::EVENT_REGISTER_CAPABILITY_TYPES` registration can be guarded (`class_exists(\craft\services\Mcp::class)`).
 
 | Interface | Method | Since | Without it |
 |---|---|---|---|
@@ -193,7 +193,7 @@ Event::on(OAuth::class, OAuth::EVENT_REGISTER_RESOURCES, function(RegisterOAuthR
         ],
         'defaultScopes' => ['my-plugin:read'],
         'scopeLevels' => ['my-plugin:read', 'my-plugin:write'],
-        'permissions' => ['my-plugin-view-orders'],
+        'permissions' => ['my-plugin:view-orders'],
         'resourceUrl' => fn() => UrlHelper::siteUrl('api/my-plugin'),
         'consentDescription' => 'It will be able to use My Plugin’s API on your behalf.',
     ];
@@ -241,7 +241,7 @@ Craft::$app->getPersonalAccessTokens()->registerScopeGroup('my-plugin', fn() => 
     handle: 'my-plugin',
     label: 'My Plugin',
     scopes: ['my-plugin:read' => 'View your orders.'],
-    userScopes: fn(\craft\elements\User $user, array $scopes) => $user->can('my-plugin-view-orders') ? $scopes : [],
+    userScopes: fn(\craft\elements\User $user, array $scopes) => $user->can('my-plugin:view-orders') ? $scopes : [],
 ));
 ```
 

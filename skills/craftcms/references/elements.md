@@ -17,11 +17,11 @@
 - URI/Routing
 - Searchable Attributes
 - Propagation — getSupportedSites, Assets in Custom volumes [5.12+] (`new Asset()` siteId, asset lookups)
-- Nested Element Queries — empty-array params [changed 5.12], mustHaveField/mustHaveOwner [5.12+], owner() arrays [5.12.2+]
+- Nested Element Queries: empty-array params [changed 5.12], mustHaveField/mustHaveOwner [5.12+], owner() arrays [5.12.2+]
 - CP Edit Pages — getCpEditUrl, elements/edit route, asCpScreen, slide-outs, extending User edit screens
 - Preview Targets — previewTargets, EVENT_REGISTER_PREVIEW_TARGETS
 - Generated Fields [5.8+] — computed values saved on elements
-- Rendering Elements [5.12+] — Template::render(), Renderable, renderElements() deprecation
+- Rendering Elements [5.12+]: Template::render(), Renderable, renderElements() deprecation
 - Eager Loading — eagerLoadingMap
 - Soft Delete and Garbage Collection — Gc::EVENT_RUN, delete-for-site soft deletes [changed 5.12]
 - Element Events Reference — ~40 events

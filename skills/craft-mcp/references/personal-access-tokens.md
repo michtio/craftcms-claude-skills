@@ -47,7 +47,7 @@ To connect an MCP client: complete the OAuth flow (`client-setup.md`), or run th
 
 | Detail | Value |
 |---|---|
-| Scopes | `graphql:read` (queries), `graphql:write` (mutations); requires `enableGql` |
+| Scopes | `graphql:read` (queries), `graphql:write` (mutations, and queries too); requires `enableGql` |
 | Header | `Authorization: Bearer <token>` |
 | Runs as | The token's user: an "Authenticated Schema" built from their permissions, with `currentUser` available |
 | Field layout conditions | Respected [5.12.1+]: fields hidden for the user are left out of the schema (or resolve to `null` for element-specific conditions) |

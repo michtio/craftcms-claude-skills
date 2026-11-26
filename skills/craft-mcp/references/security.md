@@ -20,7 +20,7 @@ An MCP client is an automated agent acting with a real user's authority; prompt-
 2. Recommend Read only or Read and write for day-to-day clients; Full access only when needed.
 3. For stdio, use a dedicated least-privileged user, not an admin.
 4. Restrict `redirectDomains` in `config/oauth.php` to the clients you expect, keeping `http://localhost` (and `http://127.0.0.1` if a client uses it) for desktop clients. The default `['*']` lets any registered client redirect anywhere; PKCE and the consent screen (which shows the redirect host) mitigate but don't remove phishing risk.
-5. Rate-limit the authenticated endpoint with `config/mcp.php` `filters` (`servers-and-access.md`). The public endpoint has no Craft-level limit or filter hook: throttle it at the web server, CDN or WAF.
+5. Rate-limit the authenticated endpoint with `config/mcp.php` `filters` and an explicit limit (`servers-and-access.md`); the 10-per-minute default would throttle a normal client. The public endpoint has no Craft-level limit or filter hook: throttle it at the web server, CDN or WAF.
 6. Behind proxies, set `trustedHosts` and `ipHeaders` so rate limits count per client.
 7. Keep signing keys in env vars or files outside the web root and git, with a separate pair per environment. Keep `securityKey` stable and secret.
 8. Only enable the public server when you've decided exactly which content is public; empty approvals expose nothing.

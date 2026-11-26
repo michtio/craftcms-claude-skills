@@ -6,9 +6,10 @@ Use it to answer "what can this project use?" against the version reported under
 
 | Version | Feature | Before that version | Covered in |
 |---|---|---|---|
+| `5.0+` | With Criteria |  | `craft-content-modeling/references/relations-and-eager-loading.md` |
 | `5.1+` | Extending User Edit Screens |  | `craftcms/references/elements.md` |
+| `5.1+` | `Authorization` |  | `craftcms/references/graphql.md` |
 | `5.1+` | `Request::getBearerToken()` |  | `craft-site/references/headless.md` |
-| `5.1+` | `Request::getBearerToken()` |  | `craftcms/references/graphql.md` |
 | `5.1+` | `asyncCsrfInputs` |  | `craft-cloud/SKILL.md` |
 | `5.1+` | `asyncCsrfInputs` |  | `craft-cloud/references/caching-and-edge.md` |
 | `5.1+` | `asyncCsrfInputs` |  | `craft-cloud/references/limitations.md` |
@@ -59,11 +60,12 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.5+` | Single Option (Dropdown / Radio Buttons / Button Group) |  | `craft-content-modeling/references/field-types.md` |
 | `5.5+` | `$PRIMARY_SITE_URL/uploads` |  | `craft-content-modeling/references/infrastructure.md` |
 | `5.5+` | `$PRIMARY_SITE_URL/uploads` |  | `craft-fortrabbit/references/asset-storage.md` |
-| `5.5+` | `$VAR/subpath` |  | `craft-php-guidelines/SKILL.md` |
+| `5.5+` | `$VAR/subpath` | prefix `UrlHelper::baseSiteUrl()` yourself, or `UrlHelper::siteUrl()` for site paths. | `craft-php-guidelines/SKILL.md` |
 | `5.5+` | `--patch-only` |  | `craftcms/references/console-commands.md` |
 | `5.5+` | `--with-fields` |  | `craft-plugins/references/ckeditor.md` |
 | `5.5+` | `EVENT_REGISTER_CARD_ATTRIBUTES` |  | `craftcms/references/elements.md` |
 | `5.5+` | `EVENT_REGISTER_DEFAULT_CARD_ATTRIBUTES` |  | `craftcms/references/elements.md` |
+| `5.5+` | `NestedElementQueryTrait` | an empty array meant "no filter" and returned every nested element. `Entry::find()->ownerId($ids)` with an empty `$ids` is the classic case; guard it with an early `return []`. | `craftcms/references/elements.md` |
 | `5.5+` | `RegisterElementCardAttributesEvent` |  | `craftcms/references/element-index.md` |
 | `5.5+` | `RegisterElementDefaultCardAttributesEvent` |  | `craftcms/references/element-index.md` |
 | `5.5+` | `craft resave/all` |  | `craftcms/references/console-commands.md` |
@@ -83,13 +85,13 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.6+` | HTML email template |  | `craftcms/references/email.md` |
 | `5.6+` | Important notes |  | `craftcms/references/config-app.md` |
 | `5.6+` | Per-site email overrides |  | `craftcms/references/email.md` |
-| `5.6+` | `ColorData\|null` |  | `craft-content-modeling/references/field-types.md` |
 | `5.6+` | `Cp::readOnlyNoticeHtml()` |  | `craftcms/references/cp.md` |
 | `5.6+` | `LinkData\|null` |  | `craft-content-modeling/references/field-types.md` |
 | `5.6+` | `User::getImpersonator()` |  | `craftcms/references/sessions-and-auth.md` |
 | `5.6+` | `affiliatedSiteId` |  | `craft-content-modeling/SKILL.md` |
 | `5.6+` | `body` |  | `craftcms/references/config-app.md` |
 | `5.6+` | `craft utils/delete-empty-volume-folders` |  | `craftcms/references/console-commands.md` |
+| `5.6+` | `craft\fields\data\ColorData` |  | `craft-content-modeling/references/field-types.md` |
 | `5.6+` | `cta` | this candidate wasn't checked first (5.10.4 to 5.10.13 respected the override without prioritizing it; earlier releases ignored it), so a `cta` type renamed to `richTextCta` inside a CKEditor field could still render `_partials/entry/cta.twig` (craftcms/cms#18968). | `craft-site/references/element-partials.md` |
 | `5.6+` | `false` |  | `craftcms/references/config-general.md` |
 | `5.6+` | `fromEmail` |  | `craftcms/references/email.md` |
@@ -122,8 +124,9 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.8+` | Entry Types in Matrix |  | `craft-content-modeling/references/field-types.md` |
 | `5.8+` | Generated Fields |  | `craftcms/references/elements.md` |
 | `5.8+` | How they work |  | `craftcms/references/elements.md` |
-| `5.8+` | `.with()` | filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`\|slice(0, 3)`). After 5.12: all three are applied to `.eagerly()` (#19994). When supporting both, keep the `.with()` or `\|slice` form. | `craft-content-modeling/references/relations-and-eager-loading.md` |
+| `5.8+` | `.with()` | filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`\|slice(0, 3)`). After 5.12: all three are applied to `.eagerly()` (#19994), with the same rules as a `.with()` hash: `limit`/`offset` per source element, `orderBy` only when `Db::isSafeOrderBy()` [5.12+] accepts it (see "With Criteria"). Upgrading changes listing output: a loop that used to print every related element now prints the limited set, and a template that "worked" because the limit was ignored needs checking. When supporting both, keep the `.with()` or `\|slice` form. | `craft-content-modeling/references/relations-and-eager-loading.md` |
 | `5.8+` | `Craft.Listbox` |  | `craftcms/references/cp.md` |
+| `5.8+` | `ElementHelper::isMultiSite()` |  | `craftcms/references/elements.md` |
 | `5.8+` | `Field::RESERVED_HANDLES` |  | `craft-content-modeling/SKILL.md` |
 | `5.8+` | `authors` |  | `craft-content-modeling/references/relations-and-eager-loading.md` |
 | `5.8+` | `buttonGroupField` |  | `craftcms/references/cp-ui-patterns.md` |
@@ -133,6 +136,7 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.8+` | `entry.author.eagerly()` |  | `craft-site/references/element-partials.md` |
 | `5.8+` | `forms.buttonGroupField` |  | `craftcms/references/cp.md` |
 | `5.8+` | `forms.buttonGroup` |  | `craftcms/references/cp.md` |
+| `5.8+` | `fullGraphqlData` | only `name` and `styles`. | `craftcms/references/graphql.md` |
 | `5.8+` | `group` |  | `craft-content-modeling/SKILL.md` |
 | `5.8+` | `moderateUsers` |  | `craftcms/references/permissions.md` |
 | `5.8+` | `render()` |  | `craft-site/references/element-partials.md` |
@@ -144,7 +148,7 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.9+` | CLI Commands | pass the handle explicitly. | `craft-content-modeling/SKILL.md` |
 | `5.9+` | View Modes |  | `craft-content-modeling/references/field-types.md` |
 | `5.9+` | Where it lives |  | `craft-content-modeling/references/element-index-sources.md` |
-| `5.9+` | `${VAR}` |  | `craft-php-guidelines/SKILL.md` |
+| `5.9+` | `${VAR}` | prefix `UrlHelper::baseSiteUrl()` yourself, or `UrlHelper::siteUrl()` for site paths. | `craft-php-guidelines/SKILL.md` |
 | `5.9+` | `'cards-grid'` |  | `craft-content-modeling/references/field-types.md` |
 | `5.9+` | `Application::init()` |  | `craftcms/references/controllers.md` |
 | `5.9+` | `Assets::resolveSubpath()` |  | `craft-content-modeling/references/object-templates.md` |
@@ -207,7 +211,7 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.11+` | Additions |  | `craftcms/references/graphql.md` |
 | `5.11+` | `.well-known/change-password` |  | `craftcms/references/config-general.md` |
 | `5.11+` | `Craft::$app->getConfig()->doesEnvVarExist('NAME')` |  | `craft-php-guidelines/SKILL.md` |
-| `5.11+` | `Gql::canQueryAllUsers()` |  | `craft-site/references/headless.md` |
+| `5.11+` | `Gql::canQueryAllUsers()` | always a 6-digit hex string. | `craft-site/references/headless.md` |
 | `5.11+` | `Gql::canQueryAllUsers()` |  | `craftcms/references/graphql.md` |
 | `5.11+` | `Matrix::normalizeValue()` |  | `craftcms/references/elements.md` |
 | `5.11+` | `craft\web\DbSession` |  | `craftcms/SKILL.md` |
@@ -218,12 +222,12 @@ Use it to answer "what can this project use?" against the version reported under
 | `5.11+` | `uploader` |  | `craftcms/references/graphql.md` |
 | `5.11+` | `url()` with `false` Params |  | `craft-twig-guidelines/SKILL.md` |
 | `5.11+` | `yii\web\DbSession` | `yii\web\DbSession` is the only option. Either way the `phpsessions` table is not created on install: run `craft setup/php-session-table` first. | `craftcms/references/config-app.md` |
-| `changed 5.11` | `${VAR}` |  | `craft-php-guidelines/SKILL.md` |
+| `changed 5.11` | `${VAR}` | prefix `UrlHelper::baseSiteUrl()` yourself, or `UrlHelper::siteUrl()` for site paths. | `craft-php-guidelines/SKILL.md` |
 | `changed 5.11` | `LinkData` |  | `craft-plugins/references/element-api.md` |
 | `changed 5.11` | `\|json_encode` |  | `craft-content-modeling/references/field-types.md` |
 | `changed 5.11` | `altTranslationMethod` |  | `craft-content-modeling/references/infrastructure.md` |
-| `changed 5.11` | `author` |  | `craft-site/references/headless.md` |
-| `changed 5.11` | `uploader` |  | `craft-site/references/headless.md` |
+| `changed 5.11` | `author` | authenticated requests ignored layout conditions. | `craft-site/references/headless.md` |
+| `changed 5.11` | `uploader` | always a 6-digit hex string. | `craft-site/references/headless.md` |
 | `changed 5.11` | `uploader` |  | `craftcms/SKILL.md` |
 | `changed 5.11` | `usergroups.everyone` |  | `craftcms/references/graphql.md` |
 | `changed 5.11.0` | `enableGraphqlCaching => false` |  | `craftcms/references/graphql.md` |
@@ -241,9 +245,351 @@ Use it to answer "what can this project use?" against the version reported under
 | `changed 5.11.4` | `create()` |  | `craftcms/references/email.md` |
 | `changed 5.11.4` | `ddev craft setup/db-cache-table` |  | `craftcms/references/config-app.md` |
 | `changed 5.11.4` | `include` |  | `craft-content-modeling/references/object-templates.md` |
-| `changed 5.11.5` | `canSaveElement()` |  | `craftcms/references/elements.md` |
+| `changed 5.11.5` | With Criteria |  | `craft-content-modeling/references/relations-and-eager-loading.md` |
+| `changed 5.11.5` | `canSaveElement()` | hard delete, and on single-site installs the method removed site rows without deleting the element. [changed 5.12.1] The CP action and the "Delete for site" element action refuse an element's only site altogether ("Elements can't be deleted for the only site they exist in."), so the soft delete is reached from code (`deleteElementForSite()`, `utils/prune-orphaned-entries`). | `craftcms/references/elements.md` |
 | `changed 5.11.5` | `setup/db-cache-table` |  | `craftcms/references/config-app.md` |
-| `5.11.5.1+` | `Addresses::canSaveElement()` |  | `craftcms/references/elements.md` |
-| `changed 5.11.5.1` | `hasDrafts()` |  | `craftcms/references/elements.md` |
-| `changed 5.12` | `.eagerly()` | filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`\|slice(0, 3)`). After 5.12: all three are applied to `.eagerly()` (#19994). When supporting both, keep the `.with()` or `\|slice` form. | `craft-content-modeling/references/relations-and-eager-loading.md` |
+| `5.11.5.1+` | `Addresses::canSaveElement()` | hard delete, and on single-site installs the method removed site rows without deleting the element. [changed 5.12.1] The CP action and the "Delete for site" element action refuse an element's only site altogether ("Elements can't be deleted for the only site they exist in."), so the soft delete is reached from code (`deleteElementForSite()`, `utils/prune-orphaned-entries`). | `craftcms/references/elements.md` |
+| `changed 5.11.5.1` | `hasDrafts()` | hard delete, and on single-site installs the method removed site rows without deleting the element. [changed 5.12.1] The CP action and the "Delete for site" element action refuse an element's only site altogether ("Elements can't be deleted for the only site they exist in."), so the soft delete is reached from code (`deleteElementForSite()`, `utils/prune-orphaned-entries`). | `craftcms/references/elements.md` |
+| `5.12+` | Asset Propagation (Volumes) | every asset existed in every site and there was nothing to choose. | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | Assets in Custom volumes |  | `craftcms/references/elements.md` |
+| `5.12+` | Authenticated Requests (OAuth and PATs) | none of this exists; every request runs under a schema token or the public schema. | `craftcms/references/graphql.md` |
+| `5.12+` | Authentication table | only schema tokens, the public schema and the admin session header exist. | `craftcms/references/graphql.md` |
+| `5.12+` | Case Filters Follow the Site Language | the filters take no argument, so templates shared with older sites | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | Client Setup Recipes |  | `craft-mcp/references/client-setup.md` |
+| `5.12+` | Color |  | `craftcms/references/graphql.md` |
+| `5.12+` | Common Pitfalls |  | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | Common Pitfalls |  | `craft-site/references/headless.md` |
+| `5.12+` | Common Pitfalls |  | `craftcms/references/graphql.md` |
+| `5.12+` | Contents |  | `craftcms/references/elements.md` |
+| `5.12+` | Contents |  | `craftcms/references/events.md` |
+| `5.12+` | Craft's Own MCP Server | nothing to connect to; upgrade first). | `ddev/SKILL.md` |
+| `5.12+` | Creating volumes in a content migration | there was no such setting and every asset existed in every site. Why it matters: the `craft-content-modeling` skill's `infrastructure.md` → "Asset Propagation (Volumes)". | `craftcms/references/migrations.md` |
+| `5.12+` | Extending MCP and OAuth from a Plugin or Module |  | `craft-mcp/references/plugin-extension.md` |
+| `5.12+` | Icon |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | Icon | only `name` and `styles`. | `craftcms/references/graphql.md` |
+| `5.12+` | Icon Sets (`craft\services\Icons`) |  | `craftcms/references/events.md` |
+| `5.12+` | Important notes |  | `craftcms/references/graphql.md` |
+| `5.12+` | Include Isolation | the tag doesn't exist and fails the whole template at compile time, | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | InputSchemaFieldInterface |  | `craftcms/references/field-types-custom.md` |
+| `5.12+` | Keys as environment variables |  | `craft-mcp/references/oauth-server.md` |
+| `5.12+` | MCP Integration |  | `craftcms/references/field-types-custom.md` |
+| `5.12+` | MCP Needs Craft 5.12 | upgrade first (`ddev composer require craftcms/cms:^5.12.4 -W`, then `ddev craft up`, commit `composer.lock` and `config/project/`; checklist: the `craftcms` skill's `upgrade-5.12.md`). Target 5.12.4 or later, not 5.12.0: 5.12.1 renamed every tool to snake_case and 5.12.1 through 5.12.3 fixed several security issues (see `references/security.md`). [5.12+] | `craft-mcp/SKILL.md` |
+| `5.12+` | MCP Servers and Access |  | `craft-mcp/references/servers-and-access.md` |
+| `5.12+` | MCP Tool Catalogue (Craft 5.12.4) |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12+` | MCP and OAuth |  | `craftcms/references/console-commands.md` |
+| `5.12+` | MCP and OAuth Security |  | `craft-mcp/references/security.md` |
+| `5.12+` | Modeling Decisions |  | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | OAuth Authorization Server |  | `craft-mcp/references/oauth-server.md` |
+| `5.12+` | OAuth signing keys |  | `servd/references/limitations.md` |
+| `5.12+` | OAuth signing keys for MCP and OAuth GraphQL |  | `craft-cloud/references/extension.md` |
+| `5.12+` | Personal Access Tokens |  | `craft-mcp/references/personal-access-tokens.md` |
+| `5.12+` | Production Hardening |  | `craft-mcp/references/security.md` |
+| `5.12+` | Propagation Methods (Multi-Site) | the Status pane's per-site toggles. \| | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | Quick Recipe: Claude Code on a Local DDEV Site |  | `craft-mcp/SKILL.md` |
+| `5.12+` | Rate Limiting | no request rate limit, only `maxInvalidLogins` lockout. | `craftcms/references/sessions-and-auth.md` |
+| `5.12+` | Rendering Elements |  | `craftcms/references/elements.md` |
+| `5.12+` | Run the upgrade locally |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | Security Fixes in 5.12.x |  | `craft-mcp/references/security.md` |
+| `5.12+` | Security Recommendations |  | `craft-site/references/headless.md` |
+| `5.12+` | Settings Queries | hardcode handles, or read them through `sectionHandle`/`typeHandle` on elements. | `craftcms/references/graphql.md` |
+| `5.12+` | Settings Queries for Site-Aware Front Ends |  | `craft-site/references/headless.md` |
+| `5.12+` | Signed-In Members over OAuth |  | `craft-site/references/headless.md` |
+| `5.12+` | Syntax Highlighting and Uploaders |  | `craft-garnish/references/integration.md` |
+| `5.12+` | Table of Contents |  | `craft-garnish/references/integration.md` |
+| `5.12+` | The Three Servers at a Glance |  | `craft-mcp/SKILL.md` |
+| `5.12+` | The `authenticated` key | the key doesn't exist and is ignored; components only reach schema tokens. Rules (docblock on `Gql::EVENT_REGISTER_GQL_SCHEMA_COMPONENTS`, https://github.com/craftcms/cms/blob/5.12.4/src/services/Gql.php): | `craftcms/references/graphql.md` |
+| `5.12+` | The `{% render %}` Tag | use `{{ entry.render({...}) }}` or `{{ entry.myMatrix.eagerly().render() }}`. | `craft-site/references/element-partials.md` |
+| `5.12+` | Token Types | only schema tokens, the public schema, preview tokens and the admin header exist. | `craft-site/references/headless.md` |
+| `5.12+` | Tokens: Lifetimes, Rotation, Revocation |  | `craft-mcp/references/oauth-server.md` |
+| `5.12+` | Twig 3.29 to 3.31 |  | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | Upgrade Checklist: Craft 5.11 → 5.12.4 |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | Volume Settings for Content Modeling |  | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | `#[RequiresHttp]` |  | `craft-mcp/references/servers-and-access.md` |
+| `5.12+` | `('en')` | locale-neutral output everywhere. Pass `('en')` [5.12+] for codes and identifiers; see `craft-twig-guidelines` (Case Filters Follow the Site Language). | `craft-site/references/multi-site-patterns.md` |
+| `5.12+` | `--brand: {{ entry.brand.getHex(false) }}` | `--brand: {{ entry.brand.getHex(false) }}` with | `craft-site/references/tailwind-conventions.md` |
+| `5.12+` | `<picture>` |  | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | `Asset::canDeleteForSite()` |  | `craftcms/references/element-authorization.md` |
+| `5.12+` | `Authorization: Bearer <jwt>` |  | `craft-site/references/headless.md` |
+| `5.12+` | `Authorization: Bearer <jwt>` |  | `craftcms/references/graphql.md` |
+| `5.12+` | `Authorization` | no such step. | `craft-site/references/headless.md` |
+| `5.12+` | `CRAFT_CUSTOM_ICON_PATH` |  | `craftcms/references/config-general.md` |
+| `5.12+` | `CRAFT_DEFAULT_RATE_LIMIT_DURATION` |  | `craftcms/references/config-general.md` |
+| `5.12+` | `CRAFT_DEFAULT_RATE_LIMIT` |  | `craftcms/references/config-general.md` |
+| `5.12+` | `CRAFT_MCP_` |  | `craftcms/references/config-bootstrap.md` |
+| `5.12+` | `CRAFT_OAUTH_PRIVATE_KEY` |  | `craft-fortrabbit/SKILL.md` |
+| `5.12+` | `CRAFT_OAUTH_PRIVATE_KEY` |  | `craft-fortrabbit/references/deploy-and-environments.md` |
+| `5.12+` | `CRAFT_OAUTH_PRIVATE_KEY` |  | `craftcms/references/config-bootstrap.md` |
+| `5.12+` | `ColorData` | always a hex string. See the `craftcms` skill's `graphql.md` (Field Type GraphQL Modes). | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `Craft.BaseUploader` |  | `craft-garnish/references/integration.md` |
+| `5.12+` | `Db::isSafeOrderBy()` |  | `craft-content-modeling/references/relations-and-eager-loading.md` |
+| `5.12+` | `Db::isSafeOrderBy()` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `Element::showSitesField()` |  | `craftcms/references/cp-ui-patterns.md` |
+| `5.12+` | `HighlightAsset` | real Prism. See `integration.md` (Syntax Highlighting and Uploaders). | `craft-garnish/SKILL.md` |
+| `5.12+` | `HighlightAsset` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `Invalid Authorization header` |  | `craftcms/references/graphql.md` |
+| `5.12+` | `McpOutputFieldInterface` |  | `craft-mcp/SKILL.md` |
+| `5.12+` | `McpOutputFieldInterface` |  | `craft-mcp/references/plugin-extension.md` |
+| `5.12+` | `NestedElementTrait::$touchOwnersOnSave` | the owner's `dateUpdated` didn't move and its next revision could reuse stale nested content (craftcms/cms#19594). The bump is a raw `Db::update()` (no owner save events, no search reindex); set `$nested->touchOwnersOnSave = false` on bulk scripts that must not move owners' timestamps. | `craftcms/references/drafts-revisions.md` |
+| `5.12+` | `Template::render()` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `X-Craft-Authorization` |  | `craft-site/references/headless.md` |
+| `5.12+` | `X-Craft-Authorization` |  | `craftcms/references/graphql.md` |
+| `5.12+` | `^8.2` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `all` | every volume behaved this way. \| | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | `allow-plugins` |  | `craft-project-setup/SKILL.md` |
+| `5.12+` | `allowCustomAlpha` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `alpha` | always a hex string. See the `craftcms` skill's `graphql.md` (Field Type GraphQL Modes). | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `authenticated` |  | `craft-mcp/references/plugin-extension.md` |
+| `5.12+` | `authenticated` |  | `craftcms/references/graphql.md` |
+| `5.12+` | `author { fullName }` |  | `craftcms/references/graphql.md` |
+| `5.12+` | `config/oauth.php` |  | `craft-mcp/references/oauth-server.md` |
+| `5.12+` | `config/project/` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `configuration_*` |  | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | `craft mcp/serve` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `craft oauth/generate-keys` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `craft pc/check` |  | `craftcms/references/console-commands.md` |
+| `5.12+` | `craft project-config/check` |  | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | `craft project-config/check` |  | `craftcms/references/deployment.md` |
+| `5.12+` | `craft-content-modeling` | locale-neutral output everywhere. Pass `('en')` [5.12+] for codes and identifiers; see `craft-twig-guidelines` (Case Filters Follow the Site Language). | `craft-site/references/multi-site-patterns.md` |
+| `5.12+` | `craft-content-modeling` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `craft-mcp` |  | `craft-cloud/SKILL.md` |
+| `5.12+` | `craft-mcp` |  | `craft-fortrabbit/SKILL.md` |
+| `5.12+` | `craft-mcp` |  | `craft-project-setup/SKILL.md` |
+| `5.12+` | `craft-mcp` |  | `craftcms/SKILL.md` |
+| `5.12+` | `craft-mcp` | none of this exists; every request runs under a schema token or the public schema. | `craftcms/references/graphql.md` |
+| `5.12+` | `craft-mcp` |  | `servd/SKILL.md` |
+| `5.12+` | `craft\base\Renderable` |  | `craft-site/references/element-partials.md` |
+| `5.12+` | `craft\base\Renderable` |  | `craftcms/references/elements.md` |
+| `5.12+` | `craft\fields\data\ColorData` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `craft\helpers\Template::render($elements, $variables)` |  | `craft-site/references/element-partials.md` |
+| `5.12+` | `craft\helpers\Template::render($objects, $variables = [], $context = [])` | `renderElements()` was the PHP API. | `craftcms/references/elements.md` |
+| `5.12+` | `craft\models\Volume::$propagationMethod` | every asset existed in every site and there was nothing to choose. | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | `craft\models\Volume` | there was no such setting and every asset existed in every site. Why it matters: the `craft-content-modeling` skill's `infrastructure.md` → "Asset Propagation (Volumes)". | `craftcms/references/migrations.md` |
+| `5.12+` | `craft\test\ElementFixtureTrait` | fixtures always created revisions. [changed 5.12.2] Tests extending `craft\test\console\ConsoleTest` run with a console application; before 5.12.2 they ran with a web application. | `craftcms/references/testing.md` |
+| `5.12+` | `craft\web\assets\highlight\HighlightAsset` |  | `craft-garnish/references/integration.md` |
+| `5.12+` | `currentUser` |  | `craft-site/SKILL.md` |
+| `5.12+` | `custom:name` |  | `craft-plugins/references/navigation.md` |
+| `5.12+` | `custom:name` |  | `craft-site/SKILL.md` |
+| `5.12+` | `customIconPath` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `ddev composer update craftcms/cms -W` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `ddev craft mcp/serve` |  | `craft-mcp/SKILL.md` |
+| `5.12+` | `ddev share` |  | `ddev/SKILL.md` |
+| `5.12+` | `defaultRateLimit` |  | `craftcms/references/config-general.md` |
+| `5.12+` | `defaultRateLimit` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `defaultWarning()` | only layout-element tips and warnings existed, no field-level defaults. | `craftcms/references/field-types-custom.md` |
+| `5.12+` | `elements_*` |  | `craft-mcp/SKILL.md` |
+| `5.12+` | `entry.brand.oklch` | `--brand: {{ entry.brand.getHex(false) }}` with | `craft-site/references/tailwind-conventions.md` |
+| `5.12+` | `entry.brand.rgba` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `entry.brand.rgba` | hex was always 6-digit. | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | `expectedRevision` |  | `craft-mcp/SKILL.md` |
+| `5.12+` | `fullGraphqlData` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `getBearerToken()` |  | `craftcms/references/graphql.md` |
+| `5.12+` | `getInputSchema(): array` |  | `craft-mcp/references/plugin-extension.md` |
+| `5.12+` | `graphql` |  | `craftcms/references/graphql.md` |
+| `5.12+` | `iconSets` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `include_only()` |  | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | `jxl` |  | `craft-content-modeling/references/infrastructure.md` |
+| `5.12+` | `keywords` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `language` |  | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | `league/oauth2-server` |  | `craft-mcp/references/oauth-server.md` |
+| `5.12+` | `league/oauth2-server` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `loop` |  | `craft-site/references/element-partials.md` |
+| `5.12+` | `markdown` | `.md` uploads were rejected by default and had kind `unknown`. | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `mcp/sdk` |  | `craftcms/references/deployment.md` |
+| `5.12+` | `mcp/serve` |  | `craft-mcp/SKILL.md` |
+| `5.12+` | `mustHaveField()` | one owner per query, or `ownerId([...])` without the owner objects being set. | `craftcms/references/elements.md` |
+| `5.12+` | `name` | Font Awesome only, stored as the bare name, with only `name` and `styles`. | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `new Asset()` |  | `craftcms/references/elements.md` |
+| `5.12+` | `null` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `oauth_*` |  | `craft-mcp/references/security.md` |
+| `5.12+` | `orderBy` | allow-list the column names yourself. | `craft-php-guidelines/SKILL.md` |
+| `5.12+` | `php craft project-config/check` |  | `craftcms/references/deployment.md` |
+| `5.12+` | `php craft project-config/check` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `php-http/discovery` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `query.collect().render()` | `ElementCollection::render()` went through `ElementHelper::renderElements()` and passed no `loop`. | `craft-site/references/element-partials.md` |
+| `5.12+` | `redirectDomains` |  | `craft-mcp/SKILL.md` |
+| `5.12+` | `references/field-types.md` |  | `craft-content-modeling/SKILL.md` |
+| `5.12+` | `references/infrastructure.md` |  | `craft-content-modeling/SKILL.md` |
+| `5.12+` | `references/security.md` | upgrade first (`ddev composer require craftcms/cms:^5.12.4 -W`, then `ddev craft up`, commit `composer.lock` and `config/project/`; checklist: the `craftcms` skill's `upgrade-5.12.md`). Target 5.12.4 or later, not 5.12.0: 5.12.1 renamed every tool to snake_case and 5.12.1 through 5.12.3 fixed several security issues (see `references/security.md`). [5.12+] | `craft-mcp/SKILL.md` |
+| `5.12+` | `references/upgrade-5.12.md` |  | `craftcms/SKILL.md` |
+| `5.12+` | `render()` |  | `craft-site/SKILL.md` |
+| `5.12+` | `render()` | use `{{ entry.render({...}) }}` or `{{ entry.myMatrix.eagerly().render() }}`. | `craft-site/references/element-partials.md` |
+| `5.12+` | `resave/entries` | owners weren't touched, so the owner's next revision could reuse stale nested content (craftcms/cms#19594). | `craftcms/references/elements.md` |
+| `5.12+` | `rgb({{ entry.brand.rgbChannels }} / 50%)` | hex was always 6-digit. | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | `saveField()` | Color fields always returned a 6-digit hex `String`. | `craftcms/references/graphql.md` |
+| `5.12+` | `sectionHandle` | hardcode handles, or read them through `sectionHandle`/`typeHandle` on elements. | `craftcms/references/graphql.md` |
+| `5.12+` | `securityKey` |  | `craftcms/references/config-general.md` |
+| `5.12+` | `set-handle:name` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12+` | `set` |  | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `sites { handle language baseUrl primary }` | hardcode the sites in the front end. See `headless.md`. | `craft-site/references/multi-site-patterns.md` |
+| `5.12+` | `sitesFieldHtml()` | always the Status panel. | `craftcms/references/cp-ui-patterns.md` |
+| `5.12+` | `src/controllers/OauthController.php` |  | `craft-mcp/SKILL.md` |
+| `5.12+` | `storage/` |  | `craft-cloud/SKILL.md` |
+| `5.12+` | `storage/` |  | `servd/SKILL.md` |
+| `5.12+` | `string` |  | `craftcms/references/cp.md` |
+| `5.12+` | `style="--brand: {{ entry.brand.rgbChannels }}"` | `--brand: {{ entry.brand.getHex(false) }}` with | `craft-site/references/tailwind-conventions.md` |
+| `5.12+` | `tip` | set the tip or warning on each field layout element. | `craft-content-modeling/references/field-types.md` |
+| `5.12+` | `tip` |  | `craftcms/references/field-types-custom.md` |
+| `5.12+` | `upgrade-5.12.md` |  | `craftcms/SKILL.md` |
+| `5.12+` | `users/create-token` |  | `craftcms/references/sessions-and-auth.md` |
+| `5.12+` | `users/login` | no request rate limit, only `maxInvalidLogins` lockout. | `craftcms/references/sessions-and-auth.md` |
+| `5.12+` | `value` |  | `craftcms/references/cp.md` |
+| `5.12+` | `volumes` | hardcode the site list in the front end, or expose it through a global set. Per-site content still needs `X-Craft-Site` or the `site:` argument. | `craft-site/references/headless.md` |
+| `5.12+` | `warning` | only layout-element tips and warnings existed, no field-level defaults. | `craftcms/references/field-types-custom.md` |
+| `5.12+` | `{ accentColor }` | always a 6-digit hex string. | `craft-site/references/headless.md` |
+| `5.12+` | `{% render %}` |  | `craft-site/references/element-partials.md` |
+| `5.12+` | `{% render %}` |  | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | `{{ include_only('_atoms/badge', { text: label }) }}` |  | `craft-twig-guidelines/SKILL.md` |
+| `5.12+` | `{{ macros.label }}` |  | `craft-twig-guidelines/SKILL.md` |
+| `changed 5.12` | Case Filters Follow the Site Language |  | `craft-twig-guidelines/SKILL.md` |
+| `changed 5.12` | Color |  | `craft-content-modeling/references/field-types.md` |
+| `changed 5.12` | Common Pitfalls |  | `craft-site/references/tailwind-conventions.md` |
+| `changed 5.12` | Contents |  | `craftcms/references/elements.md` |
+| `changed 5.12` | Delete for site | those elements were hard-deleted, and single-site installs lost the site row without the element being deleted (orphans). | `craftcms/references/elements.md` |
+| `changed 5.12` | Silent behaviour changes: plugin and module code |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | The Servd filesystem and volumes | Settings → Filesystems), then attach a **Volume** to it (Settings → Assets → Volumes). In Craft 3 these were called Volumes directly; Craft 4+ splits the storage backend (Filesystem) from the content container (Volume). In Craft 5 you always create the Filesystem first and point one or more Volumes at it. | `servd/references/asset-storage.md` |
+| `changed 5.12` | `#rrggbbaa` | Color fields always returned a 6-digit hex `String`. | `craftcms/references/graphql.md` |
+| `changed 5.12` | `#rrggbbaa` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `$siteId` |  | `craftcms/references/elements.md` |
+| `changed 5.12` | `.eagerly('quoteChildren')` |  | `craft-content-modeling/references/relations-and-eager-loading.md` |
+| `changed 5.12` | `.eagerly()` | filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`\|slice(0, 3)`). After 5.12: all three are applied to `.eagerly()` (#19994), with the same rules as a `.with()` hash: `limit`/`offset` per source element, `orderBy` only when `Db::isSafeOrderBy()` [5.12+] accepts it (see "With Criteria"). Upgrading changes listing output: a loop that used to print every related element now prints the limited set, and a template that "worked" because the limit was ignored needs checking. When supporting both, keep the `.with()` or `\|slice` form. | `craft-content-modeling/references/relations-and-eager-loading.md` |
+| `changed 5.12` | `.eagerly()` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `.meta` |  | `craftcms/references/elements.md` |
+| `changed 5.12` | `.with()` |  | `craftcms/references/debugging.md` |
+| `changed 5.12` | `Address` |  | `craftcms/references/elements.md` |
+| `changed 5.12` | `Addresses::canSaveElement()` | hard delete, and on single-site installs the method removed site rows without deleting the element. [changed 5.12.1] The CP action and the "Delete for site" element action refuse an element's only site altogether ("Elements can't be deleted for the only site they exist in."), so the soft delete is reached from code (`deleteElementForSite()`, `utils/prune-orphaned-entries`). | `craftcms/references/elements.md` |
+| `changed 5.12` | `Asset::find()->id($id)->one()` |  | `craftcms/references/elements.md` |
+| `changed 5.12` | `Db::isSafeOrderBy()` |  | `craft-content-modeling/references/relations-and-eager-loading.md` |
+| `changed 5.12` | `EVENT_BEFORE_DELETE_ELEMENT` | a section's New entry menu could still offer an entry type the handler had removed, and choosing it returned a 400. | `craftcms/references/events.md` |
+| `changed 5.12` | `ElementHelper::isMultiSite($element)` |  | `craftcms/references/element-authorization.md` |
+| `changed 5.12` | `Elements::deleteElementsForSite()` | hard delete, and on single-site installs the method removed site rows without deleting the element. [changed 5.12.1] The CP action and the "Delete for site" element action refuse an element's only site altogether ("Elements can't be deleted for the only site they exist in."), so the soft delete is reached from code (`deleteElementForSite()`, `utils/prune-orphaned-entries`). | `craftcms/references/elements.md` |
+| `changed 5.12` | `Sites::handleChangedSite()` |  | `craft-content-modeling/references/infrastructure.md` |
+| `changed 5.12` | `String` | Color fields always returned a 6-digit hex `String`. | `craftcms/references/graphql.md` |
+| `changed 5.12` | `\|lower` |  | `craft-twig-guidelines/SKILL.md` |
+| `changed 5.12` | `\|upper` | locale-neutral output everywhere. Pass `('en')` [5.12+] for codes and identifiers; see `craft-twig-guidelines` (Case Filters Follow the Site Language). | `craft-site/references/multi-site-patterns.md` |
+| `changed 5.12` | `accentColor { hex rgba }` | always a 6-digit hex string. | `craft-site/references/headless.md` |
+| `changed 5.12` | `addresses` | addresses had no drafts, and editors who could save an owner's draft but not the canonical owner couldn't edit its addresses. | `craftcms/references/drafts-revisions.md` |
+| `changed 5.12` | `addresses` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `allowedFileExtensions` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `assets/` | Settings → Filesystems). Create a new filesystem with the Cloud type, set the Subpath (e.g. `assets/`), copy your old Base Path and Base URL into the **Local Filesystem** section for dev-environment parity. Update asset volumes to point at the new filesystem. | `craft-cloud/references/migration.md` |
+| `changed 5.12` | `charset=utf8` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `cp-ui-patterns.md` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `craft-content-modeling` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `craft\cloud\fs\AssetsFs` | Settings → Filesystems), then point one or more asset volumes at it. | `craft-cloud/references/assets-and-transforms.md` |
+| `changed 5.12` | `craft\test\fixtures\elements\BaseElementFixture` | fixtures always created revisions. [changed 5.12.2] Tests extending `craft\test\console\ConsoleTest` run with a console application; before 5.12.2 they ran with a web application. | `craftcms/references/testing.md` |
+| `changed 5.12` | `craftcms` |  | `craft-project-setup/SKILL.md` |
+| `changed 5.12` | `createRevisions = true` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `dateUpdated` | the owner's `dateUpdated` didn't move and its next revision could reuse stale nested content (craftcms/cms#19594). The bump is a raw `Db::update()` (no owner save events, no search reindex); set `$nested->touchOwnersOnSave = false` on bulk scripts that must not move owners' timestamps. | `craftcms/references/drafts-revisions.md` |
+| `changed 5.12` | `dateUpdated` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `elements.md` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `enabledForSite` | every asset was saved to every site, so none of this mattered. | `craftcms/references/elements.md` |
+| `changed 5.12` | `ff` | always `#rrggbb`. A translucent value submitted from a front-end form or GraphQL mutation is rejected unless it's a palette colour or the field allows custom opacity. | `craft-content-modeling/references/field-types.md` |
+| `changed 5.12` | `fieldId` | an empty array meant "no filter" and returned every nested element. `Entry::find()->ownerId($ids)` with an empty `$ids` is the classic case; guard it with an early `return []`. | `craftcms/references/elements.md` |
+| `changed 5.12` | `hardDelete` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `loop is defined` | partials rendered through `.render()` on a collection or query got no `loop`. When supporting both: `loop.index ?? null`. | `craft-site/references/element-partials.md` |
+| `changed 5.12` | `loop` | `ElementCollection::render()` went through `ElementHelper::renderElements()` and passed no `loop`. | `craft-site/references/element-partials.md` |
+| `changed 5.12` | `loop` | `renderElements()` was the PHP API. | `craftcms/references/elements.md` |
+| `changed 5.12` | `matches` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `mb_*` | they were Twig's locale-neutral `mb_*` versions. No template changes, | `craft-twig-guidelines/SKILL.md` |
+| `changed 5.12` | `new Asset()` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `orderBy` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `ownerId([])` | an empty array normalised to `null`, so the query returned every nested element. Guard the empty case explicitly. See "Nested element queries". | `craftcms/references/elements.md` |
+| `changed 5.12` | `ownerId([])` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `render()` on collections and queries |  | `craft-site/references/element-partials.md` |
+| `changed 5.12` | `settings/filesystems` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `sitesFieldHtml()` | always the Status panel. | `craftcms/references/cp-ui-patterns.md` |
 | `changed 5.12` | `string[]` |  | `craftcms/references/config-general.md` |
+| `changed 5.12` | `svg("@appicons/…")` |  | `craft-content-modeling/references/field-types.md` |
+| `changed 5.12` | `upper` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12` | `{{ entry.brand }}80` | hex was always 6-digit. | `craft-twig-guidelines/SKILL.md` |
+| `deprecated 5.12` | `ElementCollection::render()` |  | `craftcms/references/upgrade-5.12.md` |
+| `deprecated 5.12` | `ElementHelper::renderElements()` |  | `craft-site/references/element-partials.md` |
+| `deprecated 5.12` | `ElementHelper::renderElements()` | `renderElements()` was the PHP API. | `craftcms/references/elements.md` |
+| `deprecated 5.12` | `PrismJsAsset` | real Prism. See `integration.md` (Syntax Highlighting and Uploaders). | `craft-garnish/SKILL.md` |
+| `deprecated 5.12` | `PrismJsAsset` |  | `craftcms/references/upgrade-5.12.md` |
+| `deprecated 5.12` | `yaml` | `PrismJsAsset` was real Prism; when supporting both, register `PrismJsAsset` with only built-in languages, or branch on `Craft.highlighter`. ([`HighlightAsset.php`](https://github.com/craftcms/cms/blob/5.12.4/src/web/assets/highlight/HighlightAsset.php)) | `craft-garnish/references/integration.md` |
+| `5.12.1+` | Field layout conditions |  | `craftcms/references/graphql.md` |
+| `5.12.1+` | McpOutputFieldInterface |  | `craftcms/references/field-types-custom.md` |
+| `5.12.1+` | Settings → MCP | the authenticated server returned a server error instead of an OAuth challenge when keys were missing. | `craft-mcp/references/servers-and-access.md` |
+| `5.12.1+` | Signing Keys |  | `craft-mcp/references/oauth-server.md` |
+| `5.12.1+` | The Tokens Screen | the screen showed for everyone and token creation failed with a server error. | `craft-mcp/references/personal-access-tokens.md` |
+| `5.12.1+` | `->filters()` |  | `craft-mcp/references/servers-and-access.md` |
+| `5.12.1+` | `Craft::$app->getOAuth()->hasKeys()` |  | `craft-mcp/references/oauth-server.md` |
+| `5.12.1+` | `Craft::$app->getProjectConfig()->acquireLock()` | the lock was private (`_acquireLock()`, taken inside `set()`), so a value read before `set()` could already be stale. | `craftcms/references/architecture.md` |
+| `5.12.1+` | `ProjectConfig::acquireLock()` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12.1+` | `StaleResourceException` | the lock was only taken inside `set()`. | `craftcms/references/controllers.md` |
+| `5.12.1+` | `addresses` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `assets_replace` |  | `craft-mcp/references/client-setup.md` |
+| `5.12.1+` | `assets_upload_url` |  | `craft-mcp/references/client-setup.md` |
+| `5.12.1+` | `assets_upload_url` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `blocks.innerBlocks` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `cpTrigger` |  | `craft-mcp/references/servers-and-access.md` |
+| `5.12.1+` | `craft install` |  | `craft-mcp/references/security.md` |
+| `5.12.1+` | `craft\mcp\McpOutputContext` |  | `craft-mcp/references/plugin-extension.md` |
+| `5.12.1+` | `craft\mcp\McpOutputContext` | only `serializeValue()` shapes MCP output. | `craftcms/references/field-types-custom.md` |
+| `5.12.1+` | `criteria.parentId: null` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `elementId` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `expectedRevision` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `expiryDate` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `mcp/sdk` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `mcp/serve` | restart it after editing project config elsewhere. Restart it after permission or instruction changes either way. | `craft-mcp/references/servers-and-access.md` |
+| `5.12.1+` | `null` |  | `craft-mcp/references/personal-access-tokens.md` |
+| `5.12.1+` | `null` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `outputSchema` |  | `craft-mcp/references/plugin-extension.md` |
+| `5.12.1+` | `revision` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `serializeValue($value, $element)` |  | `craft-mcp/references/plugin-extension.md` |
+| `5.12.1+` | `supports()` |  | `craft-mcp/references/plugin-extension.md` |
+| `5.12.1+` | `user_permissions_group_update` |  | `craft-mcp/references/tool-catalogue.md` |
+| `5.12.1+` | `user_permissions_user_update` |  | `craft-mcp/references/tool-catalogue.md` |
+| `changed 5.12.1` | Behaviour Notes |  | `craft-mcp/references/tool-catalogue.md` |
+| `changed 5.12.1` | Field layout conditions |  | `craftcms/references/graphql.md` |
+| `changed 5.12.1` | Security Fixes in 5.12.x |  | `craft-mcp/references/security.md` |
+| `changed 5.12.1` | Silent behaviour changes: plugin and module code |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12.1` | Troubleshooting |  | `craft-mcp/references/client-setup.md` |
+| `changed 5.12.1` | `#[PublicMcp]` |  | `craft-mcp/references/servers-and-access.md` |
+| `changed 5.12.1` | `.env` | the web installer also ran without Dev Mode, which is the advisory's subject; don't leave an uninstalled environment on an older release publicly reachable. | `craftcms/references/deployment.md` |
+| `changed 5.12.1` | `/.well-known/oauth-protected-resource/…` | discovery advertised the CP URLs and so revealed the `cpTrigger`. Unauthenticated users hitting the authorize endpoint are sent to the front-end `loginPath` (the `graphql` resource doesn't require `accessCp`), so members without CP access can complete the flow. Grants: `authorization_code` (PKCE `S256`, public clients, no client secret) and `refresh_token`. The client side of that flow is in the `craft-site` skill's `headless.md`. | `craftcms/references/graphql.md` |
+| `changed 5.12.1` | `/{cpTrigger}/oauth/{resource}/register\|authorize\|approve\|deny\|token` |  | `craft-mcp/references/oauth-server.md` |
+| `changed 5.12.1` | `Cannot query field "secretNote" on type "article_Entry"` | OAuth/PAT requests ignored field layout conditions (5.12.0 bug, craftcms/cms#20391), so hidden fields were readable and writable. Schema-token requests are unaffected in every version: they have no user to evaluate a condition against. The user-condition case was confirmed in a runtime check (`Cannot query field "secretNote" on type "article_Entry"` for a non-admin, the value for an admin); the element-condition `null` case is stated from the changelog and source. | `craftcms/references/graphql.md` |
+| `changed 5.12.1` | `EVENT_AUTHORIZE_DELETE_FOR_SITE` |  | `craftcms/references/element-authorization.md` |
+| `changed 5.12.1` | `Element::EVENT_AUTHORIZE_DELETE_FOR_SITE` |  | `craftcms/references/element-authorization.md` |
+| `changed 5.12.1` | `Element::EVENT_AUTHORIZE_DELETE_FOR_SITE` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12.1` | `Entry::EVENT_DEFINE_ENTRY_TYPES` | a section's New entry menu could still offer an entry type the handler had removed, and choosing it returned a 400. | `craftcms/references/events.md` |
+| `changed 5.12.1` | `_old2` | it truncated the name, producing `webhoo_old` instead of `webhookgroups_old` (craftcms/cms#20484), so code that looked for the archived table by its expected name missed it. | `craftcms/references/migrations.md` |
+| `changed 5.12.1` | `_set` |  | `craft-mcp/references/tool-catalogue.md` |
+| `changed 5.12.1` | `assets_replace` | download URLs only. | `craft-mcp/references/tool-catalogue.md` |
+| `changed 5.12.1` | `config/project/` | the folder was emptied first. The end state is the same either way, and that is the danger below. Any YAML the DB doesn't know about is deleted, and any YAML value the DB has older is reverted. | `craftcms/references/deployment.md` |
+| `changed 5.12.1` | `craft-sites` |  | `craft-mcp/references/tool-catalogue.md` |
+| `changed 5.12.1` | `craft\services\Elements` |  | `craftcms/references/elements.md` |
+| `changed 5.12.1` | `devMode` | the browser installer worked without Dev Mode. Details: the `craftcms` skill's `deployment.md` → "First Install on a New Environment". | `craft-project-setup/SKILL.md` |
+| `changed 5.12.1` | `devMode` |  | `craftcms/references/deployment.md` |
+| `changed 5.12.1` | `elements.md` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12.1` | `elements/delete-for-site` |  | `craftcms/references/element-authorization.md` |
+| `changed 5.12.1` | `elements/delete-for-site` |  | `craftcms/references/elements.md` |
+| `changed 5.12.1` | `graphql.md` | authenticated requests ignored layout conditions. | `craft-site/references/headless.md` |
+| `changed 5.12.1` | `my_plugin_orders_list` |  | `craft-mcp/SKILL.md` |
+| `changed 5.12.1` | `my_plugin_orders_refund` | core used dot-separated names; don't copy that, and don't copy the dotted examples on the extend docs page. | `craft-mcp/references/plugin-extension.md` |
+| `changed 5.12.1` | `null` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12.1` | `php craft install --interactive=0 …` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12.1` | `resource_metadata="…/.well-known/oauth-protected-resource/…"` | discovery advertised CP URLs. | `craft-site/references/headless.md` |
+| `changed 5.12.1` | `true` | hard delete, and on single-site installs the method removed site rows without deleting the element. [changed 5.12.1] The CP action and the "Delete for site" element action refuse an element's only site altogether ("Elements can't be deleted for the only site they exist in."), so the soft delete is reached from code (`deleteElementForSite()`, `utils/prune-orphaned-entries`). | `craftcms/references/elements.md` |
+| `5.12.2+` | Contents |  | `craftcms/references/elements.md` |
+| `5.12.2+` | Security Fixes in 5.12.x |  | `craft-mcp/references/security.md` |
+| `5.12.2+` | `Craft::$app->getDashboard()->isWidgetTypeAvailable(RecentItems::class)` | call `RecentItems::isSelectable()` and accept that one-per-user logic reads as "unavailable" once the widget exists. | `craftcms/references/cp-components.md` |
+| `5.12.2+` | `UrlHelper::absoluteUrl()` |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12.2+` | `craft\helpers\UrlHelper::absoluteUrl($url, $baseUrl = null)` | prefix `UrlHelper::baseSiteUrl()` yourself, or `UrlHelper::siteUrl()` for site paths. | `craft-php-guidelines/SKILL.md` |
+| `5.12.2+` | `mcp/serve` | restart it after editing project config elsewhere. Restart it after permission or instruction changes either way. | `craft-mcp/references/servers-and-access.md` |
+| `5.12.2+` | `upload_id` |  | `craft-mcp/references/tool-catalogue.md` |
+| `changed 5.12.2` | Checking if a draft is outdated | multi-site installs with required Matrix fields should upgrade rather than rely on applying outdated drafts. | `craftcms/references/drafts-revisions.md` |
+| `changed 5.12.2` | `composer.phar` |  | `craftcms/references/deployment.md` |
+| `changed 5.12.2` | `composer.phar` |  | `craftcms/references/upgrade-5.12.md` |
+| `changed 5.12.2` | `owner()` | one owner per query, or `ownerId([...])` without the owner objects being set. | `craftcms/references/elements.md` |
+| `changed 5.12.2` | `public bool $createRevisions = true;` | fixtures always created revisions. [changed 5.12.2] Tests extending `craft\test\console\ConsoleTest` run with a console application; before 5.12.2 they ran with a web application. | `craftcms/references/testing.md` |
+| `5.12.3+` | Before you upgrade |  | `craftcms/references/upgrade-5.12.md` |
+| `5.12.3+` | Security Fixes in 5.12.x |  | `craft-mcp/references/security.md` |
+| `5.12.3+` | Signed-In Members over OAuth | OAuth GraphQL requests failed while offline. | `craft-site/references/headless.md` |
+| `5.12.3+` | Twig 3.29 to 3.31 |  | `craft-twig-guidelines/SKILL.md` |
+| `5.12.3+` | Using a PAT with GraphQL |  | `craft-mcp/references/personal-access-tokens.md` |
+| `5.12.3+` | `Twig\Markup` |  | `craft-mcp/references/security.md` |
+| `5.12.3+` | `accessSiteWhenSystemIsOff` | OAuth GraphQL requests failed while the system was offline. Schema-token and public-schema requests are anonymous, so they get a 503 (with `Retry-After` when a retry duration is set) whenever the system is offline, in every version. | `craftcms/references/graphql.md` |
+| `changed 5.12.3` | Offline system | OAuth GraphQL requests failed while the system was offline. Schema-token and public-schema requests are anonymous, so they get a 503 (with `Retry-After` when a retry duration is set) whenever the system is offline, in every version. | `craftcms/references/graphql.md` |
+| `5.12.4+` | `{%-` |  | `craft-twig-guidelines/SKILL.md` |

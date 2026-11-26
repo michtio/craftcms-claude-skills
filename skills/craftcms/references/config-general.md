@@ -187,7 +187,7 @@ If you change `cpTrigger` mid-project, update bookmarks, external integrations, 
 ])
 ```
 
-`securityKey` must be identical across all servers in the same environment. If it changes, all sessions, encrypted field values, and password reset tokens become invalid. [5.12+] It also derives the OAuth server's encryption key, so rotating it invalidates OAuth refresh tokens and pending authorization codes (MCP clients and PAT holders must authorize again); see the `craft-mcp` skill. Use `CRAFT_SECURITY_KEY` env var and never commit it to version control.
+`securityKey` must be identical across all servers in the same environment. If it changes, all sessions, encrypted field values, and password reset tokens become invalid. [5.12+] It also derives the OAuth server's encryption key, so rotating it invalidates OAuth refresh tokens and pending authorization codes (MCP and other OAuth clients must authorize again once their access token expires; personal access tokens keep working); see the `craft-mcp` skill. Use `CRAFT_SECURITY_KEY` env var and never commit it to version control.
 
 `blowfishHashCost` at `13` means each password hash takes ~0.1s on modern hardware. Increasing to `14` doubles that to ~0.2s. Going above `15` is rarely justified -- it slows logins noticeably without meaningful security gain against offline attacks.
 

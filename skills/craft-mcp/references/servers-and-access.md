@@ -110,12 +110,17 @@ return McpConfig::create()
         'rateLimiter' => [
             'class' => RateLimiter::class,
             'enableRateLimitHeaders' => false,
-            'user' => fn() => \craft\filters\IpRateLimitIdentity::createDefault('mcp-authenticated'),
+            // 300 requests per minute per IP; pick a number that fits your clients
+            'user' => fn() => new \craft\filters\IpRateLimitIdentity([
+                'keyPrefix' => 'mcp-authenticated',
+                'limit' => 300,
+                'window' => 60,
+            ]),
         ],
     ]);
 ```
 
-`IpRateLimitIdentity::createDefault($key)` uses `defaultRateLimit` per `defaultRateLimitDuration`; pass a `new IpRateLimitIdentity(['limit' => …, 'window' => …, 'keyPrefix' => …, 'ip' => …])` for your own numbers, as `OauthController` does. The public server has no filter hook: throttle it at the web server or CDN.
+Set your own `limit` and `window`. Don't use `IpRateLimitIdentity::createDefault($key)` here: it takes `defaultRateLimit` per `defaultRateLimitDuration` (10 per 60 seconds by default), and one client's connect sequence (initialize, paginated `tools/list`, first calls) already sends several requests, so a working client gets 429s. `ip` defaults to the request's user IP, which is why `trustedHosts` and `ipHeaders` matter behind a proxy. The public server has no filter hook: throttle it at the web server or CDN.
 
 Read the config with `Craft::$app->getConfig()->getMcp()`. The service has no `getMcp()` accessor on the app: use `Craft::$app->get('mcp')`.
 

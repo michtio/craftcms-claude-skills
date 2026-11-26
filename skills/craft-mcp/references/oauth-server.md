@@ -33,13 +33,14 @@ ddev craft oauth/generate-keys --force    # replace them; invalidates every issu
 ```php
 <?php
 // config/oauth.php (optional: the CRAFT_OAUTH_* env vars alone do the same)
-use craft\config\OAuthConfig;
-
-return OAuthConfig::create([
+// Return an array, not OAuthConfig::create([...]): see the warning below.
+return [
     'privateKey' => '$OAUTH_PRIVATE_KEY',
     'publicKey' => '$OAUTH_PUBLIC_KEY',
-]);
+];
 ```
+
+**Return an array from `config/oauth.php`** [5.12+]. When the file returns an `OAuthConfig` object, Craft applies `CRAFT_OAUTH_*` overrides only through fluent setter methods, and `OAuthConfig` has none, so every `CRAFT_OAUTH_*` variable is silently ignored ([`Config::getConfigFromFile()`](https://github.com/craftcms/cms/blob/5.12.4/src/services/Config.php)). On an ephemeral host that surfaces as a missing `storage/oauth-private.key`; on a persistent host Craft quietly keeps using the old file keys. An array is merged with the env overrides as expected.
 
 Value formats checked on 5.12.4 [5.12+]:
 
@@ -67,7 +68,7 @@ OAuth also refuses to run with an empty `securityKey`.
 
 | Key | Default | Env var | Notes |
 |---|---|---|---|
-| `privateKey` | `null` (= `storage/oauth-private.key`) | `CRAFT_OAUTH_PRIVATE_KEY` | PEM, path, alias or `$ENV` reference |
+| `privateKey` | `null` (= `storage/oauth-private.key`) | `CRAFT_OAUTH_PRIVATE_KEY` (ignored if the file returns an `OAuthConfig` object) | PEM, path, alias or `$ENV` reference |
 | `publicKey` | `null` (= `storage/oauth-public.key`) | `CRAFT_OAUTH_PUBLIC_KEY` | Same |
 | `accessTokenDuration` | `'PT1H'` | `CRAFT_OAUTH_ACCESS_TOKEN_DURATION` | ISO 8601 interval string, not seconds |
 | `refreshTokenDuration` | `'P30D'` | `CRAFT_OAUTH_REFRESH_TOKEN_DURATION` | Same |
@@ -81,9 +82,10 @@ OAuth also refuses to run with an empty `securityKey`.
 Production example, restricting redirects to loopback desktop clients and one web client you trust (replace the placeholder with the redirect origin your client registers):
 
 ```php
-return OAuthConfig::create([
+// config/oauth.php: an array, so CRAFT_OAUTH_* key variables still apply
+return [
     'redirectDomains' => ['http://localhost', 'http://127.0.0.1', 'https://client.example'],
-]);
+];
 ```
 
 Check what your clients actually register (the consent screen shows the redirect host) before tightening; a client whose redirect isn't allowed fails at registration with `invalid_redirect_uri`.

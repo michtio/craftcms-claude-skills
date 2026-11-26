@@ -138,7 +138,9 @@ After all gates pass, the builder does one sweep on files it just wrote (while c
 ### Example delegation
 
 ```
-Build slice S1 of specs/2026-10-09-job-listings/plan.md (requirements R1-R3)
+Build slice S1 of specs/2026-10-09-job-listings/plan.md (approved, PRD approved).
+Requirements R1-R3; acceptance criteria AC1-AC4 in prd.md.
+Gate: ddev craft migrate/up succeeds and the JobListingServiceTest Pest filter is green.
 ```
 
 ---
@@ -365,7 +367,7 @@ The most common pattern. Plan first to break down complexity, then build layer b
 1. Write and approve the PRD: specs/{date-slug}/prd.md
 2. Delegate to craft-planner: "Plan the implementation of specs/{date-slug}/prd.md"
 3. Review and approve the returned plan, save it as specs/{date-slug}/plan.md
-4. Delegate to craft-feature-builder, one slice at a time: "Build slice S1 of specs/{date-slug}/plan.md"
+4. Delegate to craft-feature-builder, one slice at a time: "Build slice S1 of specs/{date-slug}/plan.md: R ids, their acceptance criteria, the verification gate"
 ```
 
 ### Build then review

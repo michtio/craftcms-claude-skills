@@ -133,7 +133,13 @@ def write_condition(root: Path, ref: str, skill_names: list[str]) -> Path:
     cmd_dir.mkdir(parents=True)
 
     for name in skill_names:
-        src = skill_md_text(name, ref)
+        try:
+            src = skill_md_text(name, ref)
+        except RuntimeError:
+            # A skill added after `ref` has no listing there; leave it out of
+            # that condition (its trigger set then scores as misses for `ref`).
+            print(f"note: {name} does not exist at {ref}; left out of that condition")
+            continue
         fm = parse_frontmatter(src)
         description = str(fm.get("description") or "")
         when_to_use = str(fm.get("when_to_use") or "")
