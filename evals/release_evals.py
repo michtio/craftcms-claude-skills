@@ -209,8 +209,8 @@ class Runner:
         self.stopped = threading.Event()
         self.lock = threading.Lock()
 
-    def claude(self, prompt: str, cwd: str, tools: str, max_turns: int) -> tuple[str, set[str], str]:
-        """One claude -p call: (answer text, skills invoked, error class or '')."""
+    def claude(self, prompt: str, cwd: str, tools: str, max_turns: int) -> tuple[str, set[str], str, list[str]]:
+        """One claude -p call: (answer text, skills invoked, error class or '', agent types started)."""
         with self.lock:
             self.calls += 1
         cmd = [self.claude_bin, "-p", prompt, "--output-format", "stream-json", "--verbose",
@@ -228,10 +228,10 @@ class Runner:
             proc = subprocess.run(cmd, capture_output=True, timeout=self.timeout, env=env,
                                   stdin=subprocess.DEVNULL, cwd=cwd)
         except subprocess.TimeoutExpired:
-            return "", set(), "harness: timeout"
+            return "", set(), "harness: timeout", []
         except OSError as e:
-            return "", set(), f"harness: {e.strerror or e}"
-        text, result, skills = [], "", set()
+            return "", set(), f"harness: {e.strerror or e}", []
+        text, result, skills, agents = [], "", set(), []
         for line in proc.stdout.decode("utf-8", errors="replace").splitlines():
             try:
                 ev = json.loads(line)
@@ -245,26 +245,36 @@ class Runner:
                         text.append(item.get("text", ""))
                     elif item.get("type") == "tool_use" and item.get("name") == "Skill":
                         skills.add(item.get("input", {}).get("skill", "").split(":")[-1])
+                    elif item.get("type") == "tool_use" and item.get("name") in ("Agent", "Task"):
+                        # nested agents stream too (with a parent_tool_use_id), so this counts the team
+                        agents.append(item.get("input", {}).get("subagent_type", "?").split(":")[-1])
         answer = result or "\n".join(text)
         stderr = proc.stderr.decode("utf-8", errors="replace")
         # A limit message can arrive as the whole answer, a result error or on stderr.
         if LIMIT_RE.search(stderr) or (LIMIT_RE.search(answer) and len(answer) < 400):
-            return answer, skills, "usage limit"
-        return answer, skills, ""
+            return answer, skills, "usage limit", agents
+        return answer, skills, "", agents
 
     def run_case(self, c: dict) -> dict:
         if c["kind"] == "behaviour":
             case = c["case"]
             cwd = str(REPO / case["cwd"]) if case.get("cwd") else "/tmp"
-            text, skills, err = self.claude(case["prompt"], cwd, "Skill,Read,Grep,Glob", 12)
+            # An agent case sets its own tools and turns (e.g. "Agent,Skill,Read,Grep,Glob,SendMessage").
+            text, skills, err, agents = self.claude(case["prompt"], cwd, case.get("tools", "Skill,Read,Grep,Glob"),
+                                                    case.get("max_turns", 12))
             if err:
                 return {"status": "error", "error": err}
             if not text.strip():
                 return {"status": "error", "error": "harness: no answer text"}
             failures = score(case, text)
-            return {"status": "fail" if failures else "pass", "failures": failures, "skills": sorted(skills)}
+            if "max_agents" in case and len(agents) > case["max_agents"]:
+                failures.append(f"started {len(agents)} agents, at most {case['max_agents']} allowed: {agents}")
+            if case.get("expect_agent") and case["expect_agent"] not in agents:
+                failures.append(f"agent {case['expect_agent']} never started (started: {agents or 'none'})")
+            return {"status": "fail" if failures else "pass", "failures": failures, "skills": sorted(skills),
+                    "agents": agents, "answer": text}
         q = c["case"]
-        text, skills, err = self.claude(q["query"], "/tmp", "Skill", 2)
+        text, skills, err, _ = self.claude(q["query"], "/tmp", "Skill", 2)
         if err:
             return {"status": "error", "error": err}
         hit = c["skill"] in skills
@@ -358,6 +368,8 @@ def main() -> int:
         if r["status"] != "pass":
             detail = r.get("error") or "; ".join(r.get("failures", []))
             print(f"  {r['status'].upper():8} {c['kind']:9} {c['id']}  {detail}")
+        elif r.get("agents"):
+            print(f"  PASS     {c['kind']:9} {c['id']}  agents started: {len(r['agents'])} ({', '.join(r['agents'])})")
     if args.out:
         Path(args.out).write_text(json.dumps({c["id"]: results[c["id"]] for c in to_run}, indent=2), encoding="utf-8")
 

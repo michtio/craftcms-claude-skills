@@ -27,5 +27,6 @@
       ["project-config/diff", "project-config/write"]
     ],
     "facts": [{"file": "skills/craftcms/SKILL.md", "contains": ["`project-config/write` empties `config/project/`", "Run `craft up` first"]}, {"file": "skills/craftcms/references/deployment.md", "contains": ["git diff --stat -- config/project"]}]
-  }
+  },
+  {"id": "redis-cache-session-mutex", "cwd": "evals/fixtures/projects/site-5.12.4", "prompt": "Configure Redis for cache, sessions, and mutex in our Craft project. We're running DDEV locally and deploying to a VPS with Redis installed. Write the config in your reply; don't create or edit files.", "must_match": [["yiisoft/yii2-redis"], ["REDIS_HOSTNAME\\s*=\\s*redis\\b"], ["craft\\\\mutex\\\\Mutex::class"], ["app\\.web\\.php"], ["'class'\\s*=>\\s*\\\\?yii\\\\redis\\\\Connection::class"], ["FLUSHDB", "flush(es|ing)?[^\\n]{0,120}(session|lock|mutex)", "(session|lock|mutex)[^\\n]{0,120}flush"]], "must_not_match": ["yii2-queue\\[redis\\]"], "facts": [{"file": "skills/craftcms/references/config-app.md", "contains": ["runs `FLUSHDB` unless `shareDatabase`", "REDIS_HOSTNAME=redis", "'database' => 3, // Not the cache's database"], "not_contains": ["yii2-queue\\[redis\\]"]}, {"file": "skills/ddev/SKILL.md", "contains": ["add `REDIS_HOSTNAME=redis` to `.env`"]}]}
 ]

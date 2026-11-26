@@ -1,0 +1,28 @@
+[
+  {
+    "id": "deep-review-team-planted",
+    "note": "Planted diff: IDOR in ExportController (customerId from POST, only requireLogin), N+1 in OrdersService::exportRows (User and Entry query per order). Bait: NotesController reads noteId before requirePermission, but checks before loading or populating the record, and the permission is registered in Plugin.php. agents counts the deep reviewer itself, so 6 = reviewer + at most 5.",
+    "cwd": "evals/fixtures/review/orders-plugin",
+    "tools": "Agent,Skill,Read,Grep,Glob",
+    "max_turns": 6,
+    "expect_agent": "craft-code-reviewer-deep",
+    "max_agents": 6,
+    "prompt": "Use the craftcms-claude-skills:craft-code-reviewer-deep agent (that exact type) to deep-review the 1.1.0 change in this Craft plugin. CHANGE.md lists what changed. There is no git history here, so read the files directly instead of using git, and there is no DDEV project, so skip the static checks. Reply with the agent's report verbatim.",
+    "must_match": [
+      ["Mode:\\s*team"],
+      ["agents:\\s*[1-5]\\b"],
+      ["ExportController[\\s\\S]{0,800}(customerId|IDOR|insecure direct object|another customer|other customers|any customer|any user)", "(customerId|IDOR|insecure direct object|another customer|other customers|any customer)[\\s\\S]{0,400}ExportController"],
+      ["(OrdersService|exportRows)[\\s\\S]{0,800}(N\\+1|eager|per order|inside the loop|in the loop|in a loop)", "(N\\+1)[\\s\\S]{0,400}(OrdersService|exportRows)"]
+    ],
+    "must_not_match": [
+      "###\\s*Critical(?:(?!###\\s*(Suggestions|Dropped)).)*NotesController",
+      "challenge[^\\n]{0,40}(did not|didn't|could not|couldn't) (finish|complete|run)"
+    ],
+    "facts": [
+      {"file": "agents/craft-code-reviewer-deep.md",
+       "contains": ["At most 5 agents per review", "## 4\\. Challenge \\(one round\\)", "Mode: single pass", "Dropped after challenge"]},
+      {"file": "agents/craft-review-checker.md",
+       "contains": ["## Challenge mode", "Refute only with a citation"]}
+    ]
+  }
+]

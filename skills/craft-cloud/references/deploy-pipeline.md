@@ -174,7 +174,7 @@ Cloud injects (or derives) the following itself. Setting them in the Console is 
 | `CRAFT_CLOUD`, `CRAFT_CLOUD_*` | The platform flag + `PROJECT_ID`, `ENVIRONMENT_ID`, `REGION`, `REDIS_URL`, `ARTIFACT_BASE_URL`, `CDN_BASE_URL`, `SIGNING_KEY`, `DEV_MODE`, … |
 | `CRAFT_DB_*` | DB connection auto-wired (`SERVER`, `PORT`, `DATABASE`, `USER`, `PASSWORD`, `DRIVER`, `SCHEMA`, `TABLE_PREFIX`) |
 | `CRAFT_EDITION` | Set by Cloud |
-| `REDIS_*` | Cache, queue, session, and mutex are wired by the extension via `CRAFT_CLOUD_REDIS_URL` (`AppConfig::getCache()`/`getQueue()`/`getSession()`) — your own Redis vars are unused |
+| `REDIS_*` | Unused on Cloud: the extension sets `cache` itself (Redis/Valkey via `CRAFT_CLOUD_CACHE_SRV`, or the deprecated `CRAFT_CLOUD_REDIS_URL`, else `DbCache`), `queue` (SQS) and `session` (database). See `extension.md` |
 | `CRAFT_WEB_ROOT` | Cloud-managed path. If `config/general.php` aliases `@webroot`/`@uploads` from this var, guard it so it only applies when the var is set, e.g. `App::env('CRAFT_WEB_ROOT') ? [...] : []` — otherwise `@webroot` is nulled on Cloud |
 | `CRAFT_RESOURCE_BASE_PATH`, `CRAFT_RESOURCE_BASE_URL` | cpresources are published to and served from the Cloud CDN |
 

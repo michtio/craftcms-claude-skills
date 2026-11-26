@@ -68,7 +68,7 @@ sh bin/test-craft-version.sh
 
 if [ $# -lt 1 ]; then
     tag=$(tail -n 1 bin/data/craft-releases.txt)
-    mkdir -p "$tmp/cms" "$tmp/yii2" "$tmp/yii2-queue"
+    mkdir -p "$tmp/cms" "$tmp/yii2" "$tmp/yii2-queue" "$tmp/yii2-redis"
     gh api "repos/craftcms/cms/tarball/$tag" | tar -xzf - -C "$tmp/cms" --strip-components=1
     # composer.lock is not in the release tarball; read it from the tag.
     gh api -H 'Accept: application/vnd.github.raw' "repos/craftcms/cms/contents/composer.lock?ref=$tag" > "$tmp/cms/composer.lock"
@@ -81,9 +81,13 @@ print(v["yiisoft/yii2"], v["yiisoft/yii2-queue"])' "$tmp/cms/composer.lock")
     queue=${versions#* }
     gh api "repos/yiisoft/yii2/tarball/$yii" | tar -xzf - -C "$tmp/yii2" --strip-components=1
     gh api "repos/yiisoft/yii2-queue/tarball/$queue" | tar -xzf - -C "$tmp/yii2-queue" --strip-components=1
+    # yii2-redis is not a Craft dependency (projects add it for Redis cache, session and
+    # mutex), so it is pinned to its latest release rather than read from composer.lock.
+    redis=$(gh api repos/yiisoft/yii2-redis/releases/latest --jq .tag_name)
+    gh api "repos/yiisoft/yii2-redis/tarball/$redis" | tar -xzf - -C "$tmp/yii2-redis" --strip-components=1
     python3 bin/craft_source.py index "$tmp/cms" --tag "$tag" \
-        --lib "$tmp/yii2/framework" --lib "$tmp/yii2-queue/src" \
-        --lib-versions "yii2 $yii, yii2-queue $queue"
+        --lib "$tmp/yii2/framework" --lib "$tmp/yii2-queue/src" --lib "$tmp/yii2-redis/src" \
+        --lib-versions "yii2 $yii, yii2-queue $queue, yii2-redis $redis"
     sh bin/check.sh || echo "check.sh fails against craftcms/cms $tag: fix the pack before releasing"
 else
     echo "source index not rebuilt (local CHANGELOG given); run without arguments to rebuild it"

@@ -49,7 +49,7 @@ def main() -> int:
     runner = Runner(claude_bin, args.model, 300, plugin_dir=True)
     failed = 0
     for s in scenarios:
-        _, skills, err = runner.claude(s["prompt"], str(REPO / s["cwd"]), "Skill", 3)
+        _, skills, err, _ = runner.claude(s["prompt"], str(REPO / s["cwd"]), "Skill", 3)
         if err:
             print(f"  ERROR {s['id']}: {err}")
             if err == "usage limit":

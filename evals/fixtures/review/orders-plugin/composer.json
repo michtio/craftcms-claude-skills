@@ -1,0 +1,7 @@
+{
+  "name": "acme/craft-orders",
+  "type": "craft-plugin",
+  "require": {"php": "^8.2", "craftcms/cms": "^5.12.0"},
+  "autoload": {"psr-4": {"acme\\orders\\": "src/"}},
+  "extra": {"handle": "orders", "name": "Orders", "class": "acme\\orders\\Plugin"}
+}

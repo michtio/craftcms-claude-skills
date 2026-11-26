@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.29.0 -- 2026-11-26
+
+Deep review runs as a team. `craft-code-reviewer-deep` no longer does one long `xhigh` pass: it runs PHPStan and ECS (check mode) as evidence, starts read-only checkers for the lenses the diff reaches, has every Critical and Important finding challenged once by a fresh checker, and merges one report. Small diffs, and sessions where agents cannot start agents, get a single pass.
+
+### Added
+
+- **`craft-review-checker` agent** -- one lens of a deep review (conventions, security, performance, migrations, CP JavaScript, release and hosting), started by the deep reviewer; also answers challenge rounds (uphold, refute with a citation, or unsure). Sonnet, preloads only `craftcms` (13.7 KB at startup). Not for direct use.
+- **Agent eval case** -- `deep-review-team-planted` runs the deep reviewer on a fixture plugin change with a planted IDOR, an N+1 query and a decoy; `release_evals.py` supports per-case `tools`, `max_turns`, `expect_agent` and `max_agents`, and counts agents started inside other agents.
+- **Redis behaviour case** -- the README Redis prompt, checked for the DDEV hostname, the mutex wrapper, sessions in `app.web.php` and the `FLUSHDB` trap.
+- **Routing scenarios: 18 to 28** -- field merges, categories/tags/globals to entries, and the README's example prompts word for word.
+
+### Changed
+
+- **`craft-code-reviewer-deep`** -- orchestrates instead of reviewing alone: effort `high` (was `xhigh`), no preloaded skills (38.8 to 7.2 KB at startup), at most 5 agents per review, a mode / checkers / agents line at the top of the report, and a "Dropped after challenge" section.
+- **Agent gate** (`bin/agent_budget.py`) -- the checker must start under 16 KB, the deep reviewer preloads nothing, and no reviewer agent uses `xhigh`, with a self-test.
+- **Source index** -- adds yii2-redis 2.1.3, so `yii\redis\*` symbols in the skills are verified.
+
+### Fixed
+
+- **Redis config (`craftcms`, `references/config-app.md`)** -- the mutex shared the cache's Redis database, so clearing caches (`FLUSHDB`) dropped held locks; it now uses its own database in both examples, and a note explains `FLUSHDB` and `shareDatabase`. Removed an invalid `yiisoft/yii2-queue[redis]` requirement (the driver ships in `yii2-queue`) and `ddev craft` as the production queue worker. Added the DDEV step: `REDIS_HOSTNAME=redis` in `.env`, since the add-on does not set it for Craft. Added managed-host notes (Craft Cloud and Servd wire the cache themselves).
+- **`craft-project-setup` routing** -- "set the repo up so Claude knows our conventions" in a Craft project loaded the built-in `/init` or no skill in 2 of 3 runs. The listing now says to use it instead of the generic `/init` in a Craft project (creating or updating CLAUDE.md, onboarding a developer, teaching Claude the project's conventions); 1,200 characters, lexical recall@1 132 to 133 of 165, no regressions.
+- **`ddev`** -- the Redis add-on section says how Craft reaches it and where the component config lives.
+- **`craft-cloud`** -- `deploy-pipeline.md` said the extension wires cache, queue, session and mutex to Redis; per the extension source only the cache uses Redis/Valkey, the queue is SQS and sessions are in the database (as `extension.md` already said).
+
 ## 1.28.2 -- 2026-11-26
 
 ### Changed

@@ -22,6 +22,12 @@ changes, run `scenario_check.py`: the realistic prompts in `scenarios.json`, eac
 a fixture project, passing when an expected skill loads (one call each). It replaces a
 full `route.py` A/B (about 800 calls) as the release gate; `route.py --changed-only`
 stays for a deliberate A/B.
+Agent cases (`behavior-sets/agents.json`) set their own `tools` and `max_turns`, and can
+require an agent (`expect_agent`) and cap the agents started (`max_agents`, counting nested
+ones). One such case is one `claude -p` call that runs several agents, so it costs more
+than a skill case: `deep-review-team-planted` runs the deep reviewer and its checkers on
+a planted diff (`fixtures/review/orders-plugin`). `--out` keeps each answer for reading
+a failure.
 Never run AI evals in CI, nightly or on API credit.
 
 | Tool | Tier | Makes model calls? |

@@ -53,7 +53,7 @@ Read only what the task needs; multiple files often apply. **The full task index
 - Tests → load `craft-pest`; Cloud compatibility → load `craft-cloud` (`plugin-development.md`); headless front ends → `craft-site` (`headless.md`)
 - "Which Craft version does this feature need? / What can this project use on its version?" → grep `version-table.md` for the feature or version (every version tag in the pack, with older-version alternatives); it is large, so don't read it whole
 
-**Large files: read the Contents block, then only the section.** `architecture.md`, `config-general.md`, `controllers.md`, `cp.md`, `cp-ui-patterns.md`, `element-index.md`, `elements.md`, `events.md`, `graphql.md` and `permissions.md` start with a Contents block that gives each section's line range. Read the first 40 lines, then Read only the section you need with `offset`/`limit`, never the whole file.
+**Large files: read the Contents block, then only the section.** `architecture.md`, `config-app.md`, `config-general.md`, `controllers.md`, `cp.md`, `cp-ui-patterns.md`, `element-index.md`, `elements.md`, `events.md`, `graphql.md` and `permissions.md` start with a Contents block that gives each section's line range. Read the first 40 lines, then Read only the section you need with `offset`/`limit`, never the whole file.
 
 | Task | Read | ~Tokens |
 |------|------|--------:|
@@ -80,7 +80,7 @@ Read only what the task needs; multiple files often apply. **The full task index
 | GeneralConfig (system, routing, security, users, sessions, search, assets, images) | `references/config-general.md` | 8.4K |
 | Craft version table, generated from the pack's version tags | `references/version-table.md` | 13.3K |
 | GeneralConfig (content, templates, performance, GC, localization, headless, GraphQL) | `references/config-general-extended.md` | 7.2K |
-| App config: cache, session, queue, mutex, mailer, search, logging, CORS, DB replicas, modules | `references/config-app.md` | 5.5K |
+| App config: cache, session, queue, mutex (Redis, one database each), mailer, search, logging, CORS, DB replicas, modules | `references/config-app.md` | 8.0K |
 | Config bootstrap: env vars, aliases, App::parseEnv, custom.php, db.php, routes.php | `references/config-bootstrap.md` | 3.6K |
 | Caching: template cache, data cache, static caching, CDN, invalidation | `references/caching.md` | 5.2K |
 | Permissions: handles, user groups, registration, checking, events | `references/permissions.md` | 4.7K |
