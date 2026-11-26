@@ -13,8 +13,8 @@
 #   - only known keys: the spec's fields plus Claude Code's `when_to_use`
 #   - name: 1-64 chars, lowercase letters/digits/hyphens, matches the directory
 #   - description: 1-1024 chars (spec limit)
-#   - description + " - " + when_to_use: <= 1536 chars (Claude Code truncates
-#     the combined text in the skill listing beyond this)
+#   - description + " - " + when_to_use: <= 1300 chars, the pack budget (Claude Code truncates
+#     the combined text beyond 1536; the headroom leaves room to fix a routing miss)
 #   - SKILL.md body (after the frontmatter) <= 12 KB: it loads in full with the
 #     skill, so detail lives in references/
 #   - scripts/craft-version.sh is byte-identical to bin/craft-version.sh
@@ -37,7 +37,7 @@ ruby -ryaml - "$REPO_ROOT"/skills/*/SKILL.md <<'RUBY' || status=1
 ALLOWED = %w[name description license compatibility metadata allowed-tools when_to_use]
 DESC_MAX = 1024
 BODY_MAX = 12 * 1024 # bytes after the frontmatter (R10, ~3K tokens); detail belongs in references/
-LISTING_MAX = 1536
+LISTING_MAX = 1300 # pack budget (R14): ~15% under Claude Code's 1,536-char listing cap
 SEPARATOR = " - "
 
 failures = 0
