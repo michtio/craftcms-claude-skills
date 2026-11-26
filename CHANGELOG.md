@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.24.0
+## 1.24.0 -- 2026-11-26
 
 Makes the pack Craft-version-aware. In a Craft project, the skills now know which Craft version the project runs and compare it with version tags throughout the pack. They also warn when the version is below the minimum safe release. Measured with `evals/behavior_check.py --runs 2`, with the version detected from fixture projects instead of stated in the prompt: the three version cases from the 2026-11-04 baseline went from 2 of 6 to 6 of 6, and all 7 version cases pass, in both the symlink and the plugin install. Version tags are checked against Craft's CHANGELOG through 5.12.4.
 
