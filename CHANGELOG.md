@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.28.0 -- unreleased
+## 1.28.0 -- 2026-11-26
 
 Sharper skill listings. Every listing (description + when_to_use) now fits 1,300 characters, about 15% under Claude Code's 1,536-character cap, so there is room to fix a routing miss without truncation. The 14 listings over budget dropped repeated and low-signal terms (21,465 to 17,494 characters) and kept every "Always use when" and "Do NOT trigger" clause. Routing measured without a full A/B: the lexical check shows no regression (recall@1 130 to 131 of 165, recall@3 158 of 165), and 8 real-life scenario prompts run inside fixture projects all load the right skills, in 8 model calls.
 
