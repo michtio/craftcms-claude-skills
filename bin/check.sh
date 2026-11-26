@@ -13,6 +13,7 @@
 #   tables            MCP tool catalogue and config defaults match the source
 #   facts             every behaviour case's facts hold (evals/facts_check.py)
 #   routing           lexical routing vs evals/routing-baseline.json (evals/lexical_route.py)
+#   release-evals     the release-time runner stops at a usage limit (stub claude, no model)
 # Each check that reads a fixture must also FAIL on its bad fixture; those
 # negative tests run here too, so a check that silently stops checking fails.
 #
@@ -80,6 +81,9 @@ must_fail "tables self-test (project_config_status at read)" python3 bin/craft_s
 gate      "facts (behaviour cases)"        python3 evals/facts_check.py
 gate      "routing (lexical baseline)"     python3 evals/lexical_route.py
 must_fail "routing self-test (flooded listing)" python3 evals/lexical_route.py --self-test
+grep_ok   "release-evals self-test (stops at a usage limit, stub claude)" 'errors: 1 (1 usage limit).*model calls: 1$' \
+          python3 evals/release_evals.py --assume-changed skills/craft-mcp/references/oauth-server.md \
+          --claude-bin evals/fixtures/stub-claude/claude-limit --workers 1 --no-cache
 
 if [ "$failed" -ne 0 ]; then
     echo "check.sh: FAILED"

@@ -317,6 +317,12 @@ def main():
     parser.add_argument("--timeout", type=int, default=180, help="Per-query subprocess timeout in seconds (default: 180)")
     parser.add_argument("--claude-bin", default=None, help="Path to the claude binary (default: autodetect via PATH)")
     parser.add_argument(
+        "--changed-only",
+        action="store_true",
+        help="Ask only the trigger sets of skills whose listing (description + when_to_use) differs between "
+             "the two conditions. Without --compare-ref, compares against the last v* tag. Release-time default.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Set up command files + settings.json and print what would be asked. Makes ZERO model calls.",
@@ -329,7 +335,31 @@ def main():
         print(f"error: no trigger-set queries found under {args.sets}", file=sys.stderr)
         sys.exit(1)
 
+    if args.changed_only and not args.compare_ref:
+        args.compare_ref = subprocess.run(
+            ["git", "-C", str(REPO), "describe", "--tags", "--abbrev=0", "--match", "v*"],
+            capture_output=True, text=True,
+        ).stdout.strip() or None
+        if not args.compare_ref:
+            print("error: --changed-only needs a v* tag or --compare-ref", file=sys.stderr)
+            sys.exit(1)
+
     conditions = [args.ref] + ([args.compare_ref] if args.compare_ref else [])
+
+    if args.changed_only:
+        def listing(name: str, ref: str) -> tuple[str, str] | None:
+            try:
+                fm = parse_frontmatter(skill_md_text(name, ref))
+            except RuntimeError:
+                return None
+            return fm.get("description", ""), fm.get("when_to_use", "")
+        changed = {n for n in skill_names if listing(n, conditions[0]) != listing(n, conditions[1])}
+        items = [i for i in items if i["skill"] in changed]
+        print(f"--changed-only: listings changed between {conditions[0]} and {conditions[1]}: "
+              f"{', '.join(sorted(changed)) or 'none'} ({len(items)} queries)", file=sys.stderr)
+        if not items:
+            print("No listing changed: nothing to A/B.", file=sys.stderr)
+            return
 
     claude_bin = args.claude_bin or shutil.which("claude") or "/opt/homebrew/bin/claude"
 

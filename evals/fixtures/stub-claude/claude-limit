@@ -1,0 +1,5 @@
+#!/bin/sh
+# Stub `claude` for evals/release_evals.py self-tests: every call answers with the
+# seat's usage-limit message, as a real claude -p does once the limit is hit.
+printf '%s\n' '{"type":"result","subtype":"success","is_error":true,"result":"You'"'"'ve hit your 5-hour limit · resets 7:10am"}'
+exit 1

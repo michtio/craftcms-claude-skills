@@ -4,6 +4,31 @@ Token-budget and trigger-quality tooling for this plugin's 15 skills and 6
 agents. Nothing in here ships to users — it's measurement and regression
 tooling for whoever edits `skills/*/SKILL.md` or `agents/*.md`.
 
+## Two tiers
+
+**Every push: deterministic, no model.** `sh bin/check.sh` (also what CI runs) checks
+frontmatter, version tags, every Craft symbol and the MCP/config tables against the
+`craftcms/cms` source index, the `facts` of every behaviour case (`facts_check.py`)
+and lexical routing against `routing-baseline.json` (`lexical_route.py`). These catch
+the errors that matter most, text that contradicts the source, without spending
+any of the seat's usage.
+
+**Release time only: AI evals, scoped.** `release_evals.py` runs `claude -p` only for
+cases that depend on files changed since the last tag, plus `smoke.json`. Passes are
+cached by content hash (`.cache/`, never committed), each case runs once with one
+retry, a usage-limit message stops the run and counts as an error rather than a
+failure, and the call count is printed. Always `--dry-run` first. For listing
+changes, add `route.py --changed-only` (A/B against the last tag, changed skills only).
+Never run AI evals in CI, nightly or on API credit.
+
+| Tool | Tier | Makes model calls? |
+|---|---|---|
+| `facts_check.py` | every push | No |
+| `lexical_route.py` | every push | No |
+| `release_evals.py` | release | **Yes** (`--dry-run`: no) |
+| `route.py --changed-only` | release, listing changes only | **Yes** (`--dry-run`: no) |
+| `behavior_check.py`, `trigger_check.py` | ad hoc, one set at a time | **Yes** |
+
 ## What each tool measures
 
 | Tool | Question it answers | Makes model calls? |
