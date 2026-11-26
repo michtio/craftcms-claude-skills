@@ -7,6 +7,10 @@ Factories, HTTP, queue, database assertions, multi-site, mocking, console comman
 - Common pitfalls
 - Setup and file conventions
 - Pin behaviour before refactoring
+- A test can encode the bug
+- Prove a fix or guard is not vacuous by breaking it
+- What a green suite does not prove
+- Two harnesses (and when Pest isn't the answer)
 - Pure unit tests (no Craft boot)
 - Element factories
 - HTTP testing
@@ -114,6 +118,29 @@ A test that pins a subtle invariant — an ordering constraint, a fail-closed gu
 - **For fail-closed guards**, force the bad condition (e.g. point the DB pin at a bogus name — see `isolation.md`) and confirm the process exits non-zero, not just that a message prints.
 
 Report that the step was done ("reverted the fix, test fails; restored, passes") — it's what makes the test trustworthy to the next reader, and it costs a minute.
+
+## What a green suite does not prove
+
+Worth holding in mind, because each of these has shipped a real bug past a passing test run:
+
+- **Service-layer tests never see the HTTP layer.** Reserved query params, CSRF, route resolution, and response formats only fail on a real request. See the `craftcms` skill's `controllers.md`.
+- **A green run on a seeded dev install is not authoritative.** Confirm against a freshly created test database before believing it.
+- **A console-driven harness is not a browser.** Sessions, user-agent gates, and impersonation behave differently. See `craft-state.md`.
+- **One long-lived process is not a sequence of requests.** Craft invalidates many caches by ending the request. A suite that creates sites, swaps components, or mutates project config mid-process carries stale memos that no production code path would ever see. See `craft-state.md`.
+- **A suite that isn't in CI doesn't exist.** It rots at the speed of the codebase. See `ci.md`.
+
+## Two harnesses (and when Pest isn't the answer)
+
+| Aspect | Codeception (Craft's native) | Pest + craft-pest-core |
+|--------|------------------------------|------------------------|
+| Base class | `craft\test\TestCase` | `markhuot\craftpest\test\TestCase` |
+| Element creation | Fixture classes + data files | `Entry::factory()->create()` |
+| HTTP | `FunctionalTester` (`$I`) | `$this->get('/path')->assertOk()` |
+| Rollback | Fixture teardown | `RefreshesDatabase` trait (opt-in) |
+
+Use Pest for new plugin work. Use Codeception when contributing to Craft core or extending an existing Codeception suite.
+
+For **pure unit tests** that don't need Craft booted, skip craft-pest entirely and extend `PHPUnit\Framework\TestCase` — booting Craft is the expensive, stateful part, and a test that doesn't need a database shouldn't risk one. See Pure unit tests below for the `\Craft` / `\Yii` autoload caveat.
 
 ## Pure unit tests (no Craft boot)
 

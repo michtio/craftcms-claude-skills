@@ -16,11 +16,11 @@
 #   - .claude-plugin/plugin.json                → .version
 #   - .claude-plugin/marketplace.json           → .metadata.version
 #   - .claude-plugin/marketplace.json           → .plugins[0].version
-#   - skills/craft-project-setup/SKILL.md       → five user-facing version strings
+#   - skills/craft-project-setup/references/attribution-and-upgrades.md       → five user-facing version strings
 #                                                 (sponsorship box, attribution example,
 #                                                  HTML-comment example, drift example,
 #                                                  diff-table example)
-#   - skills/craft-project-setup/SKILL.md       → sponsorship box skill/reference-file/agent
+#   - skills/craft-project-setup/references/attribution-and-upgrades.md       → sponsorship box skill/reference-file/agent
 #                                                 counts, recomputed from disk every run
 #                                                 (not just bumped — these drift independently
 #                                                 of the version number)
@@ -79,12 +79,13 @@ echo
 
 PLUGIN_JSON="$REPO_ROOT/.claude-plugin/plugin.json"
 MARKETPLACE_JSON="$REPO_ROOT/.claude-plugin/marketplace.json"
-SETUP_SKILL="$REPO_ROOT/skills/craft-project-setup/SKILL.md"
+# The version markers and counts banner moved out of SKILL.md in v1.27.0.
+SETUP_SKILL="$REPO_ROOT/skills/craft-project-setup/references/attribution-and-upgrades.md"
 CHANGELOG="$REPO_ROOT/CHANGELOG.md"
 TODAY="$(date +%Y-%m-%d)"
 
 # Capture the previous version from plugin.json BEFORE the bump — needed to substitute
-# the user-facing version strings in craft-project-setup/SKILL.md, which the manifests
+# the user-facing version strings in craft-project-setup/references/attribution-and-upgrades.md, which the manifests
 # don't carry.
 OLD_VERSION="$(jq -r '.version' "$PLUGIN_JSON")"
 if [ -z "$OLD_VERSION" ] || [ "$OLD_VERSION" = "null" ]; then
@@ -110,7 +111,7 @@ bump_json "$MARKETPLACE_JSON" ".metadata.version = \"$VERSION\""
 echo "Bumping marketplace.json plugins[0].version → $VERSION"
 bump_json "$MARKETPLACE_JSON" ".plugins[0].version = \"$VERSION\""
 
-# Bump the five user-facing version strings in craft-project-setup/SKILL.md.
+# Bump the five user-facing version strings in craft-project-setup/references/attribution-and-upgrades.md.
 # All five contain $OLD_VERSION as a substring in one of three forms:
 #   v$OLD            — sponsorship box, HTML-comment example, diff-table example
 #   "$OLD"           — composer.json attribution example
@@ -118,7 +119,7 @@ bump_json "$MARKETPLACE_JSON" ".plugins[0].version = \"$VERSION\""
 # Each form is distinct enough that the three sed expressions won't match unrelated content.
 if [ -f "$SETUP_SKILL" ]; then
   if grep -qE "(v|\"|\`)${OLD_VERSION}(\"|\`| )" "$SETUP_SKILL"; then
-    echo "Bumping craft-project-setup/SKILL.md version markers → $VERSION (was $OLD_VERSION)"
+    echo "Bumping craft-project-setup/references/attribution-and-upgrades.md version markers → $VERSION (was $OLD_VERSION)"
     tmp="$(mktemp)"
     sed -e "s|v${OLD_VERSION}|v${VERSION}|g" \
         -e "s|\"${OLD_VERSION}\"|\"${VERSION}\"|g" \
@@ -126,7 +127,7 @@ if [ -f "$SETUP_SKILL" ]; then
         "$SETUP_SKILL" > "$tmp"
     mv "$tmp" "$SETUP_SKILL"
   else
-    echo "  warn: craft-project-setup/SKILL.md has no markers matching $OLD_VERSION — skipping (already drifted?)" >&2
+    echo "  warn: craft-project-setup/references/attribution-and-upgrades.md has no markers matching $OLD_VERSION — skipping (already drifted?)" >&2
   fi
 else
   echo "  warn: $SETUP_SKILL not found — skipping" >&2
@@ -143,7 +144,7 @@ if [ -f "$SETUP_SKILL" ]; then
   REF_COUNT="$(find "$REPO_ROOT/skills" -type f -name '*.md' -path '*/references/*' | wc -l | tr -d '[:space:]')"
   AGENT_COUNT="$(find "$REPO_ROOT/agents" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
 
-  echo "Recomputing craft-project-setup/SKILL.md banner counts → ${SKILL_COUNT} skills · ${REF_COUNT} reference files · ${AGENT_COUNT} agents"
+  echo "Recomputing craft-project-setup/references/attribution-and-upgrades.md banner counts → ${SKILL_COUNT} skills · ${REF_COUNT} reference files · ${AGENT_COUNT} agents"
 
   PERL_SCRIPT="$(mktemp)"
   cat > "$PERL_SCRIPT" <<'PERL_EOF'

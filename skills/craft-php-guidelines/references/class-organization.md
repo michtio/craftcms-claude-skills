@@ -124,6 +124,15 @@ enum BulkOperationStatus: string
 - Enums can have methods — use them for labels, colors, and computed values.
 - Always string-back or int-back enums for database storage.
 
+## Control Flow
+
+- **Happy path last.** Handle error conditions first with early returns.
+- **Avoid `else`** — use early returns instead.
+- **Prefer `match` over `switch`** for value-mapping and returns. The official guideline is "don't use `switch` when a single `if` suffices"; `switch` remains acceptable where it reads more clearly (and is common in core).
+- **Always use curly brackets** even for single statements.
+- **Separate compound conditions** into nested `if` statements for readability.
+- **Named arguments** when calling methods with 3+ parameters.
+
 ## Control Flow Examples
 
 ```php

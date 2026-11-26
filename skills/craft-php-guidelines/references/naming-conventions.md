@@ -65,3 +65,29 @@ This applies to:
 - **Behavior callables** referenced by name
 
 General principle: any method Yii invokes by name is part of the public API surface.
+
+## Quick Reference
+
+| Thing | Convention | Example |
+|-------|-----------|---------|
+| Services (resource) | Plural | `Entries`, `Volumes`, `Users` |
+| Services (utility) | Domain noun | `Auth`, `Search`, `Gc` |
+| Queue jobs | Action verb, no suffix | `ResaveElements`, `UpdateSearchIndex` |
+| Records | Same name as model | Namespace distinguishes |
+| Events | Three patterns | `SectionEvent`, `RegisterUrlRulesEvent`, `DefineHtmlEvent` |
+| Element actions | Action verb, no suffix | `Delete`, `Duplicate`, `SetStatus` |
+| Enums | PascalCase cases, string/int backed | `PropagationMethod`, `CmsEdition` |
+
+## Permission Handles
+
+**Permission handles are kebab-case (`handle:manage-settings`); never camelCase.** Both halves are lowercase kebab — `savepoint:manage-settings`, `multiplayer:take-over-field`, not `savepoint:manageSettings`.
+
+Craft lowercases permission names into `userpermissions.name`, so case is discarded on the way to storage: `manageSettings` collapses to `managesettings`, while `manage-settings` keeps its word boundaries and stays readable in the database, in exports, and in debug output.
+
+**Craft core's own permissions are camelCase** (`accessCp`, `editUsers`, `viewPeerEntries`). This is a deliberate divergence for plugin-owned handles — don't "correct" plugin handles back to camelCase for consistency with core, and don't rewrite core's handles.
+
+The PHP constant holding the handle stays `SCREAMING_SNAKE_CASE` (`PERMISSION_MANAGE_SETTINGS`); only the string value is kebab. Full mechanics in the `craftcms` skill's `permissions.md`.
+
+### Permission handle constants
+
+Duplicating contract constants as `private const` across multiple classes with "keep in lockstep" comments — PHPStan can't detect drift. Declare `public const` on the owning service, reference as `OwnerService::CONSTANT_NAME` everywhere else. This applies specifically to **permission handles**: a handle like `'my-plugin:manage-settings'` is a contract string referenced from registration (`EVENT_REGISTER_PERMISSIONS`), the controller gate (`requirePermission()`), and the nav check (`->can()`); a bare literal drifts silently and a typo passes for admins (who hold every permission) while denying everyone else. Declare it as a `public const` on the controller that enforces it — `SettingsController::PERMISSION_MANAGE_SETTINGS` — and reference the const everywhere. (Craft core uses bare literals here; the const is a deliberately stricter house rule. See the `craftcms` skill's `permissions.md`.)

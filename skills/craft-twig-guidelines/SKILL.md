@@ -18,13 +18,10 @@ all Twig code — atomic components, views, layouts, builders, partials.
 
 ## Companion Skills — Always Load Together
 
-When this skill triggers, also load:
-
-- **`craft-site`** — Template architecture and component patterns. Required when creating or editing components, layouts, views, or builders.
+- **`craft-site`** — Template architecture and component patterns (atomic design, routing, builders). Required when creating or editing components, layouts, views, or builders.
 - **`craft-content-modeling`** — Content architecture. Required when template code involves element queries, field access, or section decisions.
 
-For Twig **architecture** patterns (atomic design, routing, builders), see the
-`craft-site` skill. For PHP coding standards, see `craft-php-guidelines`.
+For PHP coding standards, see `craft-php-guidelines`.
 
 ## Documentation
 
@@ -35,427 +32,41 @@ For Twig **architecture** patterns (atomic design, routing, builders), see the
 
 Use `WebFetch` on specific doc pages when something isn't covered here.
 
-## Variable Naming
-
-Single-word, descriptive, lowercase preferred. When multi-word is needed, use
-camelCase.
-
-```twig
-{# Correct #}
-{% set heading = entry.title %}
-{% set image = entry.heroImage.one() %}
-{% set items = navigation.links.all() %}
-{% set element = props.get('url') ? 'a' : 'span' %}
-{% set buttonText = entry.callToAction %}
-{% set containerClass = 'max-w-3xl' %}
-
-{# Wrong — abbreviations #}
-{% set el = props.get('url') ? 'a' : 'span' %}
-{% set btn = entry.callToAction %}
-{% set nav = navigation.links.all() %}
-
-{# Wrong — snake_case #}
-{% set button_text = entry.callToAction %}
-{% set container_class = 'max-w-3xl' %}
-```
-
-No abbreviations: `element` not `el`, `button` not `btn`, `navigation` not `nav`,
-`description` not `desc`.
-
-Prefer single-word names when context makes the meaning clear (e.g. `heading`
-inside a component is better than `sectionHeading`). But multi-word camelCase is
-perfectly fine when needed for clarity.
-
-## Null Handling
-
-`??` is the default. Always safe, always portable.
-
-`???` (empty coalesce) is acceptable if the project already has `nystudio107/craft-emptycoalesce` or `nystudio107/craft-seomatic` installed — both provide the operator. But never install a plugin just for `???`. Check `composer.json` first.
-
-```twig
-{# Always correct #}
-{% set heading = entry.heading ?? '' %}
-{% set image = entry.heroImage.one() ?? null %}
-{{ props.get('label') ?? 'Default' }}
-
-{# OK if empty-coalesce or SEOmatic is installed — checks empty, not just null #}
-{% set heading = entry.heading ??? '' %}
-
-{# Wrong — verbose, unnecessary #}
-{% if entry.heading is defined and entry.heading is not null %}
-{% if entry.heading is not defined %}
-```
-
-Craft 5 supports the nullsafe operator (`?.`). Use it for deep traversal through
-chains that may have null links — it propagates `null` cleanly without the verbose
-`is defined and is not null` dance:
-
-```twig
-{# Reach for ?. when any link in the chain may be null #}
-{{ entry?.author?.fullName ?? 'Anonymous' }}
-
-{# ?? alone is enough when only the leaf is in question #}
-{{ entry.title ?? '' }}
-```
-
-`??` stays the right tool for simple "value or fallback" cases; `?.` is for chains
-where intermediate links may be missing. Don't reach for `?.` on a single property
-access — it adds noise without adding safety.
-
-## Whitespace Control
-
-Use `{%-` and `{{-` for whitespace trimming. Never use `{%- minify -%}`.
-
-```twig
-{# Correct — surgical whitespace control #}
-{%- set heading = entry.title -%}
-{%- if heading -%}
-    {{- heading -}}
-{%- endif -%}
-
-{# Wrong — deprecated minification approach #}
-{%- minify -%}
-    {% set heading = entry.title %}
-{%- endminify -%}
-```
-
-Apply whitespace control on tags that produce unwanted blank lines in output.
-Not every tag needs it — use where visible output whitespace matters.
-
-## Include Isolation
-
-Every `{% include %}` MUST use `only`. No exceptions.
-
-```twig
-{# Correct — explicit, isolated #}
-{%- include '_atoms/buttons/button--primary' with {
-    text: entry.title,
-    url: entry.url,
-} only -%}
-
-{# Wrong — ambient variables leak in #}
-{%- include '_atoms/buttons/button--primary' with {
-    text: entry.title,
-    url: entry.url,
-} -%}
-```
-
-Without `only`, a component can silently depend on variables from its parent
-scope, creating invisible coupling.
-
-The same rule covers `{% render %}` [5.12+], which takes the same `with … only`
-grammar (or `only` alone). Without `only` the element partial receives the whole
-parent context:
-
-```twig
-{# Correct #}
-{%- render entry.contentBlocks with { theme: 'dark' } only -%}
-
-{# Wrong: every parent variable leaks into each partial #}
-{%- render entry.contentBlocks with { theme: 'dark' } -%}
-```
-
-[5.12+] Before 5.12: the tag doesn't exist and fails the whole template at compile time,
-so on older sites (or templates shared with them) use `{{ entry.contentBlocks.render({ theme: 'dark' }) }}`,
-which passes only the given variables. Inside the partial, `entry` is the rendered
-element, never the page entry: pass the page in `with` when the partial needs it.
-Partial lookup, `loop` and the collection `render()` method: `craft-site`
-(`references/element-partials.md`).
-
-`include_only()` [5.12+] (Twig 3.29) is the function form of an isolated include:
-`{{ include_only('_atoms/badge', { text: label }) }}`. [5.12+] Before 5.12:
-`{{ include('_atoms/badge', { text: label }, with_context = false) }}`.
-
-## No Macros for Components
-
-Never use `{% macro %}` for UI components. Macros don't support extends/block
-and their scoping model differs from includes.
-
-```twig
-{# Wrong — macro for a component #}
-{% macro button(text, url) %}
-    <a href="{{ url }}">{{ text }}</a>
-{% endmacro %}
-
-{# Correct — include with isolation #}
-{%- include '_atoms/buttons/button--primary' with {
-    text: text,
-    url: url,
-} only -%}
-```
-
-Macros are acceptable for utility functions that return strings (e.g., formatting
-helpers), not for rendering UI.
-
-## Comment Headers
-
-Every component file gets a section header comment:
-
-```twig
-{# =========================================================================
-   Component Name
-   Brief description of what this component does.
-   ========================================================================= #}
-```
-
-Props files, variant files, views, layouts — all get headers. The `=========`
-separator matches the PHP convention from `craft-php-guidelines`.
-
-## Craft Twig Helpers
-
-### `{% tag %}` — Polymorphic Elements
-
-Primary tool for rendering elements whose tag name depends on props.
-
-```twig
-{%- set element = props.get('url') ? 'a' : 'span' -%}
-
-{%- tag element with {
-    class: classes.implode(' '),
-    href: props.get('url') ?? false,
-    target: props.get('target') ?? false,
-    rel: props.get('rel') ?? false,
-    aria: {
-        label: props.get('label') ?? false,
-    },
-} -%}
-    {{ props.get('text') }}
-{%- endtag -%}
-```
-
-Rules:
-- Variable name must be descriptive: `element`, `heading`, `wrapper`. Never `el`, `hd`.
-- `false` omits an attribute entirely from the rendered HTML.
-- `null` also omits. Use `false` when explicitly excluding, `null` when absent.
-- `class` accepts arrays with automatic falsy filtering.
-- `aria` and `data` accept nested hashes that expand to `aria-*` / `data-*` attributes.
-
-### `tag()` — Inline Element Function
-
-For simple elements without complex inner content:
-
-```twig
-{{ tag('span', { class: 'sr-only', text: '(opens in new window)' }) }}
-{{ tag('img', { src: image.url, alt: image.title, loading: 'lazy' }) }}
-{{ tag('i', { class: ['fa-solid', icon], aria: { hidden: 'true' } }) }}
-
-{# Craft 5.10+: pass a string as the second arg as a text-only shortcut #}
-{{ tag('span', 'Read more') }}
-```
-
-- `text:` key = HTML-encoded content.
-- `html:` key = raw HTML content (trusted input only).
-- Self-closing elements (`img`, `input`, `br`) handled automatically.
-
-### `attr()` — Attribute Strings
-
-For building attributes in non-tag contexts:
-
-```twig
-<div{{ attr({ class: ['card', active ? 'card--active'], data: { id: entry.id } }) }}>
-```
-
-Returns a space-prefixed attribute string. Same `false`-means-omit and class
-array filtering as `{% tag %}`.
-
-### `|attr` Filter
-
-For merging attributes onto existing HTML strings:
-
-```twig
-{{ svg('@webroot/icons/check.svg')|attr({ class: 'w-4 h-4', aria: { hidden: 'true' } }) }}
-```
-
-### `|parseAttr` Filter
-
-For extracting attributes from an HTML string into a hash for manipulation:
-
-```twig
-{% set attributes = '<div class="foo" data-id="1">'|parseAttr %}
-{# attributes = { class: 'foo', data: { id: '1' } } #}
-```
-
-### `|append` Filter
-
-For adding content to an element string:
-
-```twig
-{{ svg('@webroot/icons/logo.svg')|append('<title>Company Logo</title>', 'replace') }}
-```
-
-### `svg()` Function
-
-```twig
-{{ svg('@webroot/icons/logo.svg') }}
-{{ svg(entry.svgField.one()) }}
-```
-
-Combine with `|attr` for classes and aria attributes. Use `|append` for
-accessible labels inside the SVG.
-
-### `url()` with `false` Params [5.11+]
-
-Passing `false` as the second argument strips every query-string param from
-an absolute URL. Canonical links, share URLs, and "clear filters" links:
-
-```twig
-<link rel="canonical" href="{{ url(craft.app.request.absoluteUrl, false) }}">
-<a href="{{ url(craft.app.request.absoluteUrl, false) }}">Clear filters</a>
-```
-
-An array still merges params in; `false` removes them all. The stripping
-only applies when the passed-in URL is absolute, so feed it a full URL, not a
-path. PHP has the same call as `UrlHelper::url($url, false)`, plus
-`UrlHelper::removeParams($url, [...])` and `UrlHelper::removeAllParams($url)`
-for finer control.
-[5.11+] `false` is new. Before 5.11: rebuild the clean URL with
-`siteUrl(craft.app.request.pathInfo)` instead.
-
-### `heading()` / `h()` / `h1()`…`h6()` — Programmatic Headings [5.10+]
-
-Build heading tags from a dynamic level without string-concatenation. Useful in
-components that receive a `level` prop and need to render the matching tag
-without doing `tag('h' ~ level, { text: title })` manually.
-
-`heading()` and `h()` need [5.10+]. Before 5.10: build the tag from the level yourself. `{{ tag('h' ~ level, { text: title }) }}` (`tag()` takes an attributes array; `text` is encoded, `html` is not) or `{% tag 'h' ~ level with { class: 'text-xl' } %}Subsection{% endtag %}`. Don't ship `heading()` / `h()` to a site below 5.10.
-
-```twig
-{# heading(level, text-or-attributes) — level is an int 1-6 #}
-{{ heading(2, 'Section title') }}                     {# <h2>Section title</h2> #}
-{{ heading(3, { class: 'text-xl', text: 'Subsection' }) }}
-
-{# h() is the short alias for heading() #}
-{{ h(2, 'Section title') }}
-
-{# Bound-level shortcuts — only attributes/text needed #}
-{{ h1('Page title') }}
-{{ h2('Section') }}
-{{ h6({ class: 'sr-only', text: 'Hidden heading' }) }}
-```
-
-These are stateless tag builders — there's no auto-incrementing or current-level
-tracking. Components that need to thread a level across nested contexts still
-pass it as a prop. `heading()` throws `InvalidArgumentException` when level is
-outside 1-6.
-
-### Filter Additions [5.10+]
-
-```twig
-{{ price|number(locale: 'de-DE') }}                   {# locale arg #}
-{{ entry.postDate|datetime('long', withTimeZone: true) }}
-{{ deadline|time('short', withTimeZone: true) }}
-{{ maybeNull|timestamp }}                              {# returns "now" for null/empty #}
-```
-
-### Case Filters Follow the Site Language [changed 5.12]
-
-Craft overrides Twig's `upper`, `lower`, `title` and `capitalize` filters with
-ICU casing for the current app language (the site's language on front-end
-requests, the user's CP language in the CP), and NFC-normalizes the string.
-[changed 5.12] Before 5.12: they were Twig's locale-neutral `mb_*` versions. No template changes,
-but output does on some languages. Observed in a runtime check:
-
-| Site language | Template | Output | With `('en')` |
-|---|---|---|---|
-| `tr` | `'istanbul'\|upper` | `İSTANBUL` | `ISTANBUL` |
-| `tr` | `'ISTANBUL'\|lower` | `ıstanbul` | `istanbul` |
-| `nl` | `'ijsland'\|title` | `IJsland` | `Ijsland` |
-| `el` | `'άλφα'\|upper` | `ΑΛΦΑ` (accent dropped) | `ΆΛΦΑ` |
-
-Other languages with their own ICU casing rules (Azerbaijani, Lithuanian) can
-change too. Each filter takes an optional `language` argument [5.12+]:
-
-```twig
-{{ product.sku|upper('en') }}         {# locale-neutral codes and identifiers #}
-{{ heading|upper }}                   {# site language: right for display copy #}
-{{ heading|title(currentSite.language) }}
-```
-
-- Pass a neutral language (`'en'`) for codes, SKUs, handles, CSS-class or
-  ID fragments built with `|lower`, and anything compared against stored values.
-- Leave display copy on the default: the new casing is what the language expects.
-- [5.12+] Before 5.12: the filters take no argument, so templates shared with older sites
-  can't pass one. Audit `|upper`/`|lower` on tr/az/nl/el/lt sites when upgrading.
-
-### Twig 3.29 to 3.31 [5.12+]
-
-Craft 5.12.0 ships Twig 3.30 and [5.12.3+] Twig 3.31.1 (before 5.12: Twig 3.28).
-What template authors see:
-
-- **Macro deprecations** (Twig 3.29, errors in Twig 4): calling a macro without
-  parentheses (`{{ forms.field }}` → `{{ forms.field() }}`), calling it with a
-  different letter case than its definition, defining the same macro twice in a
-  template, passing unknown extra arguments to a macro without a variadic
-  argument, and omitting an argument that has no default.
-- **`include()`'s `sandboxed` argument** is deprecated (Twig 3.29).
-- **`matches`** throws on a PCRE error instead of returning false (Twig 3.29).
-- **`split`, `random`, `shuffle`, `reverse`** throw a clear error on invalid
-  UTF-8 (Twig 3.30).
-- **`spaceless`**: the `{% spaceless %}` tag doesn't exist in Twig 3 (unknown tag,
-  hard error, not a change in Craft). The `|spaceless` filter (and
-  `{% apply spaceless %}`) still works but has been deprecated since Twig 3.12;
-  Craft's own CP templates are the last core user of it [5.12.4+]. Use `{%-`/`-%}`
-  whitespace control instead.
-- Twig's `E_USER_DEPRECATED` notices are not recorded in Craft's deprecation
-  log (confirmed for `|spaceless` in a runtime check), so these deprecations are
-  silent until Twig 4. Grep for them instead of waiting for warnings.
-
-### Filtering and Mapping — Default to `collect()`
-
-For data manipulation in templates, **default to `collect()`** — one consistent, chainable API (`where`, `firstWhere`, `groupBy`, `keyBy`, `unique`, `pluck`, `map`, `filter`, `sortByDesc`) instead of mixing idioms:
-
-```twig
-{% set newsByYear = entries.collect
-    .where('type', 'news')
-    .sortByDesc('postDate')
-    .groupBy(e => e.postDate|date('Y')) %}
-```
-
-The bare Twig/Craft array filters are fine for a **single trivial operation inline** — `{% for e in entries|filter(e => e.enabled) %}` — where a Collection adds nothing. But Twig's `|filter`/`|map` return plain arrays and Craft's `|where`/`|firstWhere`/`|group`/`|index` go through `ArrayHelper`, so they **don't chain like Collection methods**; once you need more than one step, switch to `collect()`. Don't mix both styles arbitrarily.
-
-There is **no `|indexBy` filter** — key a list with `|index` (or `.keyBy()` on a Collection) and bucket with `|group` (or `.groupBy()`). (`|where`, `|firstWhere`, `|contains`, `|group`, `|index`, `|explodeClass`/`|explodeStyle` are all Craft-registered filters.)
-
-### Safe Output and Inline Assets
-
-- **`|t('category')`** — route every user-facing string through translation; never hardcode display copy.
-- **`|purify`** — sanitize untrusted or rich HTML rather than reaching for `|raw`. Reserve `|raw` for trusted field output (CKEditor/Redactor); never `|raw` user-submitted or query-string-derived content.
-- **`|explodeClass` / `|explodeStyle`** — normalize a class/style string to an array before merging, instead of hand-splitting on spaces.
-- **`{% js %}` / `{% css %}` / `{% script %}`** — register inline assets through the View (it dedupes and positions them) instead of hand-writing `<script>`/`<style>`. (`{% js %}`/`{% css %}` go through the asset manager; `{% script %}`/`{% html %}` are verbatim.)
-- **`{% dd %}` / `dump()`** — for debugging only; never ship them, and don't use `{{ x|json_encode }}` as a debug hack.
-- **`|e('js')` escapes aggressively** — the standard Twig JS escaper converts *every* non-alphanumeric ASCII char, including a space (`0x20`), to a `\uXXXX` sequence (a space becomes ` `). Correct and safe for embedding strings in inline JS, but it means a translated multi-*word* string never appears verbatim in the output — so grepping rendered HTML/JS (or a test `assertSee()`) for the whole phrase silently misses. Match a single token or a raw JS identifier instead. See the `craftcms` skill's `testing.md` for the QA/grep side.
-
-## `collect()` Conventions
-
-When building props and class collections, these are the style rules to enforce:
-
-- **camelCase keys** — `heroImage`, never `hero_image`.
-- **One named key per concern** — a class collection gets one key per style
-  concern (`layout`, `color`, `spacing`, …), never two classes fighting over the
-  same element.
-- **Build class strings with `.implode(' ')`** — never string concatenation
-  (`'flex ' ~ extraClass`).
-- **Null/empty values are harmless** — `implode(' ')` joins them as empty strings,
-  producing extra spaces that browsers normalize in class attributes.
-
-```twig
-{%- set classes = collect({
-    layout: 'flex items-center gap-2',
-    color: 'bg-brand-primary text-brand-on-primary',
-    hover: 'hover:bg-brand-accent',
-    utilities: props.get('utilities'),
-}) -%}
-
-class="{{ classes.implode(' ') }}"
-```
-
-For the full `collect()` method reference and architecture patterns (props
-collection, `get()`/`merge()`, entry-queries-as-Collections), see `craft-site`
-(`references/twig-collections.md`); for the named-key Tailwind class pattern, see
-`craft-site` (`references/tailwind-conventions.md`).
-
-## Copy style
-
-Never use em-dashes (—) or en-dashes (–) in user-facing copy: template text, `|t` strings, and any content authored into templates. Use commas, periods, colons, or parentheses instead; for ranges write "4 to 10" or a plain ASCII hyphen ("4-10"). Plain hyphens are fine. Twig comments (`{# … #}`) are exempt. Grep your templates for `—` and `–` before finishing. (This is the front-end half of the shared rule; the `craft-php-guidelines` skill carries the same rule for `Craft::t()` strings, field labels, CP notices, and docs.)
+## Reference Files
+
+| Task | Read | ~Tokens |
+|------|------|---------|
+| Correct/wrong examples for naming, `??`/`???`/`?.`, whitespace, `only` on include/render/`include_only()`, macros, comment headers, `collect()` classes, copy style; long form of the pitfalls | `references/core-conventions.md` | ~2,450 |
+| `{% tag %}`, `tag()`, `attr()`, `\|attr`, `\|parseAttr`, `\|append`, `svg()`, `url(…, false)`, `heading()`/`h()` [5.10+], filter additions [5.10+], `collect()` vs array filters, `\|t`/`\|purify`/`\|raw`, `{% js %}`/`{% css %}`, `\|e('js')` escaping | `references/craft-helpers.md` | ~1,950 |
+| Upgrading to 5.12 [changed 5.12]: case filters follow the site language, Twig 3.29 to 3.31 deprecations (`spaceless`, macro calls, `matches`) | `references/craft-5-12-changes.md` | ~800 |
+
+## Rules
+
+- **Naming**: camelCase, single word when context allows (`heading`, `buttonText`). Never snake_case, never abbreviations: `element` not `el`, `button` not `btn`, `navigation` not `nav`, `description` not `desc`.
+- **Nulls**: `??` is the default. `???` only when `nystudio107/craft-emptycoalesce` or `nystudio107/craft-seomatic` is already installed (check `composer.json`; never install one just for `???`). `?.` for chains whose intermediate links may be null (`entry?.author?.fullName ?? 'Anonymous'`), not for a single property. Never `is defined and is not null`.
+- **Whitespace**: `{%-` / `{{-` / `-%}` where output whitespace matters. Never `{%- minify -%}`.
+- **Every `{% include %}` uses `only`.** No exceptions: without it the component silently depends on parent variables. The same goes for `{% render %}` [5.12+]:
+
+  ```twig
+  {# Correct #}
+  {%- render entry.contentBlocks with { theme: 'dark' } only -%}
+  ```
+
+  [5.12+] Before 5.12 the tag fails the whole template at compile time: use `{{ entry.contentBlocks.render({ theme: 'dark' }) }}`. Inside the partial, `entry` is the rendered element, not the page entry. `include_only()` [5.12+] is the function form; [5.12+] before 5.12: `include(…, with_context = false)`. Partial lookup: `craft-site` (`references/element-partials.md`).
+- **No `{% macro %}` for UI components** (no extends/block, different scoping). Macros only for string-returning helpers.
+- **Every component file gets a header** (props, variants, views, layouts too), with the same `=========` separator as the PHP convention:
+
+  ```twig
+  {# =========================================================================
+     Component Name
+     Brief description of what this component does.
+     ========================================================================= #}
+  ```
+- **Polymorphic elements** use `{% tag element with {…} %}` with a descriptive variable (`element`, `wrapper`); `false` omits an attribute. `tag()`, `attr()`, `|attr`, `svg()`: `references/craft-helpers.md`.
+- **Class strings**: `collect({})` with camelCase named keys, one key per style concern, joined with `.implode(' ')`. Never `'flex ' ~ extraClass`. Full patterns: `craft-site` (`references/twig-collections.md`, `references/tailwind-conventions.md`).
+- **Data manipulation**: default to `collect()` chains; a bare `|filter`/`|map` only for one trivial inline step. There is no `|indexBy` (use `|index` or `.keyBy()`).
+- **Output**: every user-facing string through `|t('category')`; `|purify` for untrusted HTML, `|raw` only for trusted field output; `{% js %}`/`{% css %}` instead of hand-written `<script>`/`<style>`; never ship `{% dd %}`/`dump()`.
+- **Copy style**: no em-dashes (—) or en-dashes (–) in template text or `|t` strings; use commas, colons, parentheses, or a plain hyphen, and write ranges as "4 to 10". Twig comments are exempt. Grep for `—` and `–` before finishing.
 
 ## Common Pitfalls
 
@@ -468,15 +79,17 @@ Never use em-dashes (—) or en-dashes (–) in user-facing copy: template text,
 7. **Macros as components** — wrong scoping, no extends/block support.
 8. **Hardcoded colors in class strings** — `bg-yellow-600` → `bg-brand-accent`.
 9. **String concatenation for classes** — `'flex ' ~ extraClass` → use `collect({})` with named keys.
-10. **`is empty` / `|default` on Craft Models** [changed 5.10] — from 5.10 any `yii\base\Model` (entries, settings, custom models) is treated as non-empty regardless of its property values; before 5.10 these checks did not treat every model as non-empty. Means `{{ user|default('Guest') }}` always renders the user object; `{% if entry is empty %}` always false. Check the specific property you care about: `{% if entry.title is empty %}`.
+10. **`is empty` / `|default` on Craft Models** [changed 5.10]: from 5.10 every `yii\base\Model` counts as non-empty, so `{{ user|default('Guest') }}` renders the user. Test the property: `{% if entry.title is empty %}`.
 11. **`options.x` pattern** — old macro convention. Use direct variable names.
-12. **Blocks inside conditionals** — `{% if %}{% block foo %}{% endblock %}{% endif %}` is invalid Twig. Blocks are compile-time structures and cannot be conditionally defined. Move the conditional inside the block: `{% block foo %}{% if condition %}...{% endif %}{% endblock %}`.
-13. **Hardcoded `/admin` CP URL** — `cpTrigger` is configurable via `CRAFT_CP_TRIGGER` env var or `cpTrigger` in general.php. Many projects use `cp` instead of `admin`. Use `cpUrl()` function or check `.env` — never hardcode `/admin/`.
-14. **Em/en-dashes in user-facing copy**: don't put `—` or `–` in template text or `|t` strings. Use commas, colons, parentheses, or a plain hyphen; write ranges as "4 to 10". See the Copy style section.
-15. **Twig has no `instanceof`** — PHP that scopes behaviour per class (e.g. `match (true)` over `instanceof` checks in a controller) has no direct template equivalent, and the two silently drift when the template approximates it. Branch on a capability instead (`object.hasProperty('handle')`, `object.hasMethod(...)`), or have PHP pass an explicit discriminator (`type: 'entry'`) into the template.
-16. **Per-request output inside `{% cache %}`**: the tag stores the body and replays the `{% js %}`, `{% script %}` and `{% css %}` it captured, so a CSP nonce, `csrfInput()`, `aria-current`/active classes or language-switcher URLs inside it are frozen at the first render. Cache the query and its markup; keep those outside. Parameters go in one order only (`globally`, `using key`, `for 1 hour`/`until`, `if`/`unless`), and there is no `tag()`. See the `craft-site` skill's `template-caching.md`.
-17. **Grepping output for a `|e('js')`-escaped phrase** — the JS escaper turns every space into ` `, so a translated multi-word string never appears verbatim in rendered JS. Grep/assert on a single token or raw identifier. See the Safe Output and Inline Assets section and the `craftcms` skill's `testing.md`.
+12. **Blocks inside conditionals**: invalid Twig. Put the `{% if %}` inside the `{% block %}`.
+13. **Hardcoded `/admin` CP URL**: `cpTrigger` is configurable. Use `cpUrl()`.
+14. **Em/en-dashes in user-facing copy**: see Copy style above.
+15. **Twig has no `instanceof`**: branch on `object.hasProperty()`/`hasMethod()` or have PHP pass a discriminator.
+16. **Per-request output inside `{% cache %}`** (CSP nonce, `csrfInput()`, active classes, language-switcher URLs) is frozen at the first render. See the `craft-site` skill's `template-caching.md`.
+17. **Grepping output for a `|e('js')`-escaped phrase**: every space becomes a `\uXXXX` sequence, so grep or assert on a single token. See `references/craft-helpers.md`.
 18. **`{% render %}` on a site below 5.12** [5.12+]: unknown tag, the whole template fails to compile. Use `.render()` where the template must also run on older releases.
 19. **Appending alpha to a colour** [changed 5.12]: `{{ entry.brand }}80` or `entry.brand.hex ~ '1a'` breaks once a Color field returns an 8-digit hex (translucent palette colours, or custom colours with opacity allowed). Use `rgb({{ entry.brand.rgbChannels }} / 50%)` [5.12+] or `entry.brand.rgba` [5.12+]; `entry.brand.getHex(false) ~ '80'` works on every version. Before 5.12: hex was always 6-digit.
 20. **Macros called without parentheses** [5.12+]: `{{ macros.label }}` is deprecated in Twig 3.29 and a syntax error in Twig 4. Write `{{ macros.label() }}`.
-21. **`|upper`/`|lower` on identifiers** [changed 5.12]: casing follows the site language, so a Turkish site lowercases `I` to `ı`. Pass `('en')` for codes and handles.
+21. **`|upper`/`|lower` on identifiers** [changed 5.12]: casing follows the site language, so a Turkish site lowercases `I` to `ı`. Pass `('en')` for codes and handles. See `references/craft-5-12-changes.md`.
+22. **`heading()` / `h()` on an older site**: `heading()` and `h()` need [5.10+]. Before 5.10: build the tag from the level yourself. `{{ tag('h' ~ level, { text: title }) }}` (`tag()` takes an attributes array; `text` is encoded, `html` is not) or `{% tag 'h' ~ level with { class: 'text-xl' } %}Subsection{% endtag %}`. Don't ship `heading()` / `h()` to a site below 5.10.
+23. **`url()` with `false`** [5.11+] strips every query param from an absolute URL. Before 5.11: `siteUrl(craft.app.request.pathInfo)`.

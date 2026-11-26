@@ -133,7 +133,7 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craft-mcp` | Shared | Craft 5.12+ MCP servers (authenticated, public, stdio `mcp/serve`), the OAuth server and its signing keys, personal access tokens, connecting Claude Code over HTTP or stdio (DDEV, production, Cloud, Servd, fortrabbit), the snake_case tool catalogue, plugin MCP tools and field interfaces, security. 7 reference files. |
 | `servd` | Shared | Servd managed hosting: git push-to-deploy + `servd.yaml`, local → staging → production sync, the `servd/craft-asset-storage` plugin (svdcdn CDN, off-server transforms), Servd static caching + Blitz reverse-proxy mode, MariaDB/MySQL over SSH, backups, Dedicated Queue Runner, ephemeral filesystem. 6 reference files. |
 
-15 skills, 133 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+15 skills, 150 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 

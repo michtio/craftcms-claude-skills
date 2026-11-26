@@ -144,29 +144,11 @@ Read the reference file(s) your task needs — each costs input tokens on every 
 |-----------|-------|
 | `references/isolation.md` | Database isolation: `tests/bootstrap.php`, process timezone, `phpunit.xml.dist` (force the DB name, default the connection coordinates), `RefreshesDatabase`, `InstallsCraft` boot vs plugin install, invocation paths, ambient-state assumptions (editions, counts, pre-existing fixtures) |
 | `references/craft-state.md` | Craft internals that bite in tests: permission-tree memoization, login/session gates, UTC fixture timestamps, muting audit/event surfaces, per-test site fixtures, component swapping and stale service caches, queue stubs, project-config writes |
-| `references/patterns.md` | Writing the tests: factories, HTTP, queue, database assertions, multi-site, mocking Craft services, console commands, events, file/test conventions |
+| `references/patterns.md` | Writing the tests: Pest vs Codeception, pure unit tests, what a green suite does not prove, factories, HTTP, queue, database assertions, multi-site, mocking Craft services, console commands, events, file/test conventions |
 | `references/shared-state.md` | Suites that run against a shared or long-lived install: restore-what-you-found, `Install.php` vs migration drift in the test DB, idempotent `Install` migrations, self-seeding, request-IP fixtures |
 | `references/ci.md` | CI wiring: `check-cs` not `fix-cs`, a real Pest job, invocation from the plugin root, fresh-database verification |
 
-## Two Harnesses (and when Pest isn't the answer)
+## Further Pitfalls (detail in `patterns.md`)
 
-| Aspect | Codeception (Craft's native) | Pest + craft-pest-core |
-|--------|------------------------------|------------------------|
-| Base class | `craft\test\TestCase` | `markhuot\craftpest\test\TestCase` |
-| Element creation | Fixture classes + data files | `Entry::factory()->create()` |
-| HTTP | `FunctionalTester` (`$I`) | `$this->get('/path')->assertOk()` |
-| Rollback | Fixture teardown | `RefreshesDatabase` trait (opt-in) |
-
-Use Pest for new plugin work. Use Codeception when contributing to Craft core or extending an existing Codeception suite.
-
-For **pure unit tests** that don't need Craft booted, skip craft-pest entirely and extend `PHPUnit\Framework\TestCase` — booting Craft is the expensive, stateful part, and a test that doesn't need a database shouldn't risk one. See `patterns.md` (Pure unit tests) for the `\Craft` / `\Yii` autoload caveat.
-
-## What a Green Suite Does Not Prove
-
-Worth holding in mind, because each of these has shipped a real bug past a passing test run:
-
-- **Service-layer tests never see the HTTP layer.** Reserved query params, CSRF, route resolution, and response formats only fail on a real request. See the `craftcms` skill's `controllers.md`.
-- **A green run on a seeded dev install is not authoritative.** Confirm against a freshly created test database before believing it.
-- **A console-driven harness is not a browser.** Sessions, user-agent gates, and impersonation behave differently. See `craft-state.md`.
-- **One long-lived process is not a sequence of requests.** Craft invalidates many caches by ending the request. A suite that creates sites, swaps components, or mutates project config mid-process carries stale memos that no production code path would ever see. See `craft-state.md`.
-- **A suite that isn't in CI doesn't exist.** It rots at the speed of the codebase. See `ci.md`.
+- **Codeception vs Pest**: use Pest + craft-pest-core for new plugin work, Codeception only for Craft core or an existing Codeception suite; pure-logic tests extend `PHPUnit\Framework\TestCase` without booting Craft. See `patterns.md` (Two harnesses; Pure unit tests).
+- **A green suite is not proof**: service-layer tests never see the HTTP layer, a seeded dev install is not authoritative, a console harness is not a browser, one long-lived process is not a sequence of requests, and a suite not in CI rots. See `patterns.md` (What a green suite does not prove).

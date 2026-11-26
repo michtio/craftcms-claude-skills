@@ -152,6 +152,10 @@ In CP templates, translate labels inline with the `|t()` filter:
 
 Never hardcode user-facing strings. All CP labels, messages, and descriptions must go through `Craft::t()` or the `|t()` Twig filter.
 
+## Copy Style
+
+Never use em-dashes (—) or en-dashes (–) in user-facing copy: field labels and instructions, `Craft::t()` strings, CP notices and flash messages, console command output, plugin/module README, and docs. Use commas, periods, colons, or parentheses instead; for ranges write "4 to 10" or a plain ASCII hyphen ("4-10"). Plain hyphens are fine. Code comments and PHPDoc are exempt. Grep for `—` and `–` in your `Craft::t()` strings, templates, and docs before finishing. (Front-end Twig copy: see the `craft-twig-guidelines` skill, which carries the same rule for `|t` strings and template text.)
+
 ## File Header
 
 Every PHP file starts with:

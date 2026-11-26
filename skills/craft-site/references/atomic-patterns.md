@@ -34,6 +34,7 @@
 - [Link Atom](#link-atom)
 - [Text Atom](#text-atom)
 - [Icon Atom](#icon-atom)
+- [Component System Conventions](#component-system-conventions)
 
 ## Three-Tier Implementation
 
@@ -365,3 +366,16 @@ meaningful icons get `role="img"` with a label.
     {%- endif -%}
 {%- endblock -%}
 ```
+
+## Component System Conventions
+
+One canonical component system across all projects. Atoms are context-agnostic — always named by visual treatment, never by parent. HTML element type is resolved from props (`url` → `<a>`, `type` → `<button>`, fallback → `<span>`).
+
+External link detection is derived from the URL, never passed as a prop. Components auto-apply `target="_blank"`, `rel="noopener noreferrer"`, external icon, and sr-only text when a URL is external.
+
+FontAwesome is the universal icon system. Icons are passed as FA class strings. [5.12+] Icon fields can also hold custom-set icons (`custom:name`), which have no FA class: branch on `icon.set` and output `icon.svg|raw` (see `craft-content-modeling` → `field-types.md`, Icon).
+
+Visual variants use extends/block — base template defines structure, variant overrides classes. Never use conditional logic to switch between variant styles. For structural skeletons with content slots, use `{% embed %}` — see `composition-patterns.md`.
+
+Image handling uses a single atom with config-driven presets, not separate variant files per context.
+

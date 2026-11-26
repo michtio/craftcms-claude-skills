@@ -573,4 +573,4 @@ The `--isolated` flag is inherited from `ControllerTrait` and uses Craft's mutex
 
 **Plugins**: Automatic. Place controllers in `src/console/controllers/`. Commands are accessible as `ddev craft plugin-handle/controller/action`.
 
-**Modules**: Must set `controllerNamespace` before `parent::init()` AND be bootstrapped in `config/app.php`. See the main SKILL.md for the pattern.
+**Modules**: Must set `controllerNamespace` before `parent::init()` AND be bootstrapped in `config/app.php`. See `plugin-vs-module.md` (Module Console Command Registration) for the pattern.

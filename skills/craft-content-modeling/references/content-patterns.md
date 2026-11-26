@@ -99,7 +99,43 @@ Plan sites and groups first. Example: site group "English" (en-us, en-gb), site 
 
 ## Entries-as-Taxonomy (Replacing Categories)
 
-Categories, tags, and globals are being unified into entries over three versions. See the SKILL.md "Entrification" section for the full timeline, CLI commands, and migration details.
+Categories, tags, and globals are being unified into entries over three versions (the "entrification" of Craft):
+
+- **Craft 4.4** — `entrify` CLI commands added to convert categories, tags, and globals to entries
+- **Craft 5** — Categories, tags, and global sets are deprecated and discouraged for new projects. New category groups, tag groups, and global sets can still be created in the CP (the "New" buttons remain, gated by `allowAdminChanges`), and existing ones continue to work. A unified "Content" section replaces the fragmented entries view. Custom entry index pages [5.9+] solve the sidebar organization concern.
+- **Craft 6** — Categories, tags, and global sets will be removed entirely
+
+For **new projects**, always use entries: Structure sections for hierarchical taxonomy, Channel sections for flat taxonomy, Singles for site-wide settings. For **existing projects**, migrate at your own pace using the `entrify` commands.
+
+### Entrification: Migrating Legacy Content
+
+#### CLI Commands
+
+```bash
+ddev craft entrify/categories <categoryGroupHandle>   # → Structure section
+ddev craft entrify/tags <tagGroupHandle>               # → Channel section
+ddev craft entrify/global-set <globalSetHandle>        # → Single section
+```
+
+All three accept `--section` to target an existing section instead of creating a new one. `entrify/categories` and `entrify/tags` additionally accept `--entry-type` and `--author`; `entrify/global-set` does not.
+
+[5.9+] These commands are interactive and the handle argument is optional. Before 5.9: pass the handle explicitly.
+
+#### What the commands do
+
+- Convert the element type to entries
+- Migrate all content and field data
+- Convert Categories/Tags fields to Entries fields
+- Preserve existing relations
+- Assign newly created sections to appropriate entry index pages
+
+#### Entries field for hierarchical selection
+
+When replacing a Categories field with an Entries field, enable **Maintain Hierarchy** on the Entries field. This auto-selects ancestors when a nested entry is chosen — replicating the category field behavior.
+
+#### Tags replacement caveat
+
+For flat taxonomies where editors created terms on-the-fly, the on-the-fly creation UX is not yet available for Entries fields. This is the one area where the legacy Tags field still has a UX advantage. Use a Channel section and accept the two-step workflow (create entry separately, then relate it).
 
 ### Before (Categories)
 
@@ -226,6 +262,8 @@ Will the content be queried independently across the site?
 ## Common Anti-Patterns
 
 - **"God Matrix"** — one Matrix field with every content block type. Split into purpose-specific Matrix fields (body content, sidebar widgets, page header).
+- **Over-using Matrix** — if content needs its own URL, independent querying, or permissions, it should be a separate section with an Entries relation field, not a Matrix block.
+- **Matrix for everything** — 15+ entry types in one Matrix field is a red flag. Deeply nested Matrix hits `max_input_vars` limits and degrades CP performance.
 - **Duplicating data** — storing the same information in two places instead of using Entries relation fields.
 - **Flat structure when hierarchy exists** — using a Channel with a "parent" Entries field instead of a Structure section with native hierarchy.
 - **Over-relying on Globals** — globals lack drafts, revisions, preview. Use Singles.

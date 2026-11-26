@@ -195,4 +195,4 @@ Treat a content-model PR as incomplete if new sections ship without this tidy-up
 
 - Project config workflow: `infrastructure.md` (Project Config Essentials)
 - Custom element indexes (PHP): `craftcms` skill → `references/element-index.md`
-- Entrification and custom entry index pages [5.9+]: `content-patterns.md` / SKILL.md Entrification section
+- Entrification and custom entry index pages [5.9+]: `content-patterns.md` (Entries-as-Taxonomy)

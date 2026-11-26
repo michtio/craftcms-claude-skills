@@ -67,6 +67,10 @@ $app->getElements()->saveElement($element);
 
 Don't use `@phpstan-ignore-line` to silence these. The typed local is the documented pattern. Reserve ignores for genuine library-typing gaps that can't be resolved with a cast.
 
+### Magic property access
+
+Using magic property access (`$plugin->settings`, `$app->view`) instead of explicit getters (`$plugin->getSettings()`, `$app->getView()`) — PHPStan can't resolve `__get()` calls, so magic access passes at runtime but fails static analysis. Always use explicit getters for Yii2 components and Craft plugin properties.
+
 ## Scaffolding
 
 The following component types have generator support via `craftcms/generator`. Always scaffold with the generator instead of creating manually:

@@ -13,12 +13,7 @@ allowed-tools: "Bash(sh ${CLAUDE_SKILL_DIR}/scripts/craft-version.sh)"
 
 If no Craft version line appears above, establish the version before any version-specific advice: `craftcms/cms` in `composer.lock` for a site, the lowest version the `craftcms/cms` constraint in `composer.json` allows for a plugin, or ask. Then check it against the version tags in this skill (`[5.10+]`, `[changed 5.12]`, `[seomatic 5.1+]`).
 
-How to structure content in Craft CMS 5. Sections, entry types, fields, Matrix,
-relations, asset management, and strategic patterns for real projects.
-
-This skill covers **content architecture** — what goes in the CP, how it's
-organized, and how templates access it. For extending Craft with PHP
-(plugins, modules, custom element types), see the `craftcms` skill.
+How to structure content in Craft CMS 5: sections, entry types, fields, Matrix, relations, asset management, and strategic patterns for real projects. This skill covers **content architecture** (what goes in the CP, how it's organized, and how templates access it). For extending Craft with PHP (plugins, modules, custom element types), see the `craftcms` skill.
 
 ## Companion Skills — Always Load Together
 
@@ -28,41 +23,15 @@ When this skill triggers, also load:
 - **`craft-twig-guidelines`** — Twig coding standards. Required when writing any Twig examples or template code alongside content modeling.
 - **`ddev`** — All commands run through DDEV. Required for running project config commands, Craft CLI, and content migrations.
 
-## Documentation
-
-- Entries: https://craftcms.com/docs/5.x/reference/element-types/entries.html
-- Sections: https://craftcms.com/docs/5.x/reference/element-types/entries.html#sections
-- Fields: https://craftcms.com/docs/5.x/system/fields.html
-- Field types: https://craftcms.com/docs/5.x/reference/field-types/
-- Matrix: https://craftcms.com/docs/5.x/reference/field-types/matrix.html
-- Relations: https://craftcms.com/docs/5.x/system/relations.html
-- Eager loading: https://craftcms.com/docs/5.x/development/eager-loading.html
-- Project config: https://craftcms.com/docs/5.x/system/project-config.html
-
-Use `WebFetch` on specific doc pages when a reference file doesn't cover enough detail.
+Craft docs links (entries, sections, fields, field types, Matrix, relations, eager loading, project config): `references/sections-and-entry-types.md` (Documentation). Use `WebFetch` on specific doc pages when a reference file doesn't cover enough detail.
 
 ## The Craft 5 Mental Model
 
-**Everything is becoming an entry.** Entry types are global (shared across sections and
-Matrix fields). Fields come from a global pool. This is the "entrification" of Craft — categories, tags, and globals are being unified into entries over a three-version arc:
+**Everything is becoming an entry.** Entry types are global (shared across sections and Matrix fields) and fields come from a global pool. Categories, tags, and global sets are deprecated in Craft 5 (still creatable in the CP) and removed in Craft 6. For **new projects**, always use entries: Structure sections for hierarchical taxonomy, Channel sections for flat taxonomy, Singles for site-wide settings. Timeline and `entrify` commands: `references/content-patterns.md` (Entries-as-Taxonomy).
 
-- **Craft 4.4** — `entrify` CLI commands added to convert categories, tags, and globals to entries
-- **Craft 5** — Categories, tags, and global sets are deprecated and discouraged for new projects. New category groups, tag groups, and global sets can still be created in the CP (the "New" buttons remain, gated by `allowAdminChanges`), and existing ones continue to work. A unified "Content" section replaces the fragmented entries view. Custom entry index pages [5.9+] solve the sidebar organization concern.
-- **Craft 6** — Categories, tags, and global sets will be removed entirely
+Three decisions define your content architecture: the **section type** (Single, Channel, Structure), the **entry types** that define its shape (global, reusable), and the **relation strategy** (Entries fields, Matrix, CKEditor nested entries, or a combination).
 
-For **new projects**, always use entries: Structure sections for hierarchical taxonomy, Channel sections for flat taxonomy, Singles for site-wide settings. For **existing projects**, migrate at your own pace using the `entrify` commands.
-
-Three decisions define your content architecture:
-
-1. **Which section type** organizes the content (Single, Channel, Structure)
-2. **Which entry types** define its shape (global, reusable across contexts)
-3. **Which relation strategy** connects content together (Entries fields, Matrix, CKEditor nested entries, or a combination)
-
-## CMS Editions
-
-Craft CMS has four editions (Solo, Team, Pro, Enterprise) that affect content modeling. The key distinction: if any section needs multiple custom user groups with per-group edit/view restrictions, you need **Pro or Enterprise** (multiple custom user groups are Pro+ only). Team includes one fixed "Team" group whose permissions are customizable for non-admins, plus a 5-user cap. See `references/users-and-permissions.md` for the full editions table and permissions architecture.
-
-Choose the edition before modeling — it determines whether you can scope content access by user group, which affects section and field architecture.
+**CMS edition first:** multiple custom user groups with per-group edit/view restrictions need **Pro or Enterprise**; Team has one fixed "Team" group and a 5-user cap. Editions table: `references/users-and-permissions.md`.
 
 ## Section Type Decision
 
@@ -75,240 +44,55 @@ Choose the edition before modeling — it determines whether you can scope conte
 | Taxonomy (topics, categories) | **Structure** (replaces categories) | `topics/{slug}` |
 | Flat tags | **Channel** (replaces tags) | — |
 
-### Section Properties
+Section properties (`maxAuthors`, `minAuthors` [5.10+], `previewTargets`), `preloadSingles`, structure navigation queries, global entry types, per-context overrides [5.6+] and entry type visual identity (`description`/`group` [5.8+], `uiLabelFormat` [5.9+]): `references/sections-and-entry-types.md`. Singles always propagate to all sites (hard-coded).
 
-Beyond the type, sections have settings that matter for content architecture:
+## Fields: Reuse-First, Never Reserved
 
-- **`maxAuthors`** (default 1) — allows multiple authors per entry (new in 5.0.0). Set higher for collaborative content.
-- **`minAuthors`** [5.10+] (default 1) — minimum number of authors required to save an entry. Set `1` to enforce that every entry has at least one author. Validated on save; setting `minAuthors > maxAuthors` is rejected by Craft's section validator. Combine with `maxAuthors` to define an exact range (`min: 1, max: 3` = "1 to 3 authors required").
-- **`enableVersioning`** (default true) — version history for entries
-- **`defaultPlacement`** — `'beginning'` or `'end'` for new entries in structures
-- **`previewTargets`** — array of `{label, urlFormat}` objects defining where entries can be previewed. Default: primary entry page. Add custom targets for headless frontends, staging URLs, or PDF previews.
+Fields are defined once globally and **instanced** into layouts; an instance can override label, handle, instructions and required. Before proposing any field you MUST:
 
-### Singles replace globals
+1. **Enumerate the existing field pool** (`config/project/fields/` or Settings → Fields).
+2. **Classify each proposed field** as Reuse, Reuse with settings review (flag as a decision for the user), or Create new (justify it). Only create a new field when the type or settings differ.
+3. **Single-instance fields** (Matrix, Content Block, Addresses) appear once per layout and share all config across layouts.
+4. **Present the plan as a table**, one row per field. Do not create a new field without it.
 
-Set `preloadSingles => true` in `config/general.php` to access singles as global
-Twig variables by handle — identical to the old globals behavior but with drafts,
-revisions, live preview, and scheduling.
+But don't over-reuse: if one instance could reasonably need different settings, split it. The search index can't tell instances apart.
 
-```twig
-{# With preloadSingles enabled #}
-{{ siteSettings.footerText }}
-{{ siteSettings.socialLinks.all() }}
-```
-
-**Caveat:** Singles always propagate to all sites. This is hard-coded.
-
-### Structure queries for navigation
-
-```twig
-{% set topLevel = craft.entries.section('pages').level(1).all() %}
-{% set children = craft.entries.descendantOf(entry).descendantDist(1).all() %}
-{% set breadcrumbs = craft.entries.ancestorOf(entry).all() %}
-{% set siblings = craft.entries.siblingOf(entry).all() %}
-```
-
-## Entry Types in Craft 5
-
-Entry types are defined globally (Settings → Entry Types), then attached to
-sections and Matrix fields. One entry type can serve multiple contexts.
-
-Key implications:
-- Changing an entry type's field layout affects **every** section and Matrix field using it
-- Fields come from the global pool — same field definition reused everywhere
-- Per-context name/handle/description overrides available [5.6+] — useful when the same entry type serves different purposes in different sections
-- The global pool demands careful field naming — use specific handles
-
-### Entry Type Visual Identity (Craft 5 new)
-
-Entry types have visual properties that improve the editorial experience:
-
-- **`icon`** — custom icon identifier, shown in entry type selectors and Matrix "+" menus
-- **`color`** — one of 20 options (red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose, white, gray, black)
-- **`description`** [5.8+] — help text explaining what this entry type is for
-- **`group`** [5.8+] — collapsible grouping in section/Matrix entry type assignments
-- **`uiLabelFormat`** [5.9+] — customize the label shown in element indexes (default `'{title}'`)
-- **`hasTitleField`** / **`titleFormat`** — disable the title field and auto-generate from other fields
-- **`showSlugField`** (5.0.0) / **`showStatusField`** (4.5.0) — hide slug or status from editors
-- **`allowLineBreaksInTitles`** [5.9+] — for long-form titles
-
-These settings are configured in Settings → Entry Types and affect all contexts where the entry type is used.
-
-### Reserved handles — check every proposed field handle against this list
-
-Craft has **83+ reserved handles** across all element types via `Field::RESERVED_HANDLES` [5.8+]. Validation is case-insensitive. Using any of these as a custom field handle will cause a validation error or silent template collision where the native attribute shadows the custom field.
-
-**Before proposing any field handle in a content model, check it against the lists below.** When a user asks for a field that matches a native attribute name, always use a domain-specific synonym. For example: user says "I need a title field" — the entry already has a native `title`, so use `heading`, `headline`, or `pageTitle` depending on context.
-
-**Most commonly collided (the ones you'll actually try to use):**
-
-| Reserved | Use Instead | Why |
-|----------|-------------|-----|
-| `title` | `heading`, `headline`, `label`, `pageTitle` | Native element title |
-| `slug` | `urlSlug`, `handle` | Native URL slug |
-| `status` | `state`, `phase`, `condition` | Native element status |
-| `url` | `externalUrl`, `targetUrl`, `websiteUrl` | Native element URL |
-| `link` | `targetLink`, `ctaLink`, `primaryLink` | Native `getLink()` method |
-| `icon` | `entryIcon`, `menuIcon`, `featureIcon` | Native element icon (5.0.0) |
-| `parent` | `parentEntry`, `parentItem`, `belongsTo` | Native structure parent |
-| `children` | `childEntries`, `subItems`, `nestedItems` | Native structure children |
-| `owner` | `entryOwner`, `ownerElement` | Native nested entry owner |
-| `site` | `location`, `branch`, `region` | Native site object |
-| `level` | `depth`, `tier`, `nestingLevel` | Native structure level |
-| `ancestors` | `parentChain`, `breadcrumbEntries` | Native structure ancestors |
-| `siblings` | `peerEntries`, `relatedSiblings` | Native structure siblings |
-| `enabled` | `isActive`, `isPublished`, `isVisible` | Native enabled/disabled state |
-| `language` | `locale`, `contentLanguage` | Native site language |
-| `localized` | `translations`, `localizedVersions` | Native localized entries query |
-| `next` / `prev` | `nextEntry` / `prevEntry` | Native structure navigation |
-| `ref` | `reference`, `referenceCode` | Native reference tag |
-| `type` | `entryType`, `category`, `variant` | Native entry type |
-| `author` / `authors` | `writer`, `creator`, `contributor` | Native entry author(s) |
-| `postDate` | `publishDate`, `releaseDate`, `goLiveDate` | Native entry post date |
-
-**Full list of reserved handles shared across ALL element types** (from `Field::RESERVED_HANDLES` [5.8+]):
-
-`ancestors`, `archived`, `attributes`, `behaviors`, `canonical`, `children`, `contentTable`, `dateCreated`, `dateDeleted`, `dateLastMerged`, `dateUpdated`, `descendants`, `draftId`, `enabled`, `enabledForSite`, `error`, `errors`, `fieldLayoutId`, `fieldValue`, `fieldValues`, `firstSave`, `icon`, `id`, `language`, `level`, `lft`, `link`, `localized`, `next`, `nextSibling`, `owner`, `parent`, `parents`, `prev`, `prevSibling`, `ref`, `revisionId`, `rgt`, `root`, `searchScore`, `siblings`, `site`, `siteId`, `siteSettingsId`, `slug`, `sortOrder`, `status`, `structureId`, `title`, `trashed`, `uid`, `uri`, `url`, `viewMode`
-
-**Additional per-element-type reserved handles:**
-
-| Element Type | Additional Reserved |
-|---|---|
-| **Entries** | `author`, `authorId`, `authorIds`, `authors`, `section`, `sectionId`, `type`, `postDate` |
-| **Assets** | `alt`, `extension`, `filename`, `folder`, `height`, `kind`, `size`, `volume`, `width` |
-| **Users** | `active`, `addresses`, `admin`, `affiliatedSiteId` [5.6+], `email`, `firstName`, `friendlyName`, `fullName`, `groups`, `lastName`, `locked`, `name`, `password`, `pending`, `photo`, `suspended`, `username` |
-| **Categories** | `group` |
-| **Tags** | `group` |
-| **Addresses** | `address`, `countryCode`, `fullName`, `latLong`, `organization`, `organizationTaxId` |
-
-**Also globally reserved** (from `HandleValidator::$baseReservedWords`, applies to ALL handles): `attribute`, `attributeLabels`, `attributeNames`, `attributes`, `dateCreated`, `dateUpdated`, `errors`, `false`, `fields`, `handle`, `id`, `n`, `name`, `no`, `rules`, `this`, `true`, `uid`, `y`, `yes`
-
-## Field Instances — Reuse Over Duplication
-
-Fields are defined once globally, then **instanced** into field layouts. Each instance can override four properties without affecting the global definition:
-
-- **Label** — different display name per context
-- **Handle** — different template handle per context (5.0.0+)
-- **Instructions** — context-specific help text
-- **Required** — required in one layout, optional in another
-- Default Tip/Warning [5.12+] is set on the field; a layout element's own Tip/Warning overrides it (see `references/field-types.md`).
-
-This means a single `heroImage` Assets field can be placed in a Blog Post, a Service Page, and a Project entry type — each with different labels ("Hero Image", "Banner", "Cover Photo") and different required settings. The field definition, type, and settings are shared.
-
-**The rule: reuse field definitions via instances. Only create a new field when the type or settings differ** (e.g., different allowed volumes, different source restrictions, different character limits). Don't create `blogHeroImage`, `serviceHeroImage`, `projectHeroImage` — create one `heroImage` and instance it.
-
-**But don't reuse just because two fields look alike today.** Apply the single-responsibility test ([SRP](https://en.wikipedia.org/wiki/Single-responsibility_principle)): is there a *reasonable* scenario where one instance would need different settings — a different character limit, translation method, or allowed volumes? If yes, the similarity is incidental, not essential — make them separate fields. Over-reuse has costs that are hard to reverse later:
-
-- **Search can't tell instances apart.** The index records keywords against the field, not the instance, so `summary::daisy` may match a `byline` instance of the same field ([documented](https://craftcms.com/docs/5.x/system/searching.html#multi-instance-fields)). If you rely on distinct field-scoped search, the fields must be separate. (Element-query *filtering* by the overridden handle — `.summary(x).byline(y)` — does work; only the **search index** is instance-blind.)
-- **A few relational/`relatedTo` cases** are community-reported to need the *original* handle — verify per case if reused-field results look wrong.
-
-### Multi-Instance vs Single-Instance Fields
-
-A field's `isMultiInstance()` method controls whether it can appear **multiple times in the same layout** with different handles. This is determined by `dbType()` — fields that return `null` are single-instance.
-
-| Category | Field Types | Multi-Instance | Reusable Across Layouts |
-|----------|-------------|:--------------:|:-----------------------:|
-| **Relational** | Entries, Assets, Categories, Tags, Users | Yes | Yes |
-| **Simple** | Plain Text, Number, Email, URL, Color, Lightswitch, Money, Range, Time, Date/Time | Yes | Yes |
-| **Option** | Dropdown, Checkboxes, Multi-Select, Radio Buttons, Button Group | Yes | Yes |
-| **Structured** | Table, Link, Icon, Country | Yes | Yes |
-| **Nested element** | Matrix, Content Block, Addresses | **No** | Yes (with caveats) |
-
-**Single-instance caveats:** Matrix, Content Block, and Addresses fields CAN be reused across different entry types (placed in multiple field layouts), but they can only appear **once per layout** and their configuration is fully shared — changing the entry types or settings on a Matrix field affects every entry type using it. Reuse these when contexts genuinely share the same structure. Create separate fields when different contexts need different nested entry types or settings.
-
-## Adding Fields to an Entry Type — Reuse-First Workflow
-
-Before proposing any field in a content model change, you MUST:
-
-1. **Enumerate the existing field pool.** Read `config/project/fields/` (or CP Settings → Fields). List every field with its type, handle, and key settings.
-2. **For each proposed field, classify into one of three categories:**
-   - **Reuse** — existing field with matching type and compatible settings. Instance it into the layout; optionally override label, handle, instructions, or required.
-   - **Reuse with settings review** — existing field of the correct type but slightly different settings (e.g., different allowed volumes, different character limit). Propose whether settings can be unified so one definition serves both contexts. Flag this as a decision for the user.
-   - **Create new** — no existing field matches by type or functional purpose. Justify why a new field is needed.
-3. **For single-instance fields** (Matrix, Content Block, Addresses) — if an existing field shares the same nested structure, reuse it. If the contexts need different nested entry types or settings, creating a new field is justified — note the shared-config caveat in your reasoning.
-4. **Present the plan as a table** — one row per proposed field, showing the reuse decision, the existing field being reused (if applicable), and the rationale for any new field. Do not create a new field without this table.
-
-Creating a field that duplicates an existing field's functionality is the most common content modeling mistake — it pollutes the global pool, confuses editors, and makes future refactoring harder.
-
-## Entrification — Migrating Legacy Content
-
-### CLI Commands
-
-```bash
-ddev craft entrify/categories <categoryGroupHandle>   # → Structure section
-ddev craft entrify/tags <tagGroupHandle>               # → Channel section
-ddev craft entrify/global-set <globalSetHandle>        # → Single section
-```
-
-All three accept `--section` to target an existing section instead of creating a new one. `entrify/categories` and `entrify/tags` additionally accept `--entry-type` and `--author`; `entrify/global-set` does not.
-
-[5.9+] These commands are interactive and the handle argument is optional. Before 5.9: pass the handle explicitly.
-
-### What the commands do
-
-- Convert the element type to entries
-- Migrate all content and field data
-- Convert Categories/Tags fields to Entries fields
-- Preserve existing relations
-- Assign newly created sections to appropriate entry index pages
-
-### Entries field for hierarchical selection
-
-When replacing a Categories field with an Entries field, enable **Maintain Hierarchy** on the Entries field. This auto-selects ancestors when a nested entry is chosen — replicating the category field behavior.
-
-### Tags replacement caveat
-
-For flat taxonomies where editors created terms on-the-fly, the on-the-fly creation UX is not yet available for Entries fields. This is the one area where the legacy Tags field still has a UX advantage. Use a Channel section and accept the two-step workflow (create entry separately, then relate it).
+**Check every proposed handle against the reserved list** (`Field::RESERVED_HANDLES` [5.8+], 83+ handles, case-insensitive). The common collisions: `title`, `slug`, `status`, `url`, `link`, `icon`, `parent`, `children`, `owner`, `site`, `level`, `type`, `author`, `postDate`, `enabled`, `language`. Use a domain synonym (`heading`, `targetLink`, `entryType`). Full workflow, synonym table, per-element-type lists and the multi-instance table: `references/field-pool-and-handles.md`.
 
 ## CKEditor vs Matrix vs Content Block
 
-Three tools for structured content within an entry — choose based on editing experience:
+- **Matrix** — reorderable blocks, page builders, data grids, galleries. View modes: blocks, cards, cards-grid, index.
+- **CKEditor** with nested entries — rich text with occasional inline structured content (image, code, CTA blocks).
+- **Content Block** [5.8+] — single non-repeatable nested entry for a reusable field group (SEO metadata, banner config).
 
-- **Matrix** — reorderable blocks, page builders, data grids, media galleries. Multiple view modes (blocks, cards, cards-grid, index).
-- **CKEditor** with nested entries — rich text with occasional structured content inline (image blocks, code blocks, CTAs). Natural writing flow.
-- **Content Block** [5.8+] — single non-repeatable nested entry for reusable field groups (SEO metadata, banner config).
-
-For the full decision table, nested entry type patterns, and the CKEditor chunks rendering pattern, read `references/content-patterns.md`.
+Decision table, nested entry type patterns and the CKEditor chunks rendering pattern: `references/content-patterns.md`.
 
 ## After creating sections — tidy the Entries element index
 
-Once Entries sources have been customized (Customize sources), Craft persists the full source list to `elementSources.craft\elements\Entry` in `config/project/project.yaml` and **appends** each newly created section to the bottom with **generic** columns. That is incomplete shipping of the content model. (If sources were never customized, sections show in default order and there's nothing to tidy — see `element-index-sources.md` for the precondition.)
-
-**Required follow-up** (same PR / same change set as the section):
-
-1. Place the source next to **role peers** under the correct sidebar heading (Indexes, Categories, Includes, etc.).
-2. Match **`tableAttributes`** and **`defaultSort`** to the closest similar section (e.g. FAQ Index to News Index; FAQ Categories to News Categories).
-3. Include `link` only when the section has public URLs; drop empty `heading: ''` leftovers.
-
-Full checklist, role tables, and column key rules (`field:` vs `fieldInstance:`): read `references/element-index-sources.md`.
+Once Entries sources have been customized, Craft persists them to `elementSources.craft\elements\Entry` in `config/project/project.yaml` and **appends** each new section to the bottom with **generic** columns. Required follow-up in the same change set: place the source next to **role peers** under the right heading, match **`tableAttributes`** and **`defaultSort`** to the closest similar section, include `link` only when the section has URLs, drop empty `heading: ''` leftovers. Precondition, checklist and column keys (`field:` vs `fieldInstance:`): `references/element-index-sources.md`.
 
 ## Common Pitfalls
 
-- **Leaving new section sources at the bottom of the Entries index** — after creating sections/singles, tidy `elementSources` placement and columns to match peers; see `element-index-sources.md`. An unfinished model is one that ships FAQs without FAQ Index sitting with other Indexes.
-- **Over-using Matrix** — if content needs its own URL, independent querying, or permissions, it should be a separate section with an Entries relation field, not a Matrix block.
-- **Creating new fields without checking the global pool** — before adding any field, run the Reuse-First Workflow above. Enumerate existing fields via `config/project/fields/` and default to reusing via instance. The only justification for a new field is a different type or genuinely incompatible settings.
-- **Over-reusing one field across instances with distinct needs** — the opposite mistake. The search index can't distinguish instances of a reused field (`summary::daisy` may match a `byline` instance — [docs](https://craftcms.com/docs/5.x/system/searching.html#multi-instance-fields)), and a few `relatedTo` cases need the original handle. Reuse only when the instances are genuinely the same field; if one could reasonably need different settings ([single-responsibility](https://en.wikipedia.org/wiki/Single-responsibility_principle)), split it. Reuse-first, not reuse-always.
-- **Vague or reserved field handles** — `image`, `text`, `link` are too generic (and `link` is actually reserved). For every field handle in a content model, follow this check: (1) is the handle in the reserved list? If yes, use a synonym from the table. (2) Is the handle too generic for the global field pool? If yes, add domain context: `featuredImage`, `bodyContent`, `primaryLink`. (3) Don't over-specify — `blogFeaturedImage` creates a new field when you could instance `featuredImage` with a label override.
-- **Not planning multi-site from the start** — propagation method, field translation methods, and site settings must be configured before content exists. Changing propagation later resaves all entries.
-- **Using categories/tags/globals in new projects** — they're deprecated and discouraged in Craft 5 (still creatable in the CP) and will be removed in Craft 6. Use entries instead.
-- **Forgetting `preloadSingles`** — without it, singles aren't available as global variables and you need explicit queries.
-- **Matrix for everything** — 15+ entry types in one Matrix field is a red flag. Deeply nested Matrix hits `max_input_vars` limits and degrades CP performance.
-- **Not using `.eagerly()`** — every relational field access inside a loop should use `.eagerly()` to prevent N+1 queries.
-- **Regenerating YAML from a DB that's behind the branch** — `project-config/write` empties `config/project/` and rewrites it from the DB, and `rebuild` also treats the DB as the source of truth. On a local DB restored from a production dump, both delete or revert YAML teammates committed since the dump. Run `ddev craft up` first and require a clean `project-config/diff`. For small settings (a required flag, instructions text, a dropdown option), a direct YAML edit followed by `craft up` and a clean diff is safe. See `infrastructure.md` (Project Config Essentials) and the `craftcms` skill's `deployment.md` (project-config/write safely).
-- **Using database IDs in URI formats** — IDs differ across environments. Use `{slug}`, `{canonicalUid}`, or custom fields.
+- **Over-using Matrix** — content needing its own URL, independent querying or permissions is a separate section plus an Entries field. 15+ entry types in one Matrix is a red flag (`content-patterns.md`).
+- **Duplicate, over-reused, vague or reserved fields** — run the reuse-first workflow and handle check above; `image`, `text`, `link` need domain context (`featuredImage`), not over-specifying (`blogFeaturedImage`).
+- **Not planning multi-site from the start** — propagation method, field translation methods, and site settings must be configured before content exists. Changing propagation later resaves all entries (`infrastructure.md`).
+- **Categories/tags/globals in new projects** — use entries; enable `preloadSingles` so singles are global Twig variables.
+- **Not using `.eagerly()`** — every relational field access inside a loop needs it to prevent N+1 queries (`relations-and-eager-loading.md`).
+- **Regenerating YAML from a DB that's behind the branch** — `project-config/write` and `rebuild` treat the DB as the source of truth and delete or revert teammates' YAML on a restored prod dump. Run `ddev craft up` and require a clean `project-config/diff` first. See `infrastructure.md` (Project Config Essentials) and the `craftcms` skill's `deployment.md` (project-config/write safely).
+- **Database IDs in URI formats** — IDs differ across environments. Use `{slug}`, `{canonicalUid}`, or custom fields.
 - **Not setting `allowAdminChanges => false` in production** — without this, production schema changes won't sync back to dev.
-- **Using `@web` in filesystem URLs** — `@web` is auto-detected from the HTTP request and can be spoofed or empty in console/queue contexts. Use environment variables (`$ASSETS_URL`) for filesystem URLs. `@webroot` for paths is less risky but env vars are still preferred.
-- **Ignoring entry type visual identity** — editors navigate by icon, color, and description. Investing in these settings makes the CP usable as the content model grows.
-- **Not planning for CMS edition** — if you need per-group content permissions, you need Pro or Enterprise. This affects section and field architecture.
+- **`@web` in filesystem URLs** — spoofable or empty in console/queue contexts. Use env vars (`$ASSETS_URL`) (`infrastructure.md`).
+- **Ignoring entry type icon, color and description** — editors navigate by them (`sections-and-entry-types.md`).
 
 ## Reference Files
 
 Read the relevant reference file(s) for your task.
 
 **Task examples:**
-- "Add fields to an existing entry type" → Reuse-First Workflow in this SKILL.md
-- "Modify an entry type's field layout" → Reuse-First Workflow in this SKILL.md
-- "Plan a blog content architecture" → read `content-patterns.md`
+- "Add fields to an existing entry type" / "Modify an entry type's field layout" → read `field-pool-and-handles.md` (Reuse-First Workflow)
+- "Is this field handle allowed?" → read `field-pool-and-handles.md` (Reserved handles)
+- "Section settings, preloadSingles, entry type icons/colors" → read `sections-and-entry-types.md`
+- "Plan a blog content architecture" / "entrify categories, tags, globals" → read `content-patterns.md`
 - "Which field type should I use for X?" → read `field-types.md`
 - "Set up relatedTo queries" → read `relations-and-eager-loading.md`
 - "Configure Matrix with nested entries" → read `field-types.md` (Matrix section)
@@ -319,17 +103,16 @@ Read the relevant reference file(s) for your task.
 - "How does Craft store content internally?" → read `infrastructure.md` (Storage Model)
 - "Set up asset volumes and filesystems" → read `infrastructure.md` (Assets section)
 - "Configure URI format for a structure section" → read `object-templates.md` (Structure URI Patterns)
-- "Set up dynamic asset upload subpath" → read `object-templates.md` (Asset Subpath Patterns)
-- "Asset subpath broken after moving field into Matrix" → read `object-templates.md` (The Matrix Gotcha)
-- "Tidy Entries index after creating FAQ sections" → read `element-index-sources.md`
-- "New section shows at bottom of Entries with wrong columns" → read `element-index-sources.md`
-- "Match FAQ Index / Categories to News Index / Categories sources" → read `element-index-sources.md`
+- "Dynamic asset upload subpath" / "subpath broken after moving field into Matrix" → read `object-templates.md` (Asset Subpath Patterns, The Matrix Gotcha)
+- "Tidy Entries index after creating FAQ sections" / "new section at bottom of Entries with wrong columns" / "match FAQ Index to News Index sources" → read `element-index-sources.md`
 
 | Reference | Scope |
 |-----------|-------|
+| `references/field-pool-and-handles.md` | Field instances and overrides, multi-instance vs single-instance fields, the Reuse-First Workflow, reserved handles (full lists and synonyms). |
+| `references/sections-and-entry-types.md` | Section properties, singles and `preloadSingles`, structure navigation queries, global entry types, entry type visual identity. |
 | `references/field-types.md` | All built-in field types: settings, Twig access patterns, query syntax, gotchas. Matrix configuration, view modes, nesting. |
 | `references/relations-and-eager-loading.md` | relatedTo() shapes (4 forms), .with() eager loading, .eagerly() lazy eager loading, nested eager loading, native eager-loadable attributes. |
-| `references/content-patterns.md` | Strategic patterns for blog, portfolio, multi-site corporate. Section/field/relation architecture per pattern. Entrification migration. CKEditor vs Matrix decisions. |
+| `references/content-patterns.md` | Strategic patterns for blog, portfolio, multi-site corporate. Section/field/relation architecture per pattern. Entrification timeline and migration commands. CKEditor vs Matrix decisions. |
 | `references/users-and-permissions.md` | Users, user groups, CMS editions, addresses, permissions architecture, field layout UI elements. |
 | `references/infrastructure.md` | Multi-site propagation methods, volume propagation and the add-a-site trap [5.12+], field translation methods, project config workflow, how Craft stores content (five-table model, JSON field values, relations, nested sets), asset volumes/filesystems/transforms. |
 | `references/object-templates.md` | Object template syntax: `{attribute}` vs `{{ twig }}`, URI formats, asset subpaths, preview targets, owner/rootOwner nesting, structure patterns, the Matrix gotcha. |

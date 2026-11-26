@@ -25,71 +25,34 @@ This skill is scoped to **Craft Cloud specifically** — what's different on Clo
 - **`craft-php-guidelines`** — When editing plugin PHP to add Cloud-compatibility checks.
 - **`craft-mcp`**: for Craft's MCP server, OAuth server and personal access tokens [5.12+] (signing keys as env vars on this host).
 
-## Documentation
+Docs: https://craftcms.com/docs/cloud/ (full source list and verification dates in `references/cloud-vs-self-hosted.md`).
 
-Authoritative sources used to write this skill:
+## Cloud vs Self-Hosted at a Glance
 
-- Craft Cloud docs landing: https://craftcms.com/docs/cloud/
-- Configuration reference: https://craftcms.com/docs/cloud/config
-- Deployment pipeline: https://craftcms.com/docs/cloud/deployment
-- Builds: https://craftcms.com/docs/cloud/builds
-- Compatibility & limitations: https://craftcms.com/docs/cloud/compatibility
-- Assets & transforms: https://craftcms.com/docs/cloud/assets
-- Static caching: https://craftcms.com/docs/cloud/static-caching
-- Headless apps: https://craftcms.com/docs/cloud/headless-apps
-- Request signing: https://craftcms.com/docs/cloud/request-signing
-- Plugin development: https://craftcms.com/docs/cloud/plugin-development
-- Cloud extension source: https://github.com/craftcms/cloud
-
-Per-claim URLs appear in each reference file. Last verified against the docs and `craftcms/cloud-extension-yii2@main` on 2026-05-28; headless/request-signing, artifact URLs, environments, quotas, and backups content verified against `craftcms/docs@main` on 2026-09-02.
-
-## What's Different on Cloud vs Self-Hosted
-
-A quick orientation table. Each row is a place self-hosted habits will mislead you.
-
-| Concern | Self-hosted | Cloud |
-|---|---|---|
-| Config file | `.env`, `config/general.php`, `config/db.php`, your web-server config | **`craft-cloud.yaml`** at repo root for platform settings; runtime env vars set in Craft Console UI (not `.env`) |
-| Deploy | Whatever you've wired (Forge, GitHub Actions, rsync) | Git push → automatic **Build → Migrate → Release** (15-min build cap) |
-| Filesystem | Local disk or your own S3/R2 config | **Ephemeral** Lambda filesystem; use `App::isEphemeral()` to gate writes; user assets must use the Cloud-bundled S3-backed filesystem type |
-| Database | Whatever you've installed | **MySQL 8.0 or Postgres 15 only** — no MariaDB, no `tablePrefix`, no `db.php` touching, no `CRAFT_DB_*` overrides |
-| App / component config | Free to override components in `config/app.php` | The extension **owns several components** (`response`, `session`, `cache`, `mutex`, `queue`, `assetManager`) + the DB connection — overriding them in `app.*.php` breaks the wiring, and it's **not reproducible locally** (the extension only runs on Cloud) |
-| Headless / API consumers | Your GraphQL endpoint, your rate limits | Bot detection deprioritizes automated traffic — SSG builds/ISR get **429/503** unless requests are **signed** (RFC 9421, `$CRAFT_CLOUD_SIGNING_KEY`) and retried with backoff |
-| Queue jobs | You run a worker (systemd, supervisor, cron) | **Auto-processed** by Cloud — don't schedule the runner; cap each job at 15 minutes |
-| Cron | `crontab -e`, any frequency | Craft Console UI only; **once per hour minimum** |
-| Image transforms | ImageOptimize / Imager-X / native | **Edge transforms** via Cloudflare Images — no template changes needed, but ImageOptimize is incompatible |
-| Page caching | Blitz or similar | **Edge static caching** via `cache.rules` in `craft-cloud.yaml`; tag-based auto-invalidation |
-| Dynamic islands in cached pages | Per-cache-driver workaround | First-class **`cloud.esi(...)`** Twig helper |
-| Logs | Files in `storage/logs/` | `Craft::info/warning/error()` only — no file-tailing UI; Console command output is the de-facto surface |
-| Mail | sendmail or any adapter | **No built-in mail** — bring your own SMTP/Postmark/SES/Resend |
-| SSH | `ssh user@server` | None — Console command runner only (255-char cap, 15-min cap) |
-| Server rewrites | `.htaccess` / nginx config | `redirects:` and `rewrites:` keys in `craft-cloud.yaml` |
-| Custom domains | DNS provider + cert | DNS + ownership TXT + CNAME to `edge.craft.cloud`; auto SSL via Cloudflare |
-| Preview environments | Your CI | Per-branch only — **no per-PR previews documented** |
+Platform settings live in **`craft-cloud.yaml`** at the repo root; runtime env vars are set in the Craft Console UI, not `.env`. Git push triggers **Build → Migrate → Release** (15-min build cap). The filesystem is **ephemeral**, the database is **MySQL 8.0 or Postgres 15 only**, queue jobs are **auto-processed**, cron is **hourly at most**, image transforms and static caching happen **at the edge**, there is **no SSH, no `.htaccess`, no built-in mail**, and previews are **per-branch only**. The full comparison table is in `references/cloud-vs-self-hosted.md`.
 
 ## Common Pitfalls (Cross-Cutting)
 
-- **Writing to disk without an `App::isEphemeral()` guard.** Lambda's filesystem is ephemeral and writes are lost between requests. Plugins, services, and migrations all need to check and use the Path service (`Craft::$app->getPath()->getTempPath()`/`getStoragePath()`/`getCachePath()`) for transient writes. See `references/extension.md` (App::isEphemeral) and `references/plugin-development.md`.
-- **OAuth keys in `storage/`.** [5.12+] MCP and OAuth-authenticated GraphQL need signing keys; `oauth/generate-keys` writes them to the ephemeral `storage/`. Set `CRAFT_OAUTH_PRIVATE_KEY` / `CRAFT_OAUTH_PUBLIC_KEY` as Console env vars instead. See `references/extension.md` and the `craft-mcp` skill.
-- **Reconfiguring Cloud-owned app components in `config/app.php` / `app.web.php` / `app.console.php`.** The `craftcms/cloud` extension augments the `response` component (header normalization, gzip, binary→S3 offload, all attached on `EVENT_AFTER_PREPARE`) and replaces `session`, `cache`, `mutex`, `queue`, and `assetManager` — plus auto-wires the database connection. Redefining or augmenting any of these in your app config collides with that wiring and can return **HTTP 500 on every request** (and bypass edge caching). This includes the DB: don't configure `db.php` or set `CRAFT_DB_*` env vars. To add response logic (e.g. a `Content-Language` header), attach at runtime to the response *instance* from a module — `Craft::$app->getResponse()->on(\yii\web\Response::EVENT_AFTER_PREPARE, …)` — never redefine the `response` component. **And never validate these changes locally:** the extension only runs on Cloud (`Helper::isCraftCloud()` is false on DDEV), so a local HTTP 200 proves nothing — treat `app.*.php` as prod-only-verifiable. See `references/database.md` and `references/extension.md`.
-- **Using `tablePrefix`.** Unsupported on Cloud. Run `php craft db/drop-table-prefix` before migrating. See `references/migration.md`.
-- **Choosing MariaDB.** Cloud only supports MySQL 8.0 and Postgres 15.
-- **Scheduling your own queue runner.** Cloud auto-processes queue jobs — adding a scheduled command for the queue runner is redundant and may conflict.
-- **Flushing the whole cache from a migration.** `Craft::$app->getCache()->flush()` (or any global wipe) during the Migrate phase contends with the still-live old version on a shared cache — and when Redis/Valkey isn't provisioned, that cache is a single MySQL table, so a flush can deadlock (MySQL 1205) and blow the deploy's CLI cap. Invalidate only what changed. See `references/deploy-pipeline.md` (Never flush the whole cache from a migration) and `references/extension.md` (Cache, queue, and session wiring).
-- **Synchronous external HTTP in element save hooks.** Blocks every save, and during a resave or `cloud/up` serializes network latency into the deploy's CLI cap. Queue the call instead. See `references/plugin-development.md`.
-- **Trying to schedule cron more often than hourly.** Cloud's UI enforces a one-hour minimum. Design recurring tasks around this floor or move the work into queue jobs triggered by other events.
-- **`{{ csrfInput() }}` in cacheable templates.** Forces a cookie, busts edge static caching. Use the `csrfInput()` function instead, which renders an async input compatible with `asyncCsrfInputs` [5.1+] (force-enabled on Cloud).
-- **Expecting logged-in users to see `currentUser`-gated UI on a cached route.** Cloud does **not** auto-bypass the edge cache for logged-in requests — once a URL's guest copy is cached, editors are served that copy too (`cf-cache-status: HIT`), so server-rendered edit links / member-only blocks silently disappear. Vary the cache key on the session cookie (`cookies: [CraftSessionId]`), not `session:`, under a nested `cache:` → `rules:` key. See `references/caching-and-edge.md`.
-- **`.htaccess` rules or nginx config in the repo.** Won't be honored — move to `redirects:` / `rewrites:` in `craft-cloud.yaml`. See `references/config-file.md`.
-- **Writing to log files.** No persistent filesystem. Use `Craft::info/warning/error()` and the logger routes to Cloud's log target automatically. See `references/extension.md`.
-- **Assuming SSH access.** There is none. The Console command runner is the only way to execute commands, with a 255-character argument cap and 15-minute timeout.
-- **Forked Git repos.** Cloud can't deploy from forks — must be the upstream repository.
-- **Expecting per-PR preview environments.** Cloud supports per-branch environments only; no automatic ephemeral environment per pull request.
-- **Default `sendmail` adapter.** Will not deliver mail. Configure SMTP/Postmark/SES/Resend explicitly. See `references/limitations.md` (Mail).
-- **Using ImageOptimize on Cloud.** Cloud handles transforms at the edge via Cloudflare Images — ImageOptimize duplicates the work and can conflict. See `references/assets-and-transforms.md`.
-- **Unsigned automated traffic (SSG builds, ISR revalidation, CI) getting `429`/`503`.** Cloud's bot detection correctly flags headless content retrieval as bot traffic. Sign server-side requests with the environment's `$CRAFT_CLOUD_SIGNING_KEY` (RFC 9421) *and* retry `429`/`503` with `Retry-After`-aware backoff — signatures bypass the bot policy, not capacity limits. Never expose the key client-side. See `references/headless.md`.
-- **A robots.txt that blocks everything, or slow first requests, on a non-production environment.** Cloud injects `Disallow: /` into every environment not marked Production, and lets non-prod functions sleep after ~15 min idle. Both are by design — check the Production Environment setting before debugging. See `references/limitations.md` (Environments).
-- **Changing a Console env var and expecting it to apply.** Variable changes take effect only on the **next deployment**. See `references/deploy-pipeline.md`.
+One-liners; the long form of each is in `references/cloud-vs-self-hosted.md`.
+
+- **Disk writes without an `App::isEphemeral()` guard** are lost between requests; use the Path service (`getTempPath()`/`getStoragePath()`/`getCachePath()`). See `extension.md`, `plugin-development.md`.
+- **OAuth keys in `storage/`.** [5.12+] `oauth/generate-keys` writes to the ephemeral `storage/`; set `CRAFT_OAUTH_PRIVATE_KEY` / `CRAFT_OAUTH_PUBLIC_KEY` as Console env vars. See `extension.md`.
+- **Redefining Cloud-owned components** (`response`, `session`, `cache`, `mutex`, `queue`, `assetManager`, the DB connection) in `config/app*.php` can return HTTP 500 on every request. Attach to the response *instance* (`EVENT_AFTER_PREPARE`) from a module instead. No `db.php`, no `CRAFT_DB_*`. A local HTTP 200 proves nothing: the extension only runs on Cloud. See `extension.md`, `database.md`.
+- **`tablePrefix`** is unsupported: run `php craft db/drop-table-prefix` before migrating (`migration.md`). **MariaDB** is not offered.
+- **Don't schedule a queue runner**: Cloud auto-processes jobs (15-min cap each).
+- **Never flush the whole cache from a migration**: it contends with the live release and can deadlock the MySQL-table cache (1205). See `deploy-pipeline.md`.
+- **Synchronous external HTTP in element save hooks** serializes latency into the deploy's CLI cap; queue it. See `plugin-development.md`.
+- **Cron more often than hourly** is impossible; use queue jobs triggered by events.
+- **`{{ csrfInput() }}` on cacheable pages** forces a cookie; it renders async with `asyncCsrfInputs` [5.1+] (force-enabled on Cloud). See `caching-and-edge.md`.
+- **Logged-in users get the cached guest copy**: Cloud does not bypass the edge cache for them. Vary on `cookies: [CraftSessionId]` under nested `cache:` → `rules:`. See `caching-and-edge.md`.
+- **`.htaccess` / nginx config** is ignored: use `redirects:` / `rewrites:` in `craft-cloud.yaml` (`config-file.md`).
+- **Log files**: no persistent disk; use `Craft::info/warning/error()` (`extension.md`).
+- **No SSH**: Console command runner only (255-char cap, 15-min cap). **Forked repos** can't deploy. **No per-PR previews.**
+- **`sendmail`** won't deliver: configure SMTP/Postmark/SES/Resend (`limitations.md`, Mail).
+- **ImageOptimize** conflicts with edge transforms (`assets-and-transforms.md`).
+- **Unsigned SSG/ISR/CI traffic gets `429`/`503`**: sign with `$CRAFT_CLOUD_SIGNING_KEY` (RFC 9421) and retry with `Retry-After` backoff; never expose the key client-side. See `headless.md`.
+- **Non-prod environments** inject `robots.txt` `Disallow: /` and sleep after ~15 min idle, by design (`limitations.md`, Environments).
+- **Console env var changes** apply only on the **next deployment** (`deploy-pipeline.md`).
 
 ## Reference Files
 
@@ -121,21 +84,24 @@ Read the relevant reference file(s) for your task. Multiple files often apply.
 - "Link built JS/CSS from templates" → `deploy-pipeline.md` (Artifact URLs)
 - "Private Composer packages on Cloud" → `deploy-pipeline.md` (Private Composer packages)
 - "robots.txt is blocking my site" → `limitations.md` (Environments)
+- "How does Cloud differ from self-hosting / full pitfall detail" → `cloud-vs-self-hosted.md`
 
 Load only the reference files your task needs.
 
 | Reference | Scope | ~Lines |
 |---|---|---:|
-| `references/config-file.md` | Full `craft-cloud.yaml` key reference: `php-version`, `node-version`, `node-path`, `npm-script`, `artifact-path` (webroot-unpublishing caution), `app-path`, `webroot`, `cache:` → `rules:`, `redirects`, `rewrites` | 156 |
-| `references/deploy-pipeline.md` | Build → Migrate → Release flow, On Push vs Manual triggers, 15-min build cap, build-time system vars (`CRAFT_CLOUD_*`, `GIT_SHA`), runtime env vars in Console (changes need a redeploy), **reserved/injected vars you must NOT set** (`CRAFT_SECURITY_KEY`, `CRAFT_APP_ID`, `CRAFT_OMIT_SCRIPT_NAME_IN_URLS`, `CRAFT_DB_*`, `REDIS_*`, …), artifact URLs (`cloud.artifactUrl()`, `@artifactBaseUrl`, no cache-busting, manifest/`svg()` CDN reads, white-label CDN rewrite), private Composer packages (Composer Auth), failed-migration rollback semantics | 210 |
-| `references/headless.md` | Headless apps + request signing: bot detection and `429`/`503` on SSG/ISR traffic, RFC 9421 HMAC signatures with `$CRAFT_CLOUD_SIGNING_KEY` (5-min validity, exact-URL match, gateway validation falls back silently), the `Retry-After` + backoff retry contract (reads only, throw on exhaustion), Next.js/Nuxt/Astro integration, signing from Craft via `getRequestSigner()` | 107 |
-| `references/extension.md` | `craftcms/cloud` package: Yii2 module bootstrap, `App::isEphemeral()`, Path service usage, `cloud.esi()` Twig helper, `cloud/up` internals (verified from source), asset-bundle CDN publisher, binary response auto-upload, log target | 201 |
-| `references/assets-and-transforms.md` | Cloud filesystem type (mandatory `assets/` subpath), `aws s3 sync` migration, edge image transforms (70MB / 100MP / 12,000px limits, AVIF 1,600px cap, stretch-mode constraint), no template-side changes required | 87 |
-| `references/database.md` | MySQL 8.0 / Postgres 15 only (no MariaDB), `tablePrefix` ban, `php craft db/drop-table-prefix`, auto-wired connection, nightly + on-demand backups (30-day retention, 200GB cap, not part of Cloud's durability architecture), restore commands | 111 |
-| `references/caching-and-edge.md` | Static caching rules (nested `cache:` → `rules:`, `pattern` + `query-string` + `cookies`, first-match wins), default ignored tracking params (custom rules **replace** the list), logged-in users vs the cached guest copy (`cookies: [CraftSessionId]`), opt-outs (`{% expires %}`, `setNoCacheHeaders()`), flash-guard pattern, Commerce cart caveat, `asyncCsrfInputs` [5.1+] force-enabled, `cloud.esi(...)` for dynamic islands (scalar vars only, no nesting), tag-based auto-invalidation | 347 |
-| `references/domains.md` | DNS setup (`_cf-custom-hostname` TXT, CNAME to `edge.craft.cloud`, apex A records, Orange-to-Orange Cloudflare), preview URL format, auto SSL, `www` not auto-added, extra-domain pricing | 104 |
-| `references/commands-and-cron.md` | Console command runner (no SSH, 255-char cap, 15-min cap, no shell interpolation), scheduled commands (hourly minimum, max 5 per env), queue jobs auto-processed (don't schedule a runner), 15-min per-job cap, batched jobs for long work | 143 |
-| `references/plugin-development.md` | Cloud-compatible plugin checklist: asset-bundle constraints, `App::isEphemeral()` gating, Path service, `Craft::info()` for logs, queue-job budgeting, cookie-free design, `csrfInput()` function (CSRF-token leakage warning), `sendContentAsFile()` auto-handling, asset-select preference, Craft 4.6+ minimum | 234 |
-| `references/migration.md` | Self-hosted → Cloud cutover: audit (table prefix, MariaDB, file writes, `.htaccess`, third-party S3 plugins), `php craft db/drop-table-prefix`, asset migration via `aws s3 sync`, DNS cutover sequence, project-config sync | 132 |
-| `references/local-dev.md` | DDEV recipe to mirror Cloud: matching PHP from `craft-cloud.yaml`, DB engine + version, the Cloud extension self-detection and no-op locally, optional `CRAFT_EPHEMERAL` for testing guards, S3 emulation pointers | 145 |
-| `references/limitations.md` | Documented unsupported features (MariaDB, tablePrefix, .htaccess, SSH, sendmail, devMode in prod, 6MB response cap incl. front-end uploads, 16KB header cap, 60s request timeout, 200MB upload cap, no env cloning, no region change, no per-PR previews, CP DB-backup utility disabled, forked repos can't deploy) + environments facts (non-prod `robots.txt` Disallow, function sleep, shared asset bucket, deletion is total) + flattened duplicate headers, inert `resourceBase*` + community-knowledge plugin compatibility matrix (ImageOptimize, Imager-X, Blitz, Typesense, etc.) clearly marked as not Pixel & Tonic-blessed + mail strategy + logging gap | 239 |
+| `references/cloud-vs-self-hosted.md` | Full Cloud vs self-hosted comparison table, long form of every cross-cutting pitfall, documentation sources and verification dates | 69 |
+| `references/config-file.md` | `craft-cloud.yaml` keys: `php-version`, `node-version`, `npm-script`, `artifact-path`, `app-path`, `webroot`, `cache:` → `rules:`, `redirects`, `rewrites` | 156 |
+| `references/deploy-pipeline.md` | Build → Migrate → Release, triggers, 15-min build cap, build-time vs runtime vars, **reserved vars you must NOT set**, artifact URLs (`cloud.artifactUrl()`, `@artifactBaseUrl`), private Composer packages, failed-migration rollback | 210 |
+| `references/headless.md` | Bot detection `429`/`503`, RFC 9421 signing with `$CRAFT_CLOUD_SIGNING_KEY`, `Retry-After` backoff, Next.js/Nuxt/Astro, `getRequestSigner()` | 107 |
+| `references/extension.md` | `craftcms/cloud` package: bootstrap, `App::isEphemeral()`, Path service, `cloud.esi()`, `cloud/up` internals, asset-bundle CDN publisher, binary response upload, log target, OAuth keys | 256 |
+| `references/assets-and-transforms.md` | Cloud filesystem (`assets/` subpath), `aws s3 sync`, edge transform limits (70MB / 100MP / 12,000px, AVIF 1,600px) | 87 |
+| `references/database.md` | MySQL 8.0 / Postgres 15, `tablePrefix` ban, auto-wired connection, backups (30-day retention, 200GB cap), restore | 111 |
+| `references/caching-and-edge.md` | Static caching rules (`pattern`, `query-string`, `cookies`, first-match wins), ignored tracking params, logged-in users, opt-outs (`{% expires %}`, `setNoCacheHeaders()`), Commerce cart, `asyncCsrfInputs` [5.1+], `cloud.esi(...)`, tag invalidation | 347 |
+| `references/domains.md` | DNS (`_cf-custom-hostname` TXT, CNAME to `edge.craft.cloud`, apex), preview URLs, auto SSL, `www` not auto-added | 104 |
+| `references/commands-and-cron.md` | Console command runner (255-char, 15-min caps), scheduled commands (hourly, max 5 per env), auto-processed queue, batched jobs | 141 |
+| `references/plugin-development.md` | Cloud-compatible plugin checklist: asset bundles, `App::isEphemeral()`, logging, queue budgeting, cookie-free design, `csrfInput()`, `sendContentAsFile()`, Craft 4.6+ minimum | 302 |
+| `references/migration.md` | Self-hosted → Cloud cutover: audit, `db/drop-table-prefix`, `aws s3 sync`, DNS cutover, project config | 132 |
+| `references/local-dev.md` | DDEV parity: PHP/DB versions, extension no-op locally, `CRAFT_EPHEMERAL`, S3 emulation | 145 |
+| `references/limitations.md` | Unsupported features and hard caps (6MB response, 16KB header, 60s request, 200MB upload), environments facts, plugin compatibility matrix (community knowledge), mail, logging | 239 |
+| `references/review-checklist.md` | Code review checklist for Cloud projects, by severity: CSRF tokens in cached pages, runtime asset publishing, `tablePrefix`, ephemeral file writes, file logging, queue batching | ~42 |
