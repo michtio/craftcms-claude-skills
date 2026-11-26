@@ -220,7 +220,7 @@ echo
 echo "Then the release-time AI evals, scoped to what changed since the last tag (check the call count first):"
 echo "  python3 evals/release_evals.py --dry-run"
 echo "  python3 evals/release_evals.py"
-echo "  python3 evals/route.py --changed-only --dry-run   # A/B only when a listing changed"
+echo "  python3 evals/scenario_check.py                   # when a listing changed: 8 real-life routing scenarios"
 echo
 echo "Done. Review the diff:"
 echo "  git diff -- .claude-plugin/ CHANGELOG.md"
