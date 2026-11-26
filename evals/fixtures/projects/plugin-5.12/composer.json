@@ -1,0 +1,11 @@
+{
+    "name": "acme/reports",
+    "type": "craft-plugin",
+    "require": {
+        "craftcms/cms": "^5.12.0"
+    },
+    "extra": {
+        "handle": "reports",
+        "class": "acme\\reports\\Plugin"
+    }
+}
