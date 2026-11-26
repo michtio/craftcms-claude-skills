@@ -159,7 +159,7 @@ public function getItemsWithRelations(int $categoryId): array
 
 ### Twig-Side (Front-End Templates)
 
-Craft 5 introduced lazy eager loading via `.eagerly()` -- automatically batches relation loading in template loops. `.with()` supports nested dot notation for manual pre-declaration. These are template patterns, not plugin-side, but worth knowing when your element type is consumed in Twig.
+Craft 5 introduced lazy eager loading via `.eagerly()` -- automatically batches relation loading in template loops. `.with()` supports nested dot notation for manual pre-declaration. These are template patterns, not plugin-side, but worth knowing when your element type is consumed in Twig. [changed 5.12] `.eagerly()` honours `limit`/`offset`/`orderBy` from 5.12; see `craft-content-modeling` `relations-and-eager-loading.md`.
 
 ## Indexes and Foreign Keys
 

@@ -100,7 +100,7 @@ Two variants: `editableTableField` (with label, instructions, error wrapper) and
 | `select` | Dropdown (requires `options`) | Selected value `string` |
 | `date` | Date picker | `string` (Y-m-d format) |
 | `time` | Time picker | `string` (H:i format) |
-| `color` | Color picker | `string` (hex) |
+| `color` | Color picker | `string` (hex). [5.12+] Set `alpha: true` on the column to allow translucent colors (8-digit hex such as `#0000ff80`). |
 | `heading` | Non-editable display text | Not submitted |
 | `html` | Raw HTML (non-editable) | Not submitted |
 | `template` | Render a Twig template per cell | Depends on template |
@@ -876,7 +876,7 @@ Every `*Field` macro wraps its input in a `<div class="field">` with label, inst
 | `forms.radioGroupField` | Radio button group | `options`, `value` |
 | `forms.buttonGroupField` | Button-style option selector (exclusive) [5.8+] | `options`, `value` — see [buttonGroupField](#buttongroupfield) |
 | `forms.selectizeField` | Searchable / taggable select | `options`, `value`, `multi` (bool — tag mode), `selectizeOptions` |
-| `forms.colorField` | Color picker | `value` (hex string) |
+| `forms.colorField` | Color picker | `value` (hex string); [5.12+] `alpha: true` accepts 8-digit hex with an alpha channel |
 | `forms.dateTimeField` | Date and time picker | `value` (DateTime object or string) |
 | `forms.timeField` | Time-only picker | `value` (time string) |
 | `forms.timeZoneField` | Time-zone selector | `value` (time-zone identifier) |
@@ -884,7 +884,7 @@ Every `*Field` macro wraps its input in a `<div class="field">` with label, inst
 | `forms.copytextField` | Read-only value with a copy button | `value` — see [copytextField](#copytextfield) |
 | `forms.moneyField` | Currency input | `currency`, `currencyLabel`, `decimals`, `showClear` — see [moneyField](#moneyfield) |
 | `forms.fileField` | File upload input | `name` (POSTs as a `$_FILES` entry) |
-| `forms.iconPickerField` | Craft icon picker | `value` (icon identifier) |
+| `forms.iconPickerField` | Craft icon picker | `value` (icon identifier); [5.12+] `sets`: `'*'` for every registered set or an array of set handles (default `null` = Font Awesome only). `Craft.IconPicker` takes the same `sets` setting. |
 | `forms.rangeField` | Range slider (with paired number input) | `min`, `max`, `step`, `suffix` |
 | `forms.autosuggestField` | Text with autocomplete | `suggestEnvVars`, `suggestAliases`, `suggestions` |
 | `forms.editableTableField` | Editable table with add/delete/reorder | `cols`, `rows`, `allowAdd`, `allowDelete`, `allowReorder` — see [Editable Table](#editable-table) |

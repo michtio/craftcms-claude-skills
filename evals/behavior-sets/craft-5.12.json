@@ -1,0 +1,88 @@
+[
+  {
+    "id": "c512-mcp-on-511",
+    "cwd": "evals/fixtures/projects/site-5.11.5",
+    "prompt": "I want my AI assistant to read and edit entries on this Craft site over MCP. How do I set that up? Answer in your reply; don't create files.",
+    "must_match": [["5\\.12"], ["upgrad"]]
+  },
+  {
+    "id": "c512-mcp-ddev-claude-code",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "Connect Claude Code to the MCP server of this Craft site running locally in DDEV. Give me the steps; don't run anything.",
+    "must_match": [["oauth/generate-keys", "CRAFT_OAUTH_PRIVATE_KEY", "generate.{0,20}keys"], ["claude mcp add"], ["--transport http", "--transport=http", "transport http"]],
+    "must_not_match": ["personal access token for (the )?MCP"]
+  },
+  {
+    "id": "c512-mcp-cloud-keys",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "MCP works locally but on Craft Cloud every request fails with an OAuth key error. What's wrong? Answer in your reply.",
+    "must_match": [["CRAFT_OAUTH_PRIVATE_KEY"], ["CRAFT_OAUTH_PUBLIC_KEY"], ["ephemeral", "storage/"]]
+  },
+  {
+    "id": "c512-mcp-pat",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "Can I just create a personal access token in Craft and paste it into my MCP client config? Answer in your reply.",
+    "must_match": [["can.?t", "won.?t", "cannot", "not carry", "no MCP scope", "don't include", "do not include", "not support"], ["OAuth", "stdio", "mcp/serve"]]
+  },
+  {
+    "id": "c512-mcp-plugin-tool",
+    "cwd": "evals/fixtures/projects/plugin-5.12",
+    "prompt": "Add an MCP tool to this Craft plugin that lists the current user's saved reports. Show the PHP in your reply; don't create files.",
+    "must_match": [["readOnlyHint"], ["reports_\\w+", "acme_reports_\\w+"]],
+    "must_not_match_code": ["name:\\s*'[a-z-]+\\.[a-z]", "name:\\s*\"[a-z-]+\\.[a-z]"]
+  },
+  {
+    "id": "c512-gql-build-server",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "Our Next.js build server fetches content from Craft GraphQL with a schema token. Should we switch it to OAuth now that Craft 5.12 has an OAuth server? Answer in your reply.",
+    "must_match": [["client.credentials", "no machine", "acts as a user", "on behalf of a user", "user-based", "per-user"], ["keep", "stay with", "stick with", "continue"]]
+  },
+  {
+    "id": "c512-gql-hidden-field",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "A GraphQL query authenticated with a personal access token can't see the `internalNotes` field, but our schema-token query can. The field has a condition in the field layout. Why? Answer in your reply.",
+    "must_match": [["field layout condition", "condition"], ["5\\.12\\.1", "excluded", "hidden fields", "null"]]
+  },
+  {
+    "id": "c512-render-on-511",
+    "cwd": "evals/fixtures/projects/site-5.11.5",
+    "prompt": "Render the entries in `entries` with their own partial templates per entry type in this Craft site. Write the Twig in your reply; don't create files.",
+    "must_not_match_code": ["\\{%-?\\s*render\\s"]
+  },
+  {
+    "id": "c512-render-on-512",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "Render the entries in `entries` with their own partial templates per entry type in this Craft site, using the newest Craft way. Write the Twig in your reply; don't create files.",
+    "must_match": [["\\{%-?\\s*render"]]
+  },
+  {
+    "id": "c512-color-alpha",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "Review this Twig from our Craft site: `<div style=\"background: {{ entry.brandColor }}80\">`. Editors just started picking translucent colours. Answer in your reply.",
+    "must_match": [["8.digit", "eight.digit", "alpha"], ["rgba", "rgbChannels", "rgb\\("]]
+  },
+  {
+    "id": "c512-volume-new-site",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "We added a French site to our single-site Craft install. French entries show no hero images, and the Assets field isn't translatable. Why? Answer in your reply.",
+    "must_match": [["propagat"], ["all sites", "All sites", "Custom"]]
+  },
+  {
+    "id": "c512-upgrade-checklist",
+    "cwd": "evals/fixtures/projects/site-5.11.5",
+    "prompt": "We're upgrading this Craft site to 5.12. Give me a checklist of what to watch for. Answer in your reply.",
+    "must_match": [["propagationMethod", "propagation"], ["eagerly"], ["upper", "lower", "case filter", "casing", "ICU"]]
+  },
+  {
+    "id": "c512-web-installer",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "We deployed a fresh Craft site to production (Dev Mode off) and /admin/install doesn't show the installer anymore. How do we install it? Answer in your reply.",
+    "must_match": [["Dev Mode", "devMode", "dev mode"], ["craft install", "craft\\s+install"]]
+  },
+  {
+    "id": "c512-eagerly-alias",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
+    "prompt": "My blog listing does `entry.gallery.eagerly().limit(3).all()` in a loop and later `entry.gallery.eagerly().all()` for a lightbox. The lightbox only shows 3 images. Why? Answer in your reply.",
+    "must_match": [["alias", "eagerly\\('"], ["first", "shared", "same"]]
+  }
+]

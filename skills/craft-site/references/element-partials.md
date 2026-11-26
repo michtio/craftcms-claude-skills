@@ -1,10 +1,12 @@
 # Element Partials
 
-How to use `entry.render()` and the `_partials/` template directory in Craft CMS 5 for reusable element rendering. Element partials are a front-end feature — the CP does not use them. For CP element display (chips, cards, table rows), see the craftcms skill's `element-index.md`.
+How to use `entry.render()`, the `{% render %}` tag [5.12+] and the `_partials/` template directory in Craft CMS 5 for reusable element rendering. Element partials are a front-end feature — the CP does not use them. For CP element display (chips, cards, table rows), see the craftcms skill's `element-index.md`.
 
 ## Documentation
 
 - Element partials: https://craftcms.com/docs/5.x/system/elements.html#rendering-elements
+- `{% render %}` tag: https://craftcms.com/docs/5.x/reference/twig/tags.html#render
+- Collections `render()`: https://craftcms.com/docs/5.x/development/collections.html
 
 ## Common Pitfalls
 
@@ -12,11 +14,15 @@ How to use `entry.render()` and the `_partials/` template directory in Craft CMS
 - N+1 queries inside partials — use `.eagerly()` for any related element queries. Each partial renders independently, so without eager loading, every card in a grid fires separate queries.
 - Assuming `render()` works in the CP — it's front-end only (`TEMPLATE_MODE_SITE`).
 - Hardcoding the partial path instead of using the convention — the lookup path is automatic. Don't `{% include %}` the partial manually when `entry.render()` works.
+- Shipping `{% render %}` to a site below 5.12 [5.12+]: it's an unknown tag there, and Twig fails to compile the **whole template**, even when the tag sits inside an `{% if %}` that never runs. Templates that must run on 5.11 and 5.12 (plugin example templates, shared component libraries, a staging site not yet upgraded) use the `.render()` method instead.
+- Expecting `entry` inside a partial to be the page entry: the partial's `entry` is always the element being rendered (the Matrix block, the card), with or without `only`. Pass the page explicitly (`with { page: entry }`) or use `entry.owner` for nested entries.
+- Relying on `loop is defined` in partials [changed 5.12]: list renders (`{% render entries %}`, `entries.render()`, `query.render()`) now hand each partial a `loop` variable. Before 5.12: partials rendered through `.render()` on a collection or query got no `loop`. When supporting both: `loop.index ?? null`.
 - Overriding an entry type's handle per field and expecting the partial to follow — it does, but only from [5.10.14+]. Before 5.10.14: from 5.10.4 the override is respected but not prioritized, and before 5.10.4 it is ignored, so keep the partial under the original handle when supporting older releases.
 
 ## Contents
 
 - [How It Works](#how-it-works)
+- [The `{% render %}` Tag](#the--render--tag-512)
 - [Template Lookup Path](#template-lookup-path)
 - [Available Variables](#available-variables)
 - [Passing Custom Variables](#passing-custom-variables)
@@ -41,6 +47,30 @@ Every element in Craft 5 has a `render()` method that looks for a matching templ
 ```
 
 If no matching template exists, `render()` falls back to a `<p>` tag containing the element's title — no error is thrown.
+
+## The `{% render %}` Tag [5.12+]
+
+`{% render %}` outputs an element, or a list of elements, through the same partial lookup as `render()` (https://github.com/craftcms/cms/blob/5.12.4/src/web/twig/tokenparsers/RenderTokenParser.php). [5.12+] Before 5.12: use `{{ entry.render({...}) }}` or `{{ entry.myMatrix.eagerly().render() }}`.
+
+```twig
+{% render entry %}
+{% render entry.contentBlocks with { theme: 'dark' } only %}
+{% render craft.entries().section('news').limit(6) with { size: 'card' } only %}
+```
+
+- **Input**: an element (any `craft\base\Renderable`), an array, a Collection, or an element query (it runs the query). `null` or an empty list outputs nothing. A non-renderable item in a list throws `… isn't renderable.`
+- **`with` / `only`**: same grammar as `{% include %}`: `with { … }`, `with { … } only`, or `only` alone. Without `only`, the partial also receives the whole current template context; with `only`, just the `with` variables plus the element. House style: always add `only`, like `{% include %}` (see `craft-twig-guidelines`). `ignore missing` and `sandboxed` aren't supported.
+- **`loop`**: when a list is rendered, each partial gets a `loop` hash (`index`, `index0`, `revindex`, `revindex0`, `first`, `last`, `length`, `parent`), unless you pass your own `loop` in `with`. A single element rendered inside `{% for %}` without `only` sees the outer loop's `loop` through the context instead.
+- **Output**: list results are joined with a newline and returned as safe markup.
+- **Tag vs method**: the tag passes the template context (unless `only`); `entry.render()` and `collection.render()` pass only the variables you give them.
+
+### `render()` on collections and queries [changed 5.12]
+
+- `collect([...]).render()` and `query.collect().render()` work on any Laravel Collection of renderable items [5.12+] (a `Collection::render()` macro). `ElementCollection` no longer has its own `render()` method; the macro keeps the same call syntax, so `entry.myMatrix.eagerly().render()` is unchanged.
+- `query.render()` renders `query.all()` through the same code.
+- List renders inject `loop` (see above) [changed 5.12]. Before 5.12: `ElementCollection::render()` went through `ElementHelper::renderElements()` and passed no `loop`.
+- PHP: `ElementHelper::renderElements()` is [deprecated 5.12] in favour of `craft\helpers\Template::render($elements, $variables)` [5.12+]. The deprecation is docblock-only (nothing reaches the deprecation log). Code that must also run before 5.12 keeps `ElementHelper::renderElements()`, which works on both.
+- Non-element objects can implement `craft\base\Renderable` [5.12+] (`render(array $variables = []): Markup`) to work with the tag.
 
 ## Template Lookup Path
 
@@ -176,6 +206,12 @@ Matrix entries and CKEditor nested entries also support `render()`:
 {% for block in entry.contentBlocks.all() %}
     {{ block.render() }}
 {% endfor %}
+```
+
+[5.12+] The same in one line, with `loop` available in each block partial:
+
+```twig
+{% render entry.contentBlocks.eagerly() with { page: entry } only %}
 ```
 
 Each block type gets its own partial: `_partials/entry/heroBlock.twig`, `_partials/entry/textBlock.twig`, etc.

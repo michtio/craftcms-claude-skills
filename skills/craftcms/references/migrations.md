@@ -221,6 +221,8 @@ $this->dropTableIfExists('{{%my_table}}');
 
 `dropTableIfExists()` is built into Craft's migration base class -- preferred over checking `tableExists()` then calling `dropTable()`.
 
+`archiveTableIfExists('{{%my_table}}')` renames the table to `<table>_old` (then `_old1`, `_old2`, … when taken) instead of dropping it, so the data survives a rebuild. [changed 5.12.1] It now keeps the full table name. Before 5.12.1: it truncated the name, producing `webhoo_old` instead of `webhookgroups_old` (craftcms/cms#20484), so code that looked for the archived table by its expected name missed it.
+
 ### Dropping indexes and foreign keys
 
 ```php
@@ -356,6 +358,10 @@ foreach ($sites as $site) {
 ### Propagating content across sites
 
 When adding a new site, existing entries may need content populated. Query rows from the primary site and insert for the new site, checking existence first to avoid duplicates. Use `Craft::$app->getSites()->getPrimarySite()` for the source and `getSiteByHandle()` for the target.
+
+### Creating volumes in a content migration [5.12+]
+
+[5.12+] A `craft\models\Volume` built in code defaults to `propagationMethod = PropagationMethod::Custom` (each asset only in the sites it's saved to). Set it explicitly on multi-site projects, normally `PropagationMethod::All` for shared media, and write it into the volume before `Craft::$app->getVolumes()->saveVolume($volume)`. Before 5.12: there was no such setting and every asset existed in every site. Why it matters: the `craft-content-modeling` skill's `infrastructure.md` → "Asset Propagation (Volumes)".
 
 ### Site-specific data transformations
 

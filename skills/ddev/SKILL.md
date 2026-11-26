@@ -147,6 +147,8 @@ Mailpit is built into DDEV core — no add-on installation needed. Outgoing mail
 ddev share                     # Expose the project on a temporary public URL
 ```
 
+Craft's MCP endpoint [5.12+] rejects `ddev share` hostnames (see `craft-mcp`).
+
 `ddev share` defaults to the ngrok provider, which requires a free ngrok.com account and a configured ngrok auth token. (`cloudflared` is an alternative provider via `--provider=cloudflared`, no account required, but ngrok is the default.)
 
 ## Custom Commands
@@ -247,6 +249,10 @@ DDEV sites are accessible at `https://{project}.ddev.site`. To inspect CP pages:
 ### Project setup
 
 The `craft-project-setup` skill offers to install Chrome DevTools MCP during scaffolding. If installed later, run `claude mcp add chrome-devtools -- npx chrome-devtools-mcp@latest` from the project root — this writes to the project's `.claude.json`, keeping it project-level.
+
+## Craft's Own MCP Server [5.12+]
+
+Craft 5.12 ships its own MCP server, so an MCP client can read and edit the local site's content as a Craft user. Not the same thing as Chrome DevTools MCP above. Setup (OAuth keys, Settings → MCP, the `claude mcp add --transport http` command, the stdio variant `ddev craft mcp/serve --user=<username>`), mkcert trust for the client and plugin tools live in the **`craft-mcp`** skill; load it instead of improvising. Two DDEV-specific facts: the HTTP endpoint only accepts the CP and site hosts (`*.ddev.site`, `localhost`), so a `ddev share` URL is rejected unless it is also a site base URL, and Craft MCP needs Craft 5.12 or later [5.12+] (Before 5.12: nothing to connect to; upgrade first).
 
 ## Running a Plugin's Own Test Suite
 

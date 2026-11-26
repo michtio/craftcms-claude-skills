@@ -126,6 +126,7 @@ Only include sections that have content. Blank line after the separator, before 
 
 - **`craft\helpers\App::env('VAR')`, never `getenv()`** — in plugin code AND in every config-file example that appears in docs. `getenv()` is not thread-safe, returns `string|false`, and skips values only present in `$_SERVER`; `App::env()` is Craft's own convention, normalizes `'true'`/`'false'` to booleans, and is what core docs show. A config example gets the `use craft\helpers\App;` line.
 - `App::parseEnv()` when the stored value may be a `$VAR` reference or an alias (settings-model getters resolving env-able fields). It resolves a whole-string `$VAR`, a `$VAR/subpath` [5.5+], a `$VAR` in any slash-delimited segment or `${VAR}` anywhere in the string [5.9+]; nothing else. [changed 5.11] Before 5.11, a `$` inside free text (`"$58 million"`) had its unresolved token stripped out of the string (craftcms/cms#19522); now it is left untouched. When supporting both, don't route arbitrary user copy through it.
+- [5.12.2+] `craft\helpers\UrlHelper::absoluteUrl($url, $baseUrl = null)` to resolve a root-relative or protocol-relative URL (`/uploads/a.png`, `//cdn.example.com/a.png`) against a base URL the way a browser would; the base defaults to the current site's base URL, and the URL comes back unchanged when it's already absolute or the base isn't. Before 5.12.2: prefix `UrlHelper::baseSiteUrl()` yourself, or `UrlHelper::siteUrl()` for site paths.
 - `Craft::$app->getConfig()->doesEnvVarExist('NAME')` [5.11+] before offering to write a variable to the project's `.env`. It greps the file, so it answers "declared in `.env`", not "set in the environment"; use `App::env()` for the latter.
 
 ## Database Conventions
@@ -135,6 +136,7 @@ Only include sections that have content. Blank line after the separator, before 
 - `postDate` and `expiryDate` in `addSelect()` and indexed on element tables.
 - `Db::parseParam()` for query parameters. `Db::parseDateParam()` for dates. But **not** for literal comparison — it treats a leading/trailing `*` as a `LIKE` wildcard; use a raw `andWhere(['col' => $value])` when comparing stored values exactly.
 - Foreign keys with explicit `CASCADE` / `SET NULL` behavior.
+- [5.12+] Forwarding a request-, template- or settings-supplied `orderBy` into a query: accept it only when `craft\helpers\Db::isSafeOrderBy($orderBy)` is true (an `ExpressionInterface`, a comma-separated column list with optional `asc`/`desc`, or an array of columns set to `SORT_ASC`/`SORT_DESC`). Craft applies the same check to eager-loading criteria. Before 5.12: allow-list the column names yourself.
 
 ## Permission Handles
 

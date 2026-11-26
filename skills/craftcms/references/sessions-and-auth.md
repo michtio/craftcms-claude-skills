@@ -195,6 +195,7 @@ Built-in operations that call `requireElevatedSession()`:
 - Editing GraphQL schemas and tokens
 - Plugin settings changes (when `$requireAdmin` is true)
 - Deleting a passkey (`auth/delete-passkey`) [changed 5.11.4]: Before 5.11.4 it needed only a logged-in CP session; now it requires an elevated session
+- Creating a personal access token on My Account → Tokens (the New token modal and `users/create-token`) [5.12+]. Tokens also need OAuth signing keys; see the `craft-mcp` skill
 
 Plugins should call `$this->requireElevatedSession()` in controller actions that modify authentication state, security settings, or access controls.
 
@@ -257,6 +258,10 @@ Event::on(
 ```
 
 `setImpersonatorId(null)` calls `SessionHelper::remove($this->impersonatorIdParam)` — the same path Craft's own rollback uses, so it's safe to call unconditionally in the veto branch.
+
+## Rate Limiting [5.12+]
+
+[5.12+] Craft rate-limits `users/login` (POST only), `users/send-password-reset-email`, `auth/verify-totp` and `auth/verify-recovery-code` per IP and per action: `defaultRateLimit` (10) requests per `defaultRateLimitDuration` (60 s), answered with a 429. Counters live in the data cache, so multi-server setups need a shared cache. This sits next to `maxInvalidLogins` lockout, which counts failed logins per account. Behind a proxy, configure `trustedHosts` and `ipHeaders` or all visitors share one bucket. Settings: `config-general.md`. OAuth endpoints have their own limits (`craft-mcp` skill). Before 5.12: no request rate limit, only `maxInvalidLogins` lockout.
 
 ## Session Configuration Quick Reference
 

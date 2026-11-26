@@ -23,6 +23,7 @@ This skill is scoped to **Craft Cloud specifically** — what's different on Clo
 - **`craft-site`** — When Cloud intersects front-end templating (ESI islands inside cached pages, edge image transform usage, `{% expires %}` opt-outs for static caching).
 - **`ddev`** — For the local-dev parity recipe (matching PHP/DB versions, simulating the ephemeral filesystem locally).
 - **`craft-php-guidelines`** — When editing plugin PHP to add Cloud-compatibility checks.
+- **`craft-mcp`**: for Craft's MCP server, OAuth server and personal access tokens [5.12+] (signing keys as env vars on this host).
 
 ## Documentation
 
@@ -69,6 +70,7 @@ A quick orientation table. Each row is a place self-hosted habits will mislead y
 ## Common Pitfalls (Cross-Cutting)
 
 - **Writing to disk without an `App::isEphemeral()` guard.** Lambda's filesystem is ephemeral and writes are lost between requests. Plugins, services, and migrations all need to check and use the Path service (`Craft::$app->getPath()->getTempPath()`/`getStoragePath()`/`getCachePath()`) for transient writes. See `references/extension.md` (App::isEphemeral) and `references/plugin-development.md`.
+- **OAuth keys in `storage/`.** [5.12+] MCP and OAuth-authenticated GraphQL need signing keys; `oauth/generate-keys` writes them to the ephemeral `storage/`. Set `CRAFT_OAUTH_PRIVATE_KEY` / `CRAFT_OAUTH_PUBLIC_KEY` as Console env vars instead. See `references/extension.md` and the `craft-mcp` skill.
 - **Reconfiguring Cloud-owned app components in `config/app.php` / `app.web.php` / `app.console.php`.** The `craftcms/cloud` extension augments the `response` component (header normalization, gzip, binary→S3 offload, all attached on `EVENT_AFTER_PREPARE`) and replaces `session`, `cache`, `mutex`, `queue`, and `assetManager` — plus auto-wires the database connection. Redefining or augmenting any of these in your app config collides with that wiring and can return **HTTP 500 on every request** (and bypass edge caching). This includes the DB: don't configure `db.php` or set `CRAFT_DB_*` env vars. To add response logic (e.g. a `Content-Language` header), attach at runtime to the response *instance* from a module — `Craft::$app->getResponse()->on(\yii\web\Response::EVENT_AFTER_PREPARE, …)` — never redefine the `response` component. **And never validate these changes locally:** the extension only runs on Cloud (`Helper::isCraftCloud()` is false on DDEV), so a local HTTP 200 proves nothing — treat `app.*.php` as prod-only-verifiable. See `references/database.md` and `references/extension.md`.
 - **Using `tablePrefix`.** Unsupported on Cloud. Run `php craft db/drop-table-prefix` before migrating. See `references/migration.md`.
 - **Choosing MariaDB.** Cloud only supports MySQL 8.0 and Postgres 15.

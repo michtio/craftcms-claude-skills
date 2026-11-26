@@ -22,6 +22,15 @@ Use `ddev` shorthand commands: `ddev composer`, `ddev craft`, `ddev npm`. Never 
 
 Use `gh` for all GitHub operations.
 
+## Spec-driven development
+
+Nothing gets built without an approved spec. A spec is two documents in `specs/YYYY-MM-DD-<slug>/` (git-ignored, e.g. `internal-docs/specs/`, when the repo is public):
+
+- `prd.md`: what and why. Numbered requirements (R1, R2, ..., each MUST or SHOULD), Given/When/Then acceptance criteria tagged with their R id, non-goals, constraints, open questions (empty before approval), decisions log.
+- `plan.md`: how. Architecture decisions and vertical slices (S1, S2, ...), each listing its R ids and a runnable verification gate.
+
+Only the project owner approves; no build before both are approved. A one-line fix or a pure chore may skip the spec; when unsure, ask. Briefs cite the slice and its R ids, reviews report per R id, and scope changes update the PRD, then the plan, then the code. Use the `spec-driven-development` skill if your team has one.
+
 ## Environment
 
 ```bash

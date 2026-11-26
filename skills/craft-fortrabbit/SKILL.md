@@ -23,6 +23,7 @@ This skill is scoped to **Craft on fortrabbit specifically**: what differs from 
 - **`craft-site`** — When the topic intersects templates (transforms in Twig, `{% cache %}` tags).
 - **`ddev`** — For local development; fortrabbit has no first-party local environment, DDEV is the common local stack.
 - **`craft-plugins`** — For Blitz, Imager-X or other plugin configuration on a fortrabbit site.
+- **`craft-mcp`**: for Craft's MCP server, OAuth server and personal access tokens [5.12+] (signing keys as env vars on this host).
 
 ## Documentation
 
@@ -83,6 +84,7 @@ Tool names and flags change with new releases: the MCP tools describe their own 
 - **Importing the local database without the local security key.** The template generates a random `CRAFT_SECURITY_KEY`; data encrypted locally can't be read with it. Copy the local key into the environment's ENV vars. See `references/database.md`.
 - **Running the queue in web requests.** Craft's default AJAX queue runner and on-demand image transforms block the PHP processes that serve the site, ending in 504s or memory kills. Run the queue in a worker job and set `CRAFT_RUN_QUEUE_AUTOMATICALLY=false` on that environment. See `references/limitations.md`.
 - **Expecting assets in git.** Uploads stay on the environment; git deployment only goes up. Sync volumes with rsync. See `references/asset-storage.md`.
+- **OAuth keys for MCP.** [5.12+] Craft's MCP server and OAuth GraphQL need signing keys. Prefer ENV vars `CRAFT_OAUTH_PRIVATE_KEY` / `CRAFT_OAUTH_PUBLIC_KEY`. See `references/deploy-and-environments.md` and the `craft-mcp` skill.
 - **Fixing code over SSH.** Files changed over SSH are overwritten by the next git deployment. Fix in git.
 
 ## Reference Files

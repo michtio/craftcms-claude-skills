@@ -47,6 +47,8 @@ How Craft CMS 5 loads configuration: environment variables, aliases, config file
 | `config/custom.php` | Custom key-value config accessed via `craft.app.config.custom` |
 | `config/routes.php` | Custom URL routes (site-specific nesting supported) |
 | `config/htmlpurifier/` | HTML Purifier configs for CKEditor fields |
+| `config/mcp.php` | MCP config (`craft\config\McpConfig`: `instructions`, `filters`), env prefix `CRAFT_MCP_` [5.12+]. See the `craft-mcp` skill |
+| `config/oauth.php` | OAuth server config (`craft\config\OAuthConfig`: signing keys, token lifetimes, `redirectDomains`), env prefix `CRAFT_OAUTH_`, e.g. `CRAFT_OAUTH_PRIVATE_KEY` [5.12+]. See the `craft-mcp` skill |
 
 All config files return a PHP array or fluent config object. None of these files are required — Craft has sensible defaults for everything. Create them only when you need to override a default.
 

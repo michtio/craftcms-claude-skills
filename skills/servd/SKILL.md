@@ -23,6 +23,7 @@ This skill is scoped to **Servd specifically** — what's different on Servd vs 
 - **`craft-site`** — When Servd intersects front-end templating (`{% dynamicInclude %}` islands in cached pages, transform usage, CSRF in cached forms).
 - **`ddev`** — For local development; Servd has no first-party local environment, so DDEV is the standard local stack.
 - **`craft-php-guidelines`** — When editing plugin PHP to add ephemeral-filesystem checks.
+- **`craft-mcp`**: for Craft's MCP server, OAuth server and personal access tokens [5.12+] (signing keys as env vars on this host).
 
 ## Documentation
 
@@ -81,6 +82,7 @@ Both are managed Craft hosting with git deploy, ephemeral filesystems, S3 assets
 ## Common Pitfalls (Cross-Cutting)
 
 - **Writing to disk and expecting persistence.** The filesystem is ephemeral and load-balanced — writes vanish and aren't shared across instances. Use Craft's data cache (auto-mapped to Redis) or a remote asset volume. See `references/limitations.md`.
+- **OAuth keys in `storage/`.** [5.12+] MCP and OAuth GraphQL need signing keys; set `CRAFT_OAUTH_PRIVATE_KEY` / `CRAFT_OAUTH_PUBLIC_KEY` as env vars, since `storage/` is ephemeral. See `references/limitations.md` and the `craft-mcp` skill.
 - **Making schema/Project Config changes anywhere but local.** Servd sets `allowAdminChanges: false` on staging and production and syncs uni-directionally (local → staging → production). Make changes in local, commit, deploy. See `references/deploy-and-environments.md`.
 - **Treating Blitz as a replacement for Servd's caching.** On Servd you run Blitz *alongside* the static cache in **reverse-proxy mode** (Yii Cache Storage + HTTP Generator + Servd Static Cache Purger) — Blitz's own server-rewrite mode is broken by Servd's load balancing. See `references/caching.md`.
 - **Committing a `.env` for runtime config.** Runtime env vars live in the Servd dashboard per environment, not a committed `.env`. `SERVD_PROJECT_SLUG` / `SERVD_SECURITY_KEY` come from the dashboard's Assets page.

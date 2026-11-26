@@ -42,7 +42,7 @@ Set these as environment variables (the preferred approach — see `deploy-and-e
 
 ## The Servd filesystem and volumes
 
-After install, create a **Filesystem** of the "Servd Asset Storage" type (Settings → Filesystems → New filesystem), then attach a **Volume** to it (Settings → Assets → Volumes). In Craft 3 these were called Volumes directly; Craft 4+ splits the storage backend (Filesystem) from the content container (Volume). In Craft 5 you always create the Filesystem first and point one or more Volumes at it.
+After install, create a **Filesystem** of the "Servd Asset Storage" type (Settings → Assets → Filesystems → New filesystem [changed 5.12]; Before 5.12: Settings → Filesystems), then attach a **Volume** to it (Settings → Assets → Volumes). In Craft 3 these were called Volumes directly; Craft 4+ splits the storage backend (Filesystem) from the content container (Volume). In Craft 5 you always create the Filesystem first and point one or more Volumes at it.
 
 The plugin **automatically separates assets into `local`, `staging`, and `production` directories** within the Servd Assets Platform, keyed to the environment the asset was uploaded from. This means editing or deleting assets in one environment never affects another, and assets can be carried along in clone operations.
 

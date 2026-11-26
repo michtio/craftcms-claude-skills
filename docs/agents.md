@@ -19,13 +19,15 @@ Use agents when work is scoped and repeatable. A single conversation can delegat
 
 For complex work (more than 3 steps), always plan first, then build. The planner's output feeds directly into the builder.
 
+Every agent works from the project's Craft version. It uses the version line the skills print in a Craft project, or reads `composer.lock` / the `craftcms/cms` constraint itself, and compares that version with the pack's version tags (`[5.12+]`, `[changed 5.12]`) before it uses, plans, flags or approves an API. Below a tag, builders use the `Before 5.x:` alternative or make a constraint bump explicit, and reviewers flag the API unless the constraint or a `version_compare` guard covers it. Below the minimum safe version, they say so once. MCP work (tools, OAuth resources, connecting an AI client) loads the `craft-mcp` skill (Craft 5.12+).
+
 ---
 
 ## craft-planner
 
 **Model:** Opus (`high` effort)
 **Tools:** Read, Grep, Glob, Bash, WebFetch, Skill (read-only on the project — Bash for `git`/`gh` research and clones into the research folder)
-**Skills preloaded:** `craftcms` (others on demand: `craft-pest`, `craft-content-modeling`, `craft-garnish`, `craft-plugins`, `craft-cloud`, `servd`, `craft-fortrabbit`)
+**Skills preloaded:** `craftcms` (others on demand: `craft-pest`, `craft-content-modeling`, `craft-garnish`, `craft-plugins`, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-mcp`)
 
 Breaks large tasks into scoped implementation steps that can each be completed in a single session.
 
@@ -35,7 +37,7 @@ Breaks large tasks into scoped implementation steps that can each be completed i
 2. Identifies all affected areas (elements, queries, services, controllers, migrations, templates, project config, tests)
 3. Maps dependencies -- what must be built first
 4. Breaks work into steps of roughly equal size
-5. Returns the plan, headed with its intended path `docs/plans/{feature-name}.md`, for the caller to save (the planner has no Write tool)
+5. Requires an approved PRD (`prd.md`) first, then returns `plan.md`, headed with its intended path `specs/YYYY-MM-DD-<slug>/plan.md` (or a git-ignored folder for a public package), for the caller to save (the planner has no Write tool)
 
 ### Plan format
 
@@ -136,7 +138,9 @@ After all gates pass, the builder does one sweep on files it just wrote (while c
 ### Example delegation
 
 ```
-Build the Job Listings element type following the plan in docs/plans/job-listings.md
+Build slice S1 of specs/2026-10-09-job-listings/plan.md (approved, PRD approved).
+Requirements R1-R3; acceptance criteria AC1-AC4 in prd.md.
+Gate: ddev craft migrate/up succeeds and the JobListingServiceTest Pest filter is green.
 ```
 
 ---
@@ -145,7 +149,7 @@ Build the Job Listings element type following the plan in docs/plans/job-listing
 
 **Model:** Opus (`high` effort)
 **Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, TodoWrite, TaskCreate, TaskUpdate, TaskList, ToolSearch, `mcp__chrome-devtools`
-**Skills preloaded:** `craft-site`, `craft-twig-guidelines`, `craft-content-modeling` (on demand: `craft-plugins`, `craft-cloud`, `servd`, `craft-fortrabbit`, `ddev`)
+**Skills preloaded:** `craft-site`, `craft-twig-guidelines`, `craft-content-modeling` (on demand: `craft-plugins`, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-mcp`, `ddev`)
 
 Builds site templates, content architecture, and component systems following atomic design principles.
 
@@ -195,7 +199,7 @@ topic filtering, and pagination.
 
 **Model:** Sonnet (`high` effort)
 **Tools:** Read, Write, Edit, Bash, Grep, Glob, Skill, WebFetch, ToolSearch, `mcp__chrome-devtools`
-**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-pest` (on demand: `craft-garnish`, `craft-site`, `craft-twig-guidelines`, `ddev`, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-plugins`)
+**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-pest` (on demand: `craft-garnish`, `craft-site`, `craft-twig-guidelines`, `ddev`, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-mcp`, `craft-plugins`)
 
 Systematic bug investigation with a hypothesis-driven approach.
 
@@ -315,7 +319,7 @@ Review the changes in the job-listings branch before I open a PR.
 
 **Model:** Opus (`xhigh` effort)
 **Tools:** Read, Grep, Glob, Bash, Skill (read-only — Bash for `git diff`/`log`/`show`/`blame` only)
-**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-garnish`, `craft-twig-guidelines`, `craft-site`, `craft-pest` (on demand: `craft-plugin-release` when the branch bumps a version or touches tags/changelog dating, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-plugins`)
+**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-garnish`, `craft-twig-guidelines`, `craft-site`, `craft-pest` (on demand: `craft-plugin-release` when the branch bumps a version or touches tags/changelog dating, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-mcp`, `craft-plugins`)
 
 The deep-review counterpart to `craft-code-reviewer`. The standard reviewer (Sonnet) catches checklist violations per file; this one (Opus, xhigh) catches what surface pattern-matching misses. Use it when the extra scrutiny is worth the token cost — release branches, security-sensitive code, large architectural changes, migrations, multi-service flows. Use the standard reviewer for daily review.
 
@@ -360,10 +364,10 @@ This means code built by the `craft-feature-builder` agent passes the `craft-cod
 The most common pattern. Plan first to break down complexity, then build layer by layer.
 
 ```
-1. Delegate to craft-planner: "Plan the implementation of..."
-2. Review the plan, adjust if needed
-3. Save the returned plan to docs/plans/{feature-name}.md
-4. Delegate to craft-feature-builder: "Build following the plan in docs/plans/..."
+1. Write and approve the PRD: specs/{date-slug}/prd.md
+2. Delegate to craft-planner: "Plan the implementation of specs/{date-slug}/prd.md"
+3. Review and approve the returned plan, save it as specs/{date-slug}/plan.md
+4. Delegate to craft-feature-builder, one slice at a time: "Build slice S1 of specs/{date-slug}/plan.md: R ids, their acceptance criteria, the verification gate"
 ```
 
 ### Build then review

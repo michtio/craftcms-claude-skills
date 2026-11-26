@@ -18,7 +18,7 @@ Cloud replaces local asset filesystems and Craft's native image transformer with
 
 ## The Cloud filesystem type
 
-The extension registers a `craft\cloud\fs\AssetsFs` filesystem type. Configure it as a normal Craft filesystem (Settings → Filesystems → New filesystem → type = Cloud), then point one or more asset volumes at it.
+The extension registers a `craft\cloud\fs\AssetsFs` filesystem type. Configure it as a normal Craft filesystem (Settings → Assets → Filesystems → New filesystem → type = Cloud [changed 5.12]; Before 5.12: Settings → Filesystems), then point one or more asset volumes at it.
 
 ### Required settings
 

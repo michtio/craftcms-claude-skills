@@ -31,6 +31,7 @@
   - [Queue](#queue)
   - [Migrations](#migrations)
   - [GraphQL](#graphql)
+  - [MCP and OAuth](#mcp-and-oauth-512)
   - [Email](#email)
   - [Utilities](#utilities)
   - [Environment and Shell](#environment-and-shell)
@@ -107,6 +108,7 @@ The `project-config/` controller has a `pc/` shorthand alias — `craft pc/apply
 | `craft pc/set` | Set a project config value. Accepts `--force`, `--message`, `--update-timestamp`. |
 | `craft pc/remove` | Remove a project config value by path. |
 | `craft pc/write` | Write project config YAML files to `config/project/` from the loaded config. |
+| `craft pc/check` | [5.12+] Check that the YAML's schema versions are compatible with the installed Craft and enabled plugins, without applying anything or running migrations. Needs an installed Craft with DB access; fails on missing `project.yaml` unless `--require-yaml=0`. Exits non-zero on mismatch, so it fits a deploy pre-flight. |
 
 ### Sections and Entry Types
 
@@ -239,6 +241,15 @@ For queue architecture and custom job implementation, see `queue-jobs.md`.
 | `craft graphql/dump-schema` | Dump the GraphQL schema to a file. |
 | `craft graphql/list-schemas` | List all GraphQL schemas. |
 | `craft graphql/print-schema` | Print the GraphQL schema to stdout. |
+
+### MCP and OAuth [5.12+]
+
+| Command | Purpose |
+|---------|---------|
+| `craft mcp/serve --user=<id\|username\|email>` | Run a stdio MCP server as that user. Ignores the Settings → MCP enable switches and OAuth access levels; the user must be active, not suspended or locked. |
+| `craft oauth/generate-keys` | Write a 4096-bit RSA signing pair to `storage/oauth-private.key` and `storage/oauth-public.key`. Refuses to overwrite without `--force`; replacing keys invalidates issued access tokens. |
+
+Setup, hosting key handling and client recipes: the `craft-mcp` skill.
 
 ### Email
 

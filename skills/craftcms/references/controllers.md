@@ -512,7 +512,7 @@ public function beforeAction($action): bool
 
 ## Project-config writes from controllers
 
-Project config is guarded by a mutex. `ProjectConfig::_acquireLock()` throws `BusyResourceException` when it can't acquire `MUTEX_NAME` (`'project-config'`), and `StaleResourceException` when the loaded config is out of date. Both are plain exceptions — uncaught in a controller action they're 500s.
+Project config is guarded by a mutex. `ProjectConfig::_acquireLock()` throws `BusyResourceException` when it can't acquire `MUTEX_NAME` (`'project-config'`), and `StaleResourceException` when the loaded config is out of date. Both are plain exceptions — uncaught in a controller action they're 500s. [5.12.1+] `ProjectConfig::acquireLock()` is public: call it before reading values a change depends on (see `architecture.md`). Before 5.12.1: the lock was only taken inside `set()`.
 
 Under concurrency that isn't theoretical: 18 parallel delete requests against a project-config-writing action produced 14 uncaught 500s. Any action that writes project config (saving plugin settings, creating or deleting a plugin-managed entity whose config lives in YAML) needs to handle it:
 

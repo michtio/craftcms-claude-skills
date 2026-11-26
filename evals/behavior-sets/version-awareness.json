@@ -44,8 +44,8 @@
     ]
   },
   {
-    "id": "v-no-floor-warning-5121",
-    "cwd": "evals/fixtures/version/site-agree",
+    "id": "v-no-floor-warning-at-floor",
+    "cwd": "evals/fixtures/projects/site-5.12.4",
     "prompt": "We want to add a new Link field to the article entry type on this site. Anything I should know before doing it?",
     "must_not_match": [
       "minimum safe",

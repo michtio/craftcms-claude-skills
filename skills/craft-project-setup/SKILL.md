@@ -85,6 +85,7 @@ Also check `composer.json` `scripts` section for `check-cs`, `phpstan`, `test`, 
 - Check `.claude.json` for existing MCP configuration
 - If not present, ask: "Would you like to install Chrome DevTools MCP for browser debugging? Enables inspecting CP templates, front-end pages, console errors, and visual testing."
 - If yes: run `claude mcp add chrome-devtools -- npx chrome-devtools-mcp@latest` and note session restart is needed
+- [5.12+] On Craft 5.12+ projects, optionally offer connecting Claude Code to Craft's own MCP server (off by default, enabled in Settings → MCP). Don't write setup steps into the generated config; point at the `craft-mcp` skill.
 
 From these signals, determine the project type:
 
@@ -307,6 +308,14 @@ Use `gh` for all GitHub operations — it's already authenticated.
 
 `.claude/settings.local.json` pre-approves DDEV and git commands so agents run without permission prompts. This file is gitignored — each developer can adjust it locally. If commands are being blocked, check this file first.
 ```
+
+## Install and Upgrade Facts to Record
+
+Setup doesn't install Craft, but the generated CLAUDE.md is where a project's install and upgrade rules live, and users often ask about them during setup. Record these when they apply (check the detected `craftcms/cms` version first):
+
+- **Installing on staging or production** [changed 5.12.1]: the web-based installer only runs with Dev Mode on, its actions are gone once Craft is installed, and it answers 503 when the database is unreachable (GHSA-pcf5-h66c-9wxw). Anywhere `devMode` is off, install from the CLI: `php craft install --interactive=0 --username=… --email=… --password=… --site-name=… --site-url='$PRIMARY_SITE_URL' --language=en-US` (installs from the committed `config/project/`). Locally, `ddev craft install` does the same. Before 5.12.1: the browser installer worked without Dev Mode. Details: the `craftcms` skill's `deployment.md` → "First Install on a New Environment".
+- **`allow-plugins`** [5.12+]: Craft 5.12 pulls in `php-http/discovery`, a Composer plugin marked optional, so when `config.allow-plugins` doesn't list it, non-interactive runs skip it silently (no CI failure) and an interactive `composer update` asks once and writes the answer; the `craftcms/craft` starter already lists it. In an upgrade audit, offering `"php-http/discovery": true` saves that prompt; it is never a blocker.
+- **Upgrading to 5.12** [changed 5.12]: point the generated CLAUDE.md at the `craftcms` skill's `upgrade-5.12.md` checklist (volume propagation YAML, `.eagerly()` output changes, security floor).
 
 ## Template Files
 

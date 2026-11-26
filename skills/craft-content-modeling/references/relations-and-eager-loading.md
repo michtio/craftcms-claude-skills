@@ -127,6 +127,20 @@ Add query criteria to eager-loaded relations:
 ]).all() %}
 ```
 
+`limit` and `offset` apply **per source element**: `{ limit: 3 }` gives each entry its
+3 related articles (Craft runs one combined query and slices per source in PHP).
+
+`orderBy` in a criteria hash, by version (craftcms/cms#19994):
+
+- [5.0+] Applied, from 5.0 through 5.11.4.
+- [changed 5.11.5] 5.11.5 and 5.11.5.1: **silently ignored**. The GHSA-cphx-cx67-jcqj fix
+  stripped `orderBy` from eager-loading criteria. Sort in Twig (`|sort`, `|multisort`) or upgrade.
+- [changed 5.12] Applied again, but only when it passes `Db::isSafeOrderBy()` [5.12+]: a column list
+  such as `'postDate desc'` or `'title asc, postDate desc'`, or an array of column names set to
+  `SORT_ASC`/`SORT_DESC`. Anything else (raw SQL such as `'field_x DESC NULLS LAST'`) is dropped with a
+  "Ignoring unsafe `orderBy` criteria" warning in the log. A Twig hash like `{ postDate: 'desc' }`
+  fails the check, because `'desc'` isn't `SORT_DESC`: use the string form.
+
 ### Nested Eager Loading
 
 Dot notation for relations within relations:
@@ -234,8 +248,8 @@ works in partials without upstream coordination.
 ### .eagerly() Limitations
 
 1. **Native attributes** — `.eagerly()` doesn't work for `author`, `uploader`, `photo`; they return the element, not a query. Use `.with()`. Exception: [5.8+] `entry.author` and `entry.authors` batch themselves. The first access on an entry that came from a multi-result query eager-loads `authors` for every entry in that result (`Entry::getAuthors()`), so a plain `entry.author` inside a loop is one query, with or without `.with(['author'])`. Nothing further down is batched: `entry.author.photo` is still one query per author, so keep `.with(['author.photo'])` when you render author photos.
-2. **`limit`, `offset`, `orderBy` on `.eagerly()`** [changed 5.12] — Before 5.12: filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`|slice(0, 3)`). After 5.12: all three are applied to `.eagerly()` (#19994). When supporting both, keep the `.with()` or `|slice` form.
-3. **One result per field handle** — every `.eagerly()` call on the same field shares the alias `eagerly:<handle>`. `block.children.eagerly().type('cta').all()` followed by `block.children.eagerly().type('quote').all()` returns the CTA set both times. Name each variant: `.eagerly('ctaChildren')`, `.eagerly('quoteChildren')`.
+2. **`limit`, `offset`, `orderBy` on `.eagerly()`** [changed 5.12] — Before 5.12: filters such as `.type()`, `.status()` or `.relatedTo()` are passed to the batch query. `limit`, `offset` and `orderBy` are not (they live on Yii's base query, so `ElementQuery::getCriteria()` drops them). Inside a loop, `post.topics.eagerly().limit(3).all()` silently returns every topic. On a single-entry page it returns 3, because `.eagerly()` only batches when the source came from a multi-result query. Use `.with([['topics', {limit: 3}]])` or slice in Twig (`|slice(0, 3)`). After 5.12: all three are applied to `.eagerly()` (#19994), with the same rules as a `.with()` hash: `limit`/`offset` per source element, `orderBy` only when `Db::isSafeOrderBy()` [5.12+] accepts it (see "With Criteria"). Upgrading changes listing output: a loop that used to print every related element now prints the limited set, and a template that "worked" because the limit was ignored needs checking. When supporting both, keep the `.with()` or `|slice` form.
+3. **One result per field handle** — every `.eagerly()` call on the same field shares the alias `eagerly:<handle>`. `block.children.eagerly().type('cta').all()` followed by `block.children.eagerly().type('quote').all()` returns the CTA set both times. Name each variant: `.eagerly('ctaChildren')`, `.eagerly('quoteChildren')`. [changed 5.12] This now also bites with `limit`: `entry.gallery.eagerly().limit(3).all()` followed by `entry.gallery.eagerly().all()` in the same render returns 3 images both times. Use `entry.gallery.eagerly('galleryPreview').limit(3).all()` for the slice.
 4. **Transform preloading** — No `withTransforms` equivalent. Use `.with()`.
 5. **Auto-injected single entries** — `preloadSingles` entries aren't part of the query chain.
 6. **Link fields** — no eager loading at all, lazy or upfront (see above).

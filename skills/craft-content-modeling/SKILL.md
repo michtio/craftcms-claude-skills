@@ -191,6 +191,7 @@ Fields are defined once globally, then **instanced** into field layouts. Each in
 - **Handle** — different template handle per context (5.0.0+)
 - **Instructions** — context-specific help text
 - **Required** — required in one layout, optional in another
+- Default Tip/Warning [5.12+] is set on the field; a layout element's own Tip/Warning overrides it (see `references/field-types.md`).
 
 This means a single `heroImage` Assets field can be placed in a Blog Post, a Service Page, and a Project entry type — each with different labels ("Hero Image", "Banner", "Cover Photo") and different required settings. The field definition, type, and settings are shared.
 
@@ -330,6 +331,6 @@ Read the relevant reference file(s) for your task.
 | `references/relations-and-eager-loading.md` | relatedTo() shapes (4 forms), .with() eager loading, .eagerly() lazy eager loading, nested eager loading, native eager-loadable attributes. |
 | `references/content-patterns.md` | Strategic patterns for blog, portfolio, multi-site corporate. Section/field/relation architecture per pattern. Entrification migration. CKEditor vs Matrix decisions. |
 | `references/users-and-permissions.md` | Users, user groups, CMS editions, addresses, permissions architecture, field layout UI elements. |
-| `references/infrastructure.md` | Multi-site propagation methods, field translation methods, project config workflow, how Craft stores content (five-table model, JSON field values, relations, nested sets), asset volumes/filesystems/transforms. |
+| `references/infrastructure.md` | Multi-site propagation methods, volume propagation and the add-a-site trap [5.12+], field translation methods, project config workflow, how Craft stores content (five-table model, JSON field values, relations, nested sets), asset volumes/filesystems/transforms. |
 | `references/object-templates.md` | Object template syntax: `{attribute}` vs `{{ twig }}`, URI formats, asset subpaths, preview targets, owner/rootOwner nesting, structure patterns, the Matrix gotcha. |
 | `references/element-index-sources.md` | Entries CP index sources in project config: placement under headings, tableAttributes/defaultSort matched to peer sections, post-create checklist after adding sections. |

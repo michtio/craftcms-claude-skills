@@ -22,7 +22,10 @@
 - **Stale CSRF tokens with static caching** — When using Blitz, the CSRF token baked into HTML is stale for subsequent visitors. Use `craft.blitz.csrfInput()` or JavaScript hydration.
 - **Doubled subfolder in URIs** — If `baseUrl` includes the subfolder (e.g. `https://example.com/de/`), do not repeat it in the section URI format. `de/{slug}` + base URL `/de/` produces `/de/de/my-entry`.
 - **Missing eager load for hreflang** — Generating `<link rel="alternate">` tags without eager loading fires one query per site on every page load.
+- **Assets missing on a site** [5.12+]: in a volume with Custom propagation (the default for new volumes, and for every volume on an install that was single-site at upgrade), an asset exists only in the sites it was saved to, so an Assets field read on another site comes back empty. See `craft-content-modeling` `infrastructure.md` (Assets may not exist in the current site).
 - **Assuming entries exist on all sites** — Entries may be disabled or unpropagated. Always guard against null when iterating localized entries.
+- **Case filters change per language** [changed 5.12]: `|upper`, `|lower`, `|title` and `|capitalize` use ICU casing for the site's language, so a Turkish site upper-cases `istanbul` to `İSTANBUL` and a Dutch site title-cases `ijsland` to `IJsland`. Before 5.12: locale-neutral output everywhere. Pass `('en')` [5.12+] for codes and identifiers; see `craft-twig-guidelines` (Case Filters Follow the Site Language).
+- **Headless language switchers** [5.12+]: a GraphQL front end can read the site list with `sites { handle language baseUrl primary }` once the schema has **Query for sites**. Before 5.12: hardcode the sites in the front end. See `headless.md`.
 
 ## Site Architecture Patterns
 

@@ -335,8 +335,10 @@ The one mistake that makes a sidebar panel "look wrong" is picking the wrong `.m
 `Element::getSidebarHtml(bool $static)` (`src/base/Element.php`) assembles the sidebar in order:
 
 1. The element's own `metaFieldsHtml()`, wrapped by Craft in `<div class="meta">` (plus a visually-hidden `<h2>Metadata</h2>`).
-2. `statusFieldHtml()` — the **Status** panel.
+2. [changed 5.12] `sitesFieldHtml()` [5.12+], the **Sites** pane, when `showSitesField()` is true and the pane isn't empty. Otherwise `statusFieldHtml()`, the **Status** panel (when the type has statuses). Before 5.12: always the Status panel.
 3. `notesFieldHtml()` — the draft **Notes** field (only when the element has revisions).
+
+[5.12+] The Sites pane lists the sites the element is saved in (those the user can edit) with per-site status toggles and links, plus an "Add a site…" menu. `Element::showSitesField()` (protected) defaults to `isLocalized()` with more than one supported site, and returns `false` for a type with statuses that overrides `statusFieldHtml()` (core: `User`), so a customised Status pane is kept. `sitesFieldHtml()` returns `''` for unsaved elements, revisions and single-site installs, which falls back to the Status panel. Override `showSitesField()` to opt in or out explicitly. Sidebar code that searches `$event->html` for the Status `<fieldset>` won't find it on multi-site installs.
 
 …then fires `EVENT_DEFINE_SIDEBAR_HTML` with that assembled string in `$event->html`.
 

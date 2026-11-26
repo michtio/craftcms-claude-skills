@@ -26,6 +26,7 @@ When this skill triggers, also load:
 - **`craft-garnish`** — When working on CP JavaScript, asset bundles, or interactive CP components. Covers Garnish's class system, UI widgets (Modal, HUD, DisclosureMenu, Select), drag system, and the Craft.* JS class pattern.
 - **`craft-pest`** — When writing, running, fixing, or reviewing tests. Covers the `markhuot/craft-pest-core` harness, database isolation (its rollback is opt-in and its env overrides are cwd-bound — both cause silent writes to the dev database), factories, HTTP/queue/DB assertions, and CI test jobs.
 - **`craft-cloud`** — When the project is hosted on Craft Cloud (detect via `craft-cloud.yaml` at the repo root or `craftcms/cloud` in `composer.json`). Required for plugin Cloud-compatibility constraints — `App::isEphemeral()` guards, asset-bundle CDN publishing, 15-minute queue-job cap, `csrfInput()` function over raw token output, and the `cloud/up` deploy lifecycle events.
+- **`craft-mcp`**: Craft's MCP servers, OAuth server, personal access tokens and plugin MCP tools [5.12+].
 
 ## Documentation
 
@@ -92,7 +93,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up environment variables for production" → read `config-bootstrap.md`
 - "Find a GeneralConfig setting" → read `config-general.md`
 - "Read a config value in plugin code (App::env, parseEnv, GeneralConfig)" → read `config-bootstrap.md` + `config-general.md`
-- "Which Craft version does this feature need? / What can this project use on its version?" → read `version-table.md` (every version tag in the pack, with older-version alternatives)
+- "Which Craft version does this feature need? / What can this project use on its version?" → grep `version-table.md` for the feature or version (every version tag in the pack, with older-version alternatives); it is large, so don't read it whole
 - "Check if allowAdminChanges is enabled in plugin code" → read `config-general.md` + `cp.md` (Read-Only Mode)
 - "Resolve env vars in plugin settings ($MY_API_KEY)" → read `config-bootstrap.md` (App::parseEnv)
 - "Understand CRAFT_* env var conventions" → read `config-bootstrap.md`
@@ -174,6 +175,7 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up CI/CD for a Craft project" → read `deployment.md` (CI/CD Patterns)
 - "Zero-downtime deploy" → read `deployment.md` (Zero-Downtime)
 - "Roll back a failed deploy" → read `deployment.md` (Rollback Strategies)
+- "Upgrade to Craft 5.12 / what changed after upgrading" [5.12+] → read `upgrade-5.12.md`
 - "Work with drafts and revisions" → read `drafts-revisions.md`
 - "Create a draft programmatically" → read `drafts-revisions.md` (Creating Drafts)
 - "Skip side effects for drafts in afterSave" → read `drafts-revisions.md` (Plugin Considerations)
@@ -209,11 +211,11 @@ Load only the reference files your task needs — each file costs input tokens o
 | Testing: pointer to the `craft-pest` skill (Pest/craft-pest-core lives there) + Codeception basics | `references/testing.md` | 0.6K |
 | Field types, native fields, BaseNativeField, field layout elements (built-in Tip/Heading/LineBreak/HorizontalRule reference), FieldLayoutBehavior | `references/fields.md` | 3.6K |
 | Events: registration, lifecycle, naming conventions, validation rules on core elements (EVENT_DEFINE_RULES), custom events, behaviors, Twig extensions, utilities, widgets, filesystems | `references/events.md` | 4.4K |
-| GraphQL types, queries, mutations, directives, schema components, resolvers | `references/graphql.md` | 4.6K |
+| GraphQL: authentication (schema tokens, OAuth, personal access tokens), authenticated requests, settings queries, types, queries, mutations, directives, schema components, resolvers | `references/graphql.md` | 8.4K |
 | Plugin Vite: VitePluginService, CP asset bundles, HMR, TypeScript, Vue in CP | `references/plugin-vite.md` | 2.7K |
 | Headless & hybrid: headlessMode, GraphQL API, CORS, preview tokens, front-end frameworks | craft-site skill `references/headless.md` | 3.4K |
 | GeneralConfig (system, routing, security, users, sessions, search, assets, images) | `references/config-general.md` | 8.4K |
-| Craft version table, generated from the pack's version tags | `references/version-table.md` | 23.0K |
+| Craft version table, generated from the pack's version tags | `references/version-table.md` | 13.3K |
 | GeneralConfig (content, templates, performance, GC, localization, headless, GraphQL, accessibility) | `references/config-general-extended.md` | 7.2K |
 | App config: cache, session, queue, mutex, mailer/SMTP, search, logging, CORS, DB replicas | `references/config-app.md` | 5.5K |
 | Config bootstrap: env vars, aliases, priority order, fluent API, custom.php, db.php, routes.php | `references/config-bootstrap.md` | 3.6K |
@@ -227,6 +229,7 @@ Load only the reference files your task needs — each file costs input tokens o
 | Email system: system messages, custom messages, programmatic sending, templates, events, testing | `references/email.md` | 2.4K |
 | Deployment: standard pipeline, project config deploy, project-config/write safely, zero-downtime, CI/CD, rollback | `references/deployment.md` | 2.5K |
 | Drafts & revisions: draft types, provisional drafts, autosave, applying, merge, revisions | `references/drafts-revisions.md` | 2.5K |
+| Upgrading 5.11 to 5.12.4 [5.12+]: silent behaviour changes, plugin-code changes, deploy steps | `references/upgrade-5.12.md` | 2.1K |
 
 ## Plugin vs Module Differences
 

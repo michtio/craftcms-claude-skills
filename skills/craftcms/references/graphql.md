@@ -4,33 +4,190 @@
 
 - Extending GraphQL: https://craftcms.com/docs/5.x/extend/graphql.html
 - GraphQL API (consumer): https://craftcms.com/docs/5.x/development/graphql.html
+- OAuth server and personal access tokens: https://craftcms.com/docs/5.x/system/oauth.html
 - Class reference: https://docs.craftcms.com/api/v5/craft-gql-base-query.html
+
+Setting up the OAuth server itself (signing keys, `config/oauth.php`, client registration, the Tokens screen) belongs to the `craft-mcp` skill. This file covers how GraphQL uses those tokens.
 
 ## Common Pitfalls
 
-- Skipping `TypeManager::prepareFieldDefinitions()` — other plugins can't extend your types, breaking the extension chain.
-- Not registering schema components — your types become available in the public schema with no access control.
-- Returning field definitions without checking the active token's scope — all data exposed regardless of permissions.
-- Forgetting `EVENT_REGISTER_GQL_TYPES` — interface and type classes must be registered before anything else works.
-- Using `ddev craft make gql-directive` for query-level logic — directives transform resolved values, they don't modify queries.
-- Mutation resolvers that don't validate before saving — elements silently fail or throw unstructured exceptions instead of returning `userErrors`.
-- Using `!empty()` for optional integer arguments like `limit` — `0` is a valid value but `!empty(0)` is `true`. Use `isset()` for nullable integers.
-- Tokens are stored in the database only, not project config — forgetting to create tokens per environment leaves staging/production with no API access.
-- Expecting `author`/`uploader` data from a schema without **Query for users** [5.11+] — the fields are absent from the schema, so the query fails at validation (`Cannot query field "author" on type …`) rather than returning `null`. See Additions [5.11+].
+- Skipping `TypeManager::prepareFieldDefinitions()`: other plugins can't extend your types, breaking the extension chain.
+- Not registering schema components: your types become available in the public schema with no access control.
+- Returning field definitions without checking the active token's scope: all data exposed regardless of permissions.
+- Forgetting `EVENT_REGISTER_GQL_TYPES`: interface and type classes must be registered before anything else works.
+- Using `ddev craft make gql-directive` for query-level logic: directives transform resolved values, they don't modify queries.
+- Mutation resolvers that don't validate before saving: elements silently fail or throw unstructured exceptions instead of returning `userErrors`.
+- Using `!empty()` for optional integer arguments like `limit`: `0` is a valid value but `!empty(0)` is `true`. Use `isset()` for nullable integers.
+- Tokens are stored in the database only, not project config: forgetting to create tokens per environment leaves staging/production with no API access.
+- Expecting `author`/`uploader` data from a schema without **Query for users** [5.11+]: the fields are absent from the schema, so the query fails at validation (`Cannot query field "author" on type …`) rather than returning `null`. See Additions [5.11+].
+- Registering a schema component without an `authenticated` key [5.12+]: it never appears in the per-user schema that OAuth and personal-access-token requests get, so the plugin's queries are missing for those clients while schema tokens still see them. See [Schema Components](#schema-components-access-control).
+- Treating `authenticated` as the access check [5.12+]: the callback only decides whether the component exists for a user. Resolvers still have to limit results to what `Gql::getSchemaUser()` may view.
+- Sending an OAuth access token or personal access token in `X-Craft-Authorization` [5.12+]: Craft authenticates these tokens from the `Authorization` header only. Verified on 5.12.4: a PAT in `X-Craft-Authorization` alone gets a 401. See [Header order](#header-order).
+- Pointing a build server (SSG, ISR, cron sync) at OAuth [5.12+]: Craft has no client-credentials grant, and access tokens expire after an hour. Keep a schema token for machine-to-machine access.
+
+## Authentication
+
+### Authentication table
+
+One request uses exactly one of these. The table reflects Craft 5.12.4; OAuth access tokens and personal access tokens (PATs) are [5.12+]. Before 5.12: only schema tokens, the public schema and the admin session header exist.
+
+| Credential | Header | Lifetime | Acts as | Schema resolved from |
+|---|---|---|---|---|
+| Schema token | `Authorization: Bearer <token>`, or `X-Craft-Authorization: Bearer <token>` (wins when both are sent) | Until it expires (optional expiry on the token) or is disabled/deleted | Nobody (anonymous; no user identity) | The schema assigned to the token in **GraphQL → Tokens** |
+| OAuth access token [5.12+] | `Authorization: Bearer <jwt>` only | 1 hour (`accessTokenDuration`, `PT1H`); refresh token 30 days (`refreshTokenDuration`, `P30D`), rotated on every use | The user who authorized the client | Built per user from their permissions and the token's scopes (the "Authenticated Schema") |
+| Personal access token [5.12+] | `Authorization: Bearer <jwt>` only | 7, 30, 90 or 365 days, chosen at creation; shown once | The user who created it, in **My Account → Tokens** (elevated session required) | Same per-user schema as an OAuth access token |
+| Public schema | None | While the public schema is enabled | Nobody (anonymous) | The public schema (**GraphQL → Schemas → Public Schema**) |
+| Admin session (GraphiQL) | `X-Craft-Gql-Schema: <schema-uid>` or `*` plus the CP session cookie | The session | The logged-in admin (`requireAdmin`) | That schema, or the full-access schema for `*` |
+
+Preview tokens (`X-Craft-Token`) are not authentication. They select draft content on top of whichever credential above the request carries.
+
+### Resolution order
+
+`GraphqlController` (https://github.com/craftcms/cms/blob/5.12.4/src/controllers/GraphqlController.php) decides in this order:
+
+1. **`X-Craft-Gql-Schema` header present**: admin session required; the header names the schema. OAuth detection is skipped for these requests.
+2. **Bearer token is a JWT** [5.12+]: a token with exactly two dots is treated as an OAuth access token or PAT (schema tokens never contain dots). Craft disables the session, authenticates the token against the `graphql` resource, sets its user as the identity, and builds the per-user schema. An invalid, expired or revoked token gets a **401** with `WWW-Authenticate: Bearer error="invalid_token", resource_metadata="…"`; it never falls back to the public schema.
+3. **Any other bearer token**: looked up as a schema token. Expired or disabled gives `400 Invalid Authorization header`. A token Craft can't find falls through to step 4.
+4. **Public schema**, if enabled. Otherwise `400 Missing Authorization header`, even when a header was sent.
+
+### Header order
+
+`Request::getBearerToken()` reads `X-Craft-Authorization` first and only falls back to `Authorization` when it's absent (https://github.com/craftcms/cms/blob/5.12.4/src/web/Request.php). [5.1+] Use `X-Craft-Authorization` for schema tokens when a proxy or web server strips `Authorization`. There is no query-parameter form: `?token=` is Craft's preview-token param, not GraphQL auth.
+
+OAuth access tokens and PATs [5.12+] are different: the JWT check uses `getBearerToken()`, but the token itself is validated from the `Authorization` header only (`OAuth::authenticate()` reads the PSR-7 request's `authorization` header). So:
+
+- Send OAuth and PAT tokens in `Authorization`. The official docs say the same ("Access tokens are sent in the same `Authorization` header as schema tokens").
+- A JWT sent only in `X-Craft-Authorization` is detected as OAuth, then fails with 401 (`The resource owner or authorization server denied the request.`) because `Authorization` is empty (observed in a runtime check). The `X-Craft-Authorization`-first order therefore applies to schema tokens only.
+- The same PAT in both headers works. A schema token in `X-Craft-Authorization` plus a JWT in `Authorization` resolves as the schema token, and the JWT is ignored (source reading).
+
+## Authenticated Requests (OAuth and PATs) [5.12+]
+
+How a request authenticated with an OAuth access token or PAT behaves. Getting the token (OAuth keys, client registration, the Tokens screen) is covered by the `craft-mcp` skill. [5.12+] Before 5.12: none of this exists; every request runs under a schema token or the public schema.
+
+### Per-user schema
+
+- Craft ignores your saved schemas. `Gql::getSchemaForUser($user, $includeMutations)` collects every registered schema component whose `authenticated` rule passes for that user, plus `directive:parseRefs` and `directive:transform`. The schema is named "Authenticated Schema", its uid is `user:{userUid}`, and `GqlSchema::$user` holds the user.
+- The scope is cached per user, mutations flag, edition, project config version and a hash of the user's permissions. Changing a user's permissions takes effect on their next request.
+- Element queries run as that user: entry and asset queries are limited to what they can view (`editable()` on the query), and related `parent`/`children`/`drafts`/`revisions` values are filtered with `canView()`. Nested entries below the root follow their owner's visibility.
+- GraphQL result caching (`enableGraphqlCaching`) is kept separate per user and varies with their permissions.
+
+### Scopes
+
+| Scope | Allows |
+|---|---|
+| `graphql:read` (`Gql::SCOPE_READ`) | Queries only; mutation components are left out of the schema entirely |
+| `graphql:write` (`Gql::SCOPE_WRITE`) | Queries and mutations |
+
+The `graphql` OAuth resource requires no permission to authorize, so any active user can authorize a client or create a PAT with these scopes. What they can then reach depends on their permissions.
+
+### Which core components a user gets
+
+| Component | Available when the user has |
+|---|---|
+| Query for sites (`settings.sites:read`) | Always |
+| Elements in a site (`sites.{uid}:read`) | Single-site install: always. Multi-site: `editSite:{uid}` |
+| Drafts, revisions, non-enabled elements | `accessCp` |
+| Query for sections / entry types / volumes (settings queries) | `accessCp` |
+| Entries in a section (read / create / save / delete) | `viewEntries:{uid}` / `createEntries:{uid}` / `saveEntries:{uid}` / `deleteEntries:{uid}` |
+| Nested entry fields (Matrix and friends) | Always (visibility follows the owner) |
+| Assets in a volume (read / save / delete) | `viewAssets:{uid}` / `saveAssets:{uid}` / `deleteAssets:{uid}` |
+| Users, user groups, Query for user groups | `viewUsers` |
+| Categories, tags, global sets, category/tag group settings | Never: these components have no `authenticated` key |
+
+Consequences for front-end members: they need **View entries** on each section they query, and on a multi-site install a site permission (`editSite:{uid}`) for at least one site, or the request fails with `403 Schema doesn't have access to the "…" site`. A front end that reads globals, categories or tags needs a schema token for that data.
+
+### Field layout conditions [changed 5.12.1]
+
+Authenticated requests respect field layout conditions [5.12.1+], the way the CP edit form does:
+
+- A field (or its tab) hidden from the user by a **user condition** is excluded from that user's schema types. Selecting it is a validation error (`Cannot query field …`), not `null`.
+- A field whose visibility depends on the **element** (element conditions, `showInForm` handlers) stays in the schema but becomes nullable and resolves to `null` for elements where it's hidden.
+- Mutation arguments leave out fields the user can't edit. Setting a locked field that's still in the arguments errors with `You don't have permission to edit the following fields: …`.
+
+[changed 5.12.1] Before 5.12.1: OAuth/PAT requests ignored field layout conditions (5.12.0 bug, craftcms/cms#20391), so hidden fields were readable and writable. Schema-token requests are unaffected in every version: they have no user to evaluate a condition against. The user-condition case was confirmed in a runtime check (`Cannot query field "secretNote" on type "article_Entry"` for a non-admin, the value for an admin); the element-condition `null` case is stated from the changelog and source.
+
+### Mutations
+
+Built-in element mutations call `ElementMutationResolver::requireUserAuthorization($element, 'save'|'saveCanonical'|'delete'|'createDrafts')` when the schema has a user, and fail with `Unable to perform the action.` when `canSave()`/`canDelete()` etc. say no. Custom resolvers extending `ElementMutationResolver` should call it too (see [Mutations](#mutations)). For authenticated requests, custom field values are applied after native attributes so layout conditions can be evaluated against the populated element.
+
+### `currentUser` query
+
+`currentUser` returns the user who authorized the token (`UserInterface`). It is registered only when the schema has a user, so it exists for OAuth/PAT requests alone, and it works even when the user can't query other users. Selecting `currentUser` with a schema token or the public schema is a validation error, not `null`.
+
+```graphql
+{ currentUser { id fullName email ... on User { groups { handle } } } }
+```
+
+`groups` needs **Query for user groups** (`viewUsers`).
+
+### Offline system [changed 5.12.3]
+
+Once an OAuth token is authenticated, the request goes through the same access checks as a signed-in user. While the system is offline [5.12.3+], OAuth/PAT requests work for users with **Access the site when the system is off** (`accessSiteWhenSystemIsOff`, site requests) or **Access the control panel when the system is off** (`accessCpWhenSystemIsOff`, CP requests); everyone else gets a 503. Before 5.12.3: OAuth GraphQL requests failed while the system was offline. Schema-token and public-schema requests are anonymous, so they get a 503 (with `Retry-After` when a retry duration is set) whenever the system is offline, in every version.
+
+### Discovery and member sign-in
+
+The `graphql` resource's URL is `{primarySiteBaseUrl}/{actionTrigger}/graphql/api`. A 401 points clients to its protected-resource metadata at `/.well-known/oauth-protected-resource/…`. [changed 5.12.1] For front-end resources such as GraphQL, endpoints are advertised as site action URLs (`/actions/oauth/authorize?oauthResource=graphql`, and `token`, `register`), and discovery metadata is served only from `.well-known` URLs. Before 5.12.1: discovery advertised the CP URLs and so revealed the `cpTrigger`. Unauthenticated users hitting the authorize endpoint are sent to the front-end `loginPath` (the `graphql` resource doesn't require `accessCp`), so members without CP access can complete the flow. Grants: `authorization_code` (PKCE `S256`, public clients, no client secret) and `refresh_token`. The client side of that flow is in the `craft-site` skill's `headless.md`.
+
+### Rate limits
+
+OAuth adds one limit of its own: dynamic client registration is capped at 10 clients per IP per hour (`registrationRateLimit`, `registrationRateLimitDuration` in `config/oauth.php`, see `craft-mcp`). Query cost limits are the existing general config settings (`maxGraphqlBatchSize`, `maxGraphqlComplexity`, `maxGraphqlDepth`, `maxGraphqlResults`); they apply to every credential. See `craft-site` → `headless.md` (Rate Limiting) for recommended values.
+
+## Settings Queries [5.12+]
+
+Read-only queries for configuration. Each is its own schema component, registered only when at least one such thing exists. [5.12+] Before 5.12: hardcode handles, or read them through `sectionHandle`/`typeHandle` on elements.
+
+| Component | Queries | Adds element field | OAuth/PAT rule |
+|---|---|---|---|
+| Query for sites (`settings.sites`) | `sites`, `site` | `site: Site!` on every element | Always |
+| Query for sections (`settings.sections`) | `sections`, `section` | `section: Section` on entries (null for nested entries) | `accessCp` |
+| Query for entry types (`settings.entrytypes`) | `entryTypes`, `entryType` | `type: EntryType!` on entries | `accessCp` |
+| Query for volumes (`settings.volumes`) | `volumes`, `volume` | `volume` on assets | `accessCp` |
+| Query for user groups (`settings.usergroups`) | `userGroups`, `userGroup` | `groups` on users | `viewUsers` |
+| Query for category groups / tag groups | `categoryGroups`/`categoryGroup`, `tagGroups`/`tagGroup` | `group` on categories and tags | Never |
+
+- Arguments: `id: [Int]`, `uid: [String]`, `handle: [String]`. The singular returns the first match or `null`.
+- `sites` returns enabled sites plus disabled sites the schema can query. Types expose `Site { handle name language primary enabled hasUrls baseUrl }`, `Section { type maxLevels entryTypes }`, `EntryType { description icon color hasTitleField }`.
+- `sections`, `entryTypes` and `volumes` list **all** of them, not just the ones whose content the schema can read. Enabling them on the public schema discloses every handle and name.
+- `EntryType.icon` can be a custom-set value such as `custom:rocket` (see Icon below).
+
+```graphql
+{ sites { handle language baseUrl primary } }
+```
+
+## Field Type GraphQL Modes
+
+### Color [5.12+]
+
+Color fields have a **GraphQL Mode** setting (`fullGraphqlData`; the config key `graphqlMode: 'full'|'hex'` is accepted too):
+
+- **Full data**: a `ColorData` object with `hex(withAlpha: Boolean = true)`, `label`, `red`, `green`, `blue`, `alpha`, `hue`, `saturation`, `lightness`, `luma`, `rgb`, `rgba`, `rgbChannels`, `hsl`, `hsla`, `oklch`, `contrastColor` and `contrastRatio(with: String!)`.
+- **Hex only**: a `String`. It can be an 8-digit hex (`#rrggbbaa`) when the colour is translucent [changed 5.12].
+- **Defaults differ by age** [5.12+]: fields created in 5.12 (including through `saveField()` or migrations without the key) default to Full data; existing fields without the key stay Hex only. A query written as `{ brandColor }` against a new field fails with "must have a selection of subfields". Select subfields (`brandColor { hex rgba }`) or switch the field to Hex only.
+- [changed 5.12] Before 5.12: Color fields always returned a 6-digit hex `String`.
+
+Mutations still take a string value (https://github.com/craftcms/cms/blob/5.12.4/src/fields/Color.php).
+
+### Icon [5.12+]
+
+Icon fields' Full data mode (`fullGraphqlData`, [5.8+], the default) returns an `IconData` object; 5.12 adds `set` (`null` for Font Awesome), `svg` and `keywords` to it. Name-only mode returns the icon name without its set, so a consumer can't tell `custom:rocket` from a Font Awesome `rocket` (source reading of `IconData::__toString()`). Use Full data and select `set` or `svg` once a field allows custom icon sets. Before 5.12: only `name` and `styles`.
 
 ## Additions [5.10+]
 
-- **`hardDelete` argument on `delete*` mutations** — every built-in delete mutation now accepts `hardDelete: Boolean` (default `false`). When `true`, bypasses soft-delete and removes the element immediately. Custom delete mutations should mirror this argument shape for consistency.
-- **Assets' `url` field `immediately` argument is no longer deprecated** [changed 5.10] — Before 5.10, `immediately: true` on `url` queries was deprecated and to be avoided; that deprecation was reversed. The argument forces synchronous transform generation instead of returning a queued URL.
+- **`hardDelete` argument on `delete*` mutations**: every built-in delete mutation accepts `hardDelete: Boolean` (default `false`). When `true`, bypasses soft-delete and removes the element immediately. Custom delete mutations should mirror this argument shape for consistency. `siteId` on `deleteEntry` only picks which site's copy is loaded and permission-checked: the whole element is soft-deleted, not just that site's row (https://github.com/craftcms/cms/blob/5.12.4/src/gql/resolvers/mutations/Entry.php, confirmed at runtime on a two-site entry).
+- **Assets' `url` field `immediately` argument is no longer deprecated** [changed 5.10]: Before 5.10, `immediately: true` on `url` queries was deprecated and to be avoided; that deprecation was reversed. The argument forces synchronous transform generation instead of returning a queued URL.
 
 ## Additions [5.11+]
 
-- **User-data fields are gated on "Query for users"** — `author`, `authorId`, `authors`, `authorIds`, `draftCreator`, `revisionCreator`, `uploader`, and `uploaderId` only exist in a schema that has **Query for users** enabled (Settings → GraphQL → Schemas → Users; the `usergroups.everyone` scope). [changed 5.11] Before 5.11, read access to any one user group was enough (`Gql::canQueryUsers()`); now it takes the all-users scope (`Gql::canQueryAllUsers()` [5.11+]). A schema with no user scope never had these fields. After upgrading, a front end whose schema is scoped to specific user groups and selects `author { fullName }` fails query validation. Audit every schema's Users scope before deploying the upgrade: grant it on the private schema the front end uses, or stop selecting author data. Leave the public schema without it unless exposing author accounts is intentional.
-- **`Gql::canQueryAllUsers(?GqlSchema $schema = null)`** — the helper core uses for that gate (`canSchema('usergroups.everyone')`). Custom types that expose user data (a `createdBy` field on a plugin element, say) should condition the field definition on it so they follow the same rule instead of leaking user data through a side door.
-- **Cached queries now carry cache tags and expiry** [changed 5.11.0] — Before 5.11.0, cached GraphQL responses didn't register the original query's element cache tags or expiration date, so results depending on Post/Expiry Dates could stay stale until a manual cache clear. Projects that worked around it with `enableGraphqlCaching => false` can re-enable caching after upgrading; while supporting older releases, keep that workaround.
+- **User-data fields are gated on "Query for users"**: `author`, `authorId`, `authors`, `authorIds`, `draftCreator`, `revisionCreator`, `uploader`, and `uploaderId` only exist in a schema that has **Query for users** enabled (Settings → GraphQL → Schemas → Users; the `usergroups.everyone` scope). [changed 5.11] Before 5.11, read access to any one user group was enough (`Gql::canQueryUsers()`); now it takes the all-users scope (`Gql::canQueryAllUsers()` [5.11+]). A schema with no user scope never had these fields. After upgrading, a front end whose schema is scoped to specific user groups and selects `author { fullName }` fails query validation. Audit every schema's Users scope before deploying the upgrade: grant it on the private schema the front end uses, or stop selecting author data. Leave the public schema without it unless exposing author accounts is intentional. For OAuth/PAT requests [5.12+], **Query for users** follows the user's `viewUsers` permission.
+- **`Gql::canQueryAllUsers(?GqlSchema $schema = null)`**: the helper core uses for that gate (`canSchema('usergroups.everyone')`). Custom types that expose user data (a `createdBy` field on a plugin element, say) should condition the field definition on it so they follow the same rule instead of leaking user data through a side door.
+- **Cached queries now carry cache tags and expiry** [changed 5.11.0]: Before 5.11.0, cached GraphQL responses didn't register the original query's element cache tags or expiration date, so results depending on Post/Expiry Dates could stay stale until a manual cache clear. Projects that worked around it with `enableGraphqlCaching => false` can re-enable caching after upgrading; while supporting older releases, keep that workaround.
 
 ## Table of Contents
 
+- [Authentication](#authentication)
+- [Authenticated Requests (OAuth and PATs)](#authenticated-requests-oauth-and-pats-512)
+- [Settings Queries](#settings-queries-512)
+- [Field Type GraphQL Modes](#field-type-graphql-modes)
 - [Scaffold](#scaffold)
 - [Architecture: Interface -> Type -> Generator](#architecture-interface---type---generator)
 - [Interface Definition](#interface-definition)
@@ -220,14 +377,31 @@ Without schema components, your types appear in the public schema with no access
 Event::on(Gql::class, Gql::EVENT_REGISTER_GQL_SCHEMA_COMPONENTS,
     function(RegisterGqlSchemaComponentsEvent $event) {
         $event->queries = array_merge($event->queries, [
-            'My Elements' => ['myelements.all:read' => ['label' => Craft::t('my-plugin', 'View all elements')]],
+            'My Elements' => ['myelements.all:read' => [
+                'label' => Craft::t('my-plugin', 'View all elements'),
+                // [5.12+] Opt in to OAuth/PAT requests; omit and the component never reaches them
+                'authenticated' => fn(User $user) => $user->can('my-plugin-view-elements'),
+            ]],
         ]);
         $event->mutations = array_merge($event->mutations, [
-            'My Elements' => ['myelements.all:edit' => ['label' => Craft::t('my-plugin', 'Edit all elements')]],
+            'My Elements' => ['myelements.all:edit' => [
+                'label' => Craft::t('my-plugin', 'Edit all elements'),
+                'authenticated' => fn(User $user) => $user->can('my-plugin-edit-elements'),
+            ]],
         ]);
     }
 );
 ```
+
+### The `authenticated` key [5.12+]
+
+[5.12+] Requests made with an OAuth access token or PAT get a per-user schema built from components whose `authenticated` rule passes (see [Authenticated Requests](#authenticated-requests-oauth-and-pats-512)). Before 5.12: the key doesn't exist and is ignored; components only reach schema tokens. Rules (docblock on `Gql::EVENT_REGISTER_GQL_SCHEMA_COMPONENTS`, https://github.com/craftcms/cms/blob/5.12.4/src/services/Gql.php):
+
+- `true` makes the component available to every authenticated user; a `callable(User): bool` decides per user; no key means never. The key is per component, and `nested` components are checked on their own.
+- The callback only controls whether the component exists. The component's resolvers are responsible for limiting results to what `GqlSchema::$user` may access: read it with `Gql::getSchemaUser()` (`craft\helpers\Gql`, `null` for schema-token and public requests) and filter, for example with `canView()` or a permission-aware query param.
+- The per-user scope is cached by project config version and the user's permissions only. A callback that depends on anything else (time, element state, plugin settings outside project config) should return `true` and filter results instead.
+- Mutation resolvers extending `ElementMutationResolver` call `$this->requireUserAuthorization($element, 'save')` (or `'saveCanonical'`, `'delete'`, `'createDrafts'`); it's a no-op without a schema user.
+- Resolvers that extend plain `MutationResolver` (like the example under [Mutations](#mutations)) get no automatic check: when `Gql::getSchemaUser()` returns a user, call `Craft::$app->getElements()->canSave($element, $user)` (or `canDelete()`) yourself and throw on `false`.
 
 ### Custom GQL Helper
 
@@ -437,20 +611,21 @@ ddev craft graphql/create-token <schema-uid> --name="My API Token" --expiry="202
 # The token is printed to stdout — save it immediately
 ```
 
-### Authentication
+### Sending tokens
 
 ```
 Authorization: Bearer {your-token-here}
 ```
 
-`X-Craft-Authorization: Bearer {token}` is read first and wins over `Authorization` (`Request::getBearerToken()` [5.1+]); use it when a proxy strips `Authorization`. There is no query-parameter form: `?token=` is Craft's preview-token param, not GraphQL auth.
+Headers, lifetimes, header order and how the schema is resolved for every credential are in the [Authentication table](#authentication-table). For schema tokens, `X-Craft-Authorization` is read first and wins over `Authorization` [5.1+].
 
 ### Important notes
 
-- Tokens are DB-only — NOT in project config. Must be created per environment. Store values in env vars.
-- **Public schema** — unauthenticated, no token. Disabled by default. Enable in CP: GraphQL -> Schemas.
-- **Unknown tokens fall back silently** — a bearer token Craft can't find resolves to the public schema, not an error. With no public schema the error is `Missing Authorization header`. Expired or disabled tokens give `Invalid Authorization header`.
-- **Admin "full" schema** — `X-Craft-Gql-Schema: *` (or a schema UID) works only for a logged-in admin session (`requireAdmin`), which is how CP GraphiQL works. Never token-based.
+- Schema tokens are DB-only, NOT in project config. Must be created per environment. Store values in env vars.
+- **Public schema**: unauthenticated, no token. Disabled by default. Enable in CP: GraphQL -> Schemas.
+- **Unknown schema tokens fall back silently**: a bearer token Craft can't find resolves to the public schema, not an error. With no public schema the error is `Missing Authorization header`. Expired or disabled tokens give `Invalid Authorization header`. A JWT (OAuth/PAT) [5.12+] never falls back: an invalid one is a 401.
+- **Admin "full" schema**: `X-Craft-Gql-Schema: *` (or a schema UID) works only for a logged-in admin session (`requireAdmin`), including against the API endpoint. That is how CP GraphiQL works. Never token-based.
+- **Schema token or OAuth?** [5.12+] Schema tokens for servers and build pipelines (no user, no expiry unless set, no refresh). OAuth access tokens for apps acting as a signed-in user. PATs for scripts that should act as a named user with an audit trail and that user's permissions instead of an all-powerful mutation schema.
 
 ## Consumer Query Patterns
 
