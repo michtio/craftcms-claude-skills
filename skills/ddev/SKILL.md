@@ -139,6 +139,8 @@ ddev add-on list                       # List installed add-ons
 ddev add-on remove ddev/ddev-redis    # Remove add-on
 ```
 
+Redis: the web container reaches it at `redis:6379` (no password by default). The add-on does not set `REDIS_HOSTNAME` for Craft, so add `REDIS_HOSTNAME=redis` to `.env`. Cache, session, queue and mutex config: `craftcms` skill, `references/config-app.md`.
+
 Mailpit is built into DDEV core — no add-on installation needed. Outgoing mail is captured automatically. Access the web UI with `ddev mailpit`, or `ddev describe` shows its URL (e.g. `https://{project}.ddev.site:8026`).
 
 ## Sharing a Local Site

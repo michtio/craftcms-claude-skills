@@ -317,37 +317,55 @@ Review the changes in the job-listings branch before I open a PR.
 
 ## craft-code-reviewer-deep
 
-**Model:** Opus (`xhigh` effort)
-**Tools:** Read, Grep, Glob, Bash, Skill (read-only — Bash for `git diff`/`log`/`show`/`blame` only)
-**Skills preloaded:** `craftcms`, `craft-php-guidelines`, `craft-twig-guidelines` (on demand, as soon as the diff reaches them: `craft-site` for template architecture, `craft-garnish` for CP JavaScript, `craft-pest` for tests, `craft-plugin-release` when the branch bumps a version or touches tags/changelog dating, `craft-cloud`, `servd`, `craft-fortrabbit`, `craft-mcp`, `craft-plugins`)
+**Model:** Opus (`high` effort), orchestrating `craft-review-checker` agents (Sonnet; security on Opus)
+**Tools:** Read, Grep, Glob, Bash, Skill, Agent (read-only: Bash for `git diff`/`log`/`show`/`blame`, plus PHPStan and ECS in check mode through DDEV)
+**Skills preloaded:** none (it orchestrates; it and its checkers load `craft-php-guidelines`, `craft-twig-guidelines`, `craft-pest`, `craft-site`, `craft-garnish`, `craft-mcp`, `craft-plugin-release`, `craft-cloud`, `servd`, `craft-fortrabbit` or `craft-plugins` when the diff reaches them)
 
-The deep-review counterpart to `craft-code-reviewer`. The standard reviewer (Sonnet) catches checklist violations per file; this one (Opus, xhigh) catches what surface pattern-matching misses. Use it when the extra scrutiny is worth the token cost — release branches, security-sensitive code, large architectural changes, migrations, multi-service flows. Use the standard reviewer for daily review.
+The deep-review counterpart to `craft-code-reviewer`, for release branches, security-sensitive code, large architectural changes, migrations and multi-service flows. Depth comes from separate checkers with one job each, from evidence and from a challenge round, not from one long think.
 
-### Where it looks that the standard reviewer doesn't
+### How a review runs
 
-- **Cross-file data flow** — traces request data controller → service → element → DB to catch multi-file authorization gaps and TOCTOU escalations.
-- **Untested paths** — reads the test suite and identifies new branches, exception paths, and negative cases the diff doesn't cover, and checks the harness against the `craft-pest` isolation checklist.
-- **Architecture** — whether the abstraction is right, whether a service should exist, whether a migration can roll back.
-- **Race conditions & transaction boundaries** — read-then-write without locking, resaves inside loops without `muteEvents`, single-worker assumptions in queue jobs.
-- **N+1 at production scale** — eager-loading gaps in services called from loops elsewhere, with the math run at real data volume.
-- **Semantic correctness** — does the code do what was *intended*, including empty arrays, soft-deleted parents, disabled multi-site, drafts.
-- **Migration safety at scale** — add-column on million-row tables, unbatched long migrations, index additions that lock.
-- **Plugin lifecycle correctness** — settings that mutate mid-request, events wired after they fire, DB hits during plugin boot.
+1. **Triage.** Reads the diff stat and log, sorts changed files by area, finds the governing Craft version, and picks a mode.
+2. **Static checks.** Runs PHPStan and ECS (check mode only) when the project configures them, and keeps the lines for changed files. Pest runs only when you ask for it, because a suite can write to a database.
+3. **Checkers.** Starts `craft-review-checker` agents in parallel: conventions and security always, plus at most two of performance, migrations, CP JavaScript, release and hosting, depending on what the diff touches.
+4. **Challenge.** Every Critical and Important finding goes to one fresh challenger checker, which upholds it, refutes it with a file:line or Craft source citation, or marks it unsure. Refuted findings are dropped (and listed), unsure ones are reported as **disputed** with both arguments.
+5. **Report.** One merged report. At most 5 agents per review.
+
+**Single pass:** a diff under 200 changed lines in one area, or a session where agents cannot start agents (`CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`), gets one review by the orchestrator itself, with the same lenses and no challenge round.
+
+### What the lenses cover
+
+- **Conventions:** semantic correctness (empty arrays, soft-deleted parents, drafts, disabled sites), plugin lifecycle, architecture, untested branches and test isolation, PHPDocs and section headers.
+- **Security:** request data traced controller → service → element → DB, permission checks before model population, TOCTOU, CSRF, output escaping, SQL from input, secrets, MCP tools and OAuth resources.
+- **Performance:** N+1 at production volume (including queries in services called from loops), eager loading, caches, queue batching, indexes.
+- **Migrations:** large tables, batching, locking and transactions, project-config writes, rollback, idempotent installs, single-worker assumptions.
+- **CP JavaScript:** Garnish patterns, cleanup, keyboard, focus and ARIA.
+- **Release and hosting:** version bumps, changelog dates, tags, release workflows, Cloud, Servd and fortrabbit constraints, named third-party plugins.
 
 ### Discipline
 
-It does not fabricate runtime bugs from generic framework intuition — claims about state staleness, DI timing, or cache lifecycle must trace through Craft's actual Yii2 source, or they're downgraded to "Verify". Depth means *more accurate*, not longer: a correct one-line finding beats a three-paragraph speculation.
+No runtime bug from generic framework intuition: claims about state staleness, DI timing or cache lifecycle must trace through Craft's Yii2 source, or they become a "Verify:" suggestion. A finding backed by PHPStan or ECS ranks above one that is not.
 
 ### Report format
 
-Same severity grouping as the standard reviewer (Critical / Important / Suggestions), but each finding adds *why it matters at depth* — the subtle issue surface scanning would miss. Read-only; never modifies files.
+First line: the mode, the checkers used, the number of agents started and the static-check summary. Then Critical / Important / Suggestions, then "Dropped after challenge". With a spec named in the brief, a per-R-id table. Read-only; never modifies files.
 
 ### Example delegation
 
 ```
-Deep-review the release/1.6.0 branch before tagging — it touches migrations,
+Deep-review the release/1.6.0 branch before tagging: it touches migrations,
 the asset filesystem, and the permission layer.
 ```
+
+---
+
+## craft-review-checker
+
+**Model:** Sonnet (`high` effort); the deep reviewer runs the security lens on Opus
+**Tools:** Read, Grep, Glob, Bash, Skill (read-only)
+**Skills preloaded:** `craftcms` (others on demand, per lens)
+
+One lens of a deep review, started by `craft-code-reviewer-deep` with a lens brief, the Craft version, the files and the static-check lines for them. Also answers challenge rounds: upholds, refutes with a citation, or marks a finding unsure. It starts at about 14 KB (the everyday reviewer starts at about 39 KB), so each extra lens stays cheap. Not for direct use.
 
 ---
 
