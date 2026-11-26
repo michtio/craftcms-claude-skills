@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.31.0
+## 1.31.0 -- 2026-11-27
 
 The builder no longer grades its own homework. When a plugin has an isolated Pest suite, a separate agent writes the gate tests from the acceptance criteria before the build, and the builder may not change them. Reviewers treat PASS lines as claims, every fix loop stops after 3 rounds, and read-only agent cases can be measured over a few repeated runs.
 
