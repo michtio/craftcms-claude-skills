@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.28.0 -- unreleased
+
+Sharper skill listings. Every listing (description + when_to_use) now fits 1,300 characters, about 15% under Claude Code's 1,536-character cap, so there is room to fix a routing miss without truncation. The 14 listings over budget dropped repeated and low-signal terms (21,465 to 17,494 characters) and kept every "Always use when" and "Do NOT trigger" clause. Routing measured without a full A/B: the lexical check shows no regression (recall@1 130 to 131 of 165, recall@3 158 of 165), and 8 real-life scenario prompts run inside fixture projects all load the right skills, in 8 model calls.
+
+### Changed
+
+- **Listings at most 1,300 characters** (enforced by `bin/validate-skills.sh`) -- for example `craftcms` 1,536 to 1,285, `craft-site` 1,536 to 1,282, `craft-cloud` 1,534 to 1,215.
+- **Hosting skills** -- `craft-cloud`, `craft-fortrabbit` and `servd` gain an "Always use when" clause: load when the project has the host's deploy file or the task deploys to that host.
+- **Lexical routing baseline** (`evals/routing-baseline.json`) refreshed to the new listings.
+
+### Added
+
+- **Routing scenarios** (`evals/scenarios.json`, `evals/scenario_check.py`) -- realistic prompts run inside the fixture projects (slow listing, plugin settings, plugin element type, drafts, Craft Cloud move, DDEV port conflict, Formie form, Sprig live search), each passing when an expected skill loads. One model call per scenario: a cheap routing check for listing changes.
+
 ## 1.27.0 -- 2026-11-26
 
 Cuts the context the pack costs before it does any work. Every SKILL.md body now fits 12 KB, agents start at 24 to 46 KB (was 41 to 121 KB), and the ten references over 30 KB open with a line-numbered Contents block so a reader loads one section instead of 30 to 70 KB. Nothing a skill teaches was dropped: moved text is verbatim, and every behaviour-eval fact still holds (`bin/check.sh`). Release evals for the changed skills: 14 behaviour cases and the smoke set pass, in 18 model calls.
