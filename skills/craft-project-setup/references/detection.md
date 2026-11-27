@@ -89,7 +89,7 @@ When unsure between hybrid and monorepo: if the extra code lives **inside** one 
 Read `.ai/skills-profile.json` at the project root when it exists. Validate it before using any value: run `python3 ${CLAUDE_SKILL_DIR}/../../bin/profile_check.py .ai/skills-profile.json` (the pack's `bin/` folder, two levels above this skill). Exit 0 means valid.
 
 - **Invalid** (exit 1 or 2): report the checker's messages, then ignore the whole profile. Never half-apply a profile: it is all used or none of it is.
-- **Bin scripts missing** (the file at that path does not exist): say so in one line and proceed as with no profile.
+- **Bin scripts missing** (the file at that path does not exist) **or python3 missing**: say so in one line and proceed as with no profile.
 - **No profile** (file absent): behavior is exactly as before, unchanged: every question in Step 2 is asked as written and no extra steps run.
 
 A valid profile answers questions. In Step 2, do not ask what the profile already answers; use its value and mention in the review that it came from the profile:

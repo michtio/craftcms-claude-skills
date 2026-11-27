@@ -71,7 +71,7 @@ On a rerun (a repo that already has this skill's output), only what changed is a
 2. Show a per-file difference (a diff of each file that would change, with unchanged files listed as such) before writing anything. When the difference is empty, say so and stop.
 3. Apply only what changed in the profile or the pack, surgically: one line or section at a time, never regenerate a whole file.
 4. Hand-edited sections, anything outside the skill-managed parts such as a section the team added, are never touched without an explicit yes. Show them as `Keep` and ask first if a change would reach them.
-5. Profile `setup.steps` run only if they were not already run for this unchanged profile and the user agrees in the review.
+5. Profile `setup.steps` are asked again in the review on every rerun, defaulting to not re-running them; they run only after an explicit yes to the printed list. Do not guess that a step was already run.
 
 This means the setup skill works for:
 - **First-time setup** — full scaffold from templates
