@@ -20,7 +20,7 @@ The command is configured per builder. It receives two paths. It reads the brief
 
 ## Timeout
 
-Each builder has a `timeout_minutes` value (see `docs/profile.md`). A builder that has not exited within `timeout_minutes` counts as failed.
+Each builder has a `timeout_minutes` value (see `docs/profile.md`). A builder that has not exited within `timeout_minutes` counts as failed. The pack's `bin/run_builder.py` runs one builder with its timeout and kills the whole process tree when it expires (exit 124).
 
 ## Before each builder
 

@@ -131,9 +131,10 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craft-cloud` | Shared | Craft Cloud serverless hosting: `craft-cloud.yaml`, Build → Migrate → Release pipeline, the `craftcms/cloud` extension, edge image transforms, static caching + ESI, MySQL 8 / Postgres 15 constraints, Console command runner, plugin Cloud-compatibility, headless apps + request signing, self-hosted → Cloud migration. 13 reference files. |
 | `craft-fortrabbit` | Shared | fortrabbit managed PHP hosting: git push via the GitHub App, the Craft software template (build + post-deploy commands, merge strategy, `/config/project` replace pattern), the `.fortrabbit/deploy.yml` deploy file, `CRAFT_*` ENV vars mapped from `FORTRABBIT_DB_*`, persistent storage + rsync, MySQL over SSH, queue and transforms in a worker job, crons, platform limits. 5 reference files. |
 | `craft-mcp` | Shared | Craft 5.12+ MCP servers (authenticated, public, stdio `mcp/serve`), the OAuth server and its signing keys, personal access tokens, connecting Claude Code over HTTP or stdio (DDEV, production, Cloud, Servd, fortrabbit), the snake_case tool catalogue, plugin MCP tools and field interfaces, security. 7 reference files. |
+| `craft-gated-build` | Plugin | Gated build with outside builders: when `.ai/skills-profile.json` names builders (a local AI, a script), runs one approved slice through them in order with the gate writer first, a brief file and a checked hand-back, both lock checks, the checker gate and the 3-round cap, and falls back to `craft-feature-builder`. Without a profile, nothing changes. |
 | `servd` | Shared | Servd managed hosting: git push-to-deploy + `servd.yaml`, local → staging → production sync, the `servd/craft-asset-storage` plugin (svdcdn CDN, off-server transforms), Servd static caching + Blitz reverse-proxy mode, MariaDB/MySQL over SSH, backups, Dedicated Queue Runner, ephemeral filesystem. 6 reference files. |
 
-15 skills, 150 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
+16 skills, 150 reference files. Skills load automatically and declare companion skills so related knowledge loads together. See [docs/skills-overview.md](docs/skills-overview.md) for the full breakdown.
 
 ### Agents
 
@@ -191,7 +192,7 @@ Agents build feature by feature (vertical slices), not layer by layer. Tests are
 | Guide | What it covers |
 |-------|----------------|
 | [Getting Started](docs/getting-started.md) | Installation, project setup, how skills auto-trigger, first steps |
-| [Skills Overview](docs/skills-overview.md) | All 15 skills with triggers, companion skills, reference counts, boundaries |
+| [Skills Overview](docs/skills-overview.md) | All 16 skills with triggers, companion skills, reference counts, boundaries |
 | [Prompt Guide](docs/prompt-guide.md) | 40+ real-world prompts organized by task type |
 | [Agents](docs/agents.md) | 8 agents with tools, gate patterns, composition examples |
 | [Contributing](docs/contributing.md) | Adding plugin references, improving skills, reporting issues |

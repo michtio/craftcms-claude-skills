@@ -12,7 +12,7 @@
     {
       "name": "craftcms-claude-skills",
       "source": "./",
-      "description": "Production-ready skills and agents for Craft CMS 5 development (Craft 5.0–5.12.x, version-aware: detects the project's Craft version). 15 skills (including a name-routed plugin-reference index, Pest testing, Craft's MCP and OAuth servers, plugin release mechanics, Craft Cloud, Servd, and fortrabbit hosting), 8 specialized agents with explicit build-verify gates, 24 plugin references, project scaffolding.",
+      "description": "Production-ready skills and agents for Craft CMS 5 development (Craft 5.0–5.12.x, version-aware: detects the project's Craft version). 16 skills (including a name-routed plugin-reference index, Pest testing, Craft's MCP and OAuth servers, plugin release mechanics, Craft Cloud, Servd, and fortrabbit hosting), 8 specialized agents with explicit build-verify gates, 24 plugin references, project scaffolding.",
       "version": "1.31.0",
       "author": {
         "name": "michtio"

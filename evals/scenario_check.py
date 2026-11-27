@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """Real-life routing scenarios: a handful of realistic prompts, each run inside a
-fixture project, passing when one of the expected skills loads.
+fixture project, passing when one of the expected skills loads and none of the
+forbidden ones does.
 
 A cheap routing smoke test for listing changes (one model call per scenario),
 in place of a full trigger-set or route.py A/B run. Scenarios live in
-evals/scenarios.json: [{"id", "cwd", "prompt", "expect_any": [skill, ...]}].
+evals/scenarios.json: [{"id", "cwd", "prompt", "expect_any": [skill, ...],
+"expect_none": [skill, ...]}]. "expect_none" is optional: the scenario fails when
+any skill in it loads (a negative scenario, such as a plain build request that
+must not load a skill keyed on a profile file).
 
 Usage:
     python3 evals/scenario_check.py                 # every scenario
     python3 evals/scenario_check.py --only ddev-port-conflict
     python3 evals/scenario_check.py --dry-run
-    python3 evals/scenario_check.py --changed       # only skills whose listing changed since the last tag
+    python3 evals/scenario_check.py --changed       # only scenarios naming a skill whose listing changed since the last tag
 
 Only the Skill tool is offered (as in the trigger runs), and each call stops at
 the routing decision: one turn (a scenario may set "max_turns" when its skill
@@ -58,7 +62,7 @@ def main() -> int:
     ap.add_argument("--only", help="comma-separated scenario ids")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--changed", nargs="?", const="", metavar="REF",
-                    help="only scenarios expecting a skill whose listing changed since REF (default: last tag)")
+                    help="only scenarios naming a skill (expect_any or expect_none) whose listing changed since REF (default: last tag)")
     ap.add_argument("--model", default=None)
     ap.add_argument("--claude-bin", default=None)
     args = ap.parse_args()
@@ -69,11 +73,12 @@ def main() -> int:
     if args.changed is not None:
         base, skills_changed = changed_skills(args.changed or None)
         print(f"listings changed since {base}: {', '.join(sorted(skills_changed)) or 'none'}")
-        scenarios = [s for s in scenarios if set(s["expect_any"]) & skills_changed]
+        scenarios = [s for s in scenarios if (set(s["expect_any"]) | set(s.get("expect_none", []))) & skills_changed]
     print(f"{len(scenarios)} scenario(s), {len(scenarios)} model call(s)")
     if args.dry_run:
         for s in scenarios:
-            print(f"  {s['id']:26} expects any of {', '.join(s['expect_any'])}")
+            none = f"; none of {', '.join(s['expect_none'])}" if s.get("expect_none") else ""
+            print(f"  {s['id']:26} expects any of {', '.join(s['expect_any'])}{none}")
         return 0
 
     claude_bin = str(Path(args.claude_bin).resolve()) if args.claude_bin else (shutil.which("claude") or "/opt/homebrew/bin/claude")
@@ -88,9 +93,11 @@ def main() -> int:
                 return 3
             failed += 1
             continue
-        ok = bool(set(s["expect_any"]) & skills)
+        forbidden = set(s.get("expect_none", [])) & skills
+        ok = bool(set(s["expect_any"]) & skills) and not forbidden
         failed += not ok
-        print(f"  {'PASS' if ok else 'FAIL'}  {s['id']:26} loaded: {', '.join(sorted(skills)) or 'none'}")
+        why = f" (forbidden: {', '.join(sorted(forbidden))})" if forbidden else ""
+        print(f"  {'PASS' if ok else 'FAIL'}  {s['id']:26} loaded: {', '.join(sorted(skills)) or 'none'}{why}")
     print(f"{len(scenarios) - failed}/{len(scenarios)} passed | model calls: {runner.calls}")
     return 1 if failed else 0
 

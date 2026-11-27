@@ -1,6 +1,6 @@
 # evals/
 
-Token-budget and trigger-quality tooling for this plugin's 15 skills and 6
+Token-budget and trigger-quality tooling for this plugin's 16 skills and 8
 agents. Nothing in here ships to users — it's measurement and regression
 tooling for whoever edits `skills/*/SKILL.md` or `agents/*.md`.
 
@@ -20,8 +20,10 @@ retry, a usage-limit message stops the run and counts as an error rather than a
 failure, and the call count is printed. Always `--dry-run` first. For listing
 changes, run `scenario_check.py`: the realistic prompts in `scenarios.json`, each inside
 a fixture project, passing when an expected skill loads (one call each, stopped at the routing decision
-after one turn). `--changed` runs only the scenarios whose expected skills' listings
-(SKILL.md frontmatter) changed since the last tag. It replaces a
+after one turn). A scenario may also list `expect_none`: it fails when any of those skills loads,
+which guards a skill against stealing prompts that belong elsewhere (`plain-build-no-profile`
+keeps `craft-gated-build` off a plain build request). `--changed` runs only the scenarios whose
+`expect_any` or `expect_none` skills' listings (SKILL.md frontmatter) changed since the last tag. It replaces a
 full `route.py` A/B (about 800 calls) as the release gate; `route.py --changed-only`
 stays for a deliberate A/B.
 Agent cases (`behavior-sets/agents.json`) set their own `tools` and `max_turns`, and can
@@ -120,7 +122,7 @@ python3 evals/route.py --compare-ref main --runs 2 --workers 10
 python3 evals/route.py --sets evals/trigger-sets --out evals/route-results.json
 ```
 
-Cost note: 15 skills x ~16-18 queries/skill x `--runs` x (1 or 2 conditions)
+Cost note: 16 skills x ~16-18 queries/skill x `--runs` x (1 or 2 conditions)
 `claude -p` calls. At the default `--runs 1`, single-condition that's ~230
 calls; `--compare-ref` doubles it. Budget accordingly, and prefer `--runs 1`
 for a quick check, `--runs 2`+ only when you need to smooth model noise (see
