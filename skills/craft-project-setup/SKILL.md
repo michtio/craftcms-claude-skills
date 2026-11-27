@@ -62,7 +62,7 @@ Hybrid vs monorepo: extra code **inside** one Craft install (sharing its `compos
 
 Show what was created and highlight decisions made from detection vs assumptions.
 
-With a valid profile, the review also prints each `setup.steps` entry by name and command, as the extra steps that run last, before any of them runs. Print it even when you cannot wait for an answer (non-interactive run): list the steps, then run them in order, then report each exit code.
+With a valid profile, the review also prints each `setup.steps` entry by name and command, as the extra steps that run last, before any of them runs. Print it even when you cannot wait for an answer (non-interactive run): write a block headed `Review` that names each step and says it runs last, after the generated files, then run the steps in order and report each exit code. The final report repeats that review, including the steps.
 
 ### Step 5: Show the sponsorship message → `references/attribution-and-upgrades.md`
 
