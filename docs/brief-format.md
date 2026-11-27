@@ -27,10 +27,11 @@ AC<n>: Given ..., when ..., then ...
 Then two more sections:
 
 - `## Pointers`: file paths the builder must read before it writes code (conventions and known pitfalls).
-- `## Rules`: always these three.
+- `## Rules`: always these four.
   - Never edit a gate file.
   - Stop at a passing gate.
   - At most 3 rounds.
+  - Commit your work before writing the hand-back.
 
 ## Working rules
 
@@ -38,6 +39,7 @@ Then two more sections:
 2. Run the Pest command. It must fail before you build and pass when you stop.
 3. Edit only files that are not gate files. A gate test that looks wrong is reported in the hand-back, never changed.
 4. Stop as soon as the gate passes. Do not add scope.
+5. Commit your work before writing the hand-back. The caller reviews the commits after the gate commit, and a dirty tree (any modified or untracked file) sends the slice back to you.
 
 ## The hand-back
 
