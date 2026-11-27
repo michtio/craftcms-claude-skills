@@ -31,7 +31,20 @@ the build's decision; a `FAIL` or `PENDING` line is well formed.
 
 - Both Lock check lines are required when the flow is `locked`. With
   `builder-written` they are not required (there is no gate commit).
-- The R ids to expect are the headings `## R<n>` in the brief (level 2 to 4).
+- The R ids to expect are the level-2 headings `## R<n>` in the brief, optionally
+  followed by a title after a colon or a dash (`## R5: Title`, `## R5 - Title`).
+  `### R3 notes` (any other level) is not an id.
+- **Flow bound to the brief.** The brief's `Gate commit:` line binds the flow. If it
+  holds a sha, the hand-back must say `Gate flow: locked (<sha>)` where one sha is a
+  prefix of the other, else `bad line: Gate flow`. If it says `none`, the flow must
+  be `builder-written`, else `bad line: Gate flow`.
+- **No duplicates.** A required line (Gate flow, either Lock check, Builder, or an
+  `R<n>`) that appears twice is `duplicate line: <label>`, exit 1.
+- **Fences.** Lines inside a fenced code block (``` or ~~~) do not count, in the
+  hand-back or in the brief.
+- **Unknown ids.** An `R<n>: ...` line for an id not in the brief is
+  `unknown line: R<n>`, exit 1.
+- **BOM.** A UTF-8 BOM at the start of a file is tolerated.
 - The same line shapes as `agents/craft-feature-builder.md` (`Gate flow: ...`).
 
 ## 3. Fixtures and expected output
@@ -47,6 +60,18 @@ the output contains the substring:
 | `bad-status.md` | `R2: DONE` | `bad status: R2` |
 | `missing-builder.md` | no Builder line | `missing line: Builder` |
 | `lock-nonzero.md` | committed lock exit 1 | `gate touched` |
+| `flow-downgrade.md` | `builder-written` against a brief with a gate commit | `bad line: Gate flow` |
+| `wrong-sha.md` | locked with a different sha | `bad line: Gate flow` |
+| `dup-r.md` | `R2: PASS` then `R2: FAIL` | `duplicate line: R2` |
+| `dup-lock.md` | two working-tree lock lines | `duplicate line: Lock check (working tree)` |
+| `dup-flow.md` | two Gate flow lines | `duplicate line: Gate flow` |
+| `fenced.md` | whole hand-back inside a fence | `missing line: Gate flow` |
+| `unknown-r.md` | extra `R9: PASS` | `unknown line: R9` |
+
+Passing (exit 0): `complete.md` against `brief.md` (Gate commit sha matches),
+`complete-bom.md` against `brief.md`, `complete-builder-written.md` against
+`brief-none.md` (`Gate commit: none`), and `complete.md` against
+`brief-fenced-example.md` (its fenced `## R9` is not an id).
 
 Exit 2: no arguments; `--brief` missing; a hand-back path that does not exist.
 
@@ -86,7 +111,7 @@ must find none):
 ## 6. bin/check.sh
 
 Adds one `gate` line, `python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/complete.md`,
-and one `must_fail` line per broken fixture (six), each with `--brief` the same brief.
+and one `must_fail` line per failing fixture (all thirteen in section 3), each with `--brief` the right brief, and one extra `gate` line per passing case in section 3 (`complete-bom.md`, `complete-builder-written.md` with `brief-none.md`, `complete.md` with `brief-fenced-example.md`).
 
 ## 7. Facts pins
 

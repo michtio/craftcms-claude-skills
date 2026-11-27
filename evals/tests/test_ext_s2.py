@@ -19,7 +19,20 @@ BROKEN = {
     "bad-status.md": "bad status: R2",
     "missing-builder.md": "missing line: Builder",
     "lock-nonzero.md": "gate touched",
+    "flow-downgrade.md": "bad line: Gate flow",
+    "wrong-sha.md": "bad line: Gate flow",
+    "dup-r.md": "duplicate line: R2",
+    "dup-lock.md": "duplicate line: Lock check (working tree)",
+    "dup-flow.md": "duplicate line: Gate flow",
+    "fenced.md": "missing line: Gate flow",
+    "unknown-r.md": "unknown line: R9",
 }
+
+PASSING = [
+    ("complete-bom.md", "brief.md"),
+    ("complete-builder-written.md", "brief-none.md"),
+    ("complete.md", "brief-fenced-example.md"),
+]
 
 NEW_LOCK = "git diff --quiet <gate commit> -- <gate files>"
 OLD_LOCK = "git diff --quiet -- <gate files>"
@@ -49,6 +62,36 @@ class HandbackChecker(unittest.TestCase):
                 r = run("bin/handback_check.py", "--brief", BRIEF, f"{HB}/{name}")
                 self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
                 self.assertIn(needle, r.stdout + r.stderr)
+
+    def test_adversarial_passing_cases_exit_0(self):
+        for hb, brief in PASSING:
+            with self.subTest(handback=hb, brief=brief):
+                r = run("bin/handback_check.py", "--brief", f"{HB}/{brief}", f"{HB}/{hb}")
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_builder_written_against_gate_commit_brief_fails(self):
+        r = run("bin/handback_check.py", "--brief", BRIEF, f"{HB}/complete-builder-written.md")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("bad line: Gate flow", r.stdout + r.stderr)
+
+    def test_locked_against_none_brief_fails(self):
+        r = run("bin/handback_check.py", "--brief", f"{HB}/brief-none.md", f"{HB}/complete.md")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("bad line: Gate flow", r.stdout + r.stderr)
+
+    def test_sha_prefix_either_way_matches(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            h = Path(d) / "h.md"
+            h.write_text(text(f"{HB}/complete.md").replace("(3f2a9c1)", "(3f2a9c1abcdef0)"))
+            r = run("bin/handback_check.py", "--brief", BRIEF, str(h))
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_level_3_heading_is_not_an_id(self):
+        self.assertIn("### R3 notes", text(BRIEF))
+        r = run("bin/handback_check.py", "--brief", BRIEF, f"{HB}/complete.md")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertNotIn("R3", r.stdout + r.stderr)
 
     def test_ac3_missing_lock_line_is_not_a_pass(self):
         r = run("bin/handback_check.py", "--brief", BRIEF, f"{HB}/missing-lock-line.md")
@@ -94,6 +137,11 @@ class CheckShWiring(unittest.TestCase):
                 self.assertTrue(
                     any(l.startswith("must_fail") and name in l and "--brief" in l
                         for l in lines), f"no must_fail line for {name}")
+        for hb, brief in PASSING:
+            with self.subTest(passing=hb, brief=brief):
+                self.assertTrue(
+                    any(l.startswith("gate") and hb in l and brief in l for l in lines),
+                    f"no gate line for {hb} with {brief}")
 
 
 class Docs(unittest.TestCase):

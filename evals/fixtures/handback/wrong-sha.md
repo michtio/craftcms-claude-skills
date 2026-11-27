@@ -1,0 +1,6 @@
+Gate flow: locked (9999999)
+Lock check (committed): exit 0
+Lock check (working tree): exit 0
+R2: PASS
+R5: PASS
+Builder: sample-builder
