@@ -259,6 +259,23 @@ class ReleaseCases(unittest.TestCase):
         self.assertTrue(fails(good + "CHANGE|-HAND-EDITED: releases\n"))
         self.assertTrue(fails(good + "STATUS|?? stray.md\n"))
 
+    def test_rerun_diff_commands_keep_the_list_item_gate_line(self):
+        c = cases()["setup-rerun-update"]
+        cmds = re.findall(r"`(git diff -U0[^`]*)`", c["prompt"])
+        self.assertEqual(len(cmds), 2)
+        with tempfile.TemporaryDirectory() as tmp:
+            proj = Path(tmp) / "p"
+            shutil.copytree(RERUN, proj)
+            g = ["git", "-c", "user.name=t", "-c", "user.email=t@example.com"]
+            for a in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "f"]):
+                run(g + a, cwd=proj)
+            md = proj / "CLAUDE.md"
+            md.write_text(md.read_text().replace("Gate tests: builder-written", "Gate tests: locked"))
+            count = run(["sh", "-c", cmds[0]], cwd=proj).stdout.strip()
+            lines = run(["sh", "-c", cmds[1]], cwd=proj).stdout.splitlines()
+        self.assertEqual(count, "CHANGES|2")
+        self.assertEqual(lines, ["CHANGE|-- Gate tests: builder-written", "CHANGE|+- Gate tests: locked"])
+
     def test_at_most_two_new_cases_and_release_evals_selects_them(self):
         r = run(["python3", "evals/release_evals.py", "--dry-run", "--no-cache", "--only", ",".join(CASES)])
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
