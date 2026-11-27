@@ -1,0 +1,9 @@
+#!/bin/sh
+# Harmless fixture step for the setup-with-profile case. It writes one marker
+# file, .team-step-ran, and nothing else. The marker records what existed when
+# the step ran, so the case can prove the step ran after the generated files.
+claude_md=no
+[ -f CLAUDE.md ] && claude_md=yes
+rules=0
+[ -d .claude/rules ] && rules=$(ls .claude/rules | wc -l | tr -d ' ')
+printf 'team-step ran; CLAUDE.md present: %s; rules files: %s\n' "$claude_md" "$rules" > .team-step-ran

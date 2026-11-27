@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "gate_tests": "locked",
+  "craft": {
+    "answers": {"dev_root": "~/dev"},
+    "choices": {"chrome_devtools_mcp": false, "craft_mcp": false}
+  }
+}
