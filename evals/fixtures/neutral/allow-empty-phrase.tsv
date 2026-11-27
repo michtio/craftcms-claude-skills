@@ -1,0 +1,2 @@
+# an allowlist row with an empty phrase is a usage error
+	no phrase given

@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Schema using an unsupported keyword",
+  "type": "object",
+  "properties": {
+    "version": {"type": "integer", "minimum": 1}
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "managed_by": {"tool": "team-tool", "version": "0.3.0"},
+  "gate_tests": "locked",
+  "builders": [
+    {"name": "local-first", "command": "./scripts/build-local.sh", "timeout_minutes": 45},
+    {"name": "hosted-second", "command": "./scripts/build-hosted.sh", "timeout_minutes": 30}
+  ],
+  "setup": {
+    "steps": [
+      {"name": "install", "command": "ddev composer install"},
+      {"name": "migrate", "command": "ddev craft up"}
+    ]
+  },
+  "verdicts": {"format": "per-requirement"},
+  "craft": {
+    "answers": {"hosting": "craft-cloud", "passwordless": true, "dev_root": "~/dev"},
+    "choices": {"chrome_devtools_mcp": true, "craft_mcp": false}
+  },
+  "laravel": {"queue_driver": "redis"},
+  "future_key": {"kept": "unknown keys are kept and ignored"}
+}

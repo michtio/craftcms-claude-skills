@@ -1,0 +1,4 @@
+# phrase<TAB>reason. A line containing the phrase is exempt from the deny list.
+Gemini CLI	An MCP client named as a connection target for the Craft MCP server, not a builder.
+Claude Code, Codex	An MCP client in the list of clients the Craft MCP endpoint documents setup for, not a builder.
+(e.g. Codex)	Historical changelog entry comparing skill description length caps across other agents, not a builder.

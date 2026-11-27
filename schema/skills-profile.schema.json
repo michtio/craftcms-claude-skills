@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skills profile",
+  "description": "The project profile read by the Craft and Laravel skill packs. Location: .ai/skills-profile.json. Unknown keys are kept and ignored.",
+  "type": "object",
+  "required": ["version"],
+  "properties": {
+    "version": {
+      "description": "Profile format version. Always 1 for this schema.",
+      "type": "integer",
+      "const": 1
+    },
+    "managed_by": {
+      "description": "Informational. The team tool that wrote the file.",
+      "type": "object",
+      "properties": {
+        "tool": {"type": "string"},
+        "version": {"type": "string"}
+      }
+    },
+    "gate_tests": {
+      "description": "Who writes the gate tests: locked (a separate gate writer, then locked) or builder-written.",
+      "type": "string",
+      "enum": ["locked", "builder-written"]
+    },
+    "builders": {
+      "description": "Outside builders, tried in order.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "command"],
+        "properties": {
+          "name": {"type": "string"},
+          "command": {"type": "string"},
+          "timeout_minutes": {"type": "number", "exclusiveMinimum": 0}
+        }
+      }
+    },
+    "setup": {
+      "description": "Extra project setup.",
+      "type": "object",
+      "properties": {
+        "steps": {
+          "description": "Ordered extra setup steps, run after the generated files exist.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "command"],
+            "properties": {
+              "name": {"type": "string"},
+              "command": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "verdicts": {
+      "description": "Review verdict settings. Used by the Laravel pack, ignored by the Craft pack.",
+      "type": "object"
+    },
+    "craft": {
+      "description": "Craft pack keys. Optional.",
+      "type": "object",
+      "properties": {
+        "answers": {
+          "description": "Answers to the project setup questions.",
+          "type": "object",
+          "properties": {
+            "hosting": {"type": "string"},
+            "passwordless": {"type": "boolean"},
+            "dev_root": {"type": "string"}
+          }
+        },
+        "choices": {
+          "description": "Setup choices, for example tool integrations.",
+          "type": "object",
+          "properties": {
+            "chrome_devtools_mcp": {"type": "boolean"},
+            "craft_mcp": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "laravel": {
+      "description": "Laravel pack keys. Optional. Ignored by the Craft pack.",
+      "type": "object"
+    }
+  }
+}
