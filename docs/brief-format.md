@@ -10,10 +10,10 @@ A brief is a markdown file. The header fields come first, one per line, as `Name
 |---|---|
 | `Slice:` | The slice id, for example `S1`. |
 | `Gate commit:` | The commit that holds the locked gate tests, or `none` when the builder writes its own tests. |
-| `Gate files:` | The test files in that commit, separated by spaces. |
-| `Pest command:` | The command that runs the gate. Run it exactly as written. Stack-specific. |
+| `Gate files:` | The test files in that commit, separated by single spaces. |
+| `Pest command:` | The command that runs the gate. Run it exactly as written. Stack-specific: omit or replace for other stacks. |
 | `Project root:` | The absolute path of the project. Work only inside it. |
-| `Craft version:` | The Craft CMS version the code must target. Stack-specific. |
+| `Craft version:` | The Craft CMS version the code must target. Stack-specific: omit or replace for other stacks. |
 
 After the fields, each requirement is a level-2 heading followed by its text and its acceptance criteria, copied verbatim:
 
@@ -51,14 +51,38 @@ R<n>: PASS|FAIL|PENDING
 Builder: <name>
 ```
 
-- `Gate flow:` is `locked (<sha>)` when the brief has a gate commit (`<sha>` is 7 to 40 hex characters), or `builder-written (<reason>)` when it does not.
+- `Gate flow:` is `locked (<sha>)` when the brief has a gate commit (`<sha>` is 7 to 40 hex characters and must match the brief's `Gate commit:`; one may be a prefix of the other). It is `builder-written (<reason>)` when the brief says `Gate commit: none`, for example `Gate flow: builder-written (no gate tests for this slice)`.
 - `Lock check (committed):` is the exit code of `git diff --quiet <gate commit> HEAD -- <gate files>`.
 - `Lock check (working tree):` is the exit code of `git diff --quiet <gate commit> -- <gate files>`. This compares your working tree and index with the gate commit.
-- Both lock lines are required when the flow is `locked`. Each must be `exit 0`. A nonzero code means a gate file changed, and the slice does not pass.
-- One `R<n>:` line per `## R<n>` heading in the brief, with exactly one of `PASS`, `FAIL` or `PENDING`.
+- Both lock lines are required when the flow is `locked`. Each must be `exit 0`. A nonzero code means a gate file changed, and the slice does not pass. With `builder-written` they are not required.
+- One `R<n>:` line per `## R<n>` heading in the brief, with exactly one status. An `R<n>:` line for an id that is not in the brief is rejected.
 - `Builder:` is your name, on one line.
 
-Any other text in the file is allowed, for example notes or disputed tests, as long as it does not start with one of these line shapes.
+Status meanings:
+
+- `PASS`: the requirement is met and its acceptance criteria hold under the gate.
+- `FAIL`: you tried and the requirement is not met.
+- `PENDING`: you did not get to it, or you are blocked.
+
+A slice passes only when every `R<n>` line is `PASS`. `FAIL` and `PENDING` are valid lines, so report them honestly.
+
+Format rules:
+
+- Each required line appears exactly once. A duplicate is rejected.
+- A line must start at column 0, with nothing before it.
+- Lines inside a fenced code block (three backticks or three tildes) are ignored, so the real file must not put them in one.
+- Any other text is allowed (notes, disputed tests) if it does not start with one of the line shapes above.
+
+A complete sample hand-back for a brief with R2 and R5 and a gate commit `3f2a9c1`:
+
+```
+Gate flow: locked (3f2a9c1)
+Lock check (committed): exit 0
+Lock check (working tree): exit 0
+R2: PASS
+R5: PASS
+Builder: sample-builder
+```
 
 ## Check
 

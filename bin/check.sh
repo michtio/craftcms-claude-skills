@@ -91,6 +91,16 @@ must_fail "hand-back self-test (no R5 line)" python3 bin/handback_check.py --bri
 must_fail "hand-back self-test (R2: DONE)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/bad-status.md
 must_fail "hand-back self-test (no Builder line)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/missing-builder.md
 must_fail "hand-back self-test (committed lock exit 1)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/lock-nonzero.md
+gate      "hand-back BOM tolerated" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/complete-bom.md
+gate      "hand-back builder-written, no gate commit" python3 bin/handback_check.py --brief evals/fixtures/handback/brief-none.md evals/fixtures/handback/complete-builder-written.md
+gate      "hand-back fenced R heading ignored" python3 bin/handback_check.py --brief evals/fixtures/handback/brief-fenced-example.md evals/fixtures/handback/complete.md
+must_fail "hand-back self-test (flow downgrade)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/flow-downgrade.md
+must_fail "hand-back self-test (wrong sha)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/wrong-sha.md
+must_fail "hand-back self-test (duplicate R line)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/dup-r.md
+must_fail "hand-back self-test (duplicate lock line)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/dup-lock.md
+must_fail "hand-back self-test (duplicate flow line)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/dup-flow.md
+must_fail "hand-back self-test (fenced hand-back)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/fenced.md
+must_fail "hand-back self-test (unknown R id)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/unknown-r.md
 gate      "contents blocks (references > 30 KB)" python3 bin/contents.py --check
 gate      "symbols skills/"                python3 bin/craft_source.py verify
 must_fail "symbols self-test (craft\\services\\Mcp::getTools())" python3 bin/craft_source.py verify evals/fixtures/symbols/bad-symbol.md
