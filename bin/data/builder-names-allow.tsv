@@ -1,0 +1,2 @@
+# phrase<TAB>reason. A line containing the phrase is exempt from the deny list.
+Gemini CLI	An MCP client named as a connection target for the Craft MCP server, not a builder.

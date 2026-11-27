@@ -1,0 +1,12 @@
+# Models, runtimes and vendors that must never be named as a builder in the
+# pack. One term per line, matched case-insensitively as a whole word.
+# Legitimate mentions go in builder-names-allow.tsv, with a reason.
+qwen
+mistral
+glm
+ollama
+llama
+deepseek
+gpt
+gemini
+vllm

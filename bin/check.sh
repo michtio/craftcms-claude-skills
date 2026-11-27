@@ -16,6 +16,7 @@
 #   tables            MCP tool catalogue and config defaults match the source
 #   facts             every behaviour case's facts hold (evals/facts_check.py)
 #   routing           lexical routing vs evals/routing-baseline.json (evals/lexical_route.py)
+#   profile, neutral  profile schema checker and the neutral-wording check, with must-fail fixtures
 #   release-evals     the release-time runner stops at a usage limit (stub claude, no model)
 # Each check that reads a fixture must also FAIL on its bad fixture; those
 # negative tests run here too, so a check that silently stops checking fails.
@@ -91,6 +92,15 @@ gate      "facts (behaviour cases)"        python3 evals/facts_check.py
 must_fail "facts self-test (builder case with runs 2)" python3 evals/facts_check.py evals/fixtures/runs/builder-runs-2.json
 gate      "routing (lexical baseline)"     python3 evals/lexical_route.py
 must_fail "routing self-test (flooded listing)" python3 evals/lexical_route.py --self-test
+gate      "profile schema (valid fixture)" python3 bin/profile_check.py evals/fixtures/profile/valid.json
+must_fail "profile self-test (missing version)" python3 bin/profile_check.py evals/fixtures/profile/invalid-missing-version.json
+must_fail "profile self-test (gate_tests enum)" python3 bin/profile_check.py evals/fixtures/profile/invalid-gate-tests-enum.json
+must_fail "profile self-test (builder without command)" python3 bin/profile_check.py evals/fixtures/profile/invalid-builder-no-command.json
+must_fail "profile self-test (negative timeout)" python3 bin/profile_check.py evals/fixtures/profile/invalid-negative-timeout.json
+must_fail "profile self-test (setup.steps not a list)" python3 bin/profile_check.py evals/fixtures/profile/invalid-setup-steps-not-list.json
+gate      "neutral wording (skills agents docs schema)" python3 bin/neutral_check.py skills agents docs schema
+must_fail "neutral self-test (names a model as builder)" python3 bin/neutral_check.py evals/fixtures/neutral/names-a-model.md
+gate      "neutral self-test (allowed mention)" python3 bin/neutral_check.py evals/fixtures/neutral/allowed-mention.md
 grep_ok   "release-evals self-test (stops at a usage limit, stub claude)" 'errors: 1 (1 usage limit).*model calls: 1$' \
           python3 evals/release_evals.py --assume-changed skills/craft-mcp/references/oauth-server.md \
           --claude-bin evals/fixtures/stub-claude/claude-limit --workers 1 --no-cache
