@@ -142,6 +142,9 @@ class Facts(unittest.TestCase):
                 for pat in f.get("contains", []):
                     with self.subTest(case=cid, file=f["file"], pattern=pat[:70]):
                         self.assertRegex(text, re.compile(pat, re.M))
+                for pat in f.get("not_contains", []):
+                    with self.subTest(case=cid, file=f["file"], forbidden=pat[:70]):
+                        self.assertNotRegex(text, re.compile(pat, re.M))
 
     def test_each_required_fact_is_pinned(self):
         joined = {k: " ".join(p for c in CASES for f in cases()[c]["facts"] if f["file"] == v
@@ -173,6 +176,26 @@ class Facts(unittest.TestCase):
                            "with no suite, don't ask and write nothing",
                            "exactly one `Gate tests: locked` or `Gate tests: builder-written` line"):
                 self.assertIn(needle, joined)
+
+    def test_step_confirmation_facts_are_pinned(self):
+        for cid in CASES:
+            by = {f["file"]: f for f in cases()[cid]["facts"]}
+            for rel in (SKILL, REFS["generation"]):
+                joined = " ".join(by[rel]["contains"])
+                for needle in ("explicit yes", "non-interactive", "read each command", "not run"):
+                    self.assertIn(needle, joined, f"{cid} {rel}")
+            self.assertIn("cannot wait for an answer", by[SKILL].get("not_contains", []))
+            gen = " ".join(by[REFS["generation"]]["contains"])
+            for needle in ("chrome_devtools_mcp", "craft_mcp", "unknown keys", "claude mcp add", "composer require"):
+                self.assertIn(needle, gen)
+            att = " ".join(by[REFS["attribution"]]["contains"])
+            for needle in ("asked again", "already run"):
+                self.assertIn(needle, att)
+
+    def test_with_profile_prompt_confirms_the_steps(self):
+        p = cases()["setup-with-profile"]["prompt"]
+        self.assertIn("Treat the review as confirmed", p)
+        self.assertRegex(p, r"answer yes to running the profile's extra steps")
 
 
 class Listing(unittest.TestCase):

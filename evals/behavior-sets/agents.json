@@ -547,7 +547,7 @@
     "timeout": 1500,
     "runs": 1,
     "max_agents": 0,
-    "prompt": "Use the craft-project-setup skill to set up Claude Code for this Craft plugin. Run it non-interactively: answer only what the project does not already answer, accept the defaults for anything else, and for every question you would still ask, print one line `ASKED|<the question>` instead of waiting. Treat the review as confirmed, and do not run `claude mcp add` or `composer require`. There is no DDEV project here. Do not stop to ask questions. When the run ends, run `grep -c 'Gate tests:' CLAUDE.md | sed 's/^/GATELINES|/'`, `grep -h 'Gate tests:' CLAUDE.md | sed 's/^/GATE|/'`, `grep -h 'devRootPath' CLAUDE.md | sed 's/^/DEVROOT|/'`, `cat .team-step-ran | sed 's/^/MARKER|/'` and `git status --short | sed 's/^/STATUS|/'` and paste the outputs, unprefixed lines included, in a code block after the final report. In the final report, include the review you showed before writing, with the profile's extra steps listed in it.",
+    "prompt": "Use the craft-project-setup skill to set up Claude Code for this Craft plugin. Run it non-interactively: answer only what the project does not already answer, accept the defaults for anything else, and for every question you would still ask, print one line `ASKED|<the question>` instead of waiting. Treat the review as confirmed: answer yes to running the profile's extra steps after reading their commands. Do not run `claude mcp add` or `composer require`. There is no DDEV project here. Do not stop to ask questions. When the run ends, run `grep -c 'Gate tests:' CLAUDE.md | sed 's/^/GATELINES|/'`, `grep -h 'Gate tests:' CLAUDE.md | sed 's/^/GATE|/'`, `grep -h 'devRootPath' CLAUDE.md | sed 's/^/DEVROOT|/'`, `cat .team-step-ran | sed 's/^/MARKER|/'` and `git status --short | sed 's/^/STATUS|/'` and paste the outputs, unprefixed lines included, in a code block after the final report. In the final report, include the review you showed before writing, with the profile's extra steps listed in it.",
     "must_match": [
       [
         "GATELINES\\|1\\b"
@@ -604,7 +604,15 @@
           "(?is)Gate tests:[^\\n]{0,400}gate_tests|gate_tests[^\\n]{0,400}Gate tests:",
           "setup\\.steps",
           "(?is)setup\\.steps[^\\n]{0,400}review|review[^\\n]{0,400}setup\\.steps",
-          "(?is)setup\\.steps[^\\n]{0,400}\\blast\\b|\\blast\\b[^\\n]{0,400}setup\\.steps"
+          "(?is)setup\\.steps[^\\n]{0,400}\\blast\\b|\\blast\\b[^\\n]{0,400}setup\\.steps",
+          "(?i)explicit yes[^\\n]{0,300}(step|setup\\.steps)|(step|setup\\.steps)[^\\n]{0,300}explicit yes",
+          "(?i)non-interactive[^\\n]{0,300}(nothing runs|not run|no step runs)|(nothing runs|no step runs)[^\\n]{0,300}non-interactive",
+          "(?i)(not run|were not run|weren't run)[^\\n]{0,200}confirm",
+          "(?i)read each command",
+          "chrome_devtools_mcp",
+          "craft_mcp",
+          "(?i)unknown keys[^\\n]{0,80}ignored|ignores? unknown keys",
+          "(?i)claude mcp add[^\\n]{0,200}composer require[^\\n]{0,200}approval"
         ]
       },
       {
@@ -614,13 +622,23 @@
           "(?i)only (what|the) (has )?(changed|difference|change)",
           "(?is)per-file[^\\n]{0,200}(difference|diff)|(difference|diff)[^\\n]{0,120}per file",
           "(?i)hand-edited[^\\n]{0,300}(never|only)[^\\n]{0,240}(yes|ask|consent|confirm)|(never|only)[^\\n]{0,240}hand-edited[^\\n]{0,200}(yes|ask|consent|confirm)",
-          "skills-profile\\.json|\\bprofile\\b"
+          "skills-profile\\.json|\\bprofile\\b",
+          "(?i)steps?[^\\n]{0,200}asked again",
+          "(?i)default(ing|s)?[^\\n]{0,60}(not|no)[^\\n]{0,40}re-?run",
+          "(?i)(never|no|not)[^\\n]{0,80}already run|already run[^\\n]{0,80}guess"
         ]
       },
       {
         "file": "skills/craft-project-setup/SKILL.md",
         "contains": [
-          "skills-profile\\.json"
+          "skills-profile\\.json",
+          "(?i)explicit yes[^\\n]{0,300}(step|setup\\.steps)|(step|setup\\.steps)[^\\n]{0,300}explicit yes",
+          "(?i)non-interactive[^\\n]{0,300}(nothing runs|not run|no step runs)|(nothing runs|no step runs)[^\\n]{0,300}non-interactive",
+          "(?i)(not run|were not run|weren't run)[^\\n]{0,200}confirm",
+          "(?i)read each command"
+        ],
+        "not_contains": [
+          "cannot wait for an answer"
         ]
       }
     ]
@@ -693,7 +711,15 @@
           "(?is)Gate tests:[^\\n]{0,400}gate_tests|gate_tests[^\\n]{0,400}Gate tests:",
           "setup\\.steps",
           "(?is)setup\\.steps[^\\n]{0,400}review|review[^\\n]{0,400}setup\\.steps",
-          "(?is)setup\\.steps[^\\n]{0,400}\\blast\\b|\\blast\\b[^\\n]{0,400}setup\\.steps"
+          "(?is)setup\\.steps[^\\n]{0,400}\\blast\\b|\\blast\\b[^\\n]{0,400}setup\\.steps",
+          "(?i)explicit yes[^\\n]{0,300}(step|setup\\.steps)|(step|setup\\.steps)[^\\n]{0,300}explicit yes",
+          "(?i)non-interactive[^\\n]{0,300}(nothing runs|not run|no step runs)|(nothing runs|no step runs)[^\\n]{0,300}non-interactive",
+          "(?i)(not run|were not run|weren't run)[^\\n]{0,200}confirm",
+          "(?i)read each command",
+          "chrome_devtools_mcp",
+          "craft_mcp",
+          "(?i)unknown keys[^\\n]{0,80}ignored|ignores? unknown keys",
+          "(?i)claude mcp add[^\\n]{0,200}composer require[^\\n]{0,200}approval"
         ]
       },
       {
@@ -703,13 +729,23 @@
           "(?i)only (what|the) (has )?(changed|difference|change)",
           "(?is)per-file[^\\n]{0,200}(difference|diff)|(difference|diff)[^\\n]{0,120}per file",
           "(?i)hand-edited[^\\n]{0,300}(never|only)[^\\n]{0,240}(yes|ask|consent|confirm)|(never|only)[^\\n]{0,240}hand-edited[^\\n]{0,200}(yes|ask|consent|confirm)",
-          "skills-profile\\.json|\\bprofile\\b"
+          "skills-profile\\.json|\\bprofile\\b",
+          "(?i)steps?[^\\n]{0,200}asked again",
+          "(?i)default(ing|s)?[^\\n]{0,60}(not|no)[^\\n]{0,40}re-?run",
+          "(?i)(never|no|not)[^\\n]{0,80}already run|already run[^\\n]{0,80}guess"
         ]
       },
       {
         "file": "skills/craft-project-setup/SKILL.md",
         "contains": [
-          "skills-profile\\.json"
+          "skills-profile\\.json",
+          "(?i)explicit yes[^\\n]{0,300}(step|setup\\.steps)|(step|setup\\.steps)[^\\n]{0,300}explicit yes",
+          "(?i)non-interactive[^\\n]{0,300}(nothing runs|not run|no step runs)|(nothing runs|no step runs)[^\\n]{0,300}non-interactive",
+          "(?i)(not run|were not run|weren't run)[^\\n]{0,200}confirm",
+          "(?i)read each command"
+        ],
+        "not_contains": [
+          "cannot wait for an answer"
         ]
       }
     ]
