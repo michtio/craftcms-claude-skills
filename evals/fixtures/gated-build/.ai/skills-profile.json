@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "gate_tests": "locked",
+  "builders": [
+    {"name": "stub-unavailable", "command": "./bin/stub-unavailable", "timeout_minutes": 2},
+    {"name": "stub-ok", "command": "./bin/stub-ok", "timeout_minutes": 5}
+  ]
+}

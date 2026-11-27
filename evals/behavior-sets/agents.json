@@ -339,5 +339,128 @@
         ]
       }
     ]
+  },
+  {
+    "id": "gated-build-outside",
+    "note": "Spec 2026-11-27-extension-points AC2/AC7 (S3). The fixture profile names two outside builders in order: stub-unavailable (exit 3), then stub-ok (valid hand-back). Expected: craft-gate-writer commits test(gate): S1 first, stub-unavailable is skipped, stub-ok gets the brief file and commits, the hand-back check passes, the lock checks and one craft-review-checker run on its result, and the report names stub-ok. The main session runs the whole procedure, so Bash is open: the run happens in a throwaway git copy (copy_cwd). agents counts gate writer + checker + at most 2 re-checks = 4; craft-feature-builder must not start (the report's Builder line names stub-ok). The Pest stand-in needs php on the host (no DDEV in the eval).",
+    "cwd": "evals/fixtures/gated-build",
+    "copy_cwd": true,
+    "tools": "Agent,Skill,Read,Grep,Glob,Edit,Write,Bash",
+    "max_turns": 40,
+    "timeout": 1800,
+    "runs": 1,
+    "expect_agents": [
+      "craft-gate-writer",
+      "craft-review-checker"
+    ],
+    "max_agents": 4,
+    "prompt": "Use the craft-gated-build skill to build slice S1 of specs/2026-11-27-greeting/plan.md (R1, AC1 and AC2; both documents approved). The project's .ai/skills-profile.json names outside builders. There is no DDEV project and no Craft install here: the Pest command in every brief is `vendor/bin/pest`, run from the project root (a small stand-in runner), so skip every ddev, phpstan and check-cs gate and say so. git works. Do not stop to ask questions. When the run ends, run `git log --reverse --format='LOG|%s'` and `git status --short | sed 's/^/STATUS|/'` and paste both outputs, unprefixed lines included, in a code block after the final report. Reply with the report verbatim, never a summary of it.",
+    "must_match": [
+      [
+        "LOG\\|test\\(gate\\): S1[^\\n]*\\n(?:LOG\\|[^\\n]*\\n)*?LOG\\|feat\\(S1\\)[^\\n]*stub-ok"
+      ],
+      [
+        "Gate flow:?\\**:?\\s*locked"
+      ],
+      [
+        "Builder:?\\**:?\\s*stub-ok",
+        "built by:?\\**:?\\s*stub-ok",
+        "stub-ok[^\\n]{0,80}(built|implemented|completed|passed)"
+      ],
+      [
+        "stub-unavailable[^\\n]{0,300}(skipp|exit(?:ed|s)?(?: with)?(?: code| status)?\\s*3\\b|next builder|moved on)",
+        "(skipp|exit(?:ed|s)?(?: with)?(?: code| status)?\\s*3\\b)[^\\n]{0,200}stub-unavailable"
+      ],
+      [
+        "(handback_check|hand-?back check)[^\\n]{0,200}(pass|exit\\s*0|exit code 0|\\bok\\b|accepted)"
+      ],
+      [
+        "Lock check[^\\n]{0,120}exit\\s*0"
+      ],
+      [
+        "Checker:?\\**:?\\s*\\S"
+      ]
+    ],
+    "must_not_match": [
+      "Checker:?\\**:?\\s*(skipped|not run)",
+      "Builder:?\\**:?\\s*craft-feature-builder",
+      "(handback_check|hand-?back check)[^\\n]{0,80}exit\\s*[12]\\b"
+    ],
+    "facts": [
+      {
+        "file": "skills/craft-gated-build/SKILL.md",
+        "contains": [
+          "craft-gate-writer",
+          "bin/handback_check\\.py",
+          "(?im)^#+ .*before (each|every) builder|(reset|clean)[^\\n]*before (each|every|the next) builder|before (each|every) builder[^\\n]*(reset|clean)",
+          "git reset --hard",
+          "git clean -fd",
+          "Stop after 3 rounds",
+          "craft-feature-builder",
+          "git diff --quiet <gate commit> -- <gate files>",
+          "skills-profile\\.json",
+          "(?is)\\bonly\\b[^.]{0,160}skills-profile\\.json|skills-profile\\.json[^.]{0,160}\\bonly\\b|skills-profile\\.json[^.\\n]{0,120}\\bbuilders\\b"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "gated-build-fallback",
+    "note": "Spec 2026-11-27-extension-points AC4 (S3). The overlay profile names only stub-unavailable (exit 3) and stub-fail (exit 1, leaves STUB-FAIL-PARTIAL.txt and an edit to README.md behind). Expected: craft-gate-writer first, both outside builders fail, the tree is reset before the next builder, the build continues with craft-feature-builder from the same brief, and the report says both outside builders failed. The final git status must not show the stub's leftovers. agents counts gate writer + feature builder + its checker + the skill's checker + re-checks, so the cap is 6. Builder cases run once (facts_check enforces it).",
+    "cwd": "evals/fixtures/gated-build",
+    "copy_cwd": true,
+    "overlay": "evals/fixtures/gated-build-fallback",
+    "tools": "Agent,Skill,Read,Grep,Glob,Edit,Write,Bash",
+    "max_turns": 50,
+    "timeout": 2400,
+    "expect_agents": [
+      "craft-gate-writer",
+      "craft-feature-builder"
+    ],
+    "max_agents": 6,
+    "prompt": "Use the craft-gated-build skill to build slice S1 of specs/2026-11-27-greeting/plan.md (R1, AC1 and AC2; both documents approved). The project's .ai/skills-profile.json names outside builders. There is no DDEV project and no Craft install here: the Pest command in every brief is `vendor/bin/pest`, run from the project root (a small stand-in runner), so skip every ddev, phpstan and check-cs gate and say so. git works. Do not stop to ask questions. When the run ends, run `git log --reverse --format='LOG|%s'` and `git status --short | sed 's/^/STATUS|/'` and paste both outputs, unprefixed lines included, in a code block after the final report. Reply with the report verbatim, never a summary of it.",
+    "must_match": [
+      [
+        "Gate flow:?\\**:?\\s*locked"
+      ],
+      [
+        "exit(?:ed|s)?(?: with)?(?: code| status)?\\s*3\\b",
+        "stub-unavailable[^\\n]{0,200}(unavailable|skipp)"
+      ],
+      [
+        "exit(?:ed|s)?(?: with)?(?: code| status)?\\s*1\\b",
+        "stub-fail[^\\n]{0,200}(fail|error)"
+      ],
+      [
+        "(both|all)[^\\n]{0,80}(outside )?builders?[^\\n]{0,120}(fail|unavailable|exhaust|skipp)",
+        "fall(?:ing|s)? back[^\\n]{0,80}craft-feature-builder",
+        "continu(?:e|ed|ing)[^\\n]{0,80}craft-feature-builder"
+      ],
+      [
+        "Builder:?\\**:?\\s*craft-feature-builder",
+        "craft-feature-builder[^\\n]{0,100}(built|implemented|completed|did the work)"
+      ]
+    ],
+    "must_not_match": [
+      "STATUS\\|\\s*(\\?\\?|M)\\s+(STUB-FAIL-PARTIAL|README)",
+      "Builder:?\\**:?\\s*stub-(ok|fail|unavailable)"
+    ],
+    "facts": [
+      {
+        "file": "skills/craft-gated-build/SKILL.md",
+        "contains": [
+          "craft-gate-writer",
+          "bin/handback_check\\.py",
+          "(?im)^#+ .*before (each|every) builder|(reset|clean)[^\\n]*before (each|every|the next) builder|before (each|every) builder[^\\n]*(reset|clean)",
+          "git reset --hard",
+          "git clean -fd",
+          "Stop after 3 rounds",
+          "craft-feature-builder",
+          "git diff --quiet <gate commit> -- <gate files>",
+          "skills-profile\\.json",
+          "(?is)\\bonly\\b[^.]{0,160}skills-profile\\.json|skills-profile\\.json[^.]{0,160}\\bonly\\b|skills-profile\\.json[^.\\n]{0,120}\\bbuilders\\b"
+        ]
+      }
+    ]
   }
 ]

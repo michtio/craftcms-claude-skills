@@ -1,0 +1,11 @@
+#!/bin/sh
+# Stub outside builder: fails. It leaves a half-done tree behind (an untracked
+# file and an edit to a tracked file) and exits 1, so the next builder only gets
+# a clean slice if the caller resets the tree first.
+# Call form: stub-fail <brief-file> <handback-file>
+brief=$1
+root=$(sed -n 's/^Project root:[[:space:]]*//p' "$brief" | head -n 1 | tr -d '`')
+[ -n "$root" ] && cd "$root" || exit 1
+printf 'half-done work\n' > STUB-FAIL-PARTIAL.txt
+printf '\nTODO: stub-fail was here\n' >> README.md
+exit 1
