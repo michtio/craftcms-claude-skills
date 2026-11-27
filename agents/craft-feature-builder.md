@@ -56,7 +56,7 @@ Nothing gets built without an approved spec: a `prd.md` (what and why: numbered 
 2. It hands back a commit `test(gate): <slice id>` with the gate test files, each red with its reason. Copy that table into your hand-back; it replaces Fail first for these tests.
 3. Build against those tests. You may add tests of your own (fail first). You never edit, rename or delete a gate test file.
 4. A gate test you believe is wrong (asserts a value the spec does not state, or one the spec contradicts): do not change it. Stop at a passing gate and report the test, the line and the reason.
-5. Before hand-back, run and paste both exit codes (0 means untouched): `git diff --quiet <gate commit> HEAD -- <gate files>` and `git diff --quiet -- <gate files>`.
+5. Before hand-back, run and paste both exit codes (0 means untouched): `git diff --quiet <gate commit> HEAD -- <gate files>` and `git diff --quiet <gate commit> -- <gate files>` (working tree against the gate commit).
 6. No `Agent` tool: use the builder-written flow and say `Gate flow: builder-written (no Agent tool)`.
 
 ## Build feature by feature — explicit verification gates

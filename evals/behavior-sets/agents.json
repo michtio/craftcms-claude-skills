@@ -87,7 +87,63 @@
           "## Gate tests \\(before the build\\)",
           "Gate flow: builder-written \\(<reason>\\)",
           "git diff --quiet <gate commit> HEAD -- <gate files>",
+          "git diff --quiet <gate commit> -- <gate files>",
           "do not change it\\. Stop at a passing gate"
+        ],
+        "not_contains": [
+          "git diff --quiet -- <gate files>"
+        ]
+      },
+      {
+        "file": "agents/craft-code-reviewer.md",
+        "contains": [
+          "git diff --quiet <gate commit> -- <gate files>"
+        ],
+        "not_contains": [
+          "git diff --quiet -- <gate files>"
+        ]
+      },
+      {
+        "file": "agents/craft-code-reviewer-deep.md",
+        "contains": [
+          "git diff --quiet <gate commit> -- <gate files>"
+        ],
+        "not_contains": [
+          "git diff --quiet -- <gate files>"
+        ]
+      },
+      {
+        "file": "docs/agents.md",
+        "contains": [
+          "git diff --quiet <gate commit> HEAD -- <gate files>",
+          "git diff --quiet <gate commit> -- <gate files>"
+        ],
+        "not_contains": [
+          "git diff --quiet -- <gate files>"
+        ]
+      },
+      {
+        "file": "docs/outside-builders.md",
+        "contains": [
+          "<command> <brief-file> <handback-file>",
+          "\\|\\s*0\\s*\\|[^|\\n]*done",
+          "\\|\\s*3\\s*\\|[^|\\n]*unavailable",
+          "\\|\\s*(any )?other[^|\\n]*\\|[^|\\n]*failed",
+          "timeout_minutes[^\\n]*failed|failed[^\\n]*timeout_minutes",
+          "bin/handback_check\\.py"
+        ]
+      },
+      {
+        "file": "docs/brief-format.md",
+        "contains": [
+          "^Gate flow: ",
+          "^Lock check \\(committed\\): exit ",
+          "^Lock check \\(working tree\\): exit ",
+          "^R<n>: PASS\\|FAIL\\|PENDING",
+          "^Builder: ",
+          "^## R<n>",
+          "Gate commit:",
+          "Pest command:"
         ]
       },
       {
