@@ -341,11 +341,13 @@ class Scenarios(unittest.TestCase):
         s = self.s["plain-build-no-profile"]
         self.assertEqual(s["expect_none"], ["craft-gated-build"])
         self.assertFalse((REPO / s["cwd"] / ".ai/skills-profile.json").exists())
-        self.assertNotIn("craft-gated-build", s["expect_any"])
+        self.assertNotIn("expect_any", s)  # passes when nothing in expect_none loads
 
     def test_scenario_check_honours_expect_none(self):
         src = (REPO / "evals/scenario_check.py").read_text(encoding="utf-8")
         self.assertIn("expect_none", src)
+        # A scenario with only expect_none must not need an expect_any key.
+        self.assertNotRegex(src, r's\["expect_any"\]')
 
     def test_scenario_check_lists_both(self):
         r = run(["python3", "evals/scenario_check.py", "--dry-run", "--only",
