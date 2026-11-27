@@ -6,6 +6,7 @@ Run: python3 -m unittest discover -s evals/tests -p 'test_ext_s1.py' -v
 
 import json
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -19,7 +20,11 @@ INVALID = {
     "invalid-builder-no-command.json": "command",
     "invalid-negative-timeout.json": "timeout_minutes",
     "invalid-setup-steps-not-list.json": "setup.steps",
+    "invalid-timeout-nan.json": "timeout_minutes",
 }
+
+PACK_PATHS = ("skills agents docs schema README.md CHANGELOG.md .claude-plugin "
+              "project-template reference hooks")
 
 DOC_KEYS = [
     "version", "managed_by", "gate_tests", "locked", "builder-written",
@@ -29,7 +34,8 @@ DOC_KEYS = [
 ]
 
 DENY_MIN = ["qwen", "mistral", "glm", "ollama", "llama", "deepseek", "gpt",
-            "gemini", "vllm"]
+            "gemini", "vllm", "chatgpt", "openai", "codex", "copilot", "codestral",
+            "devstral"]
 
 
 def run(*args):
@@ -60,6 +66,17 @@ class ProfileChecker(unittest.TestCase):
                 r = run("bin/profile_check.py", f"evals/fixtures/profile/{name}")
                 self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
                 self.assertIn(needle, r.stdout + r.stderr)
+
+    def test_unsupported_schema_keyword_exits_2(self):
+        r = run("bin/profile_check.py", "--schema",
+                "evals/fixtures/profile/schema-unknown-keyword.json",
+                "evals/fixtures/profile/valid.json")
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn("minimum", r.stdout + r.stderr)
+
+    def test_real_schema_uses_only_supported_keywords(self):
+        r = run("bin/profile_check.py", "evals/fixtures/profile/valid.json")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_unknown_keys_kept(self):
         v = json.loads((PROFILE / "valid.json").read_text())
@@ -97,8 +114,50 @@ class NeutralChecker(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_pack_is_neutral(self):
-        r = run("bin/neutral_check.py", "skills", "agents", "docs", "schema")
+        r = run("bin/neutral_check.py", *[p for p in PACK_PATHS.split()
+                                          if (REPO / p).exists()])
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_names_with_version_fails(self):
+        r = run("bin/neutral_check.py", "evals/fixtures/neutral/names-with-version.md")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("qwen", (r.stdout + r.stderr).lower())
+
+    def test_allowed_phrase_exempts_only_itself(self):
+        r = run("bin/neutral_check.py", "evals/fixtures/neutral/allowed-plus-builder.md")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("qwen", (r.stdout + r.stderr).lower())
+
+    def test_empty_allow_phrase_is_usage_error(self):
+        r = run("bin/neutral_check.py", "--allow",
+                "evals/fixtures/neutral/allow-empty-phrase.tsv",
+                "evals/fixtures/neutral/allowed-mention.md")
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+
+    def test_directory_scans_any_extension(self):
+        r = run("bin/neutral_check.py", "evals/fixtures/neutral/dir-with-sh")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("script.sh", r.stdout + r.stderr)
+
+    def test_letter_only_boundaries(self):
+        for line in ("Qwen3", "GPT4", "gpt_4", "Llama3", "qwen-2", "ChatGPT", "Codex"):
+            with self.subTest(line=line), tempfile.TemporaryDirectory() as d:
+                f = Path(d) / "a.md"
+                f.write_text(f"use {line} here\n")
+                r = run("bin/neutral_check.py", str(f))
+                self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "a.md"
+            f.write_text("a word like Ruglmore is not a model\n")
+            r = run("bin/neutral_check.py", str(f))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_directory_skips_binary_and_undecodable(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "nul.bin").write_bytes(b"qwen\x00\x01")
+            (Path(d) / "bad.txt").write_bytes(b"\xff\xfe qwen \xff")
+            r = run("bin/neutral_check.py", d)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_deny_list_minimum(self):
         p = REPO / "bin/data/builder-names.txt"
@@ -130,12 +189,20 @@ class CheckSh(unittest.TestCase):
                 self.assertRegex(
                     self.text,
                     r"must_fail[^\n]*profile_check\.py[^\n]*" + name.replace(".", r"\."))
-        self.assertRegex(self.text, r"must_fail[^\n]*neutral_check\.py[^\n]*names-a-model\.md")
+        for n in ("names-a-model\\.md", "names-with-version\\.md",
+                  "allowed-plus-builder\\.md", "dir-with-sh"):
+            with self.subTest(neutral=n):
+                self.assertRegex(self.text, r"must_fail[^\n]*neutral_check\.py[^\n]*" + n)
 
     def test_gate_lines_present(self):
         self.assertRegex(self.text, r"\bgate\b[^\n]*profile_check\.py[^\n]*profile/valid\.json")
         self.assertRegex(self.text, r"\bgate\b[^\n]*neutral_check\.py[^\n]*allowed-mention\.md")
-        self.assertRegex(self.text, r"\bgate\b[^\n]*neutral_check\.py[^\n]*skills[^\n]*agents[^\n]*docs[^\n]*schema")
+        paths = PACK_PATHS.replace(".", r"\.").replace(" ", " +")
+        self.assertRegex(self.text, r"\bgate\b[^\n]*neutral_check\.py +" + paths + r"\s*($|\n)")
+        for line in self.text.splitlines():
+            if "neutral_check.py" in line and line.lstrip().startswith("gate"):
+                self.assertNotIn("bin/data", line)
+                self.assertNotIn("evals/fixtures/profile", line)
 
     def test_check_sh_green(self):
         r = subprocess.run(["sh", "bin/check.sh"], cwd=REPO, capture_output=True,

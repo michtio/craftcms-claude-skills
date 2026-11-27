@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "builders": [{"name": "a", "command": "./a.sh", "timeout_minutes": NaN}]
+}
