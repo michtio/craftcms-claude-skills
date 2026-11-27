@@ -1,8 +1,104 @@
 #!/bin/sh
-# Stand-in for Pest in this fixture: no Composer install, no DDEV, no database.
-# Runs tests/**/*Test.php with PHP only (see vendor/pest-lite.php). Run it from the
-# project root: vendor/bin/pest [--filter=<name>] [<file>...]
+# Stand-in for Pest in this fixture: no Composer install, no DDEV, no database,
+# no PHP. It decides red or green from the files, using marker comments the
+# gate tests carry (see CLAUDE.md). Run it from the project root:
+#   vendor/bin/pest [--filter=<name>] [<test-file>...]
 here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../.." && pwd)
 cd "$root" || exit 2
-exec php "$root/vendor/pest-lite.php" "$@"
+
+filter=
+files=
+while [ $# -gt 0 ]; do
+    case $1 in
+        --filter=*) filter=${1#--filter=} ;;
+        --filter) shift; filter=${1:-} ;;
+        -*) ;;
+        *) files="$files $1" ;;
+    esac
+    shift
+done
+[ -n "$files" ] || files=$(find tests -name '*Test.php' | sort)
+
+pass=0
+fail=0
+# One record per line: T<TAB>name, F<TAB>path, C<TAB>path<TAB>text
+records=$(for f in $files; do
+    awk '
+        /^[[:space:]]*(it|test)\([[:space:]]*['"'"'"]/ {
+            line = $0
+            sub(/^[[:space:]]*/, "", line)
+            kind = (line ~ /^it\(/) ? "it " : ""
+            sub(/^(it|test)\([[:space:]]*/, "", line)
+            q = substr(line, 1, 1)
+            line = substr(line, 2)
+            name = line
+            sub(q ".*$", "", name)
+            printf "T\t%s%s\n", kind, name
+        }
+        /\/\/[[:space:]]*expect-file:/ {
+            p = $0; sub(/^.*expect-file:[[:space:]]*/, "", p); sub(/[[:space:]]+$/, "", p)
+            printf "F\t%s\n", p
+        }
+        /\/\/[[:space:]]*expect-contains:/ {
+            p = $0; sub(/^.*expect-contains:[[:space:]]*/, "", p); sub(/[[:space:]]+$/, "", p)
+            path = p; sub(/[[:space:]].*$/, "", path)
+            text = p; sub(/^[^[:space:]]+[[:space:]]*/, "", text)
+            printf "C\t%s\t%s\n", path, text
+        }
+    ' "$f"
+done)
+
+name=
+reasons=
+nl='
+'
+flush() {
+    [ -n "$name" ] || return 0
+    if [ -n "$filter" ] && ! printf '%s\n' "$name" | grep -Eiq -- "$filter" \
+        && ! printf '%s\n' "$name" | grep -iqF -- "$filter"; then
+        return 0
+    fi
+    if [ -z "$checks" ]; then
+        reasons="no expect-file or expect-contains marker"
+    fi
+    if [ -z "$reasons" ]; then
+        pass=$((pass + 1))
+        printf '  PASS  %s\n' "$name"
+    else
+        fail=$((fail + 1))
+        printf '  FAIL  %s\n' "$name"
+        printf '%s' "$reasons" | sed 's/^/        /'
+        printf '\n'
+    fi
+}
+
+checks=
+while IFS='	' read -r kind a b; do
+    case $kind in
+        T) flush; name=$a; reasons=; checks= ;;
+        F) checks=1
+           [ -f "$a" ] || reasons="$reasons${reasons:+$nl}missing $a" ;;
+        C) checks=1
+           if [ ! -f "$a" ]; then
+               reasons="$reasons${reasons:+$nl}missing $a"
+           elif ! grep -qF -- "$b" "$a"; then
+               reasons="$reasons${reasons:+$nl}missing text '$b' in $a"
+           fi ;;
+    esac
+done <<EOF
+$records
+EOF
+flush
+
+if [ $((pass + fail)) -eq 0 ]; then
+    echo "  No tests found."
+    exit 1
+fi
+echo
+if [ "$fail" -gt 0 ]; then
+    echo "  Tests: $fail failed, $pass passed"
+    exit 1
+fi
+echo "  Tests: $pass passed"
+exit 0

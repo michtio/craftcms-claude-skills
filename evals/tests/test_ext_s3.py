@@ -1,8 +1,7 @@
 """Gate tests for extension-points slice S3 (R2, R4, R7; AC2, AC4, AC7): the craft-gated-build skill.
 
 The model-run cases (gated-build-outside, gated-build-fallback) are release-tier;
-this file is the deterministic tier. It needs php for the Pest stand-in test and
-skips that test without it. Body size and listing length are checked here and
+this file is the deterministic tier. The Pest stand-in is sh and never runs php. Body size and listing length are checked here and
 also by bin/validate-skills.sh (12 KB body, 1,300 character listing).
 Standard library only.
 Run: python3 -m unittest discover -s evals/tests -p 'test_ext_s3.py' -v
@@ -30,10 +29,14 @@ GATE_TEST = """<?php
 use acme\\hello\\services\\GreetingService;
 
 it('greets by name', function () {
+    // expect-file: src/services/GreetingService.php
+    // expect-contains: src/services/GreetingService.php Hello, Ada!
     expect((new GreetingService())->greet('Ada'))->toBe('Hello, Ada!');
 });
 
 it('greets the world for an empty name', function () {
+    // expect-file: src/services/GreetingService.php
+    // expect-contains: src/services/GreetingService.php Hello, world!
     expect((new GreetingService())->greet(''))->toBe('Hello, world!');
 });
 """
@@ -168,6 +171,17 @@ class Fixture(unittest.TestCase):
         self.assertEqual(len(re.findall(r"(?m)^- \*\*AC\d", prd)), 2)
         self.assertEqual(len(re.findall(r"(?m)^### S\d", plan)), 1)
 
+    def test_pest_stand_in_runs_no_php(self):
+        r = run(["grep", "-rn", "php ", "evals/fixtures/gated-build/vendor/bin/pest"])
+        self.assertEqual(r.returncode, 1, r.stdout)  # no match
+        self.assertFalse((FIX / "vendor/pest-lite.php").exists())
+        self.assertNotRegex((FIX / "vendor/bin/pest").read_text(), r"(?m)^\s*(exec\s+)?php\b")
+
+    def test_claude_md_documents_the_markers(self):
+        text = (FIX / "CLAUDE.md").read_text()
+        for needle in ("expect-file:", "expect-contains:"):
+            self.assertIn(needle, text)
+
     def test_stub_exit_codes(self):
         with tempfile.TemporaryDirectory() as tmp:
             brief = Path(tmp) / "brief.md"
@@ -187,7 +201,6 @@ class Fixture(unittest.TestCase):
             self.assertIn("README.md", status)
 
 
-@unittest.skipUnless(shutil.which("php"), "php missing: the Pest stand-in needs it")
 class StubOkHandback(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -210,7 +223,21 @@ class StubOkHandback(unittest.TestCase):
     def test_gate_is_red_before_the_builder(self):
         r = run(["vendor/bin/pest"], cwd=self.proj)
         self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
-        self.assertIn("GreetingService", r.stdout)
+        self.assertIn("missing src/services/GreetingService.php", r.stdout)
+        self.assertIn("Tests: 2 failed, 1 passed", r.stdout)
+        # --filter matches the test name.
+        f = run(["vendor/bin/pest", "--filter=empty name"], cwd=self.proj)
+        self.assertEqual(f.returncode, 1)
+        self.assertIn("greets the world for an empty name", f.stdout)
+        self.assertNotIn("greets by name", f.stdout)
+        ok = run(["vendor/bin/pest", "--filter=declares the hello handle"], cwd=self.proj)
+        self.assertEqual(ok.returncode, 0, ok.stdout)
+        # A missing text reason, with the file present but wrong.
+        (self.proj / "src/services").mkdir(parents=True, exist_ok=True)
+        (self.proj / "src/services/GreetingService.php").write_text("<?php\n")
+        t = run(["vendor/bin/pest", "--filter=empty name"], cwd=self.proj)
+        self.assertEqual(t.returncode, 1)
+        self.assertIn("missing text 'Hello, world!' in src/services/GreetingService.php", t.stdout)
 
     def test_stub_ok_handback_passes_the_checker_and_the_gate(self):
         r = run([str(self.proj / "bin/stub-ok"), str(self.brief), str(self.hb)])
