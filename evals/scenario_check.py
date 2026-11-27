@@ -6,9 +6,10 @@ forbidden ones does.
 A cheap routing smoke test for listing changes (one model call per scenario),
 in place of a full trigger-set or route.py A/B run. Scenarios live in
 evals/scenarios.json: [{"id", "cwd", "prompt", "expect_any": [skill, ...],
-"expect_none": [skill, ...]}]. "expect_none" is optional: the scenario fails when
-any skill in it loads (a negative scenario, such as a plain build request that
-must not load a skill keyed on a profile file).
+"expect_none": [skill, ...]}]. Both lists are optional. A scenario passes when
+expect_any is empty or one of its skills loaded, and no skill in expect_none
+loaded (a negative scenario, such as a plain build request that must not load a
+skill keyed on a profile file).
 
 Usage:
     python3 evals/scenario_check.py                 # every scenario
@@ -73,12 +74,13 @@ def main() -> int:
     if args.changed is not None:
         base, skills_changed = changed_skills(args.changed or None)
         print(f"listings changed since {base}: {', '.join(sorted(skills_changed)) or 'none'}")
-        scenarios = [s for s in scenarios if (set(s["expect_any"]) | set(s.get("expect_none", []))) & skills_changed]
+        scenarios = [s for s in scenarios if (set(s.get("expect_any", [])) | set(s.get("expect_none", []))) & skills_changed]
     print(f"{len(scenarios)} scenario(s), {len(scenarios)} model call(s)")
     if args.dry_run:
         for s in scenarios:
             none = f"; none of {', '.join(s['expect_none'])}" if s.get("expect_none") else ""
-            print(f"  {s['id']:26} expects any of {', '.join(s['expect_any'])}{none}")
+            anyof = f"expects any of {', '.join(s['expect_any'])}" if s.get("expect_any") else "expects no particular skill"
+            print(f"  {s['id']:26} {anyof}{none}")
         return 0
 
     claude_bin = str(Path(args.claude_bin).resolve()) if args.claude_bin else (shutil.which("claude") or "/opt/homebrew/bin/claude")
@@ -94,7 +96,8 @@ def main() -> int:
             failed += 1
             continue
         forbidden = set(s.get("expect_none", [])) & skills
-        ok = bool(set(s["expect_any"]) & skills) and not forbidden
+        wanted = set(s.get("expect_any", []))
+        ok = (not wanted or bool(wanted & skills)) and not forbidden
         failed += not ok
         why = f" (forbidden: {', '.join(sorted(forbidden))})" if forbidden else ""
         print(f"  {'PASS' if ok else 'FAIL'}  {s['id']:26} loaded: {', '.join(sorted(skills)) or 'none'}{why}")

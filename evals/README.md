@@ -20,7 +20,7 @@ retry, a usage-limit message stops the run and counts as an error rather than a
 failure, and the call count is printed. Always `--dry-run` first. For listing
 changes, run `scenario_check.py`: the realistic prompts in `scenarios.json`, each inside
 a fixture project, passing when an expected skill loads (one call each, stopped at the routing decision
-after one turn). A scenario may also list `expect_none`: it fails when any of those skills loads,
+after one turn). A scenario may also list `expect_none`, and may leave `expect_any` out (any routing is fine): it fails when any `expect_none` skill loads,
 which guards a skill against stealing prompts that belong elsewhere (`plain-build-no-profile`
 keeps `craft-gated-build` off a plain build request). `--changed` runs only the scenarios whose
 `expect_any` or `expect_none` skills' listings (SKILL.md frontmatter) changed since the last tag. It replaces a
