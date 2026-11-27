@@ -37,6 +37,15 @@ CLAUDE.md                          # Project overview, commands, structure
 
 When Step 2 asked the gate-tests question (isolated Pest suite only), the generated `CLAUDE.md` holds exactly one `Gate tests: locked` or `Gate tests: builder-written` line, next to the test commands. No suite: no line.
 
+### When a skills profile is present
+
+Applies only when Step 1 validated `.ai/skills-profile.json` (`detection.md`); otherwise skip this section.
+
+- **Gate tests:** the `Gate tests:` line comes from the profile's `gate_tests`: `locked` writes `Gate tests: locked`, `builder-written` writes `Gate tests: builder-written`. Still exactly one line, and still none when the project has no isolated Pest suite.
+- **Choices:** apply each key in `craft.choices` (for example `chrome_devtools_mcp`, `craft_mcp`): `true` means do what the matching offer in Step 1 would do, `false` means skip that offer without asking.
+- **Answers:** write `craft.answers.hosting`, `passwordless` and `dev_root` into the generated config as if the user had answered.
+- **Extra steps:** `setup.steps` is an ordered list of `{name, command}`. List every step in Step 4 (the review) before any runs. They run last, in order: after all generated files, and before the sponsorship message. Each runs from the project root, its exit code is reported, and a failing step is reported without undoing the generated files. Do not run steps the user declined in the review.
+
 ## Step 3b: Generate permissions
 
 Generate `.claude/settings.local.json` with pre-approved permissions for commands the agents run repeatedly. Without this, every `ddev composer check-cs` or `ddev craft up` triggers a permission prompt, breaking the autonomous flow.

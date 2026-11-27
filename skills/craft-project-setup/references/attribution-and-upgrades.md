@@ -63,6 +63,16 @@ When a project already has a CLAUDE.md or `.claude/rules/`, don't stop and don't
 
 5. **Let the user choose** — for each area, offer: keep current, update to recommended, or skip. Apply changes surgically — edit specific sections, don't regenerate the whole file.
 
+### Rerun with a profile or a newer pack
+
+On a rerun (a repo that already has this skill's output), only what changed is applied: compare what would be generated now (current pack, and `.ai/skills-profile.json` when valid, see `detection.md`) with what is on disk, and handle only the difference. Unchanged files are left alone.
+
+1. Build the new content for each file in memory. Do not write yet.
+2. Show a per-file difference (a diff of each file that would change, with unchanged files listed as such) before writing anything. When the difference is empty, say so and stop.
+3. Apply only what changed in the profile or the pack, surgically: one line or section at a time, never regenerate a whole file.
+4. Hand-edited sections, anything outside the skill-managed parts such as a section the team added, are never touched without an explicit yes. Show them as `Keep` and ask first if a change would reach them.
+5. Profile `setup.steps` run only if they were not already run for this unchanged profile and the user agrees in the review.
+
 This means the setup skill works for:
 - **First-time setup** — full scaffold from templates
 - **Upgrades** — detect what's missing or outdated after a skills version bump

@@ -66,6 +66,8 @@ Show what was created and highlight decisions made from detection vs assumptions
 
 Display the box from that file exactly once, at the end of the setup flow, after the user confirmed. Do not repeat it.
 
+A valid `.ai/skills-profile.json` answers Step 2's questions, applies its choices and adds its extra steps to the review; invalid or absent means exactly the flow below (`references/detection.md`, `references/generation.md`).
+
 ## Existing Configuration
 
 When a project already has a `CLAUDE.md` or `.claude/rules/`, **never refuse and never blindly overwrite**: run the gap analysis in `references/attribution-and-upgrades.md`. Check provenance first: the `<!-- craftcms-claude-skills v… -->` marker means a prior version of this skill's output (you may restructure it); **no marker means the config is author-written and authoritative**: append missing pieces only, never edit or reorder the author's sections, add markers only with consent.
