@@ -16,6 +16,7 @@
 #   tables            MCP tool catalogue and config defaults match the source
 #   facts             every behaviour case's facts hold (evals/facts_check.py)
 #   routing           lexical routing vs evals/routing-baseline.json (evals/lexical_route.py)
+#   handback          the hand-back checker (bin/handback_check.py) with must-fail fixtures
 #   profile, neutral  profile schema checker and the neutral-wording check, with must-fail fixtures
 #   release-evals     the release-time runner stops at a usage limit (stub claude, no model)
 # Each check that reads a fixture must also FAIL on its bad fixture; those
@@ -83,6 +84,13 @@ must_fail "agent gate self-test (xhigh reviewer)" python3 bin/agent_budget.py --
 must_fail "agent cap self-test (Agent tool, no cap line)" python3 bin/agent_budget.py --agents evals/fixtures/agents/no-cap
 must_fail "agent cap self-test (cap 6)" python3 bin/agent_budget.py --agents evals/fixtures/agents/cap-6
 must_fail "agent cap self-test (checker with Agent)" python3 bin/agent_budget.py --agents evals/fixtures/agents/checker-with-agent
+gate      "hand-back check (complete hand-back)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/complete.md
+must_fail "hand-back self-test (no working-tree lock line)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/missing-lock-line.md
+must_fail "hand-back self-test (no Gate flow line)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/missing-gate-flow.md
+must_fail "hand-back self-test (no R5 line)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/missing-r-line.md
+must_fail "hand-back self-test (R2: DONE)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/bad-status.md
+must_fail "hand-back self-test (no Builder line)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/missing-builder.md
+must_fail "hand-back self-test (committed lock exit 1)" python3 bin/handback_check.py --brief evals/fixtures/handback/brief.md evals/fixtures/handback/lock-nonzero.md
 gate      "contents blocks (references > 30 KB)" python3 bin/contents.py --check
 gate      "symbols skills/"                python3 bin/craft_source.py verify
 must_fail "symbols self-test (craft\\services\\Mcp::getTools())" python3 bin/craft_source.py verify evals/fixtures/symbols/bad-symbol.md

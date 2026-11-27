@@ -392,7 +392,7 @@ Writes a slice's gate tests before the build, from the acceptance criteria alone
 1. **When.** The gate flow is used when `tests/Pest.php` exists, `phpunit.xml.dist` pins `CRAFT_DB_DATABASE`, and `CLAUDE.md` has no `Gate tests: builder-written` line. Otherwise the builder writes its own tests, red first, and the hand-back opens with `Gate flow: builder-written (<reason>)`.
 2. **Write and run red.** One test per acceptance criterion, under `tests/` only, each run red for a reason the missing feature explains (a bootstrap or syntax error does not count).
 3. **Commit.** Only the test files, as `test(gate): <slice id>`. The hand-back lists the commit, the files and each test's red reason.
-4. **Lock.** The builder never edits those files and pastes the exit codes of `git diff --quiet <gate commit> HEAD -- <gate files>` and `git diff --quiet -- <gate files>`. A gate test it disputes is reported, not changed. The reviewers flag any change to a gate file.
+4. **Lock.** The builder never edits those files and pastes the exit codes of `git diff --quiet <gate commit> HEAD -- <gate files>` and `git diff --quiet <gate commit> -- <gate files>` (working tree against the gate commit). A gate test it disputes is reported, not changed. The reviewers flag any change to a gate file.
 
 The lock is checked with git, not hooks: plugin subagents ignore the `hooks`, `mcpServers` and `permissionMode` frontmatter fields (https://code.claude.com/docs/en/sub-agents).
 
