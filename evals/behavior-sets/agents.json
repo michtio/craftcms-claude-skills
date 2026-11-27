@@ -401,6 +401,43 @@
           "skills-profile\\.json",
           "(?is)\\bonly\\b[^.]{0,160}skills-profile\\.json|skills-profile\\.json[^.]{0,160}\\bonly\\b|skills-profile\\.json[^.\\n]{0,120}\\bbuilders\\b"
         ]
+      },
+      {
+        "file": "skills/craft-gated-build/SKILL.md",
+        "contains": [
+          "git status --porcelain --untracked-files=all",
+          "(?is)git status --porcelain --untracked-files=all[^.]{0,240}(empty|clean)|(empty|clean)[^.]{0,240}git status --porcelain --untracked-files=all",
+          "(?i)right after every exit 0",
+          "(?i)before the hand-?back check",
+          "(?i)disqualif",
+          "(?is)in a fix round[^.]{0,300}exit 3[^.]{0,200}timeout[^.]{0,200}next builder",
+          "(?is)craft-feature-builder[^.]{0,300}hand-?back lines[^.]{0,200}\\bfile\\b",
+          "(?is)craft-feature-builder[\\s\\S]{0,600}handback_check\\.py[^.]{0,200}(file|hand-?back)",
+          "(?i)not run[`\"']* or [`\"']*skipped",
+          "(?im)^(?=.*1\\.30\\.0)(?=.*skip)(?=.*always).*$",
+          "(?i)only skill folders",
+          "(?is)(scripts|bin/)[^.]{0,200}(missing|absent|not found)[^.]{0,300}1\\.31\\.0",
+          "(?i)3 rounds per builder",
+          "(?is)git reset --hard[^.]{0,200}(whole|entire) (repo|repository)",
+          "(?is)git clean -fd[^.]{0,200}from the project root",
+          "(?is)tell the user[^.]{0,160}(not to edit|never edit|do not edit)|(do not|don't) edit[^.]{0,100}during the run"
+        ],
+        "not_contains": [
+          "(?i)Stop after 3 rounds[^\\n]*lock",
+          "(?i)3 rounds per builder[^\\n]*lock"
+        ]
+      },
+      {
+        "file": "docs/brief-format.md",
+        "contains": [
+          "Commit your work before writing the hand-back"
+        ]
+      },
+      {
+        "file": "agents/craft-feature-builder.md",
+        "contains": [
+          "(?is)(caller|brief|prompt)[^.]{0,100}gives?[^.]{0,60}gate commit[^.]{0,60}gate files[^.]{0,240}(skip|do not start|never start|no second)[^.]{0,100}gate writer"
+        ]
       }
     ]
   },
@@ -459,6 +496,43 @@
           "git diff --quiet <gate commit> -- <gate files>",
           "skills-profile\\.json",
           "(?is)\\bonly\\b[^.]{0,160}skills-profile\\.json|skills-profile\\.json[^.]{0,160}\\bonly\\b|skills-profile\\.json[^.\\n]{0,120}\\bbuilders\\b"
+        ]
+      },
+      {
+        "file": "skills/craft-gated-build/SKILL.md",
+        "contains": [
+          "git status --porcelain --untracked-files=all",
+          "(?is)git status --porcelain --untracked-files=all[^.]{0,240}(empty|clean)|(empty|clean)[^.]{0,240}git status --porcelain --untracked-files=all",
+          "(?i)right after every exit 0",
+          "(?i)before the hand-?back check",
+          "(?i)disqualif",
+          "(?is)in a fix round[^.]{0,300}exit 3[^.]{0,200}timeout[^.]{0,200}next builder",
+          "(?is)craft-feature-builder[^.]{0,300}hand-?back lines[^.]{0,200}\\bfile\\b",
+          "(?is)craft-feature-builder[\\s\\S]{0,600}handback_check\\.py[^.]{0,200}(file|hand-?back)",
+          "(?i)not run[`\"']* or [`\"']*skipped",
+          "(?im)^(?=.*1\\.30\\.0)(?=.*skip)(?=.*always).*$",
+          "(?i)only skill folders",
+          "(?is)(scripts|bin/)[^.]{0,200}(missing|absent|not found)[^.]{0,300}1\\.31\\.0",
+          "(?i)3 rounds per builder",
+          "(?is)git reset --hard[^.]{0,200}(whole|entire) (repo|repository)",
+          "(?is)git clean -fd[^.]{0,200}from the project root",
+          "(?is)tell the user[^.]{0,160}(not to edit|never edit|do not edit)|(do not|don't) edit[^.]{0,100}during the run"
+        ],
+        "not_contains": [
+          "(?i)Stop after 3 rounds[^\\n]*lock",
+          "(?i)3 rounds per builder[^\\n]*lock"
+        ]
+      },
+      {
+        "file": "docs/brief-format.md",
+        "contains": [
+          "Commit your work before writing the hand-back"
+        ]
+      },
+      {
+        "file": "agents/craft-feature-builder.md",
+        "contains": [
+          "(?is)(caller|brief|prompt)[^.]{0,100}gives?[^.]{0,60}gate commit[^.]{0,60}gate files[^.]{0,240}(skip|do not start|never start|no second)[^.]{0,100}gate writer"
         ]
       }
     ]

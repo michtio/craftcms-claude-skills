@@ -356,5 +356,98 @@ class Scenarios(unittest.TestCase):
         self.assertIn("2 scenario(s)", r.stdout)
 
 
+REVIEW_FILES = ("skills/craft-gated-build/SKILL.md", "docs/brief-format.md", "agents/craft-feature-builder.md")
+
+
+class ReviewFindings(unittest.TestCase):
+    """Facts and checks added after the S3 review (deterministic, no model)."""
+
+    def test_both_cases_pin_each_review_fact_and_the_files_hold_them(self):
+        for cid in ("gated-build-outside", "gated-build-fallback"):
+            by_file = {}
+            for f in cases()[cid]["facts"]:
+                by_file.setdefault(f["file"], []).append(f)
+            for rel in REVIEW_FILES:
+                self.assertIn(rel, by_file, f"{cid}: no facts on {rel}")
+            text = {rel: (REPO / rel).read_text(encoding="utf-8") for rel in REVIEW_FILES}
+            pinned = [(f["file"], pat, True) for fs in by_file.values() for f in fs
+                      for pat in f.get("contains", []) if f["file"] in REVIEW_FILES]
+            pinned += [(f["file"], pat, False) for fs in by_file.values() for f in fs
+                       for pat in f.get("not_contains", []) if f["file"] in REVIEW_FILES]
+            for rel, pat, want in pinned:
+                with self.subTest(case=cid, file=rel, pattern=pat[:60]):
+                    found = re.search(pat, text[rel], re.M) is not None
+                    self.assertEqual(found, want)
+
+    def test_review_facts_cover_each_finding(self):
+        joined = " ".join(p for f in cases()["gated-build-outside"]["facts"]
+                          for p in f.get("contains", []))
+        for needle in ("untracked-files=all", "right after every exit 0", "disqualif",
+                       "in a fix round", "only skill folders", "3 rounds per builder",
+                       "Commit your work before writing the hand-back", "whole|entire"):
+            self.assertIn(needle, joined)
+
+    def test_commit_before_handback_in_brief_format(self):
+        self.assertIn("Commit your work before writing the hand-back",
+                      (REPO / "docs/brief-format.md").read_text(encoding="utf-8"))
+
+    def test_when_to_use_excludes_project_setup(self):
+        head = skill_text().split("\n---", 1)[0]
+        m = re.search(r"(?m)^when_to_use:\s*(.*)$", head)
+        self.assertIsNotNone(m, "no when_to_use")
+        self.assertIn("Not for project setup", m.group(1))
+
+    def test_setup_scenario(self):
+        s = {x["id"]: x for x in json.loads(SCENARIOS.read_text(encoding="utf-8"))}["setup-with-profile-builders"]
+        self.assertEqual(s["expect_any"], ["craft-project-setup"])
+        self.assertEqual(s["expect_none"], ["craft-gated-build"])
+        self.assertTrue((REPO / s["cwd"] / ".ai/skills-profile.json").is_file())
+        self.assertRegex(s["prompt"].lower(), r"set up|setup")
+
+    def test_skill_count_is_not_stale(self):
+        for rel in ("skills/craft-project-setup/references/attribution-and-upgrades.md", "evals/route.py"):
+            with self.subTest(rel):
+                self.assertNotIn("15 skills", (REPO / rel).read_text(encoding="utf-8"))
+
+
+class RunBuilderKillsTheTree(unittest.TestCase):
+    def test_timeout_leaves_no_child_that_ignores_term(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pidfile = Path(tmp) / "child.pid"
+            script = Path(tmp) / "builder"
+            script.write_text(
+                "#!/bin/sh\n"
+                "sh -c \"trap '' TERM; exec sleep 300\" >/dev/null 2>&1 </dev/null &\n"
+                f"echo $! > {pidfile}\n"
+                "sleep 300\n")
+            script.chmod(0o755)
+            pid = None
+            try:
+                r = subprocess.run(
+                    ["python3", "bin/run_builder.py", "--cwd", tmp, "--timeout-minutes", "0.0333",
+                     "--command", str(script), str(Path(tmp) / "brief.md"), str(Path(tmp) / "hb.md")],
+                    cwd=REPO, capture_output=True, text=True, timeout=90)
+                self.assertEqual(r.returncode, 124, r.stdout + r.stderr)
+                self.assertIn("builder exit: timeout", r.stdout)
+                self.assertTrue(pidfile.is_file(), "the builder never started its child")
+                pid = int(pidfile.read_text().strip())
+                import time
+                gone = False
+                for _ in range(20):
+                    try:
+                        os.kill(pid, 0)
+                    except ProcessLookupError:
+                        gone = True
+                        break
+                    time.sleep(0.1)
+                self.assertTrue(gone, f"child {pid} (ignores SIGTERM) survived the runner")
+            finally:
+                if pid:
+                    try:
+                        os.kill(pid, 9)
+                    except OSError:
+                        pass
+
+
 if __name__ == "__main__":
     unittest.main()
