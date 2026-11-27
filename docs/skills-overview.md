@@ -1,6 +1,6 @@
 # Skills Overview
 
-15 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), plugin release mechanics, Craft's MCP and OAuth servers, and managed hosting (Craft Cloud, Servd and fortrabbit). Reference files spread across each skill's `references/` directory.
+16 skills covering plugin development (extending Craft), site development (content modeling, Twig templates, front-end architecture), plugin references (a name-routed index of third-party plugin guidance), plugin release mechanics, gated builds with outside builders, Craft's MCP and OAuth servers, and managed hosting (Craft Cloud, Servd and fortrabbit). Reference files spread across each skill's `references/` directory.
 
 ## How Skills Load
 
@@ -269,6 +269,22 @@ Craft 5.12's MCP servers, OAuth authorization server and personal access tokens.
 
 ---
 
+## craft-gated-build
+
+**Track:** Plugin Development (build flow)
+**Reference files:** none (the protocol lives in `docs/outside-builders.md` and `docs/brief-format.md`)
+**SKILL.md:** 173 lines
+
+Runs one approved slice through the outside builders a project's `.ai/skills-profile.json` names (a local AI, a script), in profile order, while keeping the 1.31.0 gates. `craft-gate-writer` commits the locked gate tests first; each builder gets a brief file and writes a hand-back that `bin/handback_check.py` checks; the main session reruns the gate and both lock checks and starts `craft-review-checker`; fix rounds stop after 3. The tree is reset before each builder. A builder that exits 3 (unavailable), fails or times out is skipped and named in the report, and `craft-feature-builder` builds from the same brief when every outside builder fails.
+
+**When it triggers:** Only when `.ai/skills-profile.json` names builders: "build this slice with the outside builders in our profile", "the local AI builder's hand-back failed the check", "the first builder exited 3".
+
+**Companion skills:** `craftcms` and `craft-pest` (through the agents it starts).
+
+**Boundary:** Does NOT trigger for a plain build request without a profile naming builders: `craft-feature-builder` handles those exactly as in 1.31.0. Project setup and the profile's setup answers belong to `craft-project-setup`.
+
+---
+
 ## Skill Boundaries at a Glance
 
 Understanding which skill handles what prevents misfires and gets you better results.
@@ -288,6 +304,7 @@ Understanding which skill handles what prevents misfires and gets you better res
 | "Plan a multi-site content model" | `craft-content-modeling` |
 | "Add drag-to-reorder to my settings page" | `craft-garnish` |
 | "Connect Claude Code to my Craft site over MCP" | `craft-mcp` |
+| "Build this slice with the outside builders in our profile" | `craft-gated-build` |
 | "Set up Pest tests for my plugin" | `craft-pest` |
 | "My tests are writing to the dev database" | `craft-pest` (isolation.md) |
 | "Deploy Craft to production" | `craftcms` (deployment.md) |

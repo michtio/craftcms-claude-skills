@@ -2,7 +2,7 @@
 
 A project can carry one profile file that answers the setup questions in advance and names the outside builders the gated-build flow may use. The file is optional. Without it, nothing in the pack changes.
 
-Status: the profile format and its checker ship now. The gated build (outside builders and the gate flow) and project setup (the answers, choices and extra steps) read the profile once those features ship. Until then the file is documented and validated only.
+Status: the profile format and its checker ship now. The gated build reads `builders` and `gate_tests` (the `craft-gated-build` skill). Project setup reads the answers, choices and extra steps once that feature ships.
 
 ## Location
 

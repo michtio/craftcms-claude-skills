@@ -1,0 +1,62 @@
+[
+  {
+    "query": "our .ai/skills-profile.json names two builders, a local AI script and a fallback script. build slice S2 of the approved plan with them, gate tests locked first",
+    "should_trigger": true
+  },
+  {
+    "query": "run slice S1 of specs/2026-11-20-invoices/plan.md through the outside builders in the profile instead of the pack's own builder. keep the gate writer, lock check and checker",
+    "should_trigger": true
+  },
+  {
+    "query": "the first builder in skills-profile.json exited with code 3. does the gated build move on to the next builder or stop?",
+    "should_trigger": true
+  },
+  {
+    "query": "my local AI builder wrote its hand-back file but handback_check.py says the lock check line is missing. what happens to the slice now?",
+    "should_trigger": true
+  },
+  {
+    "query": "we added a builders list to the project profile with a command and timeout_minutes for each. how does the main session hand the brief file to the outside builder and read its hand-back?",
+    "should_trigger": true
+  },
+  {
+    "query": "our outside builder keeps timing out after 45 minutes on this slice. the profile has timeout_minutes 45. what does the build do then, fall back to craft-feature-builder?",
+    "should_trigger": true
+  },
+  {
+    "query": "use the outside builders from .ai/skills-profile.json for this approved slice, and if every one of them fails, let craft-feature-builder finish it from the same brief",
+    "should_trigger": true
+  },
+  {
+    "query": "the outside builder left half-done files behind and failed. make sure the tree is reset before the next builder in the profile takes the slice",
+    "should_trigger": true
+  },
+  {
+    "query": "write the brief file for slice S3 and run the builder command from our skills-profile.json on it, then check the hand-back and run the checker on the diff",
+    "should_trigger": true
+  },
+  {
+    "query": "build a webhook service for my craft plugin that posts order data to an external URL when an order completes, with a queue job and retries",
+    "should_trigger": false
+  },
+  {
+    "query": "implement slice S1 of our approved plan for the plugin: a settings model, a migration for the subscriptions table and a CP screen. use the feature builder with locked gate tests",
+    "should_trigger": false
+  },
+  {
+    "query": "write Pest gate tests for these acceptance criteria before anyone builds the slice, red against the test database",
+    "should_trigger": false
+  },
+  {
+    "query": "set up Claude for this Craft project and take the hosting and gate-tests answers from our .ai/skills-profile.json instead of asking",
+    "should_trigger": false
+  },
+  {
+    "query": "add a console command to my module that lists every user who has not logged in for 90 days",
+    "should_trigger": false
+  },
+  {
+    "query": "review this diff of my plugin's controller for security issues before I merge it",
+    "should_trigger": false
+  }
+]

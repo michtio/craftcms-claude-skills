@@ -1,0 +1,8 @@
+{
+  "name": "acme/craft-hello",
+  "type": "craft-plugin",
+  "require": {"php": "^8.2", "craftcms/cms": "^5.12.0"},
+  "require-dev": {"pestphp/pest": "^3.0", "markhuot/craft-pest-core": "^3.0"},
+  "autoload": {"psr-4": {"acme\\hello\\": "src/"}},
+  "extra": {"handle": "hello", "name": "Hello", "class": "acme\\hello\\Plugin"}
+}

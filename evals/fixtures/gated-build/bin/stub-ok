@@ -1,0 +1,89 @@
+#!/bin/sh
+# Stub outside builder: makes the one small change slice S1 needs and writes a
+# valid hand-back (docs/brief-format.md). It never touches gate files.
+# Call form: stub-ok <brief-file> <handback-file>
+brief=$1
+handback=$2
+[ -r "$brief" ] && [ -n "$handback" ] || { echo "usage: stub-ok <brief-file> <handback-file>" >&2; exit 2; }
+
+field() {
+    sed -n "s/^$1:[[:space:]]*//p" "$brief" | head -n 1 | tr -d '`' | sed 's/[[:space:]]*$//'
+}
+
+root=$(field 'Project root')
+gate=$(field 'Gate commit')
+files=$(field 'Gate files')
+pest=$(field 'Pest command')
+[ -n "$root" ] && cd "$root" || { echo "stub-ok: bad Project root" >&2; exit 2; }
+
+# The change: the slice's one service.
+mkdir -p src/services
+cat > src/services/GreetingService.php <<'PHP'
+<?php
+
+namespace acme\hello\services;
+
+use yii\base\Component;
+
+/**
+ * Builds greetings.
+ *
+ * greet('Ada') returns 'Hello, Ada!' and greet('') returns 'Hello, world!'.
+ *
+ * @author Acme
+ * @since 1.0.0
+ */
+class GreetingService extends Component
+{
+    // Public Methods
+    // =========================================================================
+
+    /**
+     * Returns a greeting for a name, or for the world when the name is empty.
+     *
+     * @param string $name
+     * @return string
+     * @author Acme
+     */
+    public function greet(string $name): string
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return 'Hello, world!';
+        }
+
+        return 'Hello, ' . $name . '!';
+    }
+}
+PHP
+git add src/services/GreetingService.php
+git -c user.name=stub-ok -c user.email=stub-ok@example.com commit -q -m "feat(S1): greeting service (stub-ok)"
+
+# Run the gate as the brief says; fall back to the project's own runner.
+status=FAIL
+if [ -n "$pest" ] && sh -c "$pest" >/dev/null 2>&1; then
+    status=PASS
+elif [ -x vendor/bin/pest ] && vendor/bin/pest >/dev/null 2>&1; then
+    status=PASS
+fi
+
+{
+    if [ -n "$gate" ] && [ "$gate" != none ]; then
+        # shellcheck disable=SC2086
+        git diff --quiet "$gate" HEAD -- $files
+        committed=$?
+        # shellcheck disable=SC2086
+        git diff --quiet "$gate" -- $files
+        tree=$?
+        echo "Gate flow: locked ($gate)"
+        echo "Lock check (committed): exit $committed"
+        echo "Lock check (working tree): exit $tree"
+    else
+        echo "Gate flow: builder-written (stub builder, no gate commit)"
+    fi
+    for n in $(sed -n 's/^## R\([0-9][0-9]*\).*/\1/p' "$brief"); do
+        echo "R$n: $status"
+    done
+    echo "Builder: stub-ok"
+} > "$handback"
+exit 0

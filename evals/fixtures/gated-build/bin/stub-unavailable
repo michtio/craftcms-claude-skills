@@ -1,0 +1,4 @@
+#!/bin/sh
+# Stub outside builder: not available. Exit 3 (unavailable), writes nothing.
+# Call form: stub-unavailable <brief-file> <handback-file>
+exit 3

@@ -24,7 +24,7 @@
   "top": "servd"
  },
  "craft-cloud\tI want to add a GitHub Actions workflow that runs PHPStan and Pest on every pull request for our plugin": {
-  "rank": 6,
+  "rank": 7,
   "top": "ddev"
  },
  "craft-cloud\tI'm making our plugin Cloud-compatible — what do I need to check for the ephemeral filesystem?": {
@@ -84,7 +84,7 @@
   "top": "craft-plugins"
  },
  "craft-content-modeling\tHow do I configure the Vite dev server to work with DDEV and hot module replacement? I keep getting connection refused errors": {
-  "rank": 12,
+  "rank": 13,
   "top": "ddev"
  },
  "craft-content-modeling\tI need to build a Twig component for rendering cards with different layouts — image on top, horizontal, and text-only. Using atomic design pattern with extends/block": {
@@ -105,7 +105,7 @@
  },
  "craft-content-modeling\tI'm about to run ddev craft project-config/write and commit config/project. Anything I should check first?": {
   "rank": 4,
-  "top": "craft-plugin-release"
+  "top": "craft-project-setup"
  },
  "craft-content-modeling\tI'm trying to set up eager loading for a listing page that shows entries with their hero image, category, and author. I keep getting N+1 queries even though I'm using .with(). The template loops through entries and accesses entry.heroImage.one(), entry.topics.all(), and entry.author": {
   "rank": 1,
@@ -267,6 +267,66 @@
   "rank": 1,
   "top": "craft-garnish"
  },
+ "craft-gated-build\tadd a console command to my module that lists every user who has not logged in for 90 days": {
+  "rank": 2,
+  "top": "ddev"
+ },
+ "craft-gated-build\tbuild a webhook service for my craft plugin that posts order data to an external URL when an order completes, with a queue job and retries": {
+  "rank": 10,
+  "top": "craftcms"
+ },
+ "craft-gated-build\timplement slice S1 of our approved plan for the plugin: a settings model, a migration for the subscriptions table and a CP screen. use the feature builder with locked gate tests": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\tmy local AI builder wrote its hand-back file but handback_check.py says the lock check line is missing. what happens to the slice now?": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\tour .ai/skills-profile.json names two builders, a local AI script and a fallback script. build slice S2 of the approved plan with them, gate tests locked first": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\tour outside builder keeps timing out after 45 minutes on this slice. the profile has timeout_minutes 45. what does the build do then, fall back to craft-feature-builder?": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\treview this diff of my plugin's controller for security issues before I merge it": {
+  "rank": 3,
+  "top": "craftcms"
+ },
+ "craft-gated-build\trun slice S1 of specs/2026-11-20-invoices/plan.md through the outside builders in the profile instead of the pack's own builder. keep the gate writer, lock check and checker": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\tset up Claude for this Craft project and take the hosting and gate-tests answers from our .ai/skills-profile.json instead of asking": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\tthe first builder in skills-profile.json exited with code 3. does the gated build move on to the next builder or stop?": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\tthe outside builder left half-done files behind and failed. make sure the tree is reset before the next builder in the profile takes the slice": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\tuse the outside builders from .ai/skills-profile.json for this approved slice, and if every one of them fails, let craft-feature-builder finish it from the same brief": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\twe added a builders list to the project profile with a command and timeout_minutes for each. how does the main session hand the brief file to the outside builder and read its hand-back?": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
+ "craft-gated-build\twrite Pest gate tests for these acceptance criteria before anyone builds the slice, red against the test database": {
+  "rank": 2,
+  "top": "craft-pest"
+ },
+ "craft-gated-build\twrite the brief file for slice S3 and run the builder command from our skills-profile.json on it, then check the hand-back and run the checker on the diff": {
+  "rank": 1,
+  "top": "craft-gated-build"
+ },
  "craft-mcp\tAdd 'Sign in with Google' (OIDC) to the front-end login of our Craft site": {
   "rank": 2,
   "top": "craft-site"
@@ -356,7 +416,7 @@
   "top": "craft-content-modeling"
  },
  "craft-pest\tEntry::find()->title(['like', 'draft-%'])->all() returns an empty array every time, but I can see entries with those titles in the CP. craft 5, no exception thrown": {
-  "rank": 8,
+  "rank": 9,
   "top": "craft-garnish"
  },
  "craft-pest\tI have a test that grants a section-scoped permission to a user group and asserts the user can view entries. it passes when I run it alone with --filter but fails when the whole suite runs. the permission just isn't there after saveGroupPermissions. any idea?": {
@@ -368,7 +428,7 @@
   "top": "craft-plugins"
  },
  "craft-pest\tI need to find all entries whose slug starts with a given prefix in a craft 5 maintenance command. what's the right query syntax": {
-  "rank": 6,
+  "rank": 5,
   "top": "ddev"
  },
  "craft-pest\tI need to write a GitHub Actions workflow that runs PHPStan and Pest tests on every pull request": {
@@ -432,7 +492,7 @@
   "top": "ddev"
  },
  "craft-pest\tour importer deletes a site when a market is decommissioned. after deleteSite() runs, getSectionByHandle still comes back with siteSettings pointing at the site I just removed, and saving a category group throws 'missing site settings'": {
-  "rank": 11,
+  "rank": 12,
   "top": "craftcms"
  },
  "craft-pest\tour pest suite has an afterEach that sweeps up fixture entries by title prefix and deletes them, but the shared test install has hundreds of leftover 'test-' entries so clearly it never matched anything. the suite is green": {
@@ -456,7 +516,7 @@
   "top": "craft-pest"
  },
  "craft-pest\tphpstan is throwing 'Call to an undefined method yii\\console\\Application::getConfig()' all over our plugin src. level 5. what's the correct fix, I don't want to litter the code with ignore comments": {
-  "rank": 14,
+  "rank": 15,
   "top": "craft-php-guidelines"
  },
  "craft-pest\treviewing a PR for one of our craft plugins. code-analysis.yaml runs phpstan and fix-cs, there are 74 tests in tests/ but I don't see them running anywhere in the workflow. what should this look like": {
@@ -496,7 +556,7 @@
   "top": "craftcms"
  },
  "craft-pest\twriting a console command for our plugin that provisions a new site plus its sections from a config file. after it creates the site, entry queries in the same command are returning entries from every site, not the one I asked for": {
-  "rank": 13,
+  "rank": 14,
   "top": "craftcms"
  },
  "craft-pest\twrote a fixture with a raw insert using NOW() for dateExpired and my 'rejects expired tokens' test says the token is still valid. the row is definitely in the past?": {
@@ -504,7 +564,7 @@
   "top": "craft-pest"
  },
  "craft-php-guidelines\tCan you write a Python script that processes our product images, resizes them to 3 sizes, and converts to WebP format?": {
-  "rank": 10,
+  "rank": 11,
   "top": "craft-site"
  },
  "craft-php-guidelines\tHelp me plan the content model for a recipe website — sections for recipes, ingredients, and cuisines with proper relations between them": {
@@ -544,7 +604,7 @@
   "top": "craft-php-guidelines"
  },
  "craft-php-guidelines\tOur Craft site is slow — pages take 3+ seconds to load. How do I set up Blitz caching with Cloudflare purging?": {
-  "rank": 10,
+  "rank": 11,
   "top": "craft-project-setup"
  },
  "craft-php-guidelines\tOur ECS is failing on a bunch of files after I refactored the plugin. I'm getting errors about trailing commas, constant visibility, and nullable notation. How do I configure it correctly for Craft 5?": {
@@ -592,7 +652,7 @@
   "top": "craft-plugin-release"
  },
  "craft-plugin-release\tI need to write a migration that adds a new column to our plugin's items table": {
-  "rank": 3,
+  "rank": 4,
   "top": "craft-php-guidelines"
  },
  "craft-plugin-release\tOur create-release.yml workflow failed with a 422 already_exists when the Plugin Store tried to create the GitHub release": {
@@ -600,7 +660,7 @@
   "top": "craft-plugin-release"
  },
  "craft-plugin-release\tOur plugin's Pest suite fails in CI but works locally — what's wrong with our database isolation?": {
-  "rank": 4,
+  "rank": 5,
   "top": "craft-pest"
  },
  "craft-plugin-release\tPackagist isn't showing our new 2.3.0 tag even though we pushed it and the webhook returned 202": {
@@ -632,7 +692,7 @@
   "top": "craft-plugin-release"
  },
  "craft-plugins\tBuild a card component with atomic design and Tailwind utility classes": {
-  "rank": 6,
+  "rank": 7,
   "top": "craft-site"
  },
  "craft-plugins\tHelp me plan the content model for sections, entry types, and Matrix fields for a new site": {
@@ -672,7 +732,7 @@
   "top": "craftcms"
  },
  "craft-plugins\tI want to deploy our Craft install to Craft Cloud — what does craft-cloud.yaml need?": {
-  "rank": 12,
+  "rank": 13,
   "top": "craft-cloud"
  },
  "craft-plugins\tI'm importing a CSV of 10,000 products with Feed Me — how do I map a relation field during import?": {
@@ -688,7 +748,7 @@
   "top": "craft-plugins"
  },
  "craft-plugins\tWhat's the PHPDoc convention for @throws chains in a service method?": {
-  "rank": 14,
+  "rank": 15,
   "top": "craft-php-guidelines"
  },
  "craft-plugins\tWhat's the right Blitz refresh mode for a site with Sprig components that shouldn't be cached?": {
@@ -716,7 +776,7 @@
   "top": "craft-project-setup"
  },
  "craft-project-setup\tI need to build a custom element type for our Craft plugin that tracks customer orders with status workflows": {
-  "rank": 10,
+  "rank": 11,
   "top": "craft-plugin-release"
  },
  "craft-project-setup\tI need to write PHPDocs for all the classes in my plugin. What are the conventions for @author, @since, and section headers?": {
@@ -736,7 +796,7 @@
   "top": "craft-content-modeling"
  },
  "craft-project-setup\tOur Craft site is slow — LCP is over 4 seconds. Help me diagnose and fix the performance issues": {
-  "rank": 9,
+  "rank": 10,
   "top": "craft-plugins"
  },
  "craft-project-setup\tWe have a Craft site project with custom modules alongside it. Help me bootstrap the Claude configuration so the AI knows about our coding standards and project structure": {
@@ -768,7 +828,7 @@
   "top": "craft-site"
  },
  "craft-site\tHow do I write a Craft migration that adds a new column to our custom element's database table and updates all existing records?": {
-  "rank": 15,
+  "rank": 16,
   "top": "craftcms"
  },
  "craft-site\tHow should I handle responsive images in our Craft site? We have hero banners (full-width), content images (max 800px), and card thumbnails (fixed 400x300). I want srcset with WebP fallbacks and lazy loading": {
@@ -784,7 +844,7 @@
   "top": "craft-site"
  },
  "craft-site\tI need to build a custom element type for tracking support tickets in our Craft plugin — with statuses, custom fields, and a CP index page with filtering": {
-  "rank": 8,
+  "rank": 9,
   "top": "craft-garnish"
  },
  "craft-site\tI want to add Blitz static caching to our Craft site but we have a few pages with Sprig components (live search, filtering). How do I make the cached pages work with the dynamic parts?": {
@@ -816,7 +876,7 @@
   "top": "craftcms"
  },
  "craft-site\tWe're getting PHPStan errors in our plugin's service class — something about MemoizableArray return types not matching the interface. Level 8 analysis": {
-  "rank": 14,
+  "rank": 15,
   "top": "craft-php-guidelines"
  },
  "craft-twig-guidelines\tCan I use {% macro %} for reusable UI components in Craft? I have a button that appears in 5 different templates and I want to avoid duplication": {
@@ -824,7 +884,7 @@
   "top": "craft-twig-guidelines"
  },
  "craft-twig-guidelines\tCan you help me configure DDEV with a custom Node version and expose the Vite dev server port for HMR?": {
-  "rank": 15,
+  "rank": 16,
   "top": "ddev"
  },
  "craft-twig-guidelines\tHelp me plan the template architecture for our new Craft site — we're using atomic design with atoms, molecules, and organisms in a specific directory structure": {
@@ -848,7 +908,7 @@
   "top": "craft-twig-guidelines"
  },
  "craft-twig-guidelines\tI need to build a custom element type for our Craft plugin that tracks inventory items with quantities and locations": {
-  "rank": 13,
+  "rank": 14,
   "top": "craft-php-guidelines"
  },
  "craft-twig-guidelines\tI need whitespace control in my Twig templates — the output has tons of blank lines between elements. What's the best approach? I've seen people use minify tags": {
@@ -856,7 +916,7 @@
   "top": "craft-twig-guidelines"
  },
  "craft-twig-guidelines\tI'm getting PHPStan errors in my plugin's service class about nullable return types. How do I fix the type annotations?": {
-  "rank": 4,
+  "rank": 5,
   "top": "craft-php-guidelines"
  },
  "craft-twig-guidelines\tI'm using the ??? operator in my templates but getting an error. Do I need a plugin for that? I have SEOmatic installed": {
@@ -896,7 +956,7 @@
   "top": "craft-site"
  },
  "craftcms\tHow do I configure the Vite buildchain with Tailwind v4 in my Craft project? I keep getting HMR errors in the DDEV container": {
-  "rank": 11,
+  "rank": 12,
   "top": "ddev"
  },
  "craftcms\tHow do I register a custom dashboard widget for our Craft plugin? I want it to show a chart of recent submissions from our custom element type": {
@@ -928,12 +988,12 @@
   "top": "craftcms"
  },
  "craftcms\tI'm trying to optimize my Craft site's image loading — should I use ImageOptimize or Imager-X? We have about 2000 product images that need srcset with WebP": {
-  "rank": 12,
+  "rank": 11,
   "top": "craft-plugins"
  },
  "craftcms\tMy local Craft DB is a restore of last night's production dump and I edited a field in the CP. Is it safe to run craft project-config/write before I commit, or will it overwrite something?": {
   "rank": 3,
-  "top": "ddev"
+  "top": "craft-content-modeling"
  },
  "craftcms\tOur site module adds a required rule to one entry type with Event::on(Entry::class, Element::EVENT_DEFINE_RULES), and since then adding any nested entry in the CP fails with \"Either `sectionId` or `fieldId` + `ownerId` must be set on the entry.\" How should the handler be written?": {
   "rank": 1,
@@ -948,7 +1008,7 @@
   "top": "craft-php-guidelines"
  },
  "craftcms\tWe need to add SEOmatic meta tags to our blog section and configure the sitemap to exclude draft entries. Also want to add JSON-LD for articles": {
-  "rank": 7,
+  "rank": 6,
   "top": "craft-plugins"
  },
  "craftcms\tWe're getting a weird error in our plugin's afterSave handler — the nested entries aren't propagating to the other site and I'm not sure if I need to use EVENT_AFTER_PROPAGATE or EVENT_AFTER_SAVE for cross-site updates": {
@@ -968,7 +1028,7 @@
   "top": "craftcms"
  },
  "ddev\tCan you help me set up eager loading for a listing page that queries blog posts with their featured images and categories?": {
-  "rank": 15,
+  "rank": 16,
   "top": "craft-content-modeling"
  },
  "ddev\tHelp me configure SEOmatic meta tags for our blog section with custom OpenGraph images": {
@@ -1000,7 +1060,7 @@
   "top": "ddev"
  },
  "ddev\tI need to build a card component with 3 visual variants using Twig extends/block pattern": {
-  "rank": 15,
+  "rank": 16,
   "top": "craft-site"
  },
  "ddev\tI need to enable Xdebug for debugging a tricky issue in my Craft plugin. How do I turn it on in DDEV and connect it to VS Code?": {
@@ -1032,7 +1092,7 @@
   "top": "craft-fortrabbit"
  },
  "servd\tHelp me build a multi-brand Tailwind token system for our front-end components": {
-  "rank": 12,
+  "rank": 13,
   "top": "craft-site"
  },
  "servd\tHow do I configure native Imager-X transforms with Power Pack markup for a self-hosted site?": {
@@ -1092,11 +1152,11 @@
   "top": "servd"
  },
  "servd\tWhat's the right PHPDoc style for a new queue job class in our plugin?": {
-  "rank": 11,
+  "rank": 10,
   "top": "craft-php-guidelines"
  },
  "servd\tWrite a migration that adds a new column and backfills existing rows": {
-  "rank": 15,
+  "rank": 16,
   "top": "craftcms"
  }
 }
