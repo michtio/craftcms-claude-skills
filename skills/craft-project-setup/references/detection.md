@@ -84,6 +84,23 @@ A monorepo holds **more than one independently-typed Craft package** under one r
 
 When unsure between hybrid and monorepo: if the extra code lives **inside** one Craft install (`modules/` under the site root, sharing its `composer.json`), it's hybrid. If each package has **its own** `composer.json` and could be installed independently, it's a monorepo.
 
+### Skills profile (when present)
+
+Read `.ai/skills-profile.json` at the project root when it exists. Validate it before using any value: run `python3 ${CLAUDE_SKILL_DIR}/../../bin/profile_check.py .ai/skills-profile.json` (the pack's `bin/` folder, two levels above this skill). Exit 0 means valid.
+
+- **Invalid** (exit 1 or 2): report the checker's messages, then ignore the whole profile. Never half-apply a profile: it is all used or none of it is.
+- **Bin scripts missing** (the file at that path does not exist) **or python3 missing**: say so in one line and proceed as with no profile.
+- **No profile** (file absent): behavior is exactly as before, unchanged: every question in Step 2 is asked as written and no extra steps run.
+
+A valid profile answers questions. In Step 2, do not ask what the profile already answers; use its value and mention in the review that it came from the profile:
+
+- `gate_tests` (`locked` or `builder-written`): the gate-tests question. The value decides the `Gate tests:` line (see `generation.md`).
+- `craft.answers.hosting`: the hosting target question.
+- `craft.answers.passwordless`: the passwordless login question.
+- `craft.answers.dev_root`: the dev root question (`devRootPath`).
+
+Questions the profile does not answer are asked as usual. `craft.choices` and `setup.steps` are applied in Step 3 and Step 4 (`generation.md`).
+
 ## Step 2: Ask clarifying questions
 
 Confirm the detected type and gather project-specific details. Keep it short — 3-5 questions max.

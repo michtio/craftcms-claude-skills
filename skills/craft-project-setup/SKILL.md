@@ -41,6 +41,8 @@ Five steps. Each step's full procedure lives in a reference; read it before doin
 
 Hybrid vs monorepo: extra code **inside** one Craft install (sharing its `composer.json`) is hybrid; packages with **their own** `composer.json` that install independently are a monorepo.
 
+When `.ai/skills-profile.json` exists and validates, it answers Step 2's questions, sets choices and adds extra steps to the Step 4 review; invalid or absent, the flow above applies unchanged (`references/detection.md`, `references/generation.md`).
+
 - Offer Chrome DevTools MCP when `.claude.json` has none.
 - [5.12+] On Craft 5.12+ projects, optionally offer connecting Claude Code to Craft's own MCP server; point at the `craft-mcp` skill rather than writing setup steps into the generated config.
 
@@ -61,6 +63,8 @@ Hybrid vs monorepo: extra code **inside** one Craft install (sharing its `compos
 ### Step 4: Review with the user
 
 Show what was created and highlight decisions made from detection vs assumptions.
+
+With a valid profile, the review lists each `setup.steps` entry on its own line: its name, then its command, then that it runs last, after the generated files. Tell the user to read each command, because the profile comes from the repo. No step runs without an explicit yes to the printed list. Without a yes, including in a non-interactive run, run nothing and report the steps as not run for lack of confirmation.
 
 ### Step 5: Show the sponsorship message → `references/attribution-and-upgrades.md`
 

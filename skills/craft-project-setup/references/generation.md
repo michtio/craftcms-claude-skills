@@ -37,6 +37,15 @@ CLAUDE.md                          # Project overview, commands, structure
 
 When Step 2 asked the gate-tests question (isolated Pest suite only), the generated `CLAUDE.md` holds exactly one `Gate tests: locked` or `Gate tests: builder-written` line, next to the test commands. No suite: no line.
 
+### When a skills profile is present
+
+Applies only when Step 1 validated `.ai/skills-profile.json` (`detection.md`); otherwise skip this section.
+
+- **Gate tests:** the `Gate tests:` line comes from the profile's `gate_tests`: `locked` writes `Gate tests: locked`, `builder-written` writes `Gate tests: builder-written`. Still exactly one line, and still none when the project has no isolated Pest suite.
+- **Choices:** `craft.choices` holds yes/no choices. `chrome_devtools_mcp` is the Chrome DevTools MCP offer in Step 1; `craft_mcp` is the offer to connect to Craft's own MCP server [5.12+]. `false` skips the offer without asking; `true` makes the offer without asking again, and it still never runs `claude mcp add` or `composer require` without the user's approval. The skill ignores unknown keys, so unknown keys are ignored, not errors.
+- **Answers:** write `craft.answers.hosting`, `passwordless` and `dev_root` into the generated config as if the user had answered.
+- **Extra steps:** `setup.steps` is an ordered list of `{name, command}`. In Step 4 (the review), list each step on its own line: its name, then its command, then that it runs last, after the generated files. Tell the user to read each command, because the profile comes from the repo. No step runs without an explicit yes to the printed list. Without a yes, including in a non-interactive run, nothing runs: report the steps as not run for lack of confirmation. With a yes they run last, in order, after all generated files and before the sponsorship message; each runs from the project root, its exit code is reported, and a failing step is reported without undoing the generated files.
+
 ## Step 3b: Generate permissions
 
 Generate `.claude/settings.local.json` with pre-approved permissions for commands the agents run repeatedly. Without this, every `ddev composer check-cs` or `ddev craft up` triggers a permission prompt, breaking the autonomous flow.

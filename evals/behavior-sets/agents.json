@@ -536,5 +536,218 @@
         ]
       }
     ]
+  },
+  {
+    "id": "setup-with-profile",
+    "note": "Spec 2026-11-27-extension-points AC5 (S4). The fixture is a plugin with an isolated Pest suite and a profile that answers gate_tests (builder-written, the opposite of the default), craft.answers.dev_root and the Chrome DevTools and Craft MCP choices, and adds one extra step, ./bin/team-step, which writes only .team-step-ran. Expected: the gate-tests and dev-root questions are not asked, CLAUDE.md gets exactly one Gate tests: builder-written line and the dev root, the review lists team-step before it runs, and it runs after the generated files (the marker records CLAUDE.md and the rules files already existed). One model run, no agents. Plugin projects skip the hosting and passwordless questions anyway; the facts pin that a profile answer skips them for sites too.",
+    "cwd": "evals/fixtures/setup-profile",
+    "copy_cwd": true,
+    "tools": "Skill,Read,Grep,Glob,Edit,Write,Bash",
+    "max_turns": 40,
+    "timeout": 1500,
+    "runs": 1,
+    "max_agents": 0,
+    "prompt": "Use the craft-project-setup skill to set up Claude Code for this Craft plugin. Run it non-interactively: answer only what the project does not already answer, accept the defaults for anything else, and for every question you would still ask, print one line `ASKED|<the question>` instead of waiting. Treat the review as confirmed: answer yes to running the profile's extra steps after reading their commands. Do not run `claude mcp add` or `composer require`. There is no DDEV project here. Do not stop to ask questions. When the run ends, run `grep -c 'Gate tests:' CLAUDE.md | sed 's/^/GATELINES|/'`, `grep -h 'Gate tests:' CLAUDE.md | sed 's/^/GATE|/'`, `grep -h 'devRootPath' CLAUDE.md | sed 's/^/DEVROOT|/'`, `cat .team-step-ran | sed 's/^/MARKER|/'` and `git status --short | sed 's/^/STATUS|/'` and paste the outputs, unprefixed lines included, in a code block after the final report. In the final report, include the review you showed before writing, with the profile's extra steps listed in it.",
+    "must_match": [
+      [
+        "GATELINES\\|1\\b"
+      ],
+      [
+        "GATE\\|[^\\n]*Gate tests: builder-written"
+      ],
+      [
+        "DEVROOT\\|[^\\n]*~/dev"
+      ],
+      [
+        "MARKER\\|team-step ran[^\\n]*CLAUDE\\.md present: yes[^\\n]*rules files: [1-9]"
+      ],
+      [
+        "STATUS\\|[^\\n]*\\.team-step-ran"
+      ],
+      [
+        "review[^`]{0,3000}team-step",
+        "team-step[^\\n]{0,200}(listed|in the review|runs? (last|after))"
+      ]
+    ],
+    "must_not_match": [
+      "ASKED\\|[^\\n]*(gate|lock|builder-written)",
+      "ASKED\\|[^\\n]*(dev(elopment)? root|devRootPath)",
+      "ASKED\\|[^\\n]*(chrome|mcp)",
+      "Should builds lock their gate tests",
+      "GATE\\|[^\\n]*Gate tests: locked",
+      "MARKER\\|[^\\n]*CLAUDE\\.md present: no"
+    ],
+    "facts": [
+      {
+        "file": "skills/craft-project-setup/references/detection.md",
+        "contains": [
+          "Gate tests: \\*\\*only when the project has an isolated Pest suite\\*\\*",
+          "with no suite, don't ask and write nothing",
+          "`Gate tests: locked` on yes, `Gate tests: builder-written` on no",
+          "(?is)## Step 1: Detect the project.*\\.ai/skills-profile\\.json.*## Step 2",
+          "bin/profile_check\\.py",
+          "\\$\\{CLAUDE_SKILL_DIR\\}/\\.\\./\\.\\./bin/",
+          "(?i)invalid[^\\n]{0,240}ignore|ignore[^\\n]{0,240}invalid",
+          "(?i)half-appl",
+          "(?i)(do not|don't|never|must not) ask[^\\n]{0,200}(profile|skills-profile)|(profile|skills-profile)[^\\n]{0,240}(do not|don't|never|must not) ask",
+          "gate_tests",
+          "craft\\.answers\\.hosting",
+          "craft\\.answers\\.passwordless",
+          "craft\\.answers\\.dev_root",
+          "(?i)(no|without|absent|missing)[^\\n]{0,40}profile[^\\n]{0,240}(unchanged|exactly as|as before|no change)"
+        ]
+      },
+      {
+        "file": "skills/craft-project-setup/references/generation.md",
+        "contains": [
+          "exactly one `Gate tests: locked` or `Gate tests: builder-written` line",
+          "(?is)Gate tests:[^\\n]{0,400}gate_tests|gate_tests[^\\n]{0,400}Gate tests:",
+          "setup\\.steps",
+          "(?is)setup\\.steps[^\\n]{0,400}review|review[^\\n]{0,400}setup\\.steps",
+          "(?is)setup\\.steps[^\\n]{0,400}\\blast\\b|\\blast\\b[^\\n]{0,400}setup\\.steps",
+          "(?i)explicit yes[^\\n]{0,300}(step|setup\\.steps)|(step|setup\\.steps)[^\\n]{0,300}explicit yes",
+          "(?i)non-interactive[^\\n]{0,300}(nothing runs|not run|no step runs)|(nothing runs|no step runs)[^\\n]{0,300}non-interactive",
+          "(?i)(not run|were not run|weren't run)[^\\n]{0,200}confirm",
+          "(?i)read each command",
+          "chrome_devtools_mcp",
+          "craft_mcp",
+          "(?i)unknown keys[^\\n]{0,80}ignored|ignores? unknown keys",
+          "(?i)claude mcp add[^\\n]{0,200}composer require[^\\n]{0,200}approval"
+        ]
+      },
+      {
+        "file": "skills/craft-project-setup/references/attribution-and-upgrades.md",
+        "contains": [
+          "(?i)re-?run",
+          "(?i)only (what|the) (has )?(changed|difference|change)",
+          "(?is)per-file[^\\n]{0,200}(difference|diff)|(difference|diff)[^\\n]{0,120}per file",
+          "(?i)hand-edited[^\\n]{0,300}(never|only)[^\\n]{0,240}(yes|ask|consent|confirm)|(never|only)[^\\n]{0,240}hand-edited[^\\n]{0,200}(yes|ask|consent|confirm)",
+          "skills-profile\\.json|\\bprofile\\b",
+          "(?i)steps?[^\\n]{0,200}asked again",
+          "(?i)default(ing|s)?[^\\n]{0,60}(not|no)[^\\n]{0,40}re-?run",
+          "(?i)(never|no|not)[^\\n]{0,80}already run|already run[^\\n]{0,80}guess"
+        ]
+      },
+      {
+        "file": "skills/craft-project-setup/SKILL.md",
+        "contains": [
+          "skills-profile\\.json",
+          "(?i)explicit yes[^\\n]{0,300}(step|setup\\.steps)|(step|setup\\.steps)[^\\n]{0,300}explicit yes",
+          "(?i)non-interactive[^\\n]{0,300}(nothing runs|not run|no step runs)|(nothing runs|no step runs)[^\\n]{0,300}non-interactive",
+          "(?i)(not run|were not run|weren't run)[^\\n]{0,200}confirm",
+          "(?i)read each command"
+        ],
+        "not_contains": [
+          "cannot wait for an answer"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "setup-rerun-update",
+    "note": "Spec 2026-11-27-extension-points AC6 (S4). The fixture is a configured plugin (CLAUDE.md with the skill marker and Gate tests: builder-written, a rules file, a hand-edited Team notes section) and a profile that changes one choice, gate_tests: locked. The pack and the version marker are treated as unchanged, so the profile is the only difference. Expected: the setup shows one difference, in CLAUDE.md, applies it, leaves the hand-edited section and every other file alone, and git shows exactly one changed file with one line replaced.",
+    "cwd": "evals/fixtures/setup-rerun",
+    "copy_cwd": true,
+    "tools": "Skill,Read,Grep,Glob,Edit,Write,Bash",
+    "max_turns": 40,
+    "timeout": 1500,
+    "runs": 1,
+    "max_agents": 0,
+    "prompt": "Use the craft-project-setup skill to rerun the setup on this already configured Craft plugin and bring it up to date with its .ai/skills-profile.json. The pack has not changed since the last run: leave the version markers exactly as they are and treat the profile as the only difference. Run it non-interactively: answer yes to applying a difference to a file the skill generated, answer no to touching anything a person edited by hand, and do not run `claude mcp add` or `composer require`. There is no DDEV project here. Do not stop to ask questions. Before writing, show the difference. In the final report, list every difference you showed as one line `SHOWN|<file>|<change>`. When the run ends, run `git diff --stat | sed 's/^/DIFFSTAT|/'`, `git diff -U0 | grep -E '^[+-]' | grep -vE '^(\\+\\+\\+|---) ' | wc -l | tr -d ' ' | sed 's/^/CHANGES|/'`, `git diff -U0 | grep -E '^[+-]' | grep -vE '^(\\+\\+\\+|---) ' | sed 's/^/CHANGE|/'`, `grep -c 'HAND-EDITED' CLAUDE.md | sed 's/^/HANDEDIT|/'` and `git status --short | sed 's/^/STATUS|/'` and paste the outputs, unprefixed lines included, in a code block after the final report.",
+    "must_match": [
+      [
+        "SHOWN\\|[^\\n]*CLAUDE\\.md[^\\n]*locked"
+      ],
+      [
+        "CHANGE\\|-[^\\n]*Gate tests: builder-written"
+      ],
+      [
+        "CHANGE\\|\\+[^\\n]*Gate tests: locked"
+      ],
+      [
+        "CHANGES\\|2\\b"
+      ],
+      [
+        "DIFFSTAT\\|[^\\n]*CLAUDE\\.md"
+      ],
+      [
+        "DIFFSTAT\\|[^\\n]*\\b1 file changed"
+      ],
+      [
+        "HANDEDIT\\|1\\b"
+      ]
+    ],
+    "must_not_match": [
+      "SHOWN\\|(?![^\\n]*CLAUDE\\.md)",
+      "DIFFSTAT\\|[^\\n]*\\b([2-9]|\\d\\d+) files changed",
+      "DIFFSTAT\\|[^\\n]*(testing\\.md|composer\\.json)",
+      "STATUS\\|\\s*\\?\\?",
+      "CHANGE\\|[+-][^\\n]*HAND-EDITED"
+    ],
+    "facts": [
+      {
+        "file": "skills/craft-project-setup/references/detection.md",
+        "contains": [
+          "Gate tests: \\*\\*only when the project has an isolated Pest suite\\*\\*",
+          "with no suite, don't ask and write nothing",
+          "`Gate tests: locked` on yes, `Gate tests: builder-written` on no",
+          "(?is)## Step 1: Detect the project.*\\.ai/skills-profile\\.json.*## Step 2",
+          "bin/profile_check\\.py",
+          "\\$\\{CLAUDE_SKILL_DIR\\}/\\.\\./\\.\\./bin/",
+          "(?i)invalid[^\\n]{0,240}ignore|ignore[^\\n]{0,240}invalid",
+          "(?i)half-appl",
+          "(?i)(do not|don't|never|must not) ask[^\\n]{0,200}(profile|skills-profile)|(profile|skills-profile)[^\\n]{0,240}(do not|don't|never|must not) ask",
+          "gate_tests",
+          "craft\\.answers\\.hosting",
+          "craft\\.answers\\.passwordless",
+          "craft\\.answers\\.dev_root",
+          "(?i)(no|without|absent|missing)[^\\n]{0,40}profile[^\\n]{0,240}(unchanged|exactly as|as before|no change)"
+        ]
+      },
+      {
+        "file": "skills/craft-project-setup/references/generation.md",
+        "contains": [
+          "exactly one `Gate tests: locked` or `Gate tests: builder-written` line",
+          "(?is)Gate tests:[^\\n]{0,400}gate_tests|gate_tests[^\\n]{0,400}Gate tests:",
+          "setup\\.steps",
+          "(?is)setup\\.steps[^\\n]{0,400}review|review[^\\n]{0,400}setup\\.steps",
+          "(?is)setup\\.steps[^\\n]{0,400}\\blast\\b|\\blast\\b[^\\n]{0,400}setup\\.steps",
+          "(?i)explicit yes[^\\n]{0,300}(step|setup\\.steps)|(step|setup\\.steps)[^\\n]{0,300}explicit yes",
+          "(?i)non-interactive[^\\n]{0,300}(nothing runs|not run|no step runs)|(nothing runs|no step runs)[^\\n]{0,300}non-interactive",
+          "(?i)(not run|were not run|weren't run)[^\\n]{0,200}confirm",
+          "(?i)read each command",
+          "chrome_devtools_mcp",
+          "craft_mcp",
+          "(?i)unknown keys[^\\n]{0,80}ignored|ignores? unknown keys",
+          "(?i)claude mcp add[^\\n]{0,200}composer require[^\\n]{0,200}approval"
+        ]
+      },
+      {
+        "file": "skills/craft-project-setup/references/attribution-and-upgrades.md",
+        "contains": [
+          "(?i)re-?run",
+          "(?i)only (what|the) (has )?(changed|difference|change)",
+          "(?is)per-file[^\\n]{0,200}(difference|diff)|(difference|diff)[^\\n]{0,120}per file",
+          "(?i)hand-edited[^\\n]{0,300}(never|only)[^\\n]{0,240}(yes|ask|consent|confirm)|(never|only)[^\\n]{0,240}hand-edited[^\\n]{0,200}(yes|ask|consent|confirm)",
+          "skills-profile\\.json|\\bprofile\\b",
+          "(?i)steps?[^\\n]{0,200}asked again",
+          "(?i)default(ing|s)?[^\\n]{0,60}(not|no)[^\\n]{0,40}re-?run",
+          "(?i)(never|no|not)[^\\n]{0,80}already run|already run[^\\n]{0,80}guess"
+        ]
+      },
+      {
+        "file": "skills/craft-project-setup/SKILL.md",
+        "contains": [
+          "skills-profile\\.json",
+          "(?i)explicit yes[^\\n]{0,300}(step|setup\\.steps)|(step|setup\\.steps)[^\\n]{0,300}explicit yes",
+          "(?i)non-interactive[^\\n]{0,300}(nothing runs|not run|no step runs)|(nothing runs|no step runs)[^\\n]{0,300}non-interactive",
+          "(?i)(not run|were not run|weren't run)[^\\n]{0,200}confirm",
+          "(?i)read each command"
+        ],
+        "not_contains": [
+          "cannot wait for an answer"
+        ]
+      }
+    ]
   }
 ]

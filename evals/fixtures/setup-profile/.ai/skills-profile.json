@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "gate_tests": "builder-written",
+  "setup": {
+    "steps": [
+      {"name": "team-step", "command": "./bin/team-step"}
+    ]
+  },
+  "craft": {
+    "answers": {"dev_root": "~/dev"},
+    "choices": {"chrome_devtools_mcp": false, "craft_mcp": false}
+  }
+}
