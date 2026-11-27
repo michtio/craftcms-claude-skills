@@ -97,9 +97,13 @@ must_fail "profile self-test (missing version)" python3 bin/profile_check.py eva
 must_fail "profile self-test (gate_tests enum)" python3 bin/profile_check.py evals/fixtures/profile/invalid-gate-tests-enum.json
 must_fail "profile self-test (builder without command)" python3 bin/profile_check.py evals/fixtures/profile/invalid-builder-no-command.json
 must_fail "profile self-test (negative timeout)" python3 bin/profile_check.py evals/fixtures/profile/invalid-negative-timeout.json
+must_fail "profile self-test (NaN timeout)" python3 bin/profile_check.py evals/fixtures/profile/invalid-timeout-nan.json
 must_fail "profile self-test (setup.steps not a list)" python3 bin/profile_check.py evals/fixtures/profile/invalid-setup-steps-not-list.json
-gate      "neutral wording (skills agents docs schema)" python3 bin/neutral_check.py skills agents docs schema
+gate      "neutral wording (pack files)" python3 bin/neutral_check.py skills agents docs schema README.md CHANGELOG.md .claude-plugin project-template reference hooks
 must_fail "neutral self-test (names a model as builder)" python3 bin/neutral_check.py evals/fixtures/neutral/names-a-model.md
+must_fail "neutral self-test (version suffix)" python3 bin/neutral_check.py evals/fixtures/neutral/names-with-version.md
+must_fail "neutral self-test (allowed phrase plus a builder)" python3 bin/neutral_check.py evals/fixtures/neutral/allowed-plus-builder.md
+must_fail "neutral self-test (directory with a .sh file)" python3 bin/neutral_check.py evals/fixtures/neutral/dir-with-sh
 gate      "neutral self-test (allowed mention)" python3 bin/neutral_check.py evals/fixtures/neutral/allowed-mention.md
 grep_ok   "release-evals self-test (stops at a usage limit, stub claude)" 'errors: 1 (1 usage limit).*model calls: 1$' \
           python3 evals/release_evals.py --assume-changed skills/craft-mcp/references/oauth-server.md \

@@ -10,3 +10,9 @@ deepseek
 gpt
 gemini
 vllm
+chatgpt
+openai
+codex
+copilot
+codestral
+devstral

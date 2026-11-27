@@ -2,6 +2,8 @@
 
 A project can carry one profile file that answers the setup questions in advance and names the outside builders the gated-build flow may use. The file is optional. Without it, nothing in the pack changes.
 
+Status: the profile format and its checker ship now. The gated build (outside builders and the gate flow) and project setup (the answers, choices and extra steps) read the profile once those features ship. Until then the file is documented and validated only.
+
 ## Location
 
 `.ai/skills-profile.json` at the project root, committed with the project. The schema is `schema/skills-profile.schema.json` (JSON Schema 2020-12). Check a file with:
@@ -16,7 +18,9 @@ It exits 0 when the file is valid, 1 with a message naming the key when it is no
 
 The Craft pack and the Laravel pack read the same file and ship the same schema. Shared keys sit at the top level. Pack-specific keys sit under `craft` or `laravel`. Each pack ignores the other pack's section, so one file can serve both. A team tool may write the file; `managed_by` records which one. A person can also write it by hand.
 
-Unknown keys are kept and ignored, at every level. A newer team tool never breaks an older pack, and a pack never deletes a key it does not know.
+The schema file is shared byte for byte with the Laravel pack. Each pack types its own section (`craft` or `laravel`); the other pack's section is left open.
+
+Unknown keys are kept and ignored, at every level. `version` is the only key whose unknown value hard-fails: a file with a `version` other than `1` is rejected. A newer team tool never breaks an older pack, and a pack never deletes a key it does not know.
 
 ## Keys
 

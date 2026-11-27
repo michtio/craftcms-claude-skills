@@ -1,6 +1,5 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/schema/skills-profile.schema.json",
   "title": "Skills profile",
   "description": "The project profile read by the Craft and Laravel skill packs. Location: .ai/skills-profile.json. Unknown keys are kept and ignored.",
   "type": "object",
