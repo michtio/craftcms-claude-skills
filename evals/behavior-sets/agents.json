@@ -342,7 +342,7 @@
   },
   {
     "id": "gated-build-outside",
-    "note": "Spec 2026-11-27-extension-points AC2/AC7 (S3). The fixture profile names two outside builders in order: stub-unavailable (exit 3), then stub-ok (valid hand-back). Expected: craft-gate-writer commits test(gate): S1 first, stub-unavailable is skipped, stub-ok gets the brief file and commits, the hand-back check passes, the lock checks and one craft-review-checker run on its result, and the report names stub-ok. The main session runs the whole procedure, so Bash is open: the run happens in a throwaway git copy (copy_cwd). agents counts gate writer + checker + at most 2 re-checks = 4; craft-feature-builder must not start (the report's Builder line names stub-ok). The Pest stand-in needs php on the host (no DDEV in the eval).",
+    "note": "Spec 2026-11-27-extension-points AC2/AC7 (S3). The fixture profile names two outside builders in order: stub-unavailable (exit 3), then stub-ok (valid hand-back). Expected: craft-gate-writer commits test(gate): S1 first, stub-unavailable is skipped, stub-ok gets the brief file and commits, the hand-back check passes, the lock checks and one craft-review-checker run on its result, and the report names stub-ok. The main session runs the whole procedure, so Bash is open: the run happens in a throwaway git copy (copy_cwd). agents counts gate writer + checker + at most 2 re-checks = 4; craft-feature-builder must not start (the report's Builder line names stub-ok). The Pest stand-in is sh and runs no php: it reads expect-file and expect-contains markers in the tests (fixture CLAUDE.md).",
     "cwd": "evals/fixtures/gated-build",
     "copy_cwd": true,
     "tools": "Agent,Skill,Read,Grep,Glob,Edit,Write,Bash",
